@@ -163,3 +163,5 @@ Zones sûres (`env(safe-area-inset-*)`), unités `dvh` et `svh`, cibles tactiles
 5. Budgets du § 13 mesurés si la page porte la 3D ou change de poids.
 6. Tout changement visible du design : trois propositions vraiment différentes, montrées en planches d’images (`scripts/design/planches.ts`), et en vidéo seulement quand il faut juger un mouvement (`scripts/design/filmer.ts`, vérifiée image par image par `scripts/design/verifier-film.ts`) ; une seule question au propriétaire.
 7. Les mesures datées dans `journal-design.md` ; cette charte mise à jour si une règle change.
+
+Les outils de `scripts/design/` donnent leur mode d’emploi en tête de fichier. Ils mesurent le build de production local (port 3100) et écrivent leurs mesures hors du dépôt, dans le dossier temporaire. Sous Git Bash, on les lance avec `MSYS_NO_PATHCONV=1` (pièges 17 et 31 de `specs/001-sovermap/pieges-connus.md`).
