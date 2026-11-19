@@ -6,7 +6,7 @@
 @theme {
   --*: initial;
 
-  /* Background halfway between Mist and Galet (OKLCH L 0.887), Mist's hue (248°) much softened. */
+  /* A soft, even grey (OKLCH L 0.887), its blue hue (248°) much softened: neither beige nor violet. */
   --color-fond: #D7DADD;
   --color-surface: #DEE0E2;
   --color-surface-2: #CED1D4;
