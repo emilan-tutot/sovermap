@@ -57,7 +57,16 @@ Une case par point du brief. Une case cochée porte sa preuve. Les rapports cit�
 - [x] D.4 Contrôles : largeurs, navigateurs, axe, LCP, CLS, INP, images par seconde, poids JavaScript, console. Preuve : `journal-design.md` de `proto/t1` (63 contrôles sans défaut dans Edge, Firefox et WebKit ; budgets de vitesse tenus dans les trois directions) ; seules les mesures de la direction choisie entreront ici (E.2).
 - [x] D.5 6 vidéos, 2 planches, `LISEZMOI.txt`. Preuve : `Downloads\Sovermap-T1\02_propositions` (vidéos MP4 de 44 à 46 s, filmées dans Edge avec l'accélération graphique, sans fenêtre visible).
 - [x] D.6 Préversion par la CLI (jamais `--prod`), adresses notées au journal, vérifiées dans Edge. Preuve : `journal-T1.md` ; le tout premier envoi a été placé en production par Vercel (premier déploiement du projet) puis supprimé ; le préréglage « Other » du projet est corrigé par `vercel.json` (`framework: nextjs`).
-- [ ] ARRÊT 2 : choix de la direction.
+- [x] ARRÊT 2 : direction A gardée en principe (19/11/2026), pour son globe rond ; second tour sur A seule avant le choix définitif.
+
+### Second tour de l'ARRÊT 2 (A seule, consignes du 19/11/2026)
+- [ ] S.1 Consignes recopiées mot pour mot (dossier du propriétaire) ; notes « Pour T3 » inscrites au plan (§ 15 et T3) et dans `pieges-connus.md`.
+- [ ] S.2 B.5 terminé : accès de l'application Vercel au dépôt, lien Git, preuve.
+- [ ] S.3 Sauvegarde de `proto/t1` (E.1), puis effacement de tout ce qui est propre à B et C : code, styles, polices et dépendances inutiles, tests, captures, 4 vidéos, 2 planches, `LISEZMOI.txt`. `proto/t1` reste.
+- [ ] S.4 « A corrigée » : corrections a à i (premier écran, globe sans cadre, téléphone, Radiographie en deux colonnes, ministère, mode Expert, graphique, typographie française, vidéos régulières à la densité réelle) et montée en gamme (éclairage du globe, fils et lueur, anneaux d'arrivée, transitions de vue).
+- [ ] S.5 Variantes A1 « Nuit polaire », A2 « Encre et laiton », A3 « Brume », A4 « Pierre » : seules la palette et la matière du globe changent.
+- [ ] S.6 Pour les cinq : contrôles D.4, 10 vidéos, 2 planches, `LISEZMOI.txt` ; nouvelle préversion vérifiée dans Edge ; anciennes préversions listées, comptées, supprimées une par une par leur adresse.
+- [ ] ARRÊT 2 bis : question en texte (A corrigée, A1, A2, A3, A4), avec une recommandation. La réponse suivante est la dernière : appliquée sans autre question, puis toute la partie E (E.1 refaite ; en E.3, les quatre directions non retenues et leurs 8 vidéos).
 
 ### Partie E — Après le choix
 - [ ] E.1 Sauvegarde de `proto/t1` (archive locale, supprimée en E.8).

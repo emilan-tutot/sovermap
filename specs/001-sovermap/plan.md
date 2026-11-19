@@ -370,6 +370,13 @@ Sources :
 5. **IPtoASN** : son accord avec la table RIS du jour suffit pour « confirmé » (§ 13). L'agent utilisateur renvoie au dépôt tant que sovermap.com n'est pas branché (`docs/sources.md`, Règles).
 6. **Sources** : on se passe de DB-IP. Le propriétaire peut télécharger lui-même la liste officielle à jour dans son navigateur, une fois par trimestre au plus (T3, § 17).
 
+### Décisions du propriétaire (ARRÊT 2, 19/11/2026)
+
+- **Direction artistique** : A, « La Veille orbitale », gardée en principe pour son globe rond ; un second tour compare « A corrigée » et quatre variantes de palette (A1 à A4) avant le choix définitif. B et C sont effacées.
+- **Pour T3** (méthode, version 0.3 ; rien ne change avant T3, ni la méthode, ni l'outil de mesure, ni les chiffres de l'échantillon) :
+  1. **Société exploitante hors de l'UE, maison mère dans l'UE** (cas Imperva, Inc., détenue par Thales) : un domaine compte comme dépendant dès que la société qui le sert **ou** sa maison mère ultime a son siège hors de l'UE. Sa catégorie et son fil suivent le plus éloigné des deux sièges ; la fiche affiche les deux.
+  2. **Proxys de sécurité** placés devant les sites : traités comme des CDN (« diffusé par »), d'après une liste sourcée par la documentation de chaque fournisseur. Radware, F5 et OGO Security sont à confirmer ainsi ; Claranet aussi (proxy ou hébergeur ?). Quand le proxy tourne sur le réseau d'une autre société (OGO Security sur OVH ou NFrance), la fiche affiche les deux sociétés, et la plus éloignée compte.
+
 Ci-dessous, les options étudiées pour chaque décision, avec leurs effets. Les recommandations datent du 18/11/2026.
 
 ### D1 — Le chiffre-titre et le périmètre
@@ -553,7 +560,7 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 | Chantier | Contenu | Preuve de fin |
 |---|---|---|
 | **T2 — Collecte quotidienne** | Pipeline v1 : résolveur (§ 9), sources en masse, branche `donnees`, témoins, hystérésis, disjoncteur, contrôle de fraîcheur, alertes. | 14 jours de suite publiés ; collecte de moins de 3 h ; moins de 2 % d'échecs ; disjoncteur et contrôle de fraîcheur déclenchés exprès une fois chacun. |
-| **T3 — Référentiels** | Tables AS → société → maison mère → pays, sourcées ligne par ligne ; liste des CDN ; relevé SecNumCloud ; opérateurs de l'État rattachés à leurs domaines (D1). Liste officielle à jour : en attendant une copie ouverte aux robots, le propriétaire peut la télécharger lui-même dans son navigateur (licence etalab-2.0), une fois par trimestre au plus ; le fichier est daté et versé dans les données. | Au moins 95 % des adresses du périmètre « État » en « confirmé » ; 10 domaines contre-vérifiés à la main, au moins 95 % d'accord. |
+| **T3 — Référentiels** | Tables AS → société → maison mère → pays, sourcées ligne par ligne ; liste des CDN ; relevé SecNumCloud ; opérateurs de l'État rattachés à leurs domaines (D1). Liste officielle à jour : en attendant une copie ouverte aux robots, le propriétaire peut la télécharger lui-même dans son navigateur (licence etalab-2.0), une fois par trimestre au plus ; le fichier est daté et versé dans les données. Méthode 0.3 (décision de l’ARRÊT 2, § 15) : dépendance dès que la société qui sert le site ou sa maison mère ultime est hors de l’UE, le plus éloigné des deux sièges fait la catégorie et le fil ; proxys de sécurité traités comme des CDN, d’après la documentation de chaque fournisseur (Radware, F5, OGO Security ; Claranet à trancher). | Au moins 95 % des adresses du périmètre « État » en « confirmé » ; 10 domaines contre-vérifiés à la main, au moins 95 % d'accord. |
 | **T4 — L'Atlas réel et les fiches** | Accueil 3D avec les vraies données ; pays, radiographie, ministère, société, journal, recherche ; budgets (§ 11). | e2e verts ; axe sans violation ; LCP ≤ 1,8 s ; quotas Vercel mesurés sur 30 jours sous la cible. |
 | **T5 — Textes et pages légales** | « Pourquoi ça compte », méthode, glossaire, mentions légales, confidentialité, accessibilité, crédits, corrections ; relecture éditoriale du propriétaire. | Chaque page relue et datée ; chaque fait sourcé ; déclaration d'accessibilité publiée. |
 | **T6 — Données ouvertes** | Téléchargements CSV et JSON, schéma, licence (D4), attributions, archives mensuelles. | Fichiers valides selon le schéma ; première archive mensuelle publiée. |

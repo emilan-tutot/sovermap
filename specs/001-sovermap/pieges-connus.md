@@ -73,10 +73,23 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 14 ter. **Homonymes.** « OVH » n'est pas « OVH GROUPE » ; une recherche « ILIAD » donne 10 entités ; un élément Wikidata peut mêler le groupe coté et sa société d'exploitation.
     - Parade : joindre par un identifiant (SIREN, LEI), jamais par le nom seul.
 14 quater. **Natural Earth : `ISO_A3` vaut -99 pour la France** (et quelques autres pays). Parade : joindre par `ADM0_A3` ou `ISO_A3_EH`.
+14 sexies. **Société exploitante hors de l'UE, maison mère dans l'UE.**
+    - Vu (échantillon du 19/11/2026) : Imperva, Inc. (États-Unis), détenue par Thales (France), sert deux sites de l'État ; la règle de la maison mère ultime les classait « France ».
+    - Parade (décision de l'ARRÊT 2, méthode 0.3 en T3) : le domaine compte comme dépendant dès que la société qui le sert ou sa maison mère ultime est hors de l'UE ; le plus éloigné des deux sièges fait la catégorie et le fil ; la fiche affiche les deux.
+14 septies. **Un proxy de sécurité cache l'hébergeur comme un CDN.**
+    - Vu : Radware (`radwarecloud.net`), F5, OGO Security (sur OVH ou NFrance) et Claranet (`c.global.clara.net`) placés devant des sites, comptés « hébergé par ».
+    - Parade (T3) : les traiter comme des CDN (« diffusé par »), d'après une liste sourcée par la documentation de chaque fournisseur ; quand le proxy tourne sur le réseau d'une autre société, la fiche affiche les deux sociétés, et la plus éloignée compte.
 
 ## Documents
 
 14 quinquies. **Une citation peut contenir une adresse e-mail** : celle d'un service, ou un exemple tiré d'une documentation. Le contrôle `scan:prive` n'accepte que les adresses noreply de GitHub et d'Anthropic, celles en `@sovermap.com` et les exemples en `example.com` ou `.example`. Parade : remplacer l'adresse par « [adresse omise] » dans la citation, et le dire.
+
+## Vercel
+
+14 octies. **Le tout premier déploiement d'un projet part en production**, même sans `--prod` (« This is the project's first deployment, so it was assigned to production »).
+    - Parade : avant le premier `vercel deploy` d'un projet neuf, avoir déjà une production voulue, ou republier aussitôt en préversion puis supprimer ce déploiement par son adresse.
+14 nonies. **Un projet créé par la ligne de commande garde le préréglage « Other »** : le site compile, mais Vercel ne sert que `public/` (404 partout ailleurs).
+    - Parade : `"framework": "nextjs"` dans `vercel.json`, versionné.
 
 ## Poste et outils (Windows)
 
