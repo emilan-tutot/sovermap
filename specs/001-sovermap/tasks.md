@@ -51,12 +51,12 @@ Une case par point du brief. Une case cochée porte sa preuve. Les rapports cit�
 - [x] C.6 Résultats hors de Git (`echantillon/`). Preuve : `git check-ignore` vrai pour `echantillon/` ; `echantillon.md` remis dans le dossier du propriétaire (19/11/2026).
 
 ### Partie D — Trois prototypes
-- [ ] D.1 Branche locale `proto/t1`, jamais poussée ; routes `/proto/a`, `/proto/b`, `/proto/c` ; bandeau « Prototype ».
-- [ ] D.2 Les écrans dans chaque direction : accueil, pays, radiographie, « Pourquoi ça compte », ministère, en-tête et pied de page.
-- [ ] D.3 La 3D de chaque direction, avec son repli statique.
-- [ ] D.4 Contrôles : largeurs, navigateurs, axe, LCP, CLS, INP, images par seconde, poids JavaScript, console.
-- [ ] D.5 6 vidéos, 2 planches, `LISEZMOI.txt`.
-- [ ] D.6 Préversion par la CLI (jamais `--prod`), adresses notées au journal, vérifiées dans Edge.
+- [x] D.1 Branche locale `proto/t1`, jamais poussée ; routes `/proto/a`, `/proto/b`, `/proto/c` ; bandeau « Prototype ». Preuve : `git branch -vv` (aucune branche suivie pour `proto/t1`), crochet `pre-push` ; données de l'échantillon dans un commit local seulement (19/11/2026).
+- [x] D.2 Les écrans dans chaque direction : accueil, pays, radiographie, « Pourquoi ça compte », ministère, en-tête et pied de page. Preuve : les 2 planches de `02_propositions` (5 écrans × 3 directions, ordinateur et téléphone).
+- [x] D.3 La 3D de chaque direction, avec son repli statique. Preuve : three.js 0.187, chargé après le premier affichage ; repli SVG de la même scène ; pause hors de l'écran, densité plafonnée à 2, qualité adaptative ; au téléphone, rotation après « Explorer le globe » seulement.
+- [x] D.4 Contrôles : largeurs, navigateurs, axe, LCP, CLS, INP, images par seconde, poids JavaScript, console. Preuve : `journal-design.md` de `proto/t1` (63 contrôles sans défaut dans Edge, Firefox et WebKit ; budgets de vitesse tenus dans les trois directions) ; seules les mesures de la direction choisie entreront ici (E.2).
+- [x] D.5 6 vidéos, 2 planches, `LISEZMOI.txt`. Preuve : `Downloads\Sovermap-T1\02_propositions` (vidéos MP4 de 44 à 46 s, filmées dans Edge avec l'accélération graphique, sans fenêtre visible).
+- [x] D.6 Préversion par la CLI (jamais `--prod`), adresses notées au journal, vérifiées dans Edge. Preuve : `journal-T1.md` ; le tout premier envoi a été placé en production par Vercel (premier déploiement du projet) puis supprimé ; le préréglage « Other » du projet est corrigé par `vercel.json` (`framework: nextjs`).
 - [ ] ARRÊT 2 : choix de la direction.
 
 ### Partie E — Après le choix
