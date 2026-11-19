@@ -90,6 +90,8 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : avant le premier `vercel deploy` d'un projet neuf, avoir déjà une production voulue, ou republier aussitôt en préversion puis supprimer ce déploiement par son adresse.
 14 nonies. **Un projet créé par la ligne de commande garde le préréglage « Other »** : le site compile, mais Vercel ne sert que `public/` (404 partout ailleurs).
     - Parade : `"framework": "nextjs"` dans `vercel.json`, versionné.
+14 decies. **`vercel remove … --yes` ne suffit pas à un agent** : la CLI répond « Can't delete 1 deployment without approval » et attend l'accord d'un humain.
+    - Parade : une adresse à la fois, `vercel remove <adresse> --confirm-name <adresse>`, seulement quand la consigne écrite du propriétaire couvre cette suppression ; vérifier ensuite par `vercel inspect <adresse>` (« Can't find the deployment »).
 
 ## Poste et outils (Windows)
 
@@ -100,3 +102,10 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 19. **Les pages GitHub protégées** (« Confirm access ») demandent un mot de passe : on ne les automatise pas.
 20. **`ubuntu-latest` passe à Ubuntu 26.04 en novembre 2026** (annonce d'actions/runner-images, lue le 18/11/2026). Parade : épingler `ubuntu-24.04` dans les workflows.
 21. **Cloudflare Registrar impose les serveurs de noms de Cloudflare.** Changer de DNS impose de transférer le domaine chez un autre registraire.
+22. **Arrêter une tâche de fond n'arrête pas toujours une boucle de Git Bash** : la boucle `for` d'un script relance le tour suivant à chaque processus arrêté.
+    - Parade : le script écrit d'abord son propre numéro (`echo $$ > fichier`) ; on arrête la boucle par ce numéro, puis ses enfants, toujours par PID.
+23. **`npx --no-install <outil>` échoue quand une version plus récente que celle du cache existe** (« npx canceled due to missing packages »).
+    - Parade : appeler l'outil déjà présent dans le cache de npx par son chemin, ou épingler sa version ; aucune installation nouvelle sans accord.
+24. **Filmer une page animée sans à-coups** (vidéos des propositions de design) :
+    - Vu : la diffusion d'écran du navigateur (screencast) suit son propre rythme (45 à 51 images par seconde) et rend des images en pixels CSS ; ramenée à 30 images par seconde, elle saute un pas puis le répète. Une capture CDP lancée depuis une seconde session sort aussi en pixels CSS. Une animation CSS mise en pause ne se termine jamais : une transition de vue reste alors devant la page. Deux mouvements de doigt arrivés dans la même image réelle sont fusionnés.
+    - Parade : une horloge virtuelle installée avant les scripts de la page (`requestAnimationFrame`, `performance.now`, animations CSS et transitions de vue avancées à la main, puis terminées par `finish()`) ; une image par pas de 1/30 s, prise par la capture de Playwright à l'échelle « device » ; chaque mouvement de glisser attendu avant l'image ; vérification image par image sur le MP4 (`tblend` et `signalstats` de ffmpeg).
