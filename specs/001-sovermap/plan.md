@@ -385,6 +385,13 @@ Sources :
   1. Après T1, tout le reste (T2 à T11, dans le même ordre) se fera en **deux grands chantiers**, de plusieurs jours chacun, avec un point toutes les deux ou trois heures (questions, et propositions de design en vidéo). Le découpage est proposé dans le rapport final de T1.
   2. **L'anglais (T11)** : tout le site, de A à Z, avec un petit bouton FR / EN ; ensuite, chaque texte ajouté ou modifié l'est dans les deux langues, dans le même commit, et la CI refuse un texte sans sa traduction.
 
+### Décisions du propriétaire (ARRÊT 2 ter, 19/11/2026)
+
+- **Direction artistique** : pas encore le choix final. « Brume » et « Galet » (M2) sont gardées ; un quatrième tour ajoute deux propositions qui les mélangent (« Brume douce », « Brume galet ») ; la partie E attend la réponse à l'ARRÊT 2 quater, qui sera la dernière. A corrigée, M1 et M3 sont effacées.
+- **Couleurs de la 3D** : la conversion des couleurs vers l'écran (sRGB) s'applique partout ; les jetons de Brume sont recalés pour garder l'aspect affiché (écart OKLab de 0,02 au plus, mesuré sur l'image).
+- **Autonomie** : une règle durable entre dans `CLAUDE.md` (les actions du projet qui se refont ou se rattrapent se décident seules et se notent au journal ; ce qui est irréversible ou hors du projet se regroupe en un seul message, à un arrêt).
+- **Pour la suite** (à noter seulement) : les notes de l'ARRÊT 2 bis restent valables. Retouche : aux points des grands chantiers, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement.
+
 Ci-dessous, les options étudiées pour chaque décision, avec leurs effets. Les recommandations datent du 18/11/2026.
 
 ### D1 — Le chiffre-titre et le périmètre
@@ -578,4 +585,4 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 | **T10 — Ouverture** | `SITE_INDEXING=open` ; sitemap ; Search Console ; réutilisation déclarée sur data.gouv.fr ; décision sur les robots d'IA. | Site indexé ; 30 jours d'usage sous les cibles du § 11. |
 | **T11 — L'anglais** (D5, après l'ouverture) | Traduction des clés, relecture éditoriale, `hreflang` ; tout le site, de A à Z, avec un petit bouton FR / EN ; ensuite, chaque texte ajouté ou modifié l'est dans les deux langues dans le même commit, et la CI refuse un texte sans sa traduction (décision de l'ARRÊT 2 bis, § 15). | 100 % des clés traduites et relues. |
 
-**Organisation** (décision de l'ARRÊT 2 bis, 19/11/2026, § 15) : après T1, les chantiers T2 à T11 se font, dans cet ordre, en deux grands chantiers de plusieurs jours, avec un point toutes les deux ou trois heures ; le découpage est proposé dans le rapport final de T1.
+**Organisation** (décision de l'ARRÊT 2 bis, 19/11/2026, § 15) : après T1, les chantiers T2 à T11 se font, dans cet ordre, en deux grands chantiers de plusieurs jours, avec un point toutes les deux ou trois heures ; le découpage est proposé dans le rapport final de T1. À ces points, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement (retouche de l'ARRÊT 2 ter, § 15).
