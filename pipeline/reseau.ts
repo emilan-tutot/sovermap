@@ -12,7 +12,12 @@ export function adresseEnEntier(ip: string): { famille: 4 | 6; valeur: bigint } 
     return { famille: 4, valeur };
   }
   if (famille === 6) {
-    const [tete = "", queue] = ip.toLowerCase().split("::");
+    // An IPv4 address written at the end (::ffff:192.0.2.1) stands for the last two groups.
+    const v4 = /(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+    const texte = v4
+      ? `${ip.slice(0, v4.index)}${((Number(v4[1]) << 8) | Number(v4[2])).toString(16)}:${((Number(v4[3]) << 8) | Number(v4[4])).toString(16)}`
+      : ip;
+    const [tete = "", queue] = texte.toLowerCase().split("::");
     const groupes = (s: string | undefined) => (s === undefined || s === "" ? [] : s.split(":"));
     const debut = groupes(tete);
     const fin = groupes(queue);

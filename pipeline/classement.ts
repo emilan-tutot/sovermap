@@ -90,7 +90,6 @@ export function classer(
   perimetre: Perimetre,
   contexte: Contexte,
 ): Classement {
-  const base = servants(principale, contexte);
   const vide: Classement = {
     nom: principale.nom,
     perimetre,
@@ -105,6 +104,7 @@ export function classer(
     niveau: "non déterminé",
   };
   if (principale.statut !== "NOERROR") return vide;
+  const base = servants(principale, contexte);
 
   // The address layer is « confirmé » only when the control resolver sees the same serving companies.
   let niveauControle: Niveau = "probable";

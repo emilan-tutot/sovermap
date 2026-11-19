@@ -3,15 +3,16 @@
 //   npx tsx pipeline/cli/classer.ts --observations <obs.json> --iptoasn <ip2asn-combined.tsv.gz> --date-iptoasn <AAAA-MM-JJ>
 //     --ris4 <riswhoisdump.IPv4.gz> --ris6 <riswhoisdump.IPv6.gz> --plages <dossier> --sortie <classement.json>
 // The CDN range folder holds cloudflare-ips-v4.txt, cloudflare-ips-v6.txt and fastly-public-ip-list.json.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { gunzipSync } from "node:zlib";
-import type { PlagesOfficielles, ReferentielCdn } from "../cdn";
-import { chiffreTitre, classer, type Classement, type Contexte, type Perimetre } from "../classement";
-import type { ObservationDns } from "../dns";
+import { estPlage, type PlagesOfficielles, type ReferentielCdn } from "../cdn";
+import { chiffreTitre, classer, type Classement, type Contexte } from "../classement";
 import { coucheReseau, TableIpToAsn, TableRis } from "../reseau";
 import { chaineDepuisAs, type ReferentielAs, type ReferentielSocietes, validerReferentiels } from "../societes";
+import { niveauMin } from "../types";
+import { validerListeFastly, validerObservations } from "../valider";
 
 const { values: o } = parseArgs({
   options: {
@@ -55,37 +56,41 @@ const iptoasn = new TableIpToAsn(gz(chemin("iptoasn")));
 const ris = new TableRis([texteRis4, gz(chemin("ris6"))]);
 const plages: PlagesOfficielles = {};
 const dossierPlages = chemin("plages");
-const lignes = (f: string) =>
-  readFileSync(path.join(dossierPlages, f), "utf8")
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => /^[0-9a-f:.]+\/\d+$/i.test(l));
-if (existsSync(path.join(dossierPlages, "cloudflare-ips-v4.txt"))) {
+const fichierPlages = (f: string) => path.join(dossierPlages, f);
+/** The date of a list is the day its file was downloaded (the oldest one when a provider has two files). */
+const dateDesFichiers = (...fichiers: string[]) =>
+  fichiers.map((f) => statSync(fichierPlages(f)).mtime.toISOString().slice(0, 10)).sort()[0] ?? "inconnue";
+/** Only well-formed ranges are kept; the others are counted and said, never read as « everything ». */
+const garderPlages = (liste: string[], fournisseur: string) => {
+  const bonnes = liste.map((l) => l.trim()).filter((l) => l !== "" && estPlage(l));
+  const rejetees = liste.filter((l) => l.trim() !== "").length - bonnes.length;
+  if (rejetees > 0) console.warn(`${fournisseur} : ${rejetees} ligne(s) de la liste officielle écartée(s), sans la forme « adresse/longueur ».`);
+  return bonnes;
+};
+const lignes = (f: string) => readFileSync(fichierPlages(f), "utf8").split(/\r?\n/);
+const [cf4, cf6] = ["cloudflare-ips-v4.txt", "cloudflare-ips-v6.txt"] as const;
+if (existsSync(fichierPlages(cf4)) !== existsSync(fichierPlages(cf6))) {
+  console.error(`Listes de Cloudflare incomplètes : il faut ${cf4} et ${cf6} (relancer le téléchargement des deux).`);
+  process.exit(1);
+}
+if (existsSync(fichierPlages(cf4))) {
   plages.cloudflare = {
-    plages: [...lignes("cloudflare-ips-v4.txt"), ...lignes("cloudflare-ips-v6.txt")],
+    plages: garderPlages([...lignes(cf4), ...lignes(cf6)], "Cloudflare"),
     source: "https://www.cloudflare.com/ips-v4 et /ips-v6",
-    date: "2026-11-19",
+    date: dateDesFichiers(cf4, cf6),
   };
 }
-if (existsSync(path.join(dossierPlages, "fastly-public-ip-list.json"))) {
-  const f = lireJson<{ addresses?: string[]; ipv6_addresses?: string[] }>(
-    path.join(dossierPlages, "fastly-public-ip-list.json"),
-  );
+const fastly = "fastly-public-ip-list.json";
+if (existsSync(fichierPlages(fastly))) {
   plages.fastly = {
-    plages: [...(f.addresses ?? []), ...(f.ipv6_addresses ?? [])],
+    plages: garderPlages(validerListeFastly(lireJson<unknown>(fichierPlages(fastly))), "Fastly"),
     source: "https://api.fastly.com/public-ip-list",
-    date: "2026-11-19",
+    date: dateDesFichiers(fastly),
   };
 }
 const contexte: Contexte = { iptoasn, ris, cdn, plages, tableAs, societes };
 
-type Entree = { nom: string; perimetre: Perimetre; groupe: string; raison: string };
-const obs = lireJson<{
-  principal: string;
-  controle: string;
-  debut: string;
-  resultats: { entree: Entree; principale: ObservationDns; controle: ObservationDns }[];
-}>(chemin("observations"));
+const obs = validerObservations(lireJson<unknown>(chemin("observations")));
 
 const domaines = obs.resultats.map(({ entree, principale, controle }) => {
   const c = classer(principale, controle, entree.perimetre, contexte);
@@ -102,17 +107,20 @@ const domaines = obs.resultats.map(({ entree, principale, controle }) => {
         niveau: "non déterminé",
       };
     const r = coucheReseau(adresse, iptoasn, ris);
-    const asn = r.asns[0] ?? null;
+    // As for the addresses that serve the site, the network layer decides first: two sources that disagree, or
+    // several origins, leave the server « non déterminé » rather than one AS picked among them.
+    const asn = r.niveau !== "non déterminé" && r.asns.length === 1 ? (r.asns[0] ?? null) : null;
     const chaine = asn === null ? null : chaineDepuisAs(asn, tableAs, societes);
     return {
       nom,
       adresse,
       asn,
+      asns: r.asns,
       titulaireRegistre: r.descriptionAs,
       societe: chaine?.societe?.nom ?? null,
       maisonMere: chaine?.mere ? `${chaine.mere.nom} (${chaine.mere.pays})` : null,
       categorie: chaine?.categorie ?? "non déterminé",
-      niveau: chaine?.niveau ?? "non déterminé",
+      niveau: chaine ? niveauMin(chaine.niveau, r.niveau) : "non déterminé",
     };
   });
   return {

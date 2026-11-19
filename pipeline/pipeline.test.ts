@@ -2,7 +2,7 @@
 // 198.51.100.0/24, 203.0.113.0/24) and RFC 3849 (2001:db8::/32), AS numbers of RFC 5398 (64496-64511) and names under
 // `.example` (RFC 2606). The resolver is simulated: no network.
 import { describe, expect, it } from "vitest";
-import { detecterCdn, type ReferentielCdn } from "./cdn";
+import { detecterCdn, estPlage, type ReferentielCdn } from "./cdn";
 import { chiffreTitre, classer, type Contexte } from "./classement";
 import { observer } from "./dns";
 import { domaineEnregistre, nomWeb, raisonExclusion } from "./noms";
@@ -18,6 +18,7 @@ import {
   validerReferentiels,
 } from "./societes";
 import type { DnsAnswer, DnsClient, RecordType } from "./types";
+import { validerListe, validerListeFastly, validerObservation, validerObservations } from "./valider";
 
 class ResolveurSimule implements DnsClient {
   readonly id = "simulé";
@@ -117,6 +118,10 @@ describe("réseau", () => {
   it("reads IPv4 and IPv6 addresses", () => {
     expect(adresseEnEntier("192.0.2.1").valeur).toBe(3221225985n);
     expect(adresseEnEntier("2001:db8::1")).toEqual({ famille: 6, valeur: 0x20010db8000000000000000000000001n });
+  });
+  it("reads an IPv6 address that ends with an IPv4 address", () => {
+    expect(adresseEnEntier("::ffff:192.0.2.1")).toEqual(adresseEnEntier("::ffff:c000:201"));
+    expect(adresseEnEntier("2001:db8::192.0.2.1").valeur).toBe(0x20010db80000000000000000c0000201n);
   });
   it("is « confirmé » when IPtoASN and RIS agree, « non déterminé » when they disagree", () => {
     expect(coucheReseau("192.0.2.10", contexte.iptoasn, contexte.ris).niveau).toBe("confirmé");
@@ -219,6 +224,49 @@ describe("CDN", () => {
       })?.methode,
     ).toBe("plage");
     expect(detecterCdn([], ["192.0.2.1"], [64496], cdn)).toBeNull();
+  });
+  it("never reads a range without its length as « every address »", () => {
+    const plages = (liste: string[]) => ({ "cdn-exemple": { plages: liste, source: "x", date: "2026-11-19" } });
+    expect(detecterCdn([], ["192.0.2.1"], [64496], cdn, plages(["198.51.100.1"]))).toBeNull();
+    expect(detecterCdn([], ["192.0.2.1"], [64496], cdn, plages(["198.51.100.0/40"]))).toBeNull();
+    expect(estPlage("198.51.100.0/24")).toBe(true);
+    expect(estPlage("2001:db8::/32")).toBe(true);
+    expect(estPlage("198.51.100.1")).toBe(false);
+    expect(estPlage("198.51.100.0/33")).toBe(false);
+    expect(estPlage("2001:db8::/129")).toBe(false);
+  });
+});
+
+describe("fichiers lus par les outils", () => {
+  const entree = { nom: "www.ville.example", perimetre: "État", groupe: "essai", raison: "essai" };
+  const observation = {
+    nom: "www.ville.example",
+    resolveur: "192.0.2.53",
+    heure: "2026-11-19T00:00:00.000Z",
+    statut: "NOERROR",
+    chaineCname: [],
+    a: ["192.0.2.10"],
+    aaaa: ["2001:db8::5"],
+    zone: "ville.example",
+    ns: ["ns1.ville.example"],
+    adressesNs: { "ns1.ville.example": "198.51.100.53" },
+  };
+  it("accepts a list and observations of the expected shape", () => {
+    expect(validerListe({ domaines: [entree] })).toEqual([entree]);
+    const fichier = { principal: "192.0.2.53", controle: "198.51.100.53", debut: "2026-11-19T00:00:00.000Z", resultats: [{ entree, principale: observation, controle: observation }] };
+    expect(validerObservations(fichier).resultats[0]?.principale.a).toEqual(["192.0.2.10"]);
+  });
+  it("stops with the place and the reason on any other shape", () => {
+    expect(() => validerListe({ domaines: [{ ...entree, perimetre: "Etat" }] })).toThrow("liste.domaines[0].perimetre");
+    expect(() => validerListe({ domaines: [{ ...entree, nom: "pas un nom" }] })).toThrow("liste.domaines[0].nom");
+    const incomplete: Record<string, unknown> = { ...observation };
+    delete incomplete["adressesNs"];
+    expect(() => validerObservations({ principal: "a", controle: "b", debut: "c", resultats: [{ entree, principale: incomplete, controle: observation }] })).toThrow(
+      "observations.resultats[0].principale.adressesNs",
+    );
+    expect(() => validerObservation({ ...observation, a: ["2001:db8::5"] }, "obs")).toThrow("obs.a");
+    expect(validerListeFastly({ addresses: ["198.51.100.0/24"], ipv6_addresses: ["2001:db8::/32"] })).toHaveLength(2);
+    expect(() => validerListeFastly({ addresses: "198.51.100.0/24" })).toThrow("liste de Fastly");
   });
 });
 
