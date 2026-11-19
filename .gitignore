@@ -1,0 +1,38 @@
+# Dépendances
+node_modules/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Environnement : aucun fichier .env ne part sur GitHub (sauf l'exemple, sans valeur réelle)
+.env*
+!.env.example
+
+# Vercel
+.vercel
+
+# Claude Code : réglages locaux du poste
+.claude/settings.local.json
+
+# Essais, échantillon et passation : hors du dépôt
+essais/
+echantillon/
+PASSATION.md
+
+# Tests, traces et vidéos
+playwright-report/
+test-results/
+blob-report/
+coverage/
+playwright/.cache/
+*.webm
+*.mp4
+*.trace.zip
+
+# Système
+.DS_Store
+Thumbs.db
+npm-debug.log*

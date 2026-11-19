@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+essais/
+echantillon/
+playwright-report/
+test-results/
+package-lock.json
+# Les documents Markdown sont relus à la main : Prettier ne les reformate pas.
+**/*.md
