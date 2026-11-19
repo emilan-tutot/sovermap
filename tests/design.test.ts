@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
+import { createElement, Fragment } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { nouvelleMemoire, placerEtiquettes, seCroisent, toucheBoite, type Ancre, type Place } from "../components/globe/etiquettes";
-import { arcGrandCercle, FRANCE } from "../components/globe/geo";
+import { arcGrandCercle, estMonde, FRANCE } from "../components/globe/geo";
+import { texteAvecAppels } from "../components/texte/Texte";
 import { morceaux } from "../components/texte/Valeur";
 import { JETONS } from "../lib/design/tokens";
 import { findHardcodedTexts } from "../scripts/lib/texte-en-dur";
@@ -94,5 +97,21 @@ describe("valeurs brutes (ARRÊT 2 bis, défaut f)", () => {
     expect(morceaux("www.univ-grenoble-alpes.fr")).toEqual(["www.", "univ-grenoble-alpes.", "fr"]);
     expect(morceaux("https://example.org/a")).toEqual(["https://", "example.", "org/", "a"]);
     expect(morceaux("2606:4700::6810")).toEqual(["2606:", "4700:", ":", "6810"]);
+  });
+});
+
+describe("appels de note et carte du globe", () => {
+  it("keeps two calls in a row glued to their word, each linked to its note", () => {
+    const appels = new Map<string, number>();
+    const html = renderToStaticMarkup(createElement(Fragment, null, texteAvecAppels("Siège aux États-Unis[1][2], hébergé en France [1].", appels)));
+    for (const ancre of ['id="appel-1"', 'id="appel-2"', 'id="appel-1-2"', 'href="#note-1"', 'href="#note-2"']) expect(html).toContain(ancre);
+    expect(html).not.toContain("Unis[1]");
+    expect(appels.get("1")).toBe(2);
+  });
+  it("accepts the map of the site and refuses a malformed one", () => {
+    expect(estMonde(JSON.parse(readFileSync("public/globe/monde.json", "utf8")))).toBe(true);
+    expect(estMonde({ pays: [], cotes: [[0, "1"]], frontieres: [] })).toBe(false);
+    expect(estMonde({ cotes: [], frontieres: [] })).toBe(false);
+    expect(estMonde(null)).toBe(false);
   });
 });

@@ -2,6 +2,25 @@
 
 export type PaysMonde = { c: string; n: string; lx: number; ly: number; p: number[][] };
 export type Monde = { pays: PaysMonde[]; cotes: number[][]; frontieres: number[][] };
+
+const estLigne = (v: unknown): v is number[] => Array.isArray(v) && v.every((n) => typeof n === "number" && Number.isFinite(n));
+const estLignes = (v: unknown): v is number[][] => Array.isArray(v) && v.every(estLigne);
+/** The map file (public/globe/monde.json) checked at the boundary, before any use. */
+export function estMonde(v: unknown): v is Monde {
+  if (typeof v !== "object" || v === null) return false;
+  const m = v as Record<string, unknown>;
+  const pays = m["pays"];
+  return (
+    estLignes(m["cotes"]) &&
+    estLignes(m["frontieres"]) &&
+    Array.isArray(pays) &&
+    pays.every((p: unknown) => {
+      if (typeof p !== "object" || p === null) return false;
+      const q = p as Record<string, unknown>;
+      return typeof q["c"] === "string" && typeof q["n"] === "string" && typeof q["lx"] === "number" && typeof q["ly"] === "number" && estLignes(q["p"]);
+    })
+  );
+}
 /**
  * A thread from France to the country of the headquarters of the ultimate parents, thicker with more sites. `horsUE`
  * says whether that country is outside the European Union: only those threads take the accent.

@@ -2,11 +2,11 @@
 
 // The one 3D scene of the site (DESIGN.md §8): kept for the real Atlas, not shown in production during T1. Text and figure
 // come first; the scene loads after the first paint and fades in; a static fallback shows the same scene.
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { JETONS } from "@/lib/design/tokens";
 import { fr } from "@/lib/i18n/fr";
 import type { Etiquette, Scene } from "./commun";
-import type { Fil, Monde } from "./geo";
+import { estMonde, type Fil } from "./geo";
 import { nouvelleMemoire, placerEtiquettes, type Ancre, type Place, type Point } from "./etiquettes";
 import placesRepli from "./repli-etiquettes.json";
 import "./globe.css";
@@ -32,10 +32,14 @@ type Pointeur = { id: number; x: number; y: number; t: number; bouge: number; ty
 type Pose = { el: HTMLSpanElement; filet: SVGLineElement | null; l: number; h: number };
 
 const tailles = new WeakMap<HTMLElement, { l: number; h: number }>();
-/** The columns of labels kept from frame to frame (see etiquettes.ts). */
-const memoire = nouvelleMemoire();
-/** Where each label is drawn, the place it aims at, and what is left of its glide: a label slides, never jumps. */
-const dessin = new Map<string, { x: number; y: number; cibleX: number; cibleY: number; pointX: number; pointY: number; dx: number; dy: number }>();
+/**
+ * What one scene keeps from frame to frame, never shared with another scene: the columns of labels (see etiquettes.ts),
+ * and where each label is drawn, the place it aims at and what is left of its glide (a label slides, never jumps).
+ */
+type Suivi = {
+  memoire: ReturnType<typeof nouvelleMemoire>;
+  dessin: Map<string, { x: number; y: number; cibleX: number; cibleY: number; pointX: number; pointY: number; dx: number; dy: number }>;
+};
 
 /** From just outside the point to the nearest edge of its label, at the height of the point when it can. */
 function ligne(px: number, py: number, x: number, y: number, l: number, h: number, cote: "gauche" | "droite") {
@@ -46,7 +50,8 @@ function ligne(px: number, py: number, x: number, y: number, l: number, h: numbe
 }
 
 /** Places the labels (etiquettes.ts), then draws them: each follows its point, and glides when it changes place. */
-function afficher(sortie: Etiquette[], fils: Point[][], poses: Map<string, Pose>, largeur: number, hauteur: number, basLibre: number): Place[] {
+function afficher(suivi: Suivi, sortie: Etiquette[], fils: Point[][], poses: Map<string, Pose>, largeur: number, hauteur: number, basLibre: number): Place[] {
+  const { memoire, dessin } = suivi;
   const points = new Map(sortie.map((e) => [e.code, e]));
   const ancres: Ancre[] = [];
   for (const e of sortie) {
@@ -118,7 +123,8 @@ export function Globe({ fils, origine, choisi, onChoisir }: Props) {
     actifRef.current = actif;
     choisirRef.current = onChoisir;
   });
-  const codes = useRef(new Set([origine.code, ...fils.map((f) => f.code)]));
+  // The countries a click may choose: those of the threads shown, recomputed when the threads change.
+  const codes = useMemo(() => new Set([origine.code, ...fils.map((f) => f.code)]), [origine.code, fils]);
 
   useEffect(() => {
     const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -149,7 +155,15 @@ export function Globe({ fils, origine, choisi, onChoisir }: Props) {
         if ("requestIdleCallback" in window) window.requestIdleCallback(() => fin(), { timeout: 1200 });
         else setTimeout(fin, 120);
       });
-      const [module, monde] = await Promise.all([import("./scene"), fetch("/globe/monde.json").then((r) => r.json() as Promise<Monde>)]);
+      // The map is checked when it arrives: a missing or malformed file shows the static fallback, never a broken globe.
+      const carte = async () => {
+        const r = await fetch("/globe/monde.json");
+        const donnees: unknown = r.ok ? await r.json() : null;
+        if (!estMonde(donnees)) throw new Error("monde.json");
+        return donnees;
+      };
+      const [module, monde] = await Promise.all([import("./scene"), carte()]);
+      const suivi: Suivi = { memoire: nouvelleMemoire(), dessin: new Map() };
       const canvas = toile.current;
       const conteneur = boite.current;
       if (annule || !canvas || !conteneur) return;
@@ -196,7 +210,7 @@ export function Globe({ fils, origine, choisi, onChoisir }: Props) {
           );
         }
         // The band at the bottom of the scene belongs to the buttons.
-        mesure.places = afficher(sortie, filsEcran, poses, conteneur.clientWidth, conteneur.clientHeight, 56);
+        mesure.places = afficher(suivi, sortie, filsEcran, poses, conteneur.clientWidth, conteneur.clientHeight, 56);
         mesure.fils = filsEcran;
         mesure.points = sortie;
         compte += 1;
@@ -302,7 +316,7 @@ export function Globe({ fils, origine, choisi, onChoisir }: Props) {
     if (p.bouge < 8 && performance.now() - p.t < 600) {
       const { nx, ny } = position(e);
       const code = scene.current?.choisir(nx, ny) ?? null;
-      if (code && codes.current.has(code)) choisirRef.current(code);
+      if (code && codes.has(code)) choisirRef.current(code);
       if (p.type === "touch" && !actifRef.current) setActif(true);
     }
   };
