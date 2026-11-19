@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { fr } from "../lib/i18n/fr";
 
 // What a visitor sees: the waiting page, closed to indexing, accessible, and talking to no other domain.
 test("la page d'attente s'affiche sans tiers, sans erreur et sans violation d'accessibilité", async ({ page, baseURL }) => {
@@ -16,7 +17,8 @@ test("la page d'attente s'affiche sans tiers, sans erreur et sans violation d'ac
 
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Sovermap");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(fr.site.question);
+  await expect(page.getByRole("link", { name: fr.coque.logo })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   expect(response?.headers()["x-robots-tag"]).toContain("noindex");
 

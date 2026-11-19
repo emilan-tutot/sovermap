@@ -1,17 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { Coque } from "@/components/coque/Coque";
 import { fr } from "@/lib/i18n/fr";
+
+export const metadata: Metadata = { title: fr.meta.titre(fr.notFound.title) };
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-6 px-6 py-16">
-      <p className="font-mono text-sm text-discret tabular-nums">404</p>
-      <h1 className="text-3xl font-semibold">{fr.notFound.title}</h1>
-      <p className="text-lg">{fr.notFound.lead}</p>
+    <Coque>
+      <p className="etiquette-capitales valeur">{fr.notFound.code}</p>
+      <h1 className="titre-page">{fr.notFound.title}</h1>
+      <p className="chapo">{fr.notFound.lead}</p>
       <p>
-        <Link href="/" className="underline underline-offset-4">
+        <Link href="/" prefetch={false}>
           {fr.notFound.back}
         </Link>
       </p>
-    </main>
+    </Coque>
   );
 }
