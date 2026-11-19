@@ -109,3 +109,15 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 24. **Filmer une page animée sans à-coups** (vidéos des propositions de design) :
     - Vu : la diffusion d'écran du navigateur (screencast) suit son propre rythme (45 à 51 images par seconde) et rend des images en pixels CSS ; ramenée à 30 images par seconde, elle saute un pas puis le répète. Une capture CDP lancée depuis une seconde session sort aussi en pixels CSS. Une animation CSS mise en pause ne se termine jamais : une transition de vue reste alors devant la page. Deux mouvements de doigt arrivés dans la même image réelle sont fusionnés.
     - Parade : une horloge virtuelle installée avant les scripts de la page (`requestAnimationFrame`, `performance.now`, animations CSS et transitions de vue avancées à la main, puis terminées par `finish()`) ; une image par pas de 1/30 s, prise par la capture de Playwright à l'échelle « device » ; chaque mouvement de glisser attendu avant l'image ; vérification image par image sur le MP4 (`tblend` et `signalstats` de ffmpeg).
+    - Un défilement filmé ne dépasse jamais le bas de la page : arrivé au bout, il filmerait des images fixes au milieu d'un mouvement (vu au troisième tour, quand la page du ministère est devenue plus courte). Le parcours se raccourcit à vitesse constante.
+
+## 3D, styles et polices
+
+25. **three.js dessine en deux passes un matériau transparent visible des deux côtés** (`transparent: true` et `side: DoubleSide`), et il redemande la mise à jour de ce matériau à chaque passe, donc à chaque image : `getParameters` et `getProgramCacheKey` arrivent en tête du profil.
+    - Vu au troisième tour : un dixième du fil principal au téléphone (processeur × 4), pour cinq anneaux plats.
+    - Parade : `forceSinglePass: true` quand une seule passe suffit (anneau, disque plat), ou `side: FrontSide`.
+    - Repérage : un profil du processeur (domaine `Profiler` de CDP) ; un point d'arrêt silencieux (`Debugger.setBreakpointByUrl` avec une condition qui écrit puis renvoie `false`) donne le matériau fautif sans toucher à la page.
+26. **Un `ShaderMaterial` de three.js écrit ses couleurs sans la conversion d'affichage** (sRGB) si son fragment shader ne se termine pas par `#include <colorspace_fragment>` : tout ce qu'il dessine sort bien plus sombre que les jetons (#50585E devient #14191C). Les matériaux intégrés (`MeshBasicMaterial`, `LineBasicMaterial`) convertissent, eux.
+    - Parade : la direction retenue choisit une seule règle en E.2 (conversion partout, jetons réglés pour l'image) ; les clartés et les contrastes du globe se mesurent sur l'image (une capture à la densité réelle), jamais sur les jetons seuls.
+27. **Une feuille de style importée par plusieurs mises en page peut être regroupée avec les polices de l'une d'elles** (Turbopack, regroupement du CSS) : les autres routes préchargent alors ces polices pour rien (44 Ko mesurés sur M2 et M3).
+    - Parade : importer la feuille commune une seule fois, dans la mise en page parente ; chaque mise en page enfant n'importe que ses propres polices. Contrôle : compter les `<link rel="preload" as="font">` de chaque route.
