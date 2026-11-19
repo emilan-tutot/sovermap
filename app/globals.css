@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* Provisional neutral tokens for the socle. The chosen direction replaces them in E.2 (DESIGN.md, one source of tokens,
+   Tailwind defaults reset). */
+@theme {
+  --color-fond: oklch(0.985 0.004 250);
+  --color-encre: oklch(0.24 0.02 255);
+  --color-discret: oklch(0.48 0.02 255);
+  --color-filet: oklch(0.86 0.01 255);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-fond);
+    color: var(--color-encre);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
