@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import robots from "../app/robots";
 import { securityHeaders } from "../lib/security/headers";
 import { indexingOpen, servedVersion } from "../lib/site";
 import { findDesignViolations } from "../scripts/lib/design-rules";
@@ -38,6 +39,21 @@ describe("site", () => {
     expect(indexingOpen({ SITE_INDEXING: "open" })).toBe(true);
     expect(indexingOpen({ SITE_INDEXING: "closed" })).toBe(false);
     expect(indexingOpen({})).toBe(false);
+  });
+});
+
+describe("robots.txt", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("is closed to every robot while the site is not open", () => {
+    vi.stubEnv("SITE_INDEXING", "");
+    expect(robots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
+  });
+  it("announces the sitemap by its absolute address once open, and leaves it out without the site's address", () => {
+    vi.stubEnv("SITE_INDEXING", "open");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://site.example/");
+    expect(robots().sitemap).toBe("https://site.example/sitemap.xml");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
+    expect(robots().sitemap).toBeUndefined();
   });
 });
 
