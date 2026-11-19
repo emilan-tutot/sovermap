@@ -121,3 +121,20 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : la direction retenue choisit une seule règle en E.2 (conversion partout, jetons réglés pour l'image) ; les clartés et les contrastes du globe se mesurent sur l'image (une capture à la densité réelle), jamais sur les jetons seuls.
 27. **Une feuille de style importée par plusieurs mises en page peut être regroupée avec les polices de l'une d'elles** (Turbopack, regroupement du CSS) : les autres routes préchargent alors ces polices pour rien (44 Ko mesurés sur M2 et M3).
     - Parade : importer la feuille commune une seule fois, dans la mise en page parente ; chaque mise en page enfant n'importe que ses propres polices. Contrôle : compter les `<link rel="preload" as="font">` de chaque route.
+28. **`next/font` refuse une option qui n'est pas écrite en toutes lettres** (19/11/2026) : « Font loader values must be explicitly written literals » au build, pour une plage de caractères rangée dans une constante.
+    - Parade : écrire chaque valeur dans l'appel ; `app/fonts.ts` répète les plages latin et latin-ext dans chaque police.
+
+## Outils de mesure et de tournage (`scripts/design/`)
+
+29. **Un texte passé par le shell perd ses barres obliques inverses** (T1, plusieurs fois) : une expression régulière, un `\n` ou un `\u00a0` écrits dans un script par un heredoc arrivent abîmés, parfois sans message d'erreur (même entre guillemets : `<<'EOF'`).
+    - Parade : écrire ces fichiers avec l'outil d'écriture de l'éditeur, puis les lancer ; jamais par un heredoc.
+30. **Une fonction envoyée à une page par un script lancé avec `tsx` y appelle `__name`, qui n'existe pas** (19/11/2026) : « __name is not defined » dans `page.evaluate`.
+    - Parade : donner ce nom à la page avant ses scripts (`addInitScript` avec `window.__name = (f) => f;` : `AIDE_TSX` de `scripts/design/commun.ts`).
+31. **Sous Git Bash, `MSYS_NO_PATHCONV=1` coupe aussi la traduction des chemins de fichiers** (20/11/2026) : un fichier écrit à la façon de Git Bash (`/c/…`) arrive tel quel, et Node le cherche dans un dossier `c` du disque courant (`C:\c\…`).
+    - Parade : avec cette variable (nécessaire pour un chemin de page comme `/` ou `/page-introuvable`, piège 17), écrire les fichiers à la façon de Windows (`C:/…`). Les outils de `scripts/design/` refusent un chemin de page réécrit par Git Bash et le disent.
+32. **Une page 404 produit une « erreur de console » dans Edge et WebKit** (20/11/2026) : le navigateur signale le code 404 de la page elle-même (« Failed to load resource »), sans faute de la page.
+    - Parade : `scripts/design/controles.ts` ignore ce seul message quand il vise l'adresse de la page ; toute autre erreur compte.
+33. **`prettier --write` sur un fichier qui n'était pas encore formaté change des lignes sans rapport** (19/11/2026) : couleurs mises en minuscules, lignes recoupées ; le diff n'est plus chirurgical.
+    - Parade : ne formater que ce que l'on change, ou formater le fichier seul dans un commit à part ; relire `git diff` avant d'indexer.
+34. **Une étape de tournage qui porte deux mots-clés est lue selon le premier trouvé** (20/11/2026) : un glissement avec `"images": 54` était filmé comme une pause ; seul le contrôle image par image l'a montré (aucun mouvement « glisser » dans sa liste).
+    - Parade : `filmer.ts` cherche les actions avant les pauses ; après tout changement d'un parcours, lire la liste des mouvements que donne `verifier-film.ts`.
