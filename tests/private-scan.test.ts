@@ -63,6 +63,12 @@ describe("scanText", () => {
   it("refuses the account name outside the repository address", () => {
     expect(scanText("auteur : jean-exemple", "x.md", ctx).length).toBeGreaterThan(0);
   });
+  it("refuses the account name by itself, even without any private pattern or Windows user", () => {
+    const seul: ScanContext = { ownerLogin: "jean-exemple", windowsUser: null, motifs: [] };
+    expect(scanText("merci jean-exemple", "x.md", seul).map((f) => f.kind)).toEqual(["nom du compte hors de l'adresse du dépôt"]);
+    expect(scanText("https://jean-exemple.github.io", "x.md", seul)).toHaveLength(1);
+    expect(scanText("https://github.com/jean-exemple/sovermap", "x.md", seul)).toEqual([]);
+  });
   it("finds a pattern of the other project whatever its case", () => {
     expect(scanText("vu dans AUTRE PROJET", "x.md", ctx)[0]?.kind).toBe("motif privé n° 3");
   });

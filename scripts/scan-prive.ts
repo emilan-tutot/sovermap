@@ -80,6 +80,7 @@ const findings = [...fileFindings, ...commits.findings];
 
 const checks = [
   "chemins personnels",
+  ctx.ownerLogin === null ? "nom du compte : sauté (compte inconnu)" : "nom du compte hors de l'adresse du dépôt",
   ctx.windowsUser === null ? "nom d'utilisateur Windows : sauté (hors Windows)" : "nom d'utilisateur Windows",
   ctx.motifs.length === 0 ? "motifs privés : sautés (fichier local absent)" : `${ctx.motifs.length} motif(s) privé(s)`,
   "adresses e-mail",

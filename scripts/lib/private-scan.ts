@@ -59,6 +59,14 @@ export function scanText(text: string, where: string, context: ScanContext): Fin
     }
   });
 
+  // The account name is allowed only in the repository's addresses, removed above (decision D6, CLAUDE.md).
+  const login = context.ownerLogin?.toLowerCase() ?? "";
+  if (login.length >= 3) {
+    lower.forEach((line, index) => {
+      if (line.includes(login)) findings.push({ where: at(index), kind: "nom du compte hors de l'adresse du dépôt" });
+    });
+  }
+
   const user = context.windowsUser?.toLowerCase() ?? "";
   if (user.length >= 3) {
     lower.forEach((line, index) => {
