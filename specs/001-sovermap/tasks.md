@@ -43,12 +43,12 @@ Une case par point du brief. Une case cochée porte sa preuve. Les rapports cit�
 - [ ] B.5 Vercel : projet `sovermap` (selon D2 et D6), région `cdg1`, préversions protégées, barre d'outils coupée, rétention, fermeture à l'indexation, en-têtes ; première préversion verte.
 
 ### Partie C — Échantillon de vraies données
-- [ ] C.1 40 à 60 domaines choisis, avec le pourquoi de chaque choix.
-- [ ] C.2 Outil de mesure v0 dans `pipeline/`, avec ses tests (résolveur simulé, adresses et AS de documentation, domaines en `.example`).
-- [ ] C.3 Mesure selon `docs/methode.md` : deux sources par couche, provenance, horodatage, confiance, « diffusé par » et « hébergé par ».
-- [ ] C.4 10 domaines contre-vérifiés par un chemin indépendant ; taux d'accord et désaccords expliqués.
-- [ ] C.5 Chiffre-titre de l'échantillon (« échantillon : ne pas citer »).
-- [ ] C.6 Résultats hors de Git (`echantillon/`). Preuve : `echantillon.md` remis au propriétaire.
+- [x] C.1 40 à 60 domaines choisis, avec le pourquoi de chaque choix. Preuve : 58 domaines (38 « État », 20 hors État), chacun vérifié dans une liste retenue ; tableau des raisons dans `echantillon.md`, § 1 (19/11/2026).
+- [x] C.2 Outil de mesure v0 dans `pipeline/`, avec ses tests (résolveur simulé, adresses et AS de documentation, domaines en `.example`). Preuve : 16 tests Vitest sans réseau (`pipeline/pipeline.test.ts`), dont la validation des tables de `referentiels/` ; `npm run check` vert (19/11/2026).
+- [x] C.3 Mesure selon `docs/methode.md` : deux sources par couche, provenance, horodatage, confiance, « diffusé par » et « hébergé par ». Preuve : mesure du 19/11/2026 par deux résolveurs, chaque couche avec sa source, son heure et son niveau ; détail dans `echantillon.md` (dossier du propriétaire, hors du dépôt).
+- [x] C.4 10 domaines contre-vérifiés par un chemin indépendant ; taux d'accord et désaccords expliqués. Preuve : client DNS de Windows, Team Cymru et RIPEstat ; taux d'accord et écarts dans `echantillon.md`, § 5.
+- [x] C.5 Chiffre-titre de l'échantillon (« échantillon : ne pas citer »). Preuve : calculé selon la définition provisoire de D1, dans `echantillon.md`, § 4 ; aucun résultat dans le dépôt.
+- [x] C.6 Résultats hors de Git (`echantillon/`). Preuve : `git check-ignore` vrai pour `echantillon/` ; `echantillon.md` remis dans le dossier du propriétaire (19/11/2026).
 
 ### Partie D — Trois prototypes
 - [ ] D.1 Branche locale `proto/t1`, jamais poussée ; routes `/proto/a`, `/proto/b`, `/proto/c` ; bandeau « Prototype ».

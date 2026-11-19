@@ -1,0 +1,824 @@
+{
+  "version": "0.1",
+  "date": "2026-11-19",
+  "statut": "Provisoire : les sociétés vues dans l'échantillon du chantier T1. La table complète est établie en T3.",
+  "regle": "« sources » établit l'identité et le pays du siège ; « sources_mere » établit le lien vers la maison mère, ou le fait qu'il n'y en a pas au-dessus. Deux producteurs différents : « confirmé » ; un seul : « probable » ; aucun : « non déterminé ». « non-determinee » marque une maison mère inconnue.",
+  "societes": {
+    "cloudflare-inc": {
+      "nom": "Cloudflare, Inc.",
+      "pays": "US",
+      "mere": null,
+      "controle": "personnes physiques : les cofondateurs détiennent ensemble environ 52,8 % des droits de vote (10-K, exercice 2024)",
+      "lei": "5493007DY18BGNLDWU14",
+      "sources": [
+        {
+          "titre": "GLEIF : CLOUDFLARE, INC., siège aux États-Unis",
+          "url": "https://search.gleif.org/#/record/5493007DY18BGNLDWU14",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Cloudflare, résultats du 3e trimestre 2026 (05/11/2026) : « Cloudflare, Inc. (NYSE: NET) », San Francisco",
+          "url": "https://cloudflare.net/files/content_files/Q3-26-Exhibit-99-1-1.pdf",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/5493007DY18BGNLDWU14",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Cloudflare, formulaire 10-K de l'exercice 2024 (20/02/2025) : comptes de la société et de ses filiales à 100 % ; aucune société au-dessus",
+          "url": "https://cloudflare.net/files/doc_financials/2024/q4/2c5ce18c-bb02-4031-89cb-59ff64f22eaf.pdf",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "fastly-inc": {
+      "nom": "Fastly, Inc.",
+      "pays": "US",
+      "mere": null,
+      "lei": "549300E2FZC83FJ3H565",
+      "sources": [
+        {
+          "titre": "GLEIF : FASTLY, INC., siège aux États-Unis",
+          "url": "https://search.gleif.org/#/record/549300E2FZC83FJ3H565",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Fastly, communiqué du 14/10/2026 : « Fastly, Inc. (NASDAQ: FSLY) », San Francisco",
+          "url": "https://www.fastly.com/press/press-releases/fastly-named-a-leader-in-2026-idc-marketscape-for-worldwide-waap-platforms",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NON_CONSOLIDATING »",
+          "url": "https://search.gleif.org/#/record/549300E2FZC83FJ3H565",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "note": "Seconde source sur le sommet du groupe non lue : le site investisseurs de Fastly refuse les robots, et EDGAR exige une adresse e-mail dans l'agent utilisateur."
+    },
+    "akamai-international-bv": {
+      "nom": "Akamai International B.V.",
+      "pays": "NL",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "RDAP du RIPE NCC : organisation Akamai International B.V. (forme juridique néerlandaise B.V.) ; aucun LEI trouvé dans GLEIF",
+          "url": "https://rdap.db.ripe.net/autnum/20940",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Maison mère attendue : Akamai Technologies, Inc. (États-Unis). Aucune source primaire lisible : les sites d'Akamai répondent « Access Denied » aux robots, même pour robots.txt, et EDGAR exige une adresse e-mail. Une lecture humaine de l'annexe 21.1 du 10-K suffirait."
+    },
+    "akamai-technologies-inc": {
+      "nom": "Akamai Technologies, Inc.",
+      "pays": "US",
+      "mere": null,
+      "lei": "OC1LZNN2LF5WTJ5RIL89",
+      "sources": [
+        {
+          "titre": "GLEIF : AKAMAI TECHNOLOGIES, INC., siège aux États-Unis",
+          "url": "https://search.gleif.org/#/record/OC1LZNN2LF5WTJ5RIL89",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/OC1LZNN2LF5WTJ5RIL89",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "incapsula-inc": {
+      "nom": "Incapsula Inc",
+      "pays": "US",
+      "mere": "imperva-inc",
+      "sources": [
+        {
+          "titre": "RDAP de l'ARIN : organisation Incapsula Inc (États-Unis) ; aucun LEI trouvé dans GLEIF",
+          "url": "https://rdap.arin.net/registry/autnum/19551",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Imperva, communiqué du 16/12/2014 : « Incapsula, a wholly owned subsidiary of Imperva »",
+          "url": "https://www.imperva.com/company/press_releases/frost-sullivan-recognizes-imperva-for-becoming-the-revenue-leader-in-the-web-application-firewall-market-and-for-its-acquisition-of-incapsula/",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "imperva-inc": {
+      "nom": "Imperva, Inc.",
+      "pays": "US",
+      "mere": "thales",
+      "lei": "549300204GJIBLPF1S81",
+      "sources": [
+        {
+          "titre": "GLEIF : IMPERVA, INC., siège aux États-Unis",
+          "url": "https://search.gleif.org/#/record/549300204GJIBLPF1S81",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime THALES (LEI 529900FNDVTQJOVVPZ19)",
+          "url": "https://search.gleif.org/#/record/549300204GJIBLPF1S81",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Communiqué de Thales, repris par Imperva (04/12/2023) : Thales a finalisé l'acquisition d'Imperva",
+          "url": "https://www.imperva.com/company/press_releases/thales-completes-acquisition-of-imperva/",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "thales": {
+      "nom": "Thales",
+      "pays": "FR",
+      "mere": null,
+      "lei": "529900FNDVTQJOVVPZ19",
+      "sources": [
+        {
+          "titre": "GLEIF : THALES, siège en France",
+          "url": "https://search.gleif.org/#/record/529900FNDVTQJOVVPZ19",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Communiqué de Thales, repris par Imperva (04/12/2023) : « Thales (Euronext Paris: HO) », Meudon",
+          "url": "https://www.imperva.com/company/press_releases/thales-completes-acquisition-of-imperva/",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/529900FNDVTQJOVVPZ19",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "radware-ltd": {
+      "nom": "Radware Ltd.",
+      "pays": "IL",
+      "mere": "non-determinee",
+      "lei": "254900LYRZOTBQ99ZG59",
+      "sources": [
+        {
+          "titre": "GLEIF : Radware Ltd (nom légal en hébreu), siège en Israël",
+          "url": "https://search.gleif.org/#/record/254900LYRZOTBQ99ZG59",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Radware, formulaire 20-F de l'exercice 2024 (28/03/2025) : société israélienne, cotée au Nasdaq (RDWR)",
+          "url": "https://www.radware.com/getattachment/6b27a577-0d92-4afe-b565-1faf7c37c7fe/20F-2024-Final-As-Filed-with-FS.pdf.aspx",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_LEI » (un parent sans LEI existerait)",
+          "url": "https://search.gleif.org/#/record/254900LYRZOTBQ99ZG59",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Radware, formulaire 20-F de l'exercice 2024 : la société n'est détenue ni contrôlée par aucune société, aucun État ni aucune personne",
+          "url": "https://www.radware.com/getattachment/6b27a577-0d92-4afe-b565-1faf7c37c7fe/20F-2024-Final-As-Filed-with-FS.pdf.aspx",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "note": "Les deux sources se contredisent sur l'existence d'un parent : la maison mère reste « non déterminée », et le désaccord est montré (docs/methode.md § 5)."
+    },
+    "claranet-limited": {
+      "nom": "Claranet Limited",
+      "pays": "GB",
+      "mere": "claranet-group-limited",
+      "lei": "636700X36UM8OJWF4811",
+      "sources": [
+        {
+          "titre": "GLEIF : CLARANET LIMITED, siège au Royaume-Uni",
+          "url": "https://search.gleif.org/#/record/636700X36UM8OJWF4811",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime CLARANET GROUP LIMITED (LEI 213800UV357CYV31AQ61)",
+          "url": "https://search.gleif.org/#/record/636700X36UM8OJWF4811",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "claranet-group-limited": {
+      "nom": "Claranet Group Limited",
+      "pays": "GB",
+      "mere": null,
+      "lei": "213800UV357CYV31AQ61",
+      "sources": [
+        {
+          "titre": "GLEIF : CLARANET GROUP LIMITED, siège au Royaume-Uni",
+          "url": "https://search.gleif.org/#/record/213800UV357CYV31AQ61",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/213800UV357CYV31AQ61",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Claranet, page « Private Equity » (non datée) : groupe détenu de façon privée, avec l'investissement de croissance de trois fonds",
+          "url": "https://www.claranet.com/uk/private-equity/",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "f5-networks-sarl": {
+      "nom": "F5 Networks SARL",
+      "pays": "FR",
+      "mere": "f5-inc",
+      "sources": [
+        {
+          "titre": "Sirene : F5 NETWORKS, SIREN 433615036, siège à Suresnes",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/433615036",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "F5, rapport sur l'impôt sur les bénéfices (exercice 2024-2025, modifié le 26/10/2026) : F5 Networks SARL (France), société mère ultime F5, Inc. (États-Unis)",
+          "url": "https://www.f5.com/fr_fr/company/report-on-corporate-income-tax-information",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "f5-inc": {
+      "nom": "F5, Inc.",
+      "pays": "US",
+      "mere": null,
+      "lei": "54930015FPK9KT966303",
+      "sources": [
+        {
+          "titre": "GLEIF : F5 NETWORKS, INC. (ancien nom d'F5, Inc.), siège aux États-Unis",
+          "url": "https://search.gleif.org/#/record/54930015FPK9KT966303",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "F5, rapport sur l'impôt sur les bénéfices : pays du siège de la société mère ultime, États-Unis",
+          "url": "https://www.f5.com/fr_fr/company/report-on-corporate-income-tax-information",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/54930015FPK9KT966303",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "F5, rapport sur l'impôt sur les bénéfices : F5, Inc. est la société mère ultime du groupe",
+          "url": "https://www.f5.com/fr_fr/company/report-on-corporate-income-tax-information",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "dinum": {
+      "nom": "Direction interministérielle du numérique (DINUM)",
+      "pays": "FR",
+      "mere": null,
+      "controle": "administration centrale de l'État, rattachée au Premier ministre",
+      "sources": [
+        {
+          "titre": "Référentiel de l'organisation administrative de l'État (DILA), version du 18/11/2026",
+          "url": "https://www.data.gouv.fr/datasets/referentiel-de-lorganisation-administrative-de-letat",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Décret n° 2019-1088 du 25 octobre 2019 relatif au système d'information et de communication de l'État et à la direction interministérielle du numérique",
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000039281619",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Référentiel de l'organisation administrative de l'État (DILA) : service de l'État",
+          "url": "https://www.data.gouv.fr/datasets/referentiel-de-lorganisation-administrative-de-letat",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "mae": {
+      "nom": "Ministère de l'Europe et des Affaires étrangères",
+      "pays": "FR",
+      "mere": null,
+      "controle": "administration centrale de l'État",
+      "sources": [
+        {
+          "titre": "Référentiel de l'organisation administrative de l'État (DILA), version du 18/11/2026",
+          "url": "https://www.data.gouv.fr/datasets/referentiel-de-lorganisation-administrative-de-letat",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Référentiel de l'organisation administrative de l'État (DILA) : ministère",
+          "url": "https://www.data.gouv.fr/datasets/referentiel-de-lorganisation-administrative-de-letat",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "ovh-sas": {
+      "nom": "OVH SAS",
+      "pays": "FR",
+      "mere": "ovh-groupe",
+      "lei": "9695007586GCAKPYJ703",
+      "sources": [
+        {
+          "titre": "Sirene : OVH, SAS, SIREN 424761419, siège à Roubaix",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/424761419",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : OVH, siège en France",
+          "url": "https://search.gleif.org/#/record/9695007586GCAKPYJ703",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime OVH GROUPE (LEI 9695001J8OSOVX4TP939)",
+          "url": "https://search.gleif.org/#/record/9695007586GCAKPYJ703",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "OVH Groupe, document d'enregistrement universel 2025, § 1.7.2 « Filiales et participations » (déposé à l'AMF le 07/11/2025) : détient directement 100 % d'OVH SAS",
+          "url": "https://corporate.ovhcloud.com/sites/default/files/2025-11/ovh_urd_2025_fr_mel_bis_25_11_12.pdf",
+          "lu_le": "2026-11-18"
+        }
+      ]
+    },
+    "ovh-groupe": {
+      "nom": "OVH Groupe",
+      "pays": "FR",
+      "mere": null,
+      "controle": "société cotée",
+      "lei": "9695001J8OSOVX4TP939",
+      "sources": [
+        {
+          "titre": "GLEIF : OVH GROUPE, siège en France",
+          "url": "https://search.gleif.org/#/record/9695001J8OSOVX4TP939",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "OVH Groupe, document d'enregistrement universel 2025 (déposé à l'AMF le 07/11/2025)",
+          "url": "https://corporate.ovhcloud.com/sites/default/files/2025-11/ovh_urd_2025_fr_mel_bis_25_11_12.pdf",
+          "lu_le": "2026-11-18"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON » (relevée le 18/11/2026)",
+          "url": "https://search.gleif.org/#/record/9695001J8OSOVX4TP939",
+          "lu_le": "2026-11-18"
+        },
+        {
+          "titre": "OVH Groupe, document d'enregistrement universel 2025 : société mère du groupe, cotée",
+          "url": "https://corporate.ovhcloud.com/sites/default/files/2025-11/ovh_urd_2025_fr_mel_bis_25_11_12.pdf",
+          "lu_le": "2026-11-18"
+        }
+      ]
+    },
+    "renater": {
+      "nom": "RENATER (groupement d'intérêt public)",
+      "pays": "FR",
+      "mere": null,
+      "controle": "groupement d'intérêt public, opérateur de l'État",
+      "sources": [
+        {
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Sirene : nature juridique « groupement d'intérêt public »",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "PLF 2026, annexe « Opérateurs de l'État » : RENATER, GIP, opérateur de soutien à l'enseignement supérieur et à la recherche",
+          "url": "https://www.data.gouv.fr/datasets/projet-de-loi-de-finances-pour-2026-plf-2026-jaune-operateurs-de-letat-liste-des-operateurs-et-categories",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "celeste": {
+      "nom": "Celeste",
+      "pays": "FR",
+      "mere": null,
+      "controle": "personnes physiques",
+      "lei": "969500B8A5L23VV18M38",
+      "sources": [
+        {
+          "titre": "Sirene : CELESTE, SAS, SIREN 439905837, siège à Champs-sur-Marne",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/439905837",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : CELESTE, siège en France",
+          "url": "https://search.gleif.org/#/record/969500B8A5L23VV18M38",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NATURAL_PERSONS »",
+          "url": "https://search.gleif.org/#/record/969500B8A5L23VV18M38",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "sfr": {
+      "nom": "Société française du radiotéléphone (SFR)",
+      "pays": "FR",
+      "mere": "altice-france",
+      "lei": "549300WESL03YASJ5X58",
+      "sources": [
+        {
+          "titre": "Sirene : SOCIETE FRANCAISE DU RADIOTELEPHONE - S.F.R, SIREN 343059564, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/343059564",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR, siège en France",
+          "url": "https://search.gleif.org/#/record/549300WESL03YASJ5X58",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct ALTICE FRANCE (LEI 5493001ZMCICV4N02J21)",
+          "url": "https://search.gleif.org/#/record/549300WESL03YASJ5X58",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "altice-france": {
+      "nom": "Altice France",
+      "pays": "FR",
+      "mere": "altice-france-holding",
+      "lei": "5493001ZMCICV4N02J21",
+      "sources": [
+        {
+          "titre": "GLEIF : ALTICE FRANCE, siège en France",
+          "url": "https://search.gleif.org/#/record/5493001ZMCICV4N02J21",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime Altice France Holding S.A. (LEI 5299000JVHXKJPOE6H40)",
+          "url": "https://search.gleif.org/#/record/5493001ZMCICV4N02J21",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "altice-france-holding": {
+      "nom": "Altice France Holding S.A.",
+      "pays": "LU",
+      "mere": null,
+      "lei": "5299000JVHXKJPOE6H40",
+      "sources": [
+        {
+          "titre": "GLEIF : Altice France Holding S.A., siège au Luxembourg",
+          "url": "https://search.gleif.org/#/record/5299000JVHXKJPOE6H40",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : déclaré parent ultime d'Altice France et de SFR",
+          "url": "https://search.gleif.org/#/record/5299000JVHXKJPOE6H40",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "orange-business-services": {
+      "nom": "Orange Business Services",
+      "pays": "FR",
+      "mere": "orange",
+      "lei": "969500XIASJ73LZKU285",
+      "sources": [
+        {
+          "titre": "Sirene : ORANGE BUSINESS SERVICES, SIREN 345039416, siège à Saint-Denis",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/345039416",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : ORANGE BUSINESS SERVICES, siège en France",
+          "url": "https://search.gleif.org/#/record/969500XIASJ73LZKU285",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime ORANGE (LEI 969500MCOONR8990S771)",
+          "url": "https://search.gleif.org/#/record/969500XIASJ73LZKU285",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "orange": {
+      "nom": "Orange",
+      "pays": "FR",
+      "mere": null,
+      "controle": "société cotée",
+      "lei": "969500MCOONR8990S771",
+      "sources": [
+        {
+          "titre": "Sirene : ORANGE, SIREN 380129866, siège à Issy-les-Moulineaux",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/380129866",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : ORANGE, siège en France",
+          "url": "https://search.gleif.org/#/record/969500MCOONR8990S771",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/969500MCOONR8990S771",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "eurofiber-france": {
+      "nom": "Eurofiber France",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : EUROFIBER FRANCE, SAS, SIREN 530018639, siège à Issy-les-Moulineaux ; aucun LEI trouvé dans GLEIF",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/530018639",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Eurofiber, « Résultats annuels du groupe Eurofiber en 2025 » (10/06/2026) : pied de page Eurofiber France, TVA FR16530018639",
+          "url": "https://www.eurofiber.com/fr-fr/actualites/resultats-annuels-du-groupe-eurofiber-en-2025",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Groupe Eurofiber (Pays-Bas) : actionnaire majoritaire Antin Infrastructure Partners, minoritaire PGGM Infrastructure Fund (eurofiber.com, 10/06/2026 et 28/09/2020). La société de tête et son pays ne sont pas établis : maison mère « non déterminée »."
+    },
+    "cegedim-cloud": {
+      "nom": "Cegedim.cloud",
+      "pays": "FR",
+      "mere": "cegedim",
+      "lei": "969500N65CFEG84VPE23",
+      "sources": [
+        {
+          "titre": "Sirene : CEGEDIM.CLOUD, SAS, SIREN 790173066, siège à Boulogne-Billancourt",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/790173066",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : CEGEDIM.CLOUD, siège en France",
+          "url": "https://search.gleif.org/#/record/969500N65CFEG84VPE23",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct CEGEDIM (LEI 9695002XQWX9TKCOZT86)",
+          "url": "https://search.gleif.org/#/record/969500N65CFEG84VPE23",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "cegedim": {
+      "nom": "Cegedim",
+      "pays": "FR",
+      "mere": "fcb",
+      "lei": "9695002XQWX9TKCOZT86",
+      "sources": [
+        {
+          "titre": "GLEIF : CEGEDIM, siège en France",
+          "url": "https://search.gleif.org/#/record/9695002XQWX9TKCOZT86",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime FCB (LEI 9695008A28UP3TB2XW95)",
+          "url": "https://search.gleif.org/#/record/9695002XQWX9TKCOZT86",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "fcb": {
+      "nom": "FCB",
+      "pays": "FR",
+      "mere": null,
+      "lei": "9695008A28UP3TB2XW95",
+      "sources": [
+        {
+          "titre": "GLEIF : FCB, siège en France",
+          "url": "https://search.gleif.org/#/record/9695008A28UP3TB2XW95",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : déclaré parent ultime de CEGEDIM et de CEGEDIM.CLOUD",
+          "url": "https://search.gleif.org/#/record/9695008A28UP3TB2XW95",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "worldline-igsa": {
+      "nom": "Worldline IGSA",
+      "pays": "FR",
+      "mere": "worldline",
+      "lei": "969500C1KK5OLNWK1S69",
+      "sources": [
+        {
+          "titre": "Sirene : WORLDLINE IGSA, SIREN 317218758, siège à Puteaux",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/317218758",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : WORLDLINE IGSA, siège en France",
+          "url": "https://search.gleif.org/#/record/969500C1KK5OLNWK1S69",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime WORLDLINE (LEI 549300CJMQNCA0U4TS33)",
+          "url": "https://search.gleif.org/#/record/969500C1KK5OLNWK1S69",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "worldline": {
+      "nom": "Worldline",
+      "pays": "FR",
+      "mere": null,
+      "controle": "société cotée",
+      "lei": "549300CJMQNCA0U4TS33",
+      "sources": [
+        {
+          "titre": "GLEIF : WORLDLINE, siège en France",
+          "url": "https://search.gleif.org/#/record/549300CJMQNCA0U4TS33",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/549300CJMQNCA0U4TS33",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "france-travail": {
+      "nom": "France Travail",
+      "pays": "FR",
+      "mere": null,
+      "controle": "établissement public de l'État",
+      "sources": [
+        {
+          "titre": "Sirene : FRANCE TRAVAIL, établissement public, SIREN 130005481, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/130005481",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Sirene : nature juridique d'établissement public",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/130005481",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "antemeta": {
+      "nom": "Antemeta",
+      "pays": "FR",
+      "mere": null,
+      "controle": "société indépendante, selon elle ; actionnaires non publiés",
+      "sources": [
+        {
+          "titre": "Sirene : ANTEMETA, SAS, SIREN 489288969, siège à Guyancourt",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/489288969",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Antemeta, actualité du 08/01/2026 : « entreprise française indépendante »",
+          "url": "https://www.antemeta.fr/antemeta-cloudian-partenariat-nouvelle-etape-france/",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "note": "GLEIF ne connaît qu'une autre entité, ANTEMETA NOVA, avec l'exception « NO_LEI »."
+    },
+    "nfrance-conseil": {
+      "nom": "NFrance Conseil",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : NFRANCE CONSEIL, SAS, SIREN 425052941, siège à Toulouse",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/425052941",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": []
+    },
+    "over-link": {
+      "nom": "Over-Link",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : OVER-LINK, SAS, SIREN 443569330, siège à Valbonne",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/443569330",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": []
+    },
+    "dri": {
+      "nom": "DRI SAS",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [],
+      "sources_mere": [],
+      "note": "Seul le registre de l'AS est connu ; plusieurs sociétés « DRI » existent dans Sirene."
+    },
+    "hcl": {
+      "nom": "Hospices civils de Lyon",
+      "pays": "FR",
+      "mere": null,
+      "controle": "établissement public de santé",
+      "sources": [
+        {
+          "titre": "Sirene : HOSPICES CIVILS DE LYON, SIREN 266900273, siège à Lyon",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/266900273",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Sirene : nature juridique d'établissement d'hospitalisation public",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/266900273",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "acoss": {
+      "nom": "Urssaf Caisse nationale (Acoss)",
+      "pays": "FR",
+      "mere": null,
+      "controle": "établissement public national",
+      "sources": [
+        {
+          "titre": "Sirene : AGENCE CENTRALE DES ORGANISMES DE SECURITE SOCIALE, SIREN 180035016, siège à Montreuil",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180035016",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Sirene : nature juridique d'établissement public",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180035016",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "nameshield": {
+      "nom": "Nameshield",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : NAMESHIELD, SAS, SIREN 399140961, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/399140961",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "sources_mere": []
+    }
+  }
+}

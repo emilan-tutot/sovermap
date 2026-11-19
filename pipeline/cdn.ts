@@ -1,0 +1,95 @@
+// CDN layer (docs/methode.md § 4, couche 9): a CDN is recognised by a documented CNAME suffix, an address in an official
+// range list of the provider, or an AS dedicated to the CDN. Never by the AS of the address alone when that AS is shared.
+import { adresseEnEntier } from "./reseau";
+import type { Niveau } from "./types";
+
+export type FournisseurCdn = {
+  id: string;
+  nom: string;
+  /** Key of the operating company in referentiels/societes.json. */
+  societe: string;
+  suffixes: { suffixe: string; source: string; lu_le: string }[];
+  as: { numero: number; suffit_seul: boolean; source: string; lu_le: string }[];
+  /** Official range lists, downloaded at run time; « texte »: one range per line; « fastly-json »: Fastly's format. */
+  listes_plages?: { url: string; format: "texte" | "fastly-json" }[];
+};
+
+export type ReferentielCdn = { version: string; fournisseurs: FournisseurCdn[] };
+
+/** Official ranges of a provider, downloaded at run time (never copied into the repository). */
+export type PlagesOfficielles = Record<string, { plages: string[]; source: string; date: string }>;
+
+export type DetectionCdn = {
+  id: string;
+  nom: string;
+  societe: string;
+  methode: "cname" | "plage" | "as";
+  niveau: Niveau;
+  preuve: string;
+};
+
+function dansPlage(adresse: string, plage: string): boolean {
+  const [base = "", longueurTexte = ""] = plage.split("/");
+  try {
+    const a = adresseEnEntier(adresse);
+    const b = adresseEnEntier(base);
+    if (a.famille !== b.famille) return false;
+    const bits = a.famille === 4 ? 32 : 128;
+    const longueur = Number(longueurTexte);
+    const masque = longueur === 0 ? 0n : ((1n << BigInt(longueur)) - 1n) << BigInt(bits - longueur);
+    return (a.valeur & masque) === (b.valeur & masque);
+  } catch {
+    return false;
+  }
+}
+
+/** The CDN in front of a name, if any, with the strongest proof found. */
+export function detecterCdn(
+  chaineCname: readonly string[],
+  adresses: readonly string[],
+  asns: readonly number[],
+  referentiel: ReferentielCdn,
+  plages: PlagesOfficielles = {},
+): DetectionCdn | null {
+  for (const f of referentiel.fournisseurs) {
+    const suffixe = f.suffixes.find((s) =>
+      chaineCname.some((maillon) => maillon === s.suffixe.replace(/^\./, "") || maillon.endsWith(s.suffixe)),
+    );
+    if (suffixe)
+      return {
+        id: f.id,
+        nom: f.nom,
+        societe: f.societe,
+        methode: "cname",
+        niveau: "confirmé",
+        preuve: `CNAME *${suffixe.suffixe}`,
+      };
+  }
+  for (const f of referentiel.fournisseurs) {
+    const officielles = plages[f.id];
+    const adresse = officielles ? adresses.find((a) => officielles.plages.some((p) => dansPlage(a, p))) : undefined;
+    if (officielles && adresse) {
+      return {
+        id: f.id,
+        nom: f.nom,
+        societe: f.societe,
+        methode: "plage",
+        niveau: "confirmé",
+        preuve: `${adresse} dans la liste officielle (${officielles.date})`,
+      };
+    }
+  }
+  for (const f of referentiel.fournisseurs) {
+    const as = f.as.find((a) => a.suffit_seul && asns.includes(a.numero));
+    if (as)
+      return {
+        id: f.id,
+        nom: f.nom,
+        societe: f.societe,
+        methode: "as",
+        niveau: "probable",
+        preuve: `AS${as.numero} réservé au CDN`,
+      };
+  }
+  return null;
+}

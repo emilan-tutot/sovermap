@@ -1,0 +1,99 @@
+{
+  "version": "0.1",
+  "date": "2026-11-19",
+  "statut": "Provisoire : les quatre fournisseurs vus dans l'échantillon du chantier T1. La liste complète (docs/sources.md, fiches 27 à 29) est établie en T3.",
+  "regle": "confirmé : suffixe CNAME documenté par le fournisseur, ou adresse dans sa liste officielle de plages ; probable : AS réservé au seul CDN, confirmé au registre ; sinon, pas de CDN.",
+  "fournisseurs": [
+    {
+      "id": "cloudflare",
+      "nom": "Cloudflare",
+      "societe": "cloudflare-inc",
+      "suffixes": [
+        {
+          "suffixe": ".cdn.cloudflare.net",
+          "source": "https://developers.cloudflare.com/dns/zone-setups/partial-setup/",
+          "lu_le": "2026-11-18"
+        }
+      ],
+      "as": [
+        {
+          "numero": 13335,
+          "suffit_seul": true,
+          "source": "RDAP de l'ARIN, AS13335 CLOUDFLARENET, titulaire Cloudflare, Inc.",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "listes_plages": [
+        { "url": "https://www.cloudflare.com/ips-v4", "format": "texte" },
+        { "url": "https://www.cloudflare.com/ips-v6", "format": "texte" }
+      ]
+    },
+    {
+      "id": "fastly",
+      "nom": "Fastly",
+      "societe": "fastly-inc",
+      "suffixes": [
+        {
+          "suffixe": ".fastly.net",
+          "source": "https://www.fastly.com/documentation/guides/getting-started/domains/working-with-domains/working-with-cname-records-and-your-dns-provider/",
+          "lu_le": "2026-11-18"
+        }
+      ],
+      "as": [
+        {
+          "numero": 54113,
+          "suffit_seul": true,
+          "source": "RDAP de l'ARIN, AS54113 FASTLY, titulaire Fastly, Inc.",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "listes_plages": [{ "url": "https://api.fastly.com/public-ip-list", "format": "fastly-json" }]
+    },
+    {
+      "id": "akamai",
+      "nom": "Akamai",
+      "societe": "akamai-international-bv",
+      "suffixes": [
+        {
+          "suffixe": ".edgesuite.net",
+          "source": "https://techdocs.akamai.com/edge-hostnames/docs/edge-hn-terminology",
+          "lu_le": "2026-11-18"
+        },
+        {
+          "suffixe": ".edgekey.net",
+          "source": "https://techdocs.akamai.com/edge-hostnames/docs/edge-hn-terminology",
+          "lu_le": "2026-11-18"
+        },
+        {
+          "suffixe": ".akamaized.net",
+          "source": "https://techdocs.akamai.com/edge-hostnames/docs/edge-hn-terminology",
+          "lu_le": "2026-11-18"
+        }
+      ],
+      "as": [
+        {
+          "numero": 20940,
+          "suffit_seul": true,
+          "source": "RDAP du RIPE NCC, AS20940 AKAMAI-ASN1, titulaire Akamai International B.V.",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "listes_plages": []
+    },
+    {
+      "id": "imperva",
+      "nom": "Imperva",
+      "societe": "incapsula-inc",
+      "suffixes": [],
+      "as": [
+        {
+          "numero": 19551,
+          "suffit_seul": true,
+          "source": "RDAP de l'ARIN, AS19551 INCAPSULA, titulaire Incapsula Inc (Imperva)",
+          "lu_le": "2026-11-19"
+        }
+      ],
+      "listes_plages": []
+    }
+  ]
+}

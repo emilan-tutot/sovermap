@@ -1,0 +1,505 @@
+{
+  "version": "0.1",
+  "date": "2026-11-19",
+  "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents). La table complète est établie en T3.",
+  "regle": "Une ligne relie un AS à la société qui l'exploite. Première source : le titulaire inscrit au registre régional (lu dans IPtoASN, vérifiable par le RDAP du registre). Seconde source : l'identité de la société dans un registre d'entreprises (Sirene, GLEIF) ou une liste officielle. Les deux concordent : « confirmé ». Une seule : « probable ».",
+  "as": {
+    "13335": {
+      "societe": "cloudflare-inc",
+      "titulaire_registre": "Cloudflare, Inc.",
+      "sources": [
+        {
+          "titre": "RDAP de l'ARIN : AS13335 CLOUDFLARENET, titulaire Cloudflare, Inc. (États-Unis)",
+          "url": "https://rdap.arin.net/registry/autnum/13335",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : CLOUDFLARE, INC., LEI 5493007DY18BGNLDWU14, États-Unis",
+          "url": "https://search.gleif.org/#/record/5493007DY18BGNLDWU14",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "54113": {
+      "societe": "fastly-inc",
+      "titulaire_registre": "Fastly, Inc.",
+      "sources": [
+        {
+          "titre": "RDAP de l'ARIN : AS54113 FASTLY, titulaire Fastly, Inc. (États-Unis)",
+          "url": "https://rdap.arin.net/registry/autnum/54113",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : FASTLY, INC., LEI 549300E2FZC83FJ3H565, États-Unis",
+          "url": "https://search.gleif.org/#/record/549300E2FZC83FJ3H565",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "20940": {
+      "societe": "akamai-international-bv",
+      "titulaire_registre": "Akamai International B.V.",
+      "sources": [
+        {
+          "titre": "RDAP du RIPE NCC : AS20940 AKAMAI-ASN1, titulaire Akamai International B.V.",
+          "url": "https://rdap.db.ripe.net/autnum/20940",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "19551": {
+      "societe": "incapsula-inc",
+      "titulaire_registre": "Incapsula Inc",
+      "sources": [
+        {
+          "titre": "RDAP de l'ARIN : AS19551 INCAPSULA, titulaire Incapsula Inc (États-Unis)",
+          "url": "https://rdap.arin.net/registry/autnum/19551",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "198949": {
+      "societe": "radware-ltd",
+      "titulaire_registre": "Radware Ltd",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Radware Ltd",
+          "url": "https://rdap.db.ripe.net/autnum/198949",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : Radware Ltd (nom légal en hébreu), LEI 254900LYRZOTBQ99ZG59, Israël",
+          "url": "https://search.gleif.org/#/record/254900LYRZOTBQ99ZG59",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "48851": {
+      "societe": "radware-ltd",
+      "titulaire_registre": "Radware Ltd",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Radware Ltd",
+          "url": "https://rdap.db.ripe.net/autnum/48851",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : Radware Ltd (nom légal en hébreu), LEI 254900LYRZOTBQ99ZG59, Israël",
+          "url": "https://search.gleif.org/#/record/254900LYRZOTBQ99ZG59",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "8426": {
+      "societe": "claranet-limited",
+      "titulaire_registre": "Claranet Limited",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Claranet Limited",
+          "url": "https://rdap.db.ripe.net/autnum/8426",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "GLEIF : CLARANET LIMITED, LEI 636700X36UM8OJWF4811, Royaume-Uni",
+          "url": "https://search.gleif.org/#/record/636700X36UM8OJWF4811",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "35280": {
+      "societe": "f5-networks-sarl",
+      "titulaire_registre": "F5 Networks SARL",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire F5 Networks SARL",
+          "url": "https://rdap.db.ripe.net/autnum/35280",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : F5 NETWORKS, SIREN 433615036, siège à Suresnes",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/433615036",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "60855": {
+      "societe": "dinum",
+      "titulaire_registre": "La Direction interministérielle du numérique",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS DISIC-RIE-AS, titulaire LA DIRECTION INTERMINISTERIELLE DU NUMERIQUE",
+          "url": "https://rdap.db.ripe.net/autnum/60855",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Référentiel de l'organisation administrative de l'État (DILA), version du 18/11/2026 : Direction interministérielle du numérique",
+          "url": "https://www.data.gouv.fr/datasets/referentiel-de-lorganisation-administrative-de-letat",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "50588": {
+      "societe": "mae",
+      "titulaire_registre": "Ministère de l'Europe et des Affaires étrangères",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-MAE, titulaire Ministere De L'europe Et Des Affaires Etrangeres",
+          "url": "https://rdap.db.ripe.net/autnum/50588",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Référentiel de l'organisation administrative de l'État (DILA), version du 18/11/2026 : Ministère de l'Europe et des Affaires étrangères",
+          "url": "https://www.data.gouv.fr/datasets/referentiel-de-lorganisation-administrative-de-letat",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "16276": {
+      "societe": "ovh-sas",
+      "titulaire_registre": "OVH SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire OVH SAS",
+          "url": "https://rdap.db.ripe.net/autnum/16276",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : OVH, SAS, SIREN 424761419, siège à Roubaix",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/424761419",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "2200": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RENATER, titulaire Renater",
+          "url": "https://rdap.db.ripe.net/autnum/2200",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, groupement d'intérêt public, SIREN 180089476",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "2202": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RENATER-REAUMUR, titulaire Renater",
+          "url": "https://rdap.db.ripe.net/autnum/2202",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : RENATER, groupement d'intérêt public, SIREN 180089476",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "2060": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RENATER, titulaire Renater",
+          "url": "https://rdap.db.ripe.net/autnum/2060",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : RENATER, groupement d'intérêt public, SIREN 180089476",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "2259": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RAREST, titulaire Renater",
+          "url": "https://rdap.db.ripe.net/autnum/2259",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : RENATER, groupement d'intérêt public, SIREN 180089476",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "34177": {
+      "societe": "celeste",
+      "titulaire_registre": "Celeste SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Celeste SAS",
+          "url": "https://rdap.db.ripe.net/autnum/34177",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : CELESTE, SAS, SIREN 439905837, siège à Champs-sur-Marne",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/439905837",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "15557": {
+      "societe": "sfr",
+      "titulaire_registre": "Societe Francaise Du Radiotelephone - SFR SA",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS LDCOMNET, titulaire Societe Francaise Du Radiotelephone - SFR SA",
+          "url": "https://rdap.db.ripe.net/autnum/15557",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : SOCIETE FRANCAISE DU RADIOTELEPHONE - S.F.R, SIREN 343059564, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/343059564",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "15401": {
+      "societe": "orange-business-services",
+      "titulaire_registre": "Orange Business Services SA",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS EOLAS-AS, titulaire Orange Business Services SA",
+          "url": "https://rdap.db.ripe.net/autnum/15401",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : ORANGE BUSINESS SERVICES, SIREN 345039416, siège à Saint-Denis",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/345039416",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "3215": {
+      "societe": "orange",
+      "titulaire_registre": "Orange S.A.",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Orange S.A.",
+          "url": "https://rdap.db.ripe.net/autnum/3215",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : ORANGE, SIREN 380129866, siège à Issy-les-Moulineaux",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/380129866",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "35625": {
+      "societe": "eurofiber-france",
+      "titulaire_registre": "Eurofiber France SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS EUROFIBER-FRANCE, titulaire Eurofiber France SAS",
+          "url": "https://rdap.db.ripe.net/autnum/35625",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : EUROFIBER FRANCE, SAS, SIREN 530018639, siège à Issy-les-Moulineaux",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/530018639",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "24935": {
+      "societe": "eurofiber-france",
+      "titulaire_registre": "Eurofiber France SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS ATE-AS, titulaire Eurofiber France SAS",
+          "url": "https://rdap.db.ripe.net/autnum/24935",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : EUROFIBER FRANCE, SAS, SIREN 530018639",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/530018639",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "12601": {
+      "societe": "cegedim-cloud",
+      "titulaire_registre": "Cegedim.Cloud SASU",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Cegedim.Cloud SASU",
+          "url": "https://rdap.db.ripe.net/autnum/12601",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : CEGEDIM.CLOUD, SAS, SIREN 790173066, siège à Boulogne-Billancourt",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/790173066",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "47957": {
+      "societe": "worldline-igsa",
+      "titulaire_registre": "Worldline IGSA SA",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS ING-AS, titulaire Worldline IGSA SA",
+          "url": "https://rdap.db.ripe.net/autnum/47957",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : WORLDLINE IGSA, SIREN 317218758, siège à Puteaux",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/317218758",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "205461": {
+      "societe": "france-travail",
+      "titulaire_registre": "France Travail EPA",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS PE-AS, titulaire France Travail EPA",
+          "url": "https://rdap.db.ripe.net/autnum/205461",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : FRANCE TRAVAIL, établissement public, SIREN 130005481, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/130005481",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "201085": {
+      "societe": "antemeta",
+      "titulaire_registre": "ANTEMETA SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire ANTEMETA SAS",
+          "url": "https://rdap.db.ripe.net/autnum/201085",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : ANTEMETA, SAS, SIREN 489288969, siège à Guyancourt",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/489288969",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "15826": {
+      "societe": "nfrance-conseil",
+      "titulaire_registre": "NFrance Conseil",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire NFrance Conseil",
+          "url": "https://rdap.db.ripe.net/autnum/15826",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : NFRANCE CONSEIL, SAS, SIREN 425052941, siège à Toulouse",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/425052941",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "48426": {
+      "societe": "over-link",
+      "titulaire_registre": "OVER-LINK s.a.s.",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire OVER-LINK s.a.s.",
+          "url": "https://rdap.db.ripe.net/autnum/48426",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : OVER-LINK, SAS, SIREN 443569330, siège à Valbonne",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/443569330",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "6738": {
+      "societe": "dri",
+      "titulaire_registre": "DRI SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire DRI SAS (Sirene donne plusieurs sociétés « DRI » : aucune n'est retenue sans preuve)",
+          "url": "https://rdap.db.ripe.net/autnum/6738",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "51038": {
+      "societe": "hcl",
+      "titulaire_registre": "Hospices civils de Lyon",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS HCL, titulaire Hospices civils de Lyon",
+          "url": "https://rdap.db.ripe.net/autnum/51038",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : HOSPICES CIVILS DE LYON, établissement d'hospitalisation, SIREN 266900273",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/266900273",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "48140": {
+      "societe": "acoss",
+      "titulaire_registre": "Agence Centrale Des Organismes De Securite Sociale",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS cirtilnet, titulaire Agence Centrale Des Organismes De Securite Sociale",
+          "url": "https://rdap.db.ripe.net/autnum/48140",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : AGENCE CENTRALE DES ORGANISMES DE SECURITE SOCIALE, établissement public, SIREN 180035016, siège à Montreuil",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180035016",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "20756": {
+      "societe": "nameshield",
+      "titulaire_registre": "NAMESHIELD SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire NAMESHIELD SAS",
+          "url": "https://rdap.db.ripe.net/autnum/20756",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : NAMESHIELD, SAS, SIREN 399140961, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/399140961",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "209510": {
+      "societe": "nameshield",
+      "titulaire_registre": "NAMESHIELD SAS",
+      "sources": [
+        {
+          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS NAMESHIELDGRP, titulaire NAMESHIELD SAS",
+          "url": "https://rdap.db.ripe.net/autnum/209510",
+          "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Sirene : NAMESHIELD, SAS, SIREN 399140961, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/399140961",
+          "lu_le": "2026-11-19"
+        }
+      ]
+    }
+  }
+}

@@ -439,7 +439,7 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 - **Constat** : l'exemple de sa documentation attribue à Akamai des plages qui figurent dans la liste officielle de Fastly.
 - **Décision : écartée comme source.** Elle sert seulement d'aide-mémoire des fournisseurs à couvrir.
 
-**La liste tenue à la main** : un fichier versionné, `referentiels/cdn.yaml`. Il a un bloc par fournisseur : AS (avec « suffit seul : oui ou non » et la confirmation au registre), listes de plages (adresse, filtre, conditions), suffixes CNAME (documentation, citation, date de lecture), règle de confiance et date de revue. Niveaux :
+**La liste tenue à la main** : un fichier versionné, `referentiels/cdn.json` (JSON, validé par l'outil de mesure avant tout usage). Il a un bloc par fournisseur : AS (avec « suffit seul : oui ou non » et la confirmation au registre), listes de plages (adresse, filtre, conditions), suffixes CNAME (documentation, citation, date de lecture), règle de confiance et date de revue. Niveaux :
 - **confirmé** : suffixe CNAME documenté, ou adresse dans une plage officielle ;
 - **probable** : AS réservé au seul CDN ;
 - **non déterminé** : le reste.
