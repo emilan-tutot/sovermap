@@ -377,6 +377,14 @@ Sources :
   1. **Société exploitante hors de l'UE, maison mère dans l'UE** (cas Imperva, Inc., détenue par Thales) : un domaine compte comme dépendant dès que la société qui le sert **ou** sa maison mère ultime a son siège hors de l'UE. Sa catégorie et son fil suivent le plus éloigné des deux sièges ; la fiche affiche les deux.
   2. **Proxys de sécurité** placés devant les sites : traités comme des CDN (« diffusé par »), d'après une liste sourcée par la documentation de chaque fournisseur. Radware, F5 et OGO Security sont à confirmer ainsi ; Claranet aussi (proxy ou hébergeur ?). Quand le proxy tourne sur le réseau d'une autre société (OGO Security sur OVH ou NFrance), la fiche affiche les deux sociétés, et la plus éloignée compte.
 
+### Décisions du propriétaire (ARRÊT 2 bis, 19/11/2026)
+
+- **Direction artistique** : pas encore le choix final. « A corrigée » et « Brume » (A3) sont gardées ; un troisième tour ajoute trois propositions (M1 « Ardoise », M2 « Galet », M3 « Équinoxe ») ; la partie E attend la réponse à l'ARRÊT 2 ter. A1, A2 et A4 sont effacées.
+- **Propreté** : une règle durable entre dans `CLAUDE.md` (dossiers rangés par usage, scripts jetables hors du dépôt, aucun fichier fantôme, `git status` propre à chaque arrêt, liste des suppressions dans chaque rapport).
+- **Pour la suite** (à noter seulement, rien n'est commencé) :
+  1. Après T1, tout le reste (T2 à T11, dans le même ordre) se fera en **deux grands chantiers**, de plusieurs jours chacun, avec un point toutes les deux ou trois heures (questions, et propositions de design en vidéo). Le découpage est proposé dans le rapport final de T1.
+  2. **L'anglais (T11)** : tout le site, de A à Z, avec un petit bouton FR / EN ; ensuite, chaque texte ajouté ou modifié l'est dans les deux langues, dans le même commit, et la CI refuse un texte sans sa traduction.
+
 Ci-dessous, les options étudiées pour chaque décision, avec leurs effets. Les recommandations datent du 18/11/2026.
 
 ### D1 — Le chiffre-titre et le périmètre
@@ -568,4 +576,6 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 | **T8 — Le domaine** | sovermap.com branché ; www redirigé en 308 ; CAA ; DNSSEC étudié ; adresse de contact ; surveillance du domaine (reprise d'un outil générique d'un autre projet du propriétaire). | `probe:prod` vert sur sovermap.com ; aucun enregistrement DNS orphelin. |
 | **T9 — Avant l'ouverture** | Audit complet du dépôt ; attaque simulée de notre propre site ; vrais iPhone et Android ; lecteur d'écran. | Rapports d'audit et d'essais, défauts corrigés. |
 | **T10 — Ouverture** | `SITE_INDEXING=open` ; sitemap ; Search Console ; réutilisation déclarée sur data.gouv.fr ; décision sur les robots d'IA. | Site indexé ; 30 jours d'usage sous les cibles du § 11. |
-| **T11 — L'anglais** (D5, après l'ouverture) | Traduction des clés, relecture éditoriale, `hreflang`. | 100 % des clés traduites et relues. |
+| **T11 — L'anglais** (D5, après l'ouverture) | Traduction des clés, relecture éditoriale, `hreflang` ; tout le site, de A à Z, avec un petit bouton FR / EN ; ensuite, chaque texte ajouté ou modifié l'est dans les deux langues dans le même commit, et la CI refuse un texte sans sa traduction (décision de l'ARRÊT 2 bis, § 15). | 100 % des clés traduites et relues. |
+
+**Organisation** (décision de l'ARRÊT 2 bis, 19/11/2026, § 15) : après T1, les chantiers T2 à T11 se font, dans cet ordre, en deux grands chantiers de plusieurs jours, avec un point toutes les deux ou trois heures ; le découpage est proposé dans le rapport final de T1.

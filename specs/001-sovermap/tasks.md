@@ -66,15 +66,24 @@ Une case par point du brief. Une case cochée porte sa preuve. Les rapports cit�
 - [x] S.4 « A corrigée » : corrections a à i (premier écran, globe sans cadre, téléphone, Radiographie en deux colonnes, ministère, mode Expert, graphique, typographie française, vidéos régulières à la densité réelle) et montée en gamme (éclairage du globe, fils et lueur, anneaux d'arrivée, transitions de vue). Preuve (branche locale `proto/t1`) : premier écran mesuré, il tient dans les 15 cas (1707 × 799, 1920 × 1080, 360 × 732 ; étiquettes sans chevauchement) ; vidéos tournées sur une horloge virtuelle et vérifiées image par image ; `journal-design.md` de `proto/t1`.
 - [x] S.5 Variantes A1 « Nuit polaire », A2 « Encre et laiton », A3 « Brume », A4 « Pierre » : seules la palette et la matière du globe changent. Preuve : routes `/proto/a1` à `/proto/a4` de `proto/t1` ; contrastes WCAG 2.2 suffisants dans les cinq (texte 4,5:1, contrôles et fils 3:1).
 - [x] S.6 Pour les cinq : contrôles D.4, 10 vidéos, 2 planches, `LISEZMOI.txt` ; nouvelle préversion vérifiée dans Edge ; anciennes préversions listées, comptées, supprimées une par une par leur adresse. Preuve : 105 écrans contrôlés (5 versions × 7 écrans × Edge, Firefox, WebKit, à 9 largeurs) sans défilement horizontal, sans violation axe sérieuse ni critique, sans erreur de console ni requête étrangère ; vitesse de l'accueil : LCP 600 à 628 ms, CLS 0, INP 40 à 48 ms ; 10 vidéos sans image répétée ni sautée ; préversion vérifiée dans Edge ; 4 anciennes préversions supprimées une par une, une seule reste en ligne (`journal-T1.md`).
-- [ ] ARRÊT 2 bis : question en texte (A corrigée, A1, A2, A3, A4), avec une recommandation. La réponse suivante est la dernière : appliquée sans autre question, puis toute la partie E (E.1 refaite ; en E.3, les quatre directions non retenues et leurs 8 vidéos).
+- [x] ARRÊT 2 bis : question posée en texte (19/11/2026). Réponse du propriétaire : pas encore le choix final ; A corrigée et Brume (A3) gardées, troisième tour avec trois nouvelles propositions ; la partie E attend l'ARRÊT 2 ter (`consignes-arret2bis.md`, dossier du propriétaire).
+
+### Troisième tour de l'ARRÊT 2 (consignes du 19/11/2026)
+- [ ] R.1 Consignes recopiées mot pour mot ; journal ; `tasks.md` ; notes pour le plan (§ 15 et § 17).
+- [ ] R.2 Règle de propreté écrite dans `CLAUDE.md` (commit à part, reportée sur `proto/t1`) et en mémoire, puis appliquée : scripts jetables hors du dépôt, aucun fichier ni dossier fantôme, `git status` propre à chaque arrêt, liste des suppressions dans chaque rapport.
+- [ ] R.3 Sauvegarde E.1 refaite, puis effacement de tout ce qui est propre à A1, A2 et A4 : code, jetons, styles, polices et dépendances devenues inutiles, tests, captures, lignes de `journal-design.md`, 6 vidéos.
+- [ ] R.4 Défauts a à n corrigés dans A corrigée et Brume ; ils valent pour M1 à M3 et deviennent des règles de `DESIGN.md` en E.2.
+- [ ] R.5 Trois nouvelles directions : M1 « Ardoise », M2 « Galet », M3 « Équinoxe ».
+- [ ] R.6 Pour les cinq (A corrigée, Brume, M1, M2, M3) : contrôles D.4, 10 vidéos (même parcours, même méthode), 2 planches, `LISEZMOI.txt` (avec, pour chacune, la clarté du fond en OKLCH, ses contrastes, ses polices et leur raison, ce qui la distingue de A corrigée et de Brume) ; nouvelle préversion vérifiée dans Edge ; anciennes préversions listées, comptées, supprimées une par une par leur adresse.
+- [ ] ARRÊT 2 ter : question en texte (A corrigée, Brume, M1, M2, M3), avec une recommandation. La réponse suivante est vraiment la dernière : appliquée sans autre question (2 vidéos si elle retouche la direction), puis toute la partie E.
 
 ### Partie E — Après le choix
-- [ ] E.1 Sauvegarde de `proto/t1` (archive locale, supprimée en E.8).
-- [ ] E.2 Portage de la direction choisie : `DESIGN.md`, jetons, polices locales, `lint:design`, coque, composant 3D, mesures.
-- [ ] E.3 Effacement complet des deux autres directions, de leurs vidéos et préversions (une par une, après comptage). Preuve : recherche sans trace.
+- [ ] E.1 Sauvegarde de `proto/t1` (archive locale, refaite après l'ARRÊT 2 ter, supprimée en E.8).
+- [ ] E.2 Portage de la direction choisie : `DESIGN.md` (avec, comme règles, les défauts a à n du troisième tour), jetons, polices locales, `lint:design`, coque, composant 3D, mesures ; tous les textes du site par un seul dictionnaire (`lib/i18n/`), jamais écrits en dur dans les composants, pour préparer l'anglais.
+- [ ] E.3 Effacement complet des quatre directions non retenues, de leurs 8 vidéos et des préversions (une par une, après comptage). Preuve : recherche sans trace.
 - [ ] E.4 Liste des visuels à créer ailleurs (20 au plus).
 - [ ] E.5 Recherche de la marque « Sovermap » (INPI, EUIPO), sans dépôt.
 - [ ] E.6 Relectures : `/code-review` (niveau high) et `/security-review` sur `main...feat/t1-socle`.
-- [ ] E.7 Fusion : PR prête, CI verte, contrôles obligatoires, squash, `probe:prod`, production vérifiée, CodeQL.
-- [ ] E.8 Ménage : branches, processus, dossiers temporaires, `essais/`, `echantillon/`, sauvegarde ; fichiers du brief rangés.
+- [ ] E.7 Fusion : avant elle, les outils de tournage et de contrôle des vidéos rangés dans `feat/t1-socle`, propres et sans donnée privée ; puis PR prête, CI verte, contrôles obligatoires, squash, `probe:prod`, production vérifiée, CodeQL.
+- [ ] E.8 Ménage : branches, processus, dossiers temporaires, le reste d'`essais/` (les outils rangés en E.7 restent), `echantillon/`, sauvegarde ; fichiers du brief rangés.
 - [ ] Rapport final en trois blocs.
