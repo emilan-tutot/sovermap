@@ -29,8 +29,11 @@ try {
 if (event.stop_hook_active === true) process.exit(0);
 
 const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
-const run = (command, args, timeout) =>
-  spawnSync(command, args, { cwd: root, encoding: "utf8", shell: process.platform === "win32", timeout });
+// Never through a shell: file names go straight to the tools as arguments, so no name can inject a command.
+const run = (command, args, timeout) => spawnSync(command, args, { cwd: root, encoding: "utf8", shell: false, timeout });
+// The tools of the repository, run by this very Node (no npx, no shell).
+const tool = (relative, args, timeout) => run(process.execPath, [path.join(root, relative), ...args], timeout);
+const SAFE_NAME = /^[\w./@+-]+$/;
 
 const status = run("git", ["status", "--porcelain", "--untracked-files=all"], 15_000);
 if (status.status !== 0) process.exit(0);
@@ -69,20 +72,22 @@ try {
 const failures = [];
 const started = Date.now();
 
-const types = run("npx", ["--no-install", "tsc", "--noEmit"], 50_000);
+const types = tool("node_modules/typescript/bin/tsc", ["--noEmit"], 50_000);
 if (types.status !== 0) {
   failures.push(`Types (tsc --noEmit) :\n${(types.stdout + types.stderr).trim().split("\n").slice(0, 25).join("\n")}`);
 }
 
-const lintable = changed.filter((file) => /\.(ts|tsx|mts)$/.test(file) && existsSync(path.join(root, file)));
+const lintable = changed.filter(
+  (file) => /\.(ts|tsx|mts)$/.test(file) && SAFE_NAME.test(file) && existsSync(path.join(root, file)),
+);
 if (lintable.length > 0 && Date.now() - started < 45_000) {
-  const lint = run("npx", ["--no-install", "eslint", "--no-warn-ignored", ...lintable.map((f) => `"${f}"`)], 45_000);
+  const lint = tool("node_modules/eslint/bin/eslint.js", ["--no-warn-ignored", "--", ...lintable], 45_000);
   if (lint.status !== 0) {
     failures.push(`ESLint :\n${(lint.stdout + lint.stderr).trim().split("\n").slice(0, 25).join("\n")}`);
   }
 }
 if (Date.now() - started < 50_000) {
-  const design = run("npx", ["--no-install", "tsx", "scripts/lint-design.ts"], 30_000);
+  const design = tool("node_modules/tsx/dist/cli.mjs", ["scripts/lint-design.ts"], 30_000);
   if (design.status !== 0) {
     failures.push(`lint:design :\n${(design.stdout + design.stderr).trim().split("\n").slice(0, 25).join("\n")}`);
   }
