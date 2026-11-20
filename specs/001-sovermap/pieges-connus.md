@@ -95,6 +95,12 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : `"framework": "nextjs"` dans `vercel.json`, versionné.
 14 decies. **`vercel remove … --yes` ne suffit pas à un agent** : la CLI répond « Can't delete 1 deployment without approval » et attend l'accord d'un humain.
     - Parade : une adresse à la fois, `vercel remove <adresse> --confirm-name <adresse>`, seulement quand la consigne écrite du propriétaire couvre cette suppression ; vérifier ensuite par `vercel inspect <adresse>` (« Can't find the deployment »).
+14 undecies. **Vercel répond à certaines adresses avant le routage du site** (chantier 2, 20/11/2026).
+    - Vu : `/_next/image` reçoit `400 INVALID_IMAGE_OPTIMIZE_REQUEST` du service d'images de la plateforme, même avec `images.unoptimized`, avant toute réécriture de `next.config.ts`.
+    - Vu aussi : une réécriture vers une page qui appelle seulement `notFound()` répond bien 404 à une page normale, mais **200** à une navigation interne ou un préchargement (en-tête `RSC: 1`) : Vercel sert le fichier `.rsc` prérendu de cette page. Le local (`next start`) ne le montre pas.
+    - Parade : la porte réécrit vers une adresse que rien ne sert (`/_porte-fermee`) ; la liste de `probe:prod` pose chaque famille avec et sans `RSC`, avec et sans préchargement ; et toute fusion qui touche le routage passe d'abord par une préversion vérifiée dans Edge (règle de `CLAUDE.md`).
+14 duodecies. **Le « Vercel Security Checkpoint »** (20/11/2026) : après des contrôles rapprochés, Vercel répond `403` avec `x-vercel-mitigated: challenge` aux requêtes du PC ; un navigateur ordinaire passe seul, sans clic.
+    - Parade : une seconde au moins entre deux requêtes, une seule passe à la fois ; un Checkpoint n'est ni vert ni rouge : la liste se passe dans Edge (`npm run porte:navigateur`), puis `probe:prod` se relance 30 minutes plus tard. Jamais de contournement.
 
 ## Poste et outils (Windows)
 

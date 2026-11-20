@@ -22,7 +22,8 @@
     "scan:prive": "tsx scripts/scan-prive.ts",
     "scan:build": "tsx scripts/scan-build.ts",
     "probe:prod": "tsx scripts/probe-production.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "porte:navigateur": "tsx scripts/porte-navigateur.ts"
   },
   "dependencies": {
     "next": "16.4.6",

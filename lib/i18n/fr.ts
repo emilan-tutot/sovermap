@@ -24,6 +24,8 @@ export const fr = {
     title: "En préparation",
     lead: "Sovermap mesurera chaque jour l’hébergement des sites publics français, couche par couche, avec ses sources et sa méthode.",
     status: "Le site n’est pas encore ouvert. Aucune donnée n’est publiée pour l’instant.",
+    /** The text alternative of the waiting page's share image (public/partage.png). */
+    partage: `Sovermap · Qui héberge l’État${NBSP}? Le site est en préparation.`,
   },
   footer: {
     version: `Version servie${NBSP}:`,

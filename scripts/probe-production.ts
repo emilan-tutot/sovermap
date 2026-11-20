@@ -8,6 +8,10 @@
 //      chantier 2, A.6): the waiting page at the root, the 404 page everywhere else, and nowhere a sign of data;
 //   5. no source map, no cookie, nothing served that must not be (/.env, /.git), a real 404.
 // The two switches of the site are separate (SITE_PUBLIC, then SITE_INDEXING), and so are the two options.
+// Politeness (brief § 0.2, point 01 of chantier 2): one pass at a time, at least one second between two requests. When
+// Vercel answers with its « Security Checkpoint » (403, x-vercel-mitigated: challenge), the probe stops at once and
+// exits with code 3: neither green nor red; the same list is then asked in Edge (npm run porte:navigateur), and the
+// probe runs again at least 30 minutes later.
 // Adapted from a generic tool of another project of the owner.
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
@@ -25,7 +29,12 @@ const { values } = parseArgs({
 });
 
 class ProbeFailure extends Error {}
+class VercelCheckpoint extends Error {}
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** At least one second between two requests to the site. */
+const ESPACEMENT_MS = 1_000;
+let derniereRequete = 0;
 
 async function get(
   url: string,
@@ -33,6 +42,9 @@ async function get(
 ): Promise<{ status: number; text: string; headers: Headers }> {
   let lastError: unknown = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    const attente = derniereRequete + ESPACEMENT_MS - Date.now();
+    if (attente > 0) await pause(attente);
+    derniereRequete = Date.now();
     try {
       // A request that carries headers imitates an internal navigation of Next.js, which may be redirected once to add
       // its `_rsc` check: it follows redirects; every other request sees the first answer.
@@ -41,8 +53,12 @@ async function get(
         redirect: headers === undefined ? "manual" : "follow",
         headers: { ...headers },
       });
+      if (response.status === 403 && response.headers.get("x-vercel-mitigated") === "challenge") {
+        throw new VercelCheckpoint(new URL(url).pathname);
+      }
       return { status: response.status, text: await response.text(), headers: response.headers };
     } catch (error) {
+      if (error instanceof VercelCheckpoint) throw error;
       lastError = error;
       await pause(2_000);
     }
@@ -108,6 +124,7 @@ async function main() {
           status: reponse.status,
           contentType: reponse.headers.get("content-type") ?? "",
           texte: reponse.text,
+          origine: origin,
         }),
       );
     }
@@ -140,6 +157,13 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
+  if (error instanceof VercelCheckpoint) {
+    console.error(
+      `probe:prod : NON CONCLUANT : Vercel répond par son « Security Checkpoint » (403, x-vercel-mitigated: challenge) à ${error.message}. ` +
+        "Ni vert ni rouge : passer toute la liste dans Edge (npm run porte:navigateur), puis relancer ce contrôle au moins 30 minutes plus tard.",
+    );
+    process.exit(3);
+  }
   console.error(error instanceof ProbeFailure ? `probe:prod : ÉCHEC : ${error.message}` : error);
   process.exit(1);
 });
