@@ -1,0 +1,54 @@
+{
+  "name": "sovermap",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sovermap · Qui héberge l’État ? Mesure ouverte et quotidienne de l’hébergement des sites publics français.",
+  "license": "EUPL-1.2",
+  "author": "",
+  "type": "module",
+  "engines": {
+    "node": "26.x"
+  },
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "lint": "eslint . && npm run lint:design",
+    "lint:design": "tsx scripts/lint-design.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run scan:prive",
+    "scan:prive": "tsx scripts/scan-prive.ts",
+    "scan:build": "tsx scripts/scan-build.ts",
+    "probe:prod": "tsx scripts/probe-production.ts",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.187.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "prettier": "3.10.1",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "tailwindcss": "4.3.5",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.1.1"
+  },
+  "allowScripts": {
+    "esbuild": false
+  }
+}
