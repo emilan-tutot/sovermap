@@ -37,6 +37,8 @@ env:
   SOVERMAP_GITHUB_OWNER: ${{ github.repository_owner }}
   ESSAI: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.essai != 'aucun') }}
   ESSAI_DISJONCTEUR: ${{ github.event_name == 'workflow_dispatch' && inputs.essai == 'disjoncteur' }}
+  # The size of a trial: a sample of the list, drawn at random (the limit of 200 names holds outside Actions only).
+  LIMITE_ESSAI: "8000"
 
 jobs:
   # Is today already published? (The run of 09:47 UTC then does nothing.)
@@ -122,7 +124,7 @@ jobs:
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
-          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite 200 --delai-reprise-minutes 1); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"
