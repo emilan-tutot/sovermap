@@ -10,7 +10,7 @@ test.skip(sitePublic(), "la porte est ouverte pour ce build (SITE_PUBLIC=open)")
 // shell says otherwise: these tests then check the closed door.
 for (const adresse of ADRESSES_PORTE) {
   const entetes = adresse.entetes === undefined ? "" : ` [${Object.keys(adresse.entetes).join(", ")}]`;
-  test(`porte fermée : ${adresse.chemin}${entetes} (${adresse.famille})`, async ({ request }) => {
+  test(`porte fermée : ${adresse.chemin}${entetes} (${adresse.famille})`, async ({ request, baseURL }) => {
     // An internal navigation without its `_rsc` check is first redirected by `next start` (Vercel answers at once).
     const response = await request.get(adresse.chemin, {
       maxRedirects: adresse.entetes === undefined ? 0 : 3,
@@ -20,6 +20,7 @@ for (const adresse of ADRESSES_PORTE) {
       status: response.status(),
       contentType: response.headers()["content-type"] ?? "",
       texte: await response.text(),
+      origine: new URL(baseURL ?? "http://127.0.0.1:3100").origin,
     });
     expect(ecarts).toEqual([]);
   });

@@ -71,7 +71,8 @@ export function svgLogo(options: OptionsSvg): string {
     (options.claire === undefined
       ? ""
       : `@media (prefers-color-scheme:dark){.l{stroke:${options.claire}}.p{fill:${options.claire}}}`);
-  const titre = options.titre === undefined ? "" : `<title>${options.titre}</title>`;
+  const echappe = (texte: string) => texte.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const titre = options.titre === undefined ? "" : `<title>${echappe(options.titre)}</title>`;
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${nombre(-d)} ${nombre(-d)} ${nombre(2 * d)} ${nombre(2 * d)}">`,
     titre,

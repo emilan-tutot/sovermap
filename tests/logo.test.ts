@@ -37,6 +37,10 @@ describe("the logo (A.5, the owner's choice of 20/11/2026)", () => {
     expect(onglet).toContain(`@media (prefers-color-scheme:dark){.l{stroke:${ENCRE_CLAIRE}}.p{fill:${ENCRE_CLAIRE}}}`);
   });
 
+  it("escapes its title, so that the SVG stays well formed", () => {
+    expect(svgLogo({ ...LOGO_PETIT, titre: "A & B <c>" })).toContain("<title>A &amp; B &lt;c&gt;</title>");
+  });
+
   it("serves the tab icon exactly as the code draws it (public/icon.svg)", () => {
     const attendu = svgLogo({ ...LOGO_PETIT, claire: ENCRE_CLAIRE, titre: fr.site.name });
     expect(readFileSync("public/icon.svg", "utf8")).toBe(attendu);
@@ -47,9 +51,17 @@ describe("the site's origin, for the share image", () => {
   it("takes the configured address, else Vercel's production domain, else the local server", () => {
     expect(origineDuSite({ NEXT_PUBLIC_SITE_URL: "https://site.example/" })).toBe("https://site.example");
     expect(origineDuSite({ VERCEL_PROJECT_PRODUCTION_URL: "projet.example" })).toBe("https://projet.example");
-    expect(
-      origineDuSite({ NEXT_PUBLIC_SITE_URL: "pas une adresse", VERCEL_PROJECT_PRODUCTION_URL: "projet.example" }),
-    ).toBe("https://projet.example");
+    expect(origineDuSite({ NEXT_PUBLIC_SITE_URL: "", VERCEL_PROJECT_PRODUCTION_URL: "projet.example" })).toBe(
+      "https://projet.example",
+    );
     expect(origineDuSite({})).toBe("http://localhost:3100");
+  });
+
+  it("stops the build on a configured address that is not a bare origin, never falling back silently", () => {
+    for (const valeur of ["pas une adresse", "https://site.example/fr", "ftp://site.example"]) {
+      expect(() =>
+        origineDuSite({ NEXT_PUBLIC_SITE_URL: valeur, VERCEL_PROJECT_PRODUCTION_URL: "projet.example" }),
+      ).toThrow();
+    }
   });
 });

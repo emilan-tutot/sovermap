@@ -124,6 +124,7 @@ async function main() {
           status: reponse.status,
           contentType: reponse.headers.get("content-type") ?? "",
           texte: reponse.text,
+          origine: origin,
         }),
       );
     }

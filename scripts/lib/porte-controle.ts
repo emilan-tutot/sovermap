@@ -4,7 +4,13 @@
 import { fr } from "../../lib/i18n/fr";
 import type { AdressePorte } from "../../lib/porte";
 
-export type Reponse = { status: number; contentType: string; texte: string };
+export type Reponse = {
+  status: number;
+  contentType: string;
+  texte: string;
+  /** The origin the page was asked from: an online page must not point its share image at a local server. */
+  origine?: string;
+};
 
 /**
  * Signs of Sovermap data. None may ever appear behind a closed door, written plainly, as HTML entities (checked on the
@@ -63,8 +69,21 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse, textes: Tex
         ecarts.push(`${ou} : l'icône de la page d'attente manque`);
       if (!/<link rel="apple-touch-icon" href="\/apple-touch-icon\.png"/.test(reponse.texte))
         ecarts.push(`${ou} : l'icône d'écran d'accueil manque`);
-      if (!/<meta property="og:image" content="https?:\/\/[^"]+\/partage\.png"/.test(reponse.texte))
-        ecarts.push(`${ou} : l'image de partage manque`);
+      {
+        // The share image: absolute, /partage.png; from a page served online, in https and never on a local server.
+        const local = (hote: string) => ["localhost", "127.0.0.1", "[::1]"].includes(hote);
+        const og = /<meta property="og:image" content="([^"]+)"/.exec(reponse.texte)?.[1];
+        let image: URL | null = null;
+        try {
+          image = og === undefined ? null : new URL(og);
+        } catch {
+          image = null;
+        }
+        const pageLocale = reponse.origine !== undefined && local(new URL(reponse.origine).hostname);
+        if (image === null || image.pathname !== "/partage.png") ecarts.push(`${ou} : l'image de partage manque`);
+        else if (!pageLocale && (image.protocol !== "https:" || local(image.hostname)))
+          ecarts.push(`${ou} : l'image de partage pointe vers une adresse locale ou non https`);
+      }
       break;
     case "attente-rsc":
       statut(200);

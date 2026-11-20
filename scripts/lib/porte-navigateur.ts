@@ -45,6 +45,11 @@ export function scriptNavigateur(espacementMs = 1_000): string {
       redirect: adresse.entetes === undefined ? "manual" : "follow",
       headers: { ...adresse.entetes },
     });
+    const version = document.querySelector('meta[name="sovermap-version"]')?.getAttribute("content") ?? null;
+    // Vercel's Security Checkpoint: neither green nor red; stop at once and say where (CLAUDE.md).
+    if (r.status === 403 && r.headers.get("x-vercel-mitigated") === "challenge") {
+      return { origine: location.origin, version, adresses: adresses.length, checkpoint: adresse.chemin, ecarts };
+    }
     const redirige = r.type === "opaqueredirect";
     ecarts.push(
       ...ecartsPorte(
@@ -53,12 +58,13 @@ export function scriptNavigateur(espacementMs = 1_000): string {
           status: redirige ? 300 : r.status,
           contentType: r.headers.get("content-type") ?? "",
           texte: redirige ? "" : await r.text(),
+          origine: location.origin,
         },
         TEXTES_PORTE,
       ),
     );
   }
   const version = document.querySelector('meta[name="sovermap-version"]')?.getAttribute("content") ?? null;
-  return { origine: location.origin, version, adresses: adresses.length, ecarts };
+  return { origine: location.origin, version, adresses: adresses.length, checkpoint: null, ecarts };
 })()`);
 }
