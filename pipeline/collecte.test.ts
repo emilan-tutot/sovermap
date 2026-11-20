@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { collecter, POLITESSE } from "./collecte";
 import type { Horloge } from "./politesse";
-import { generateur } from "./politesse";
+import { Cadence, generateur } from "./politesse";
 import { mesurerNom, mesurerZone } from "./mesure";
 import { ResolveurSimule, type ZoneSimulee } from "./resolveur-simule";
 
@@ -125,6 +125,34 @@ describe("the scheduling of a collection", () => {
     expect(resultat.essais.get("www.sansmail.example")).toBe(3);
     expect(resultat.essais.get("www.mairie.example")).toBe(1);
     expect(horloge.attentes.filter((ms) => ms === 10 * 60 * 1000)).toHaveLength(2);
+  });
+
+  it("waits for the brake before every question", async () => {
+    let freinages = 0;
+    const r = new ResolveurSimule(ZONE, zoneDe);
+    await collecter(noms, r, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+      frein: async () => {
+        freinages += 1;
+      },
+    });
+    expect(freinages).toBe(r.questions.length);
+  });
+
+  it("opens the domains slowly at first: one per second, then faster", async () => {
+    const horloge = fausseHorloge();
+    const debuts: number[] = [];
+    const cadence = new Cadence(8, horloge, { depart: 1, dureeMs: 10_000 });
+    for (let i = 0; i < 100; i += 1) {
+      await cadence.attendre();
+      debuts.push(horloge.maintenant());
+    }
+    const ecarts = debuts.slice(1).map((d, i) => d - (debuts[i] ?? 0));
+    expect(ecarts[0]).toBe(1000);
+    expect(ecarts.every((e, i) => i === 0 || e <= (ecarts[i - 1] ?? Infinity) + 1e-6)).toBe(true);
+    expect(ecarts.at(-1)).toBeCloseTo(125, 6);
   });
 
   it("keeps the pace: 25 names per second at most", async () => {

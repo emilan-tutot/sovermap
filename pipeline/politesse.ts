@@ -33,20 +33,32 @@ export const HORLOGE_REELLE: Horloge = {
   dormir: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 };
 
-/** At most `parSeconde` starts per second, evenly spaced. */
+/** A rate that starts low and climbs to its target: a cold start never bursts (brief B.3). */
+export type Montee = { depart: number; dureeMs: number };
+
+/** At most `parSeconde` starts per second, evenly spaced; with a ramp, from `montee.depart` up to it. */
 export class Cadence {
-  readonly #intervalle: number;
   #prochain = 0;
+  #debut: number | null = null;
   constructor(
-    parSeconde: number,
+    private readonly parSeconde: number,
     private readonly horloge: Horloge = HORLOGE_REELLE,
-  ) {
-    this.#intervalle = 1000 / parSeconde;
+    private readonly montee: Montee | null = null,
+  ) {}
+  #intervalle(maintenant: number): number {
+    if (this.montee === null) return 1000 / this.parSeconde;
+    const ecoule = maintenant - (this.#debut ?? maintenant);
+    const debit = Math.min(
+      this.parSeconde,
+      this.montee.depart + ((this.parSeconde - this.montee.depart) * ecoule) / this.montee.dureeMs,
+    );
+    return 1000 / debit;
   }
   async attendre(): Promise<void> {
     const maintenant = this.horloge.maintenant();
+    this.#debut ??= maintenant;
     const depart = Math.max(maintenant, this.#prochain);
-    this.#prochain = depart + this.#intervalle;
+    this.#prochain = depart + this.#intervalle(depart);
     if (depart > maintenant) await this.horloge.dormir(depart - maintenant);
   }
 }

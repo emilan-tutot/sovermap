@@ -53,6 +53,8 @@ import { lireZip } from "../zip";
 
 /** Point 02, Q2: confirmed breakdowns above 8 % of the domains, or up by more than 2 points in a day, stop it all. */
 const SEUIL_PANNES = 0.08;
+/** The brake engages at 8 questions within a second to one server, under the limit of 10 (brief B.3). */
+const SEUIL_FREIN = 8;
 const HAUSSE_PANNES = 0.02;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
@@ -223,8 +225,11 @@ function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson }
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Knot Resolver's debug lines, read from the container's logs while the collection runs (brief B.3). */
-function suivreDebit(conteneur: string | undefined): { arreter: () => DebitServeurs | null } {
-  if (conteneur === undefined) return { arreter: () => null };
+function suivreDebit(conteneur: string | undefined): {
+  frein: (() => Promise<void>) | undefined;
+  arreter: () => DebitServeurs | null;
+} {
+  if (conteneur === undefined) return { frein: undefined, arreter: () => null };
   const compteur = new CompteurServeurs();
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -236,6 +241,13 @@ function suivreDebit(conteneur: string | undefined): { arreter: () => DebitServe
     enErreur = true;
   });
   return {
+    // The brake (brief B.3, point 02): while one address already got SEUIL_FREIN questions within the current second,
+    // every new question waits (10 seconds at most, so a stalled log never stops the collection).
+    frein: async () => {
+      for (let i = 0; i < 40 && compteur.charge(Date.now()) >= SEUIL_FREIN; i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    },
     arreter: () => {
       enfant.kill();
       return enErreur ? null : compteur.resultat();
@@ -334,6 +346,7 @@ async function principal(): Promise<number> {
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
       zoneDe,
       suivi,
+      ...(debit.frein === undefined ? {} : { frein: debit.frein }),
     }),
     controler(quad9, plan.noms, plan.mx),
     controler(cloudflare, nomsTemoins, []),
@@ -635,7 +648,11 @@ async function principal(): Promise<number> {
     "",
     `- Noms mesurés : ${mesuresNoms.length} sur ${liste.noms.size} ; domaines : ${b.etat.domaines.size} ; durée : ${etatJson.collecte.dureeMinutes} min.`,
     `- Changements confirmés : ${b.changements.length}${b.etatInitial ? " (état initial)" : ""}${b.reglesChangees ? " (règles nouvelles : rien au journal)" : ""}.`,
-    `- Débit maximal vers un même serveur faisant autorité : ${debitServeurs === null ? "non mesuré" : `${debitServeurs.max} questions en une seconde`}.`,
+    `- Débit maximal vers un même serveur faisant autorité : ${
+      debitServeurs === null
+        ? "non mesuré"
+        : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
+    }.`,
     `- Sources lues de la veille ou en échec : ${etatJson.lecturesEnEchec}.`,
     `- IPtoASN (relevé manuel) : ${(() => {
       const ip = sources.find((s) => s.id === "iptoasn");

@@ -7,7 +7,7 @@
 // domain that fails is asked again, at most twice, 10 minutes apart; a failure stays a failure, never « no site ».
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
-import { Cadence, type Horloge, HORLOGE_REELLE, melanger, ParZone } from "./politesse";
+import { Cadence, type Horloge, HORLOGE_REELLE, melanger, type Montee, ParZone } from "./politesse";
 import { etendreSpf, type ResolveurSpf, type ResultatSpf } from "./spf";
 
 export type OptionsCollecte = {
@@ -16,6 +16,13 @@ export type OptionsCollecte = {
   parZone: number;
   /** Names in flight at once (each one may wait for its domain to open). */
   enVol: number;
+  /** The domains' rate climbs from `depart` per second to `domainesParSeconde` (a cold cache never bursts). */
+  montee: Montee | null;
+  /**
+   * Waited before every question: the collection slows down while an authoritative server got too many questions
+   * within the current second (the resolver's logs, debit-serveurs.ts; brief B.3).
+   */
+  frein?: () => Promise<void>;
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -30,7 +37,8 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   nomsParSeconde: 25,
   domainesParSeconde: 8,
   parZone: 2,
-  enVol: 128,
+  enVol: 64,
+  montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
 };
@@ -55,12 +63,14 @@ class ClientParZone implements ClientDns {
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
     parZone: number,
+    private readonly frein: (() => Promise<void>) | undefined = undefined,
   ) {
     this.id = base.id;
     this.#zones = new ParZone(parZone);
   }
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
+    if (this.frein) await this.frein();
     await this.#zones.prendre(zone);
     try {
       return await this.base.demander(nom, type);
@@ -107,10 +117,10 @@ export async function collecter(
   options: OptionsCollecte,
 ): Promise<ResultatCollecte> {
   const horloge = options.horloge ?? HORLOGE_REELLE;
-  const client = new ClientParZone(clientBrut, options.zoneDe, options.parZone);
+  const client = new ClientParZone(clientBrut, options.zoneDe, options.parZone, options.frein);
   const spfClient = resolveurSpf(client);
   const cadenceNoms = new Cadence(options.nomsParSeconde, horloge);
-  const cadenceDomaines = new Cadence(options.domainesParSeconde, horloge);
+  const cadenceDomaines = new Cadence(options.domainesParSeconde, horloge, options.montee);
   const resultat: ResultatCollecte = {
     noms: new Map(),
     domaines: new Map(),

@@ -21,6 +21,22 @@ describe("the pace towards each authoritative server", () => {
     ]) {
       c.lire(l);
     }
-    expect(c.resultat()).toEqual({ questions: 7, max: 3, adresse: "198.51.100.53", seconde: "2026-11-21T03:17:06" });
+    expect(c.resultat()).toEqual({
+      questions: 7,
+      depassements: 0,
+      max: 3,
+      adresse: "198.51.100.53",
+      seconde: "2026-11-21T03:17:06",
+    });
+  });
+
+  it("tells the load of the current second, notes every second above 10, and stays quiet when the logs lag", () => {
+    const c = new CompteurServeurs();
+    for (let i = 0; i < 12; i += 1) c.lire(ligne("07", "192.0.2.53"));
+    expect(c.charge(Date.parse("2026-11-21T03:17:07.500Z"))).toBe(12);
+    expect(c.charge(Date.parse("2026-11-21T03:17:20.000Z"))).toBe(0);
+    c.lire(ligne("08", "192.0.2.53"));
+    expect(c.charge(Date.parse("2026-11-21T03:17:08.200Z"))).toBe(1);
+    expect(c.resultat()).toMatchObject({ depassements: 1, max: 12 });
   });
 });
