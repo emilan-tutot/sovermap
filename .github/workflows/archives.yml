@@ -1,0 +1,62 @@
+name: Archives
+
+# On the 1st of each month (brief B.8 and F.2), the release « donnees-AAAA-MM » of the month that ended: the full state
+# of its last published day, in JSON and CSV, compressed, with each name's exact addresses and their TTL (left out of
+# the daily fragments). Marked « pre-release » and « en préparation » until the opening.
+# Emergency gesture if GitHub disables this workflow after 60 days without activity: Actions › Archives ›
+# « Enable workflow ».
+
+on:
+  schedule:
+    - cron: "13 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archives
+  cancel-in-progress: false
+
+jobs:
+  archiver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: veille
+          key: collecte-veille-aucune
+          restore-keys: collecte-veille-
+          fail-on-cache-miss: true
+      - run: |
+          git fetch --depth=1 origin donnees
+          git worktree add --detach publie FETCH_HEAD
+      - id: mois
+        run: echo "mois=$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - env:
+          MOIS: ${{ steps.mois.outputs.mois }}
+        run: npx tsx pipeline/cli/archiver.ts --donnees publie --veille veille --mois "$MOIS" --sortie archives
+      - env:
+          MOIS: ${{ steps.mois.outputs.mois }}
+        run: |
+          tag="donnees-$MOIS"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" archives/* --clobber
+          else
+            gh release create "$tag" archives/* --prerelease --target donnees \
+              --title "Données de Sovermap — archive de $MOIS (en préparation)" \
+              --notes "En préparation : le site n'est pas encore ouvert ; ne pas citer avant l'ouverture. État complet du dernier jour publié du mois, avec les adresses exactes et leur durée de vie (TTL). Licence et attributions : README.md de la branche donnees."
+          fi

@@ -1,0 +1,243 @@
+name: Collecte
+
+# The daily collection (brief B of chantier 2, plan § 4 to § 13): at 03:17 UTC, and again at 09:47 UTC, which does
+# nothing once the day is published. The measuring job has read-only rights; only the publishing job may write (the
+# « donnees » branch and the « donnees-courant » release), and only the alerting job may open or comment an issue.
+# A pull request that touches the collection runs the measuring job alone, on 200 names, as a trial: nothing is
+# published, nothing is kept for tomorrow, no issue is opened.
+# Emergency gesture if GitHub disables this workflow after 60 days without activity: Actions › Collecte ›
+# « Enable workflow ».
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+    - cron: "47 9 * * *"
+  workflow_dispatch:
+    inputs:
+      essai:
+        description: "aucun : la collecte du jour ; disjoncteur : un essai sur 200 noms qui déclenche le disjoncteur exprès et ne publie rien"
+        type: choice
+        options: [aucun, disjoncteur]
+        default: aucun
+  pull_request:
+    paths:
+      - "pipeline/**"
+      - "referentiels/**"
+      - ".github/workflows/collecte.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collecte-${{ github.event_name == 'pull_request' && github.ref || 'quotidienne' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  RESOLVEUR: docker.io/cznic/knot-resolver@sha256:a72a60a9b64d4c050df0c0435ca5cb34171e5c458555b30b4c37c530e2189824 # v6.5.1-20261117
+  SOVERMAP_GITHUB_OWNER: ${{ github.repository_owner }}
+  ESSAI: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.essai != 'aucun') }}
+  ESSAI_DISJONCTEUR: ${{ github.event_name == 'workflow_dispatch' && inputs.essai == 'disjoncteur' }}
+
+jobs:
+  # Is today already published? (The run of 09:47 UTC then does nothing.)
+  jour:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      date: ${{ steps.date.outputs.date }}
+      faite: ${{ steps.publie.outputs.faite }}
+    steps:
+      - id: date
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - id: publie
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DATE: ${{ steps.date.outputs.date }}
+        run: |
+          publie=$( (gh api "repos/$REPO/contents/etat.json?ref=donnees" --jq .content | base64 -d | jq -r '.date // ""') 2>/dev/null || true)
+          echo "Dernier jour publié : ${publie:-aucun}"
+          if [ "$ESSAI" != "true" ] && [ "$publie" = "$DATE" ]; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
+
+  mesurer:
+    needs: jour
+    if: needs.jour.outputs.faite != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    outputs:
+      publiable: ${{ steps.collecte.outputs.publiable }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+
+      # The resolver: the official image, pinned by its digest, kept in the Actions cache (brief B.2).
+      - id: image
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/knot-resolver
+          key: knot-resolver-${{ env.RESOLVEUR }}
+      - if: steps.image.outputs.cache-hit != 'true'
+        run: |
+          docker pull "$RESOLVEUR"
+          docker tag "$RESOLVEUR" knot-resolver:epingle
+          mkdir -p ~/knot-resolver
+          docker save knot-resolver:epingle -o ~/knot-resolver/image.tar
+          docker image inspect --format '{{.Id}}' knot-resolver:epingle > ~/knot-resolver/id
+      - if: steps.image.outputs.cache-hit == 'true'
+        run: |
+          docker load -i ~/knot-resolver/image.tar
+          test "$(docker image inspect --format '{{.Id}}' knot-resolver:epingle)" = "$(cat ~/knot-resolver/id)"
+      - run: |
+          docker run -d --name knot --network host --log-opt max-size=200m --log-opt max-file=5 \
+            -v "$PWD/pipeline/knot/config.yaml:/etc/knot-resolver/config.yaml:ro" knot-resolver:epingle
+          npx tsx pipeline/cli/attendre-resolveur.ts 127.0.0.1:5300
+
+      # Yesterday: its sources and observations (the Actions cache, never published), and the published state.
+      - if: env.ESSAI != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: veille
+          key: collecte-veille-${{ needs.jour.outputs.date }}
+          restore-keys: collecte-veille-
+      - run: |
+          if git ls-remote --exit-code --heads origin donnees > /dev/null; then
+            git fetch --depth=1 origin donnees
+            git worktree add --detach publie FETCH_HEAD
+          fi
+
+      - id: collecte
+        run: |
+          args=(--travail travail --veille veille --conteneur knot)
+          if [ -d publie ]; then args+=(--donnees publie); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite 200); fi
+          if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
+          set +e
+          npx tsx pipeline/cli/collecter.ts "${args[@]}"
+          code=$?
+          set -e
+          if [ -f travail/resume.md ]; then cat travail/resume.md >> "$GITHUB_STEP_SUMMARY"; fi
+          case "$code" in
+            0) echo "publiable=true" >> "$GITHUB_OUTPUT" ;;
+            2) echo "publiable=false" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$code" ;;
+          esac
+      - if: always()
+        run: |
+          docker logs knot 2>&1 | grep -v "querying:" | tail -n 20 || true
+          docker rm -f knot > /dev/null 2>&1 || true
+
+      - if: steps.collecte.outputs.publiable != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: collecte
+          path: |
+            travail/sortie
+            travail/resume.md
+            travail/rapport.json
+          retention-days: 7
+          if-no-files-found: error
+
+      # Today becomes tomorrow's « yesterday », only when the guards pass and only for a real collection.
+      - if: steps.collecte.outputs.publiable == 'true' && env.ESSAI != 'true'
+        run: |
+          rm -rf veille
+          mkdir veille
+          mv travail/sources travail/observations.json.gz veille/
+      - if: steps.collecte.outputs.publiable == 'true' && env.ESSAI != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: veille
+          key: collecte-veille-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+
+  publier:
+    needs: [jour, mesurer]
+    if: needs.mesurer.outputs.publiable == 'true' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.essai != 'aucun')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DATE: ${{ needs.jour.outputs.date }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: collecte
+          path: collecte
+      # The only job that keeps a token in .git/config: it writes the « donnees » branch.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: depot
+          fetch-depth: 1
+      - name: Publier l'état du jour dans la branche donnees
+        working-directory: depot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin donnees > /dev/null; then
+            git fetch --depth=1 origin donnees
+            git checkout -q -B donnees FETCH_HEAD
+            premier=false
+          else
+            git checkout -q --orphan donnees
+            git rm -r -q --cached .
+            premier=true
+          fi
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a ../collecte/sortie/. ./
+          git add --all -- README.md vercel.json etat.json noms domaines index agregats journal schemas
+          if git diff --cached --quiet; then
+            echo "Rien de nouveau à publier." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git commit -q -m "donnees : collecte du $DATE"
+          if [ "$premier" = true ]; then revs="HEAD"; else revs=$'HEAD\n^HEAD~1'; fi
+          octets=$(printf '%s\n' "$revs" | git pack-objects --revs --thin --stdout -q | wc -c)
+          git push -q origin donnees
+          echo "Taille ajoutée à la branche donnees : $octets octets (paquet compressé)." >> "$GITHUB_STEP_SUMMARY"
+      # The fallback channel (brief B.9 bis): one compressed file, replaced every day.
+      - name: Remplacer la Release donnees-courant
+        working-directory: depot
+        run: |
+          tar -czf ../donnees-courant.tar.gz --exclude=.git .
+          if ! gh release view donnees-courant > /dev/null 2>&1; then
+            gh release create donnees-courant --prerelease --target donnees \
+              --title "Données de Sovermap — en préparation (état courant)" \
+              --notes "En préparation : le site n'est pas encore ouvert ; ne pas citer avant l'ouverture. Ce fichier est remplacé chaque jour par la collecte. Licence et attributions : README.md de la branche donnees."
+          fi
+          gh release upload donnees-courant ../donnees-courant.tar.gz --clobber
+
+  alerter:
+    needs: [jour, mesurer]
+    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.mesurer.result == 'failure' || needs.mesurer.result == 'cancelled' || needs.mesurer.outputs.publiable == 'false')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        continue-on-error: true
+        with:
+          name: collecte
+          path: collecte
+      - name: Ouvrir ou commenter l'issue « Collecte bloquée »
+        run: |
+          {
+            if [ "$ESSAI" = "true" ]; then echo "**Essai** (déclenché exprès, rien n'a été publié, la série des jours n'est pas cassée)."; echo; fi
+            if [ -f collecte/resume.md ]; then cat collecte/resume.md; else echo "La tâche de mesure a échoué avant de rendre son résumé."; fi
+            echo
+            echo "L'état de la veille reste publié. Exécution : $RUN"
+          } > corps.md
+          titre="Collecte bloquée"
+          n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty")
+          if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
