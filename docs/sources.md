@@ -336,7 +336,13 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
 
 ### 21. Fichiers de délégation des cinq registres régionaux (RIR)
 - **Producteurs** : RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC.
-- **Adresses** : par exemple https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest (et les équivalents des quatre autres registres).
+- **Adresses** (vérifiées le 20/11/2026 : HTTP 200) :
+  - https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest
+  - https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest (12 929 688 octets)
+  - https://ftp.apnic.net/stats/apnic/delegated-apnic-extended-latest (9 314 823 octets)
+  - https://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-extended-latest (4 587 589 octets)
+  - https://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-extended-latest (1 009 177 octets)
+- **robots.txt** (lus le 20/11/2026) : ARIN, APNIC et LACNIC n'en ont pas (404) ; AFRINIC ferme seulement `/rfc`, `/db` et `/OVA` ; le RIPE NCC, seulement des documents et des mesures Atlas. `/pub/stats/` et `/stats/` restent ouverts partout.
 - **Ce qu'on en tire** : le pays d'**enregistrement** de chaque AS et de chaque bloc, et un identifiant opaque commun aux ressources d'un même titulaire. Ces fichiers ne contiennent aucun nom ni contact.
 - **Conditions, mot pour mot** :
   - APNIC : « The files are freely available for download and use on the condition that APNIC will not be held responsible for any loss or damage arising from the use of the information contained in these reports. » AFRINIC dit la même chose.
