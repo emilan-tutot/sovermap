@@ -11,7 +11,8 @@ export function servedVersion(env: Env = process.env): string {
 
 /**
  * The production door (brief of chantier 2, A.6): open only on the exact value SITE_PUBLIC=open, set at the launch on
- * the owner's decision. Absent, empty or any other value keeps it closed: the waiting page only, and no data read.
+ * the owner's decision. Absent, empty or any other value keeps it closed: only the waiting page answers (lib/porte.ts),
+ * and no data is read: every data reader checks this function before any read, at build time as at request time.
  */
 export function sitePublic(env: Env = process.env): boolean {
   return env["SITE_PUBLIC"] === "open";

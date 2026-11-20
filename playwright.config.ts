@@ -20,6 +20,11 @@ export default defineConfig({
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: false,
     timeout: 300_000,
+    // The production door and indexing stay closed unless the shell opens them: a local .env file never decides.
+    env: {
+      SITE_PUBLIC: process.env["SITE_PUBLIC"] ?? "closed",
+      SITE_INDEXING: process.env["SITE_INDEXING"] ?? "closed",
+    },
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Edge"], channel } },

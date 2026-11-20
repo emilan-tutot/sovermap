@@ -6,12 +6,15 @@ import type { AdressePorte } from "../../lib/porte";
 
 export type Reponse = { status: number; contentType: string; texte: string };
 
-/** Signs of Sovermap data. None may ever appear behind a closed door. */
+/**
+ * Signs of Sovermap data. None may ever appear behind a closed door, written plainly, as HTML entities (checked on the
+ * decoded text) or escaped inside a string of Next.js' page payload (\"statut\":).
+ */
 export const SIGNES_DE_DONNEES: readonly RegExp[] = [
   /raw\.githubusercontent\.com/i,
   /etat\.json/i,
   /donnees-courant/i,
-  /"statut"\s*:/i,
+  /\\?"statut\\?"\s*:/i,
 ];
 
 /** The few entities React or a server may write in HTML, decoded, to compare texts as a reader sees them. */
@@ -30,7 +33,8 @@ const estHtml = (r: Reponse) => /text\/html/i.test(r.contentType);
 /** The problems of one answer, in French; an empty list when the closed door answers as it must. */
 export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
   const ecarts: string[] = [];
-  const ou = adresse.chemin;
+  const ou =
+    adresse.entetes === undefined ? adresse.chemin : `${adresse.chemin} (${Object.keys(adresse.entetes).join(", ")})`;
   const texte = texteLisible(reponse.texte);
   const statut = (attendu: number) => {
     if (reponse.status !== attendu) ecarts.push(`${ou} répond ${reponse.status}, pas ${attendu}`);
@@ -42,7 +46,14 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
       for (const attendu of [fr.site.question, fr.attente.title, fr.attente.status]) {
         if (!texte.includes(attendu)) ecarts.push(`${ou} : la page d'attente ne dit pas « ${attendu} »`);
       }
-      if (!/<link rel="icon" href="\/icon\.svg"/.test(reponse.texte)) ecarts.push(`${ou} : l'icône de la page d'attente manque`);
+      if (!/<link rel="icon" href="\/icon\.svg"/.test(reponse.texte))
+        ecarts.push(`${ou} : l'icône de la page d'attente manque`);
+      break;
+    case "attente-rsc":
+      statut(200);
+      if (!/text\/x-component/i.test(reponse.contentType))
+        ecarts.push(`${ou} n'est pas une réponse de navigation interne`);
+      if (!reponse.texte.includes(fr.attente.status)) ecarts.push(`${ou} : ce n'est pas la page d'attente`);
       break;
     case "robots-ferme":
       statut(200);
@@ -59,10 +70,12 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
       break;
     case "introuvable":
       statut(404);
-      if (estHtml(reponse) && !texte.includes(fr.notFound.title)) ecarts.push(`${ou} : ce n'est pas la page 404 du site`);
+      if (estHtml(reponse) && !texte.includes(fr.notFound.title))
+        ecarts.push(`${ou} : ce n'est pas la page 404 du site`);
       break;
     case "refusee":
-      if (reponse.status < 400 || reponse.status > 499) ecarts.push(`${ou} répond ${reponse.status}, pas un refus (4xx)`);
+      if (reponse.status < 400 || reponse.status > 499)
+        ecarts.push(`${ou} répond ${reponse.status}, pas un refus (4xx)`);
       if (/^image\//i.test(reponse.contentType)) ecarts.push(`${ou} sert une image`);
       break;
     default: {
@@ -71,7 +84,8 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
     }
   }
   for (const signe of SIGNES_DE_DONNEES) {
-    if (signe.test(reponse.texte)) ecarts.push(`${ou} montre un signe de données (${signe.source})`);
+    if (signe.test(reponse.texte) || signe.test(texte))
+      ecarts.push(`${ou} montre un signe de données (${signe.source})`);
   }
   return ecarts;
 }

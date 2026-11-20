@@ -1,9 +1,10 @@
 // The production door (brief of chantier 2, A.6), in ONE place. While it is closed, only the waiting page's addresses
 // answer: the root, its files and icons, robots.txt and the empty sitemap. Every other address is rewritten, before any
-// file or route is looked up, to a path that no route serves, so Next.js answers with the 404 page: pages, Next.js
-// internal requests (`?_rsc=`), search index, share images, sitemaps, API routes and data files alike.
+// file or route is looked up, to a route that always answers with the 404 page: pages, Next.js internal requests,
+// search index, share images, sitemaps, API routes and data files alike.
 // The rule is a routing rewrite computed at build time from the deployment's own variables (next.config.ts): no
 // function runs per request (nothing counted in the shared quotas), and a deployment built closed stays closed.
+// Identifiers keep the project's French domain words (porte, chemin…), like the rest of the code base.
 // No "@/" alias here: next.config.ts imports this file.
 import { sitePublic } from "./site";
 
@@ -11,23 +12,26 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 /**
  * What still answers behind a closed door, besides the root « / » (the waiting page). Regular expressions on the path
- * without its leading slash; each must end with « $ » or « / ».
+ * without its leading slash; each must end with « $ » or « / ». Letter case is written out, never left to the matcher.
  */
 export const LISTE_BLANCHE: readonly string[] = [
   "robots\\.txt$",
   "sitemap\\.xml$",
   // The icons of the waiting page.
   "icon\\.svg$",
-  // The licences of the fonts it uses (SIL OFL 1.1).
-  "licenses/[a-z0-9-]+\\.txt$",
+  // The licences of the fonts it uses (SIL OFL 1.1), for example manrope-OFL.txt.
+  "licenses/[A-Za-z0-9-]+\\.txt$",
   // Its scripts, styles and fonts: files of the build, which hold no data.
   "_next/static/",
   // The reload channel of the development server (`next dev`); a production build has none.
   "_next/webpack-hmr$",
 ];
 
-/** A path that no route serves: the target of the rewrite, answered by the 404 page. */
-export const CHEMIN_FERME = "/_porte-fermee";
+/**
+ * The target of the rewrite: app/porte-fermee/page.tsx, which always calls notFound(). A static route outranks any
+ * dynamic segment a later chantier may add at the root, so the target can never become another page.
+ */
+export const CHEMIN_FERME = "/porte-fermee";
 
 /** Any path (without its leading slash) that is not on the white list. */
 export const MOTIF_FERME = `(?!(?:${LISTE_BLANCHE.join("|")})).+`;
@@ -40,13 +44,23 @@ export function reecrituresPorte(env: Env = process.env): Reecriture[] {
 }
 
 /**
- * What a closed door must answer at an address. « refusee »: an address that the hosting platform answers itself,
- * before the site's routing (Vercel's image service at /_next/image answers 400 « INVALID_IMAGE_OPTIMIZE_REQUEST »):
- * any 4xx, never an image, never data.
+ * What a closed door must answer at an address.
+ * - « attente-rsc »: the waiting page's payload for an internal navigation of Next.js (header `RSC: 1`).
+ * - « refusee »: an address the hosting platform answers itself, before the site's routing (Vercel's image service
+ *   at /_next/image answers 400 « INVALID_IMAGE_OPTIMIZE_REQUEST »): any 4xx, never an image, never data.
  */
-export type Attendu = "attente" | "robots-ferme" | "plan-vide" | "fichier" | "introuvable" | "refusee";
+export type Attendu = "attente" | "attente-rsc" | "robots-ferme" | "plan-vide" | "fichier" | "introuvable" | "refusee";
 
-export type AdressePorte = { chemin: string; famille: string; attendu: Attendu };
+export type AdressePorte = {
+  chemin: string;
+  famille: string;
+  attendu: Attendu;
+  /** Request headers, to ask the way a browser really does (an internal navigation sends `RSC: 1`). */
+  entetes?: Readonly<Record<string, string>>;
+};
+
+/** The header of an internal navigation of Next.js (App Router). */
+const RSC = { RSC: "1" } as const;
 
 /**
  * The addresses that `npm run probe:prod` and the e2e tests ask while the door is closed: at least one REAL address of
@@ -55,12 +69,15 @@ export type AdressePorte = { chemin: string; famille: string; attendu: Attendu }
  */
 export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/", famille: "page d'attente", attendu: "attente" },
+  { chemin: "/", famille: "navigation interne vers la page d'attente", attendu: "attente-rsc", entetes: RSC },
   { chemin: "/robots.txt", famille: "robots.txt", attendu: "robots-ferme" },
   { chemin: "/sitemap.xml", famille: "plan du site", attendu: "plan-vide" },
   { chemin: "/icon.svg", famille: "icône de la page d'attente", attendu: "fichier" },
   { chemin: "/licenses/manrope-OFL.txt", famille: "licences des polices", attendu: "fichier" },
   { chemin: "/page-qui-n-existe-pas", famille: "pages", attendu: "introuvable" },
+  { chemin: "/page-qui-n-existe-pas", famille: "navigation interne de Next.js", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas?_rsc=porte", famille: "requêtes internes de Next.js", attendu: "introuvable" },
+  { chemin: CHEMIN_FERME, famille: "cible de la porte", attendu: "introuvable" },
   { chemin: "/globe/monde.json", famille: "fichiers publics hors de la page d'attente", attendu: "introuvable" },
   { chemin: "/globe/repli.svg", famille: "images hors de la page d'attente", attendu: "introuvable" },
   { chemin: "/_next/image?url=%2Ficon.svg&w=64&q=75", famille: "images optimisées", attendu: "refusee" },

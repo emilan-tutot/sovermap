@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Coque } from "@/components/coque/Coque";
 import { fr } from "@/lib/i18n/fr";
 
-export const metadata: Metadata = { title: fr.meta.titre(fr.notFound.title) };
+// The layout's title template already adds « · Sovermap ».
+export const metadata: Metadata = { title: fr.notFound.title };
 
 export default function NotFound() {
   return (
