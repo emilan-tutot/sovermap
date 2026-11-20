@@ -1,0 +1,77 @@
+{
+  "version": "2026-11-20",
+  "note": "Domaines témoins de la collecte (méthode § 8, plan § 13) : chacun a un comportement connu, relevé à la main et daté. Chaque jour, le résolveur de la collecte, Quad9 et Cloudflare doivent tous le retrouver ; sinon, la collecte ne publie rien (issue « Collecte bloquée »). Un témoin qui change pour de bon se met à jour ici, par une PR, avec sa preuve.",
+  "temoins": [
+    {
+      "nom": "www.data.gouv.fr",
+      "attendu": {
+        "etat": "ok",
+        "cdn": null,
+        "as": [
+          16276
+        ]
+      },
+      "releve": {
+        "le": "2026-11-18",
+        "preuve": "docs/methode.md, exemple 1 (AS16276, OVH SAS)"
+      }
+    },
+    {
+      "nom": "www.impots.gouv.fr",
+      "attendu": {
+        "etat": "ok",
+        "cdn": "akamai"
+      },
+      "releve": {
+        "le": "2026-11-18",
+        "preuve": "docs/methode.md, exemple 2 (CNAME edgesuite.net)"
+      }
+    },
+    {
+      "nom": "www.paris.fr",
+      "attendu": {
+        "etat": "ok",
+        "cdn": "fastly"
+      },
+      "releve": {
+        "le": "2026-11-18",
+        "preuve": "docs/methode.md, exemple 3 (CNAME fastly.net)"
+      }
+    },
+    {
+      "nom": "www.univ-lyon1.fr",
+      "attendu": {
+        "etat": "ok",
+        "cdn": null,
+        "as": [
+          2060
+        ]
+      },
+      "releve": {
+        "le": "2026-11-18",
+        "preuve": "docs/methode.md, exemple 4 (AS2060, Renater)"
+      }
+    },
+    {
+      "nom": "www.economie.gouv.fr",
+      "attendu": {
+        "etat": "ok",
+        "cdn": "cloudflare"
+      },
+      "releve": {
+        "le": "2026-11-18",
+        "preuve": "docs/methode.md, exemple 5 (AS13335)"
+      }
+    },
+    {
+      "nom": "temoin.sovermap.invalid",
+      "attendu": {
+        "etat": "nxdomain"
+      },
+      "releve": {
+        "le": "2026-11-20",
+        "preuve": "RFC 6761, § 6.4 : « .invalid » n'existe jamais"
+      }
+    }
+  ]
+}
