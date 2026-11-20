@@ -104,6 +104,19 @@ describe("the low-level DNS client", () => {
     }
   });
 
+  it("survives a resolver that does not listen yet: the question ends as a TIMEOUT", async () => {
+    const ferme = dgram.createSocket("udp4");
+    await new Promise<void>((ok) => ferme.bind(0, "127.0.0.1", () => ok()));
+    const port = ferme.address().port;
+    await new Promise<void>((ok) => ferme.close(() => ok()));
+    const client = new ClientUdp("essai", "127.0.0.1", port, 300);
+    try {
+      expect((await client.demander("a.example", "A")).code).toBe("TIMEOUT");
+    } finally {
+      client.fermer();
+    }
+  });
+
   it("tells a truncated answer, to be asked again over TCP", () => {
     const tronquee = Buffer.from(reponse(4, "a.example", "TXT", [], dnsPacket.TRUNCATED_RESPONSE));
     expect(lireReponse(tronquee, 4, "a.example", "TXT", 1)?.tronquee).toBe(true);

@@ -174,6 +174,9 @@ export class ClientUdp implements ClientDns {
     this.#connecte = new Promise((resolve, reject) => {
       this.#socket.connect(port, hote, (erreur?: Error) => (erreur ? reject(erreur) : resolve()));
     });
+    // A connected socket hears the system's refusals (« port unreachable » while the resolver starts, ECONNREFUSED):
+    // never fatal; the question then ends as a TIMEOUT, and the caller asks again or counts a failure.
+    this.#socket.on("error", () => {});
     this.#socket.unref();
   }
 
