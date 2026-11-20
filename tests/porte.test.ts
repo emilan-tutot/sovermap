@@ -89,7 +89,9 @@ describe("the production door (brief of chantier 2, A.6)", () => {
   it("agrees with the addresses that probe:prod and the e2e tests ask", () => {
     for (const adresse of ADRESSES_PORTE) {
       const chemin = adresse.chemin.split("?")[0] ?? adresse.chemin;
-      expect(fermee(chemin), adresse.chemin).toBe(adresse.attendu === "introuvable" || adresse.attendu === "refusee");
+      const parLaRegle =
+        (adresse.attendu === "introuvable" || adresse.attendu === "refusee") && !adresse.laisseeParLaRegle;
+      expect(fermee(chemin), adresse.chemin).toBe(parLaRegle);
     }
   });
 

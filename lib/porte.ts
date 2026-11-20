@@ -12,7 +12,9 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 /**
  * What still answers behind a closed door, besides the root « / » (the waiting page). Regular expressions on the path
- * without its leading slash; each must end with « $ » or « / ». Letter case is written out, never left to the matcher.
+ * without its leading slash; each must end with « $ » or « / ». Next.js matches them without regard to letter case:
+ * /ROBOTS.TXT is let through by the rule, then finds no file and answers 404. So a dynamic segment added later at
+ * the root must also refuse what it does not know (dynamicParams = false), and every data reader checks sitePublic().
  */
 export const LISTE_BLANCHE: readonly string[] = [
   "robots\\.txt$",
@@ -57,6 +59,8 @@ export type AdressePorte = {
   attendu: Attendu;
   /** Request headers, to ask the way a browser really does (an internal navigation sends `RSC: 1`). */
   entetes?: Readonly<Record<string, string>>;
+  /** The rule lets it through (letter case, or a build file that does not exist): its 404 comes from the absence. */
+  laisseeParLaRegle?: true;
 };
 
 /** The header of an internal navigation of Next.js (App Router). */
@@ -81,4 +85,17 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/globe/monde.json", famille: "fichiers publics hors de la page d'attente", attendu: "introuvable" },
   { chemin: "/globe/repli.svg", famille: "images hors de la page d'attente", attendu: "introuvable" },
   { chemin: "/_next/image?url=%2Ficon.svg&w=64&q=75", famille: "images optimisées", attendu: "refusee" },
+  { chemin: "/ROBOTS.TXT", famille: "liste blanche en capitales", attendu: "introuvable", laisseeParLaRegle: true },
+  {
+    chemin: "/_NEXT/STATIC/x.js",
+    famille: "liste blanche en capitales",
+    attendu: "introuvable",
+    laisseeParLaRegle: true,
+  },
+  {
+    chemin: "/_next/static/x.js",
+    famille: "fichier du build inexistant",
+    attendu: "introuvable",
+    laisseeParLaRegle: true,
+  },
 ];
