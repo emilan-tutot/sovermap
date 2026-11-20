@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   // No source map is ever served in production (cahier §6).
   productionBrowserSourceMaps: false,
   reactStrictMode: true,
+  // No image goes through the optimizer (the site draws its images in code and serves its few files as they are).
+  // Switched off, so that Vercel's image service never answers before the production door (lib/porte.ts).
+  images: { unoptimized: true },
   experimental: {
     // Every build starts cold: a restored build cache once served a stale stylesheet in another project of the owner
     // (specs/001-sovermap/pieges-connus.md).
