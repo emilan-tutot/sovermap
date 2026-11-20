@@ -61,6 +61,10 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
       statut(404);
       if (estHtml(reponse) && !texte.includes(fr.notFound.title)) ecarts.push(`${ou} : ce n'est pas la page 404 du site`);
       break;
+    case "refusee":
+      if (reponse.status < 400 || reponse.status > 499) ecarts.push(`${ou} répond ${reponse.status}, pas un refus (4xx)`);
+      if (/^image\//i.test(reponse.contentType)) ecarts.push(`${ou} sert une image`);
+      break;
     default: {
       const jamais: never = adresse.attendu;
       ecarts.push(`${ou} : réponse attendue inconnue (${String(jamais)})`);

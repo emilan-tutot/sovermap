@@ -39,8 +39,12 @@ export function reecrituresPorte(env: Env = process.env): Reecriture[] {
   return sitePublic(env) ? [] : [{ source: `/:chemin(${MOTIF_FERME})`, destination: CHEMIN_FERME }];
 }
 
-/** What a closed door must answer at an address. */
-export type Attendu = "attente" | "robots-ferme" | "plan-vide" | "fichier" | "introuvable";
+/**
+ * What a closed door must answer at an address. « refusee »: an address that the hosting platform answers itself,
+ * before the site's routing (Vercel's image service at /_next/image answers 400 « INVALID_IMAGE_OPTIMIZE_REQUEST »):
+ * any 4xx, never an image, never data.
+ */
+export type Attendu = "attente" | "robots-ferme" | "plan-vide" | "fichier" | "introuvable" | "refusee";
 
 export type AdressePorte = { chemin: string; famille: string; attendu: Attendu };
 
@@ -59,5 +63,5 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/page-qui-n-existe-pas?_rsc=porte", famille: "requêtes internes de Next.js", attendu: "introuvable" },
   { chemin: "/globe/monde.json", famille: "fichiers publics hors de la page d'attente", attendu: "introuvable" },
   { chemin: "/globe/repli.svg", famille: "images hors de la page d'attente", attendu: "introuvable" },
-  { chemin: "/_next/image?url=%2Ficon.svg&w=64&q=75", famille: "images optimisées", attendu: "introuvable" },
+  { chemin: "/_next/image?url=%2Ficon.svg&w=64&q=75", famille: "images optimisées", attendu: "refusee" },
 ];

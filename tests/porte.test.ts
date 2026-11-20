@@ -1,8 +1,10 @@
 import { existsSync } from "node:fs";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
 import { describe, expect, it } from "vitest";
-import { ADRESSES_PORTE, CHEMIN_FERME, reecrituresPorte } from "../lib/porte";
+import { fr } from "../lib/i18n/fr";
+import { ADRESSES_PORTE, type Attendu, CHEMIN_FERME, reecrituresPorte } from "../lib/porte";
 import { indexingOpen, sitePublic } from "../lib/site";
+import { ecartsPorte } from "../scripts/lib/porte-controle";
 
 // The rewrite of a closed door, matched the way Next.js matches a rewrite: its own path matcher, in strict mode
 // (next/dist/server/lib/router-utils/filesystem.js). The e2e tests and probe:prod check the real answers.
@@ -82,7 +84,21 @@ describe("the production door (brief of chantier 2, A.6)", () => {
   it("agrees with the addresses that probe:prod and the e2e tests ask", () => {
     for (const adresse of ADRESSES_PORTE) {
       const chemin = adresse.chemin.split("?")[0] ?? adresse.chemin;
-      expect(fermee(chemin), adresse.chemin).toBe(adresse.attendu === "introuvable");
+      expect(fermee(chemin), adresse.chemin).toBe(adresse.attendu === "introuvable" || adresse.attendu === "refusee");
     }
+  });
+
+  it("checks each answer the way probe:prod does", () => {
+    const adresse = (attendu: Attendu) => ({ chemin: "/x", famille: "essai", attendu });
+    const reponse = (status: number, contentType: string, texte = "") => ({ status, contentType, texte });
+    expect(ecartsPorte(adresse("refusee"), reponse(400, "text/plain", "INVALID_IMAGE_OPTIMIZE_REQUEST"))).toEqual([]);
+    expect(ecartsPorte(adresse("refusee"), reponse(404, "text/html", fr.notFound.title))).toEqual([]);
+    expect(ecartsPorte(adresse("refusee"), reponse(200, "image/png"))).toHaveLength(2);
+    expect(ecartsPorte(adresse("introuvable"), reponse(404, "text/html", `<h1>${fr.notFound.title}</h1>`))).toEqual([]);
+    expect(ecartsPorte(adresse("introuvable"), reponse(200, "text/html", "<h1>Atlas</h1>"))).toHaveLength(2);
+    expect(ecartsPorte(adresse("robots-ferme"), reponse(200, "text/plain", "User-Agent: *\nDisallow: /\n"))).toEqual([]);
+    expect(ecartsPorte(adresse("robots-ferme"), reponse(200, "text/plain", "User-Agent: *\nAllow: /\n"))).toHaveLength(2);
+    expect(ecartsPorte(adresse("plan-vide"), reponse(200, "application/xml", "<urlset><url>"))).toHaveLength(1);
+    expect(ecartsPorte(adresse("fichier"), reponse(200, "text/plain", '{"statut": "preparation"}'))).toHaveLength(1);
   });
 });

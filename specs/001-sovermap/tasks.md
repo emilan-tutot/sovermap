@@ -105,11 +105,11 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 
 ### Départ
 - [x] Prérequis : session non administrateur, `main` = `95844e6`, à jour et propre, CI de `main` verte, `probe:prod` vert, `gh` et la CLI Vercel connectés, Edge répond. Preuve : `journal-C2.md` (20/11/2026, 02:56 UTC, dossier du propriétaire).
-- [x] Message unique au propriétaire (liste officielle des domaines, liste SecNumCloud, logo facultatif, double authentification de Vercel). Preuve : `journal-C2.md` (20/11/2026, 03:08 UTC).
+- [x] Message unique au propriétaire (liste officielle des domaines, liste SecNumCloud, logo facultatif, double authentification de Vercel). Preuve : `journal-C2.md` (20/11/2026, vers 03:00 UTC).
 
 ### Partie A — Départ propre (`feat/c2-depart`)
 - [ ] A.1 `scan:prive` accepte exactement la ligne de signature de Dependabot dans un message de commit, et rien d'autre (tests) ; puis la PR n° 3 (ESLint 10) fusionnée après `@dependabot rebase`, CI verte et lecture des notes de version ; la PR n° 2 (TypeScript 7) fermée avec une phrase ; puis `feat/c2-dependabot` : plus de montée majeure proposée.
-- [x] A.2 Le crochet d'arrêt lit le nouveau nom d'un fichier renommé (essai avec un fichier renommé, diff au rapport). Preuve : `.claude/hooks/stop-check.mjs` ; essai du 20/11/2026 (`journal-C2.md`, 04:10 UTC) : un fichier suivi renommé par `git mv`, avec une faute ESLint (`no-explicit-any`) : sortie 0 avant la correction, sortie 2 après, la faute signalée sur le nouveau nom ; essai annulé.
+- [x] A.2 Le crochet d'arrêt lit le nouveau nom d'un fichier renommé (essai avec un fichier renommé, diff au rapport). Preuve : `.claude/hooks/stop-check.mjs` ; essai du 20/11/2026 (`journal-C2.md`, 03:10 UTC) : un fichier suivi renommé par `git mv`, avec une faute ESLint (`no-explicit-any`) : sortie 0 avant la correction, sortie 2 après, la faute signalée sur le nouveau nom ; essai annulé.
 - [x] A.3 Cases de T1 (E.7, E.8, rapport) cochées avec leurs preuves ; cette section recopiée. Preuve : ce fichier.
 - [x] A.4 `CLAUDE.md` et mémoire : les points ; le DNS seulement ; le registre d'abord ; jamais « société » pour un organisme public ; la règle de la porte. Preuve : `CLAUDE.md` (70 lignes) ; cinq fiches de mémoire du projet (points, porte de la production, DNS seulement, registre d'abord, organisme public).
 - [ ] A.5 Le logo, s'il est déposé : lisible à 16 px, icônes tirées (onglet, écran d'accueil, image de partage) ; sinon rien.
