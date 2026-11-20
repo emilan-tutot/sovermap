@@ -6,7 +6,7 @@
 import { type Classement, classer, type Contexte, type Perimetre, type Servant } from "./classement";
 import type { ObservationDns } from "./dns";
 import type { MesureNom } from "./mesure";
-import { adresseEnEntier } from "./reseau";
+import { adresseEnEntier, type CoucheReseau, type TableIpToAsn, type TableRis } from "./reseau";
 import type { ResultatSpf } from "./spf";
 import { type Categorie, type DnsStatus, type Niveau, niveauMin } from "./types";
 
@@ -48,6 +48,35 @@ export type CoucheAdresses = {
   niveau: Niveau;
   controle: { resolveur: string; accord: boolean } | null;
 };
+
+/**
+ * The network layer as the collection may publish it: the AS comes from IPtoASN only (« retenue »); RIS (« en contrôle
+ * seulement », brief F.3) only says whether it confirms it, and none of its values is ever kept: without IPtoASN, the
+ * layer is « non déterminé »; when RIS disagrees, IPtoASN's AS is kept, « non déterminé » (methode § 5).
+ */
+export function coucheReseauPubliable(adresse: string, iptoasn: TableIpToAsn, ris: TableRis): CoucheReseau {
+  const a = iptoasn.chercher(adresse);
+  if (a === null) {
+    return {
+      adresse,
+      asns: [],
+      prefixe: null,
+      descriptionAs: null,
+      sources: { iptoasn: null, ris: null },
+      niveau: "non déterminé",
+    };
+  }
+  const r = ris.chercher(adresse);
+  const niveau: Niveau = r === null ? "probable" : r.origines.includes(a.asn) ? "confirmé" : "non déterminé";
+  return {
+    adresse,
+    asns: [a.asn],
+    prefixe: null,
+    descriptionAs: a.description,
+    sources: { iptoasn: a.asn, ris: null },
+    niveau,
+  };
+}
 
 const STATUTS: Record<MesureNom["etat"], DnsStatus> = {
   ok: "NOERROR",
@@ -130,9 +159,9 @@ export function coucheAdresses(
   );
   const reseaux = new Map<string, Reseau>();
   for (const adresse of [...m.a, ...m.aaaa].map((x) => x.adresse)) {
+    // Only IPtoASN's AS and range are kept; RIS never gives a value (brief F.3).
     const p = plageDe(adresse, contexte);
-    const couche = c.reseau.find((r) => r.adresse === adresse);
-    for (const as of p ? [p.as] : (couche?.asns ?? [])) {
+    for (const as of p ? [p.as] : []) {
       const cle = `${as} ${p?.plage ?? ""}`;
       if (!reseaux.has(cle)) {
         reseaux.set(cle, {
@@ -208,6 +237,8 @@ export type CoucheSpf = {
   inclus: string[];
   /** The AS numbers of the networks allowed to send mail, with their IPtoASN description (« probable »: one source). */
   reseaux: { as: number; descriptionAs: string | null }[];
+  /** How many AS the record allows in all (the list keeps the first 50, by number). */
+  reseauxTotal: number;
   /** Terms that depend on the sender (macros, exists, ptr), never evaluated: the list is then incomplete. */
   nonEvalues: number;
 };
@@ -223,7 +254,11 @@ export function coucheSpf(r: ResultatSpf, contexte: ContexteV1): CoucheSpf {
   return {
     statut: r.statut,
     inclus: [...r.inclus].sort(),
-    reseaux: [...parAs.entries()].map(([as, descriptionAs]) => ({ as, descriptionAs })).sort((x, y) => x.as - y.as),
+    reseaux: [...parAs.entries()]
+      .map(([as, descriptionAs]) => ({ as, descriptionAs }))
+      .sort((x, y) => x.as - y.as)
+      .slice(0, 50),
+    reseauxTotal: parAs.size,
     nonEvalues: r.nonEvalues.length,
   };
 }

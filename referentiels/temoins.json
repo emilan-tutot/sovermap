@@ -1,6 +1,6 @@
 {
   "version": "2026-11-20",
-  "note": "Domaines témoins de la collecte (méthode § 8, plan § 13) : chacun a un comportement connu, relevé à la main et daté. Chaque jour, le résolveur de la collecte, Quad9 et Cloudflare doivent tous le retrouver ; sinon, la collecte ne publie rien (issue « Collecte bloquée »). Un témoin qui change pour de bon se met à jour ici, par une PR, avec sa preuve.",
+  "note": "Domaines témoins de la collecte (méthode § 7, plan § 13) : chacun a un comportement connu, relevé à la main et daté. Chaque jour, le résolveur de la collecte, Quad9 et Cloudflare doivent tous le retrouver ; sinon, la collecte ne publie rien (issue « Collecte bloquée »). Un témoin qui change pour de bon se met à jour ici, par une PR, avec sa preuve.",
   "temoins": [
     {
       "nom": "www.data.gouv.fr",

@@ -1,8 +1,9 @@
 // Tests of the layers v1: a made-up context (essai-contexte.ts), documentation names, addresses and AS numbers only.
 import { describe, expect, it } from "vitest";
-import { coucheAdresses, coucheHotes, coucheSpf } from "./couches";
+import { coucheAdresses, coucheHotes, coucheReseauPubliable, coucheSpf } from "./couches";
 import { contexteEssai } from "./essai-contexte";
 import type { MesureNom } from "./mesure";
+import { TableRis } from "./reseau";
 
 const contexte = contexteEssai();
 const mesure = (nom: string, adresses: string[], cname: string[] = []): MesureNom => ({
@@ -63,6 +64,23 @@ describe("the layers v1", () => {
     expect(fr).toMatchObject({ categorie: "France", horsUE: false });
   });
 
+  it("never keeps a value of RIS: no AS without IPtoASN, IPtoASN's AS when RIS disagrees", () => {
+    const ris = new TableRis([["64511\t192.0.2.0/24\t300", "64499\t198.18.0.0/15\t300"].join("\n")]);
+    const desaccord = coucheReseauPubliable("192.0.2.10", contexte.iptoasn, ris);
+    expect(desaccord).toMatchObject({ asns: [64496], prefixe: null, niveau: "non déterminé" });
+    expect(desaccord.sources.ris).toBeNull();
+    expect(coucheReseauPubliable("198.18.0.1", contexte.iptoasn, ris)).toMatchObject({
+      asns: [],
+      niveau: "non déterminé",
+    });
+    expect(JSON.stringify(desaccord)).not.toContain("64511");
+  });
+
+  it("gives the description of an AS", () => {
+    expect(contexte.iptoasn.descriptionAs(64496)).toBe("EXEMPLE-HEBERGEUR");
+    expect(contexte.iptoasn.descriptionAs(64511)).toBeNull();
+  });
+
   it("reduces the SPF networks to their AS", () => {
     const c = coucheSpf(
       {
@@ -84,6 +102,7 @@ describe("the layers v1", () => {
         { as: 64496, descriptionAs: "EXEMPLE-HEBERGEUR" },
         { as: 64501, descriptionAs: "EXEMPLE-CLOUD" },
       ],
+      reseauxTotal: 2,
       nonEvalues: 0,
     });
   });

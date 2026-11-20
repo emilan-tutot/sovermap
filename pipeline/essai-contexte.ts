@@ -1,6 +1,6 @@
 // A small classification context for the tests of the collection v1: documentation addresses (RFC 5737, RFC 3849),
 // AS numbers (RFC 5398) and names (RFC 2606) only; made-up companies, each with two dated sources.
-import type { ContexteV1 } from "./couches";
+import { type ContexteV1, coucheReseauPubliable } from "./couches";
 import { TableIpToAsn, TableRis } from "./reseau";
 
 const deux = [
@@ -39,6 +39,7 @@ export function contexteEssai(): ContexteV1 {
       ],
     },
     plages: {},
+    coucheReseau: coucheReseauPubliable,
     tableAs: {
       version: "essai",
       as: {

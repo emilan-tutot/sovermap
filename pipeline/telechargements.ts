@@ -82,8 +82,11 @@ export async function telechargerSources(
         : null;
     const reprendre = (etat: EtatSource["etat"]) => {
       if (ancienne === null || metaAncienne === null || !existsSync(ancienne)) return false;
-      copyFileSync(ancienne, cible);
-      copyFileSync(`${ancienne}.meta.json`, `${cible}.meta.json`);
+      // The same folder may serve as today's and yesterday's (a local trial): the copy is then already in place.
+      if (path.resolve(ancienne) !== path.resolve(cible)) {
+        copyFileSync(ancienne, cible);
+        copyFileSync(`${ancienne}.meta.json`, `${cible}.meta.json`);
+      }
       etats.push({ ...s, etat, date: metaAncienne.date, octets: metaAncienne.octets, sha256: metaAncienne.sha256 });
       return true;
     };

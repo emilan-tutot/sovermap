@@ -48,7 +48,8 @@ export type EnregistrementDomaine = {
   perimetre: "État" | "hors État";
   raisons: string[];
   plateforme: boolean;
-  organismes: string[];
+  /** How many bodies of the DILA's Référentiel name it as a website (the list itself: index/organismes.json). */
+  organismes: number;
   ministeres: string[];
   noms: number;
   zone: { etat: string; ns: string[]; soa: string | null; ds: boolean; caa: { propriete: string; valeur: string }[] };
@@ -215,7 +216,12 @@ export function fragments<T>(dossier: string, enregistrements: Iterable<[string,
     liste.sort(([a], [b]) => (a < b ? -1 : 1));
     const texte = `${jsonStable({ [dossier]: liste.map(([, e]) => e) })}\n`;
     if (Buffer.byteLength(texte) > TAILLE_MAX_FRAGMENT) {
-      throw new Error(`${dossier}/${s}.json : ${Buffer.byteLength(texte)} octets, plus de 8 Ko`);
+      const [cle, taille] = liste
+        .map(([c, e]) => [c, Buffer.byteLength(jsonStable(e))] as const)
+        .reduce((x, y) => (y[1] > x[1] ? y : x));
+      throw new Error(
+        `${dossier}/${s}.json : ${Buffer.byteLength(texte)} octets, plus de 8 Ko (le plus gros : ${cle}, ${taille} octets)`,
+      );
     }
     fichiers.set(`${dossier}/${s}.json`, texte);
     const [haut, bas] = s.split("/") as [string, string];
@@ -238,6 +244,8 @@ export function index(
     >;
     societes: ReadonlyMap<string, Societe>;
     organismes: ReadonlyMap<string, Organisme>;
+    /** The bodies that name each domain as a website. */
+    organismesDe: ReadonlyMap<string, readonly string[]>;
   },
 ): Fichiers {
   const fichiers: Fichiers = new Map();
@@ -267,7 +275,7 @@ export function index(
         parPays.set(pays, p);
       }
     }
-    for (const o of d.organismes) noter(parOrganisme, o, d.domaine);
+    for (const o of details.organismesDe.get(d.domaine) ?? []) noter(parOrganisme, o, d.domaine);
     for (const m of d.ministeres) noter(parMinistere, m, d.domaine);
   }
   const trie = (s: Set<string>) => [...s].sort();

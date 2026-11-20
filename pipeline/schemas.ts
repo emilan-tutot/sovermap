@@ -20,10 +20,11 @@ type Schema = {
 };
 
 const texte = (maxLength = 300): Schema => ({ type: "string", maxLength });
+// A DNS name: letters, digits, hyphens and underscores (_spf, _domainkey…), never markup.
 const nomDns: Schema = {
   type: "string",
   maxLength: 253,
-  pattern: "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$",
+  pattern: "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$",
 };
 const niveau: Schema = { enum: ["confirmé", "probable", "non déterminé"] };
 const categorie: Schema = { enum: ["France", "UE hors France", "Europe hors UE", "hors d'Europe", "non déterminé"] };
@@ -80,7 +81,7 @@ export const DOMAINE: Schema = objet({
   perimetre: { enum: ["État", "hors État"] },
   raisons: liste({ enum: ["gouv.fr", "dila"] }, 5),
   plateforme: { type: "boolean" },
-  organismes: liste(texte(80), 200),
+  organismes: { type: "integer", minimum: 0 },
   ministeres: liste(texte(80), 50),
   noms: { type: "integer", minimum: 1 },
   zone: objet({
@@ -104,8 +105,9 @@ export const DOMAINE: Schema = objet({
         inclus: liste(nomDns, 50),
         reseaux: liste(
           objet({ as: { type: "integer", minimum: 0 }, descriptionAs: { type: ["string", "null"], maxLength: 200 } }),
-          500,
+          50,
         ),
+        reseauxTotal: { type: "integer", minimum: 0 },
         nonEvalues: { type: "integer", minimum: 0 },
       }),
       type: ["object", "null"],

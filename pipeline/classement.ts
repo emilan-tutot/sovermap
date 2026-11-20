@@ -22,6 +22,8 @@ export type Contexte = {
   plages: PlagesOfficielles;
   tableAs: ReferentielAs;
   societes: ReferentielSocietes;
+  /** The network layer of one address (coucheReseau by default; the collection v1 passes the version it may publish). */
+  coucheReseau?: typeof coucheReseau;
 };
 
 export type Servant = { role: "diffusé par" | "hébergé par"; chaine: ChaineSociete; preuve: string; niveau: Niveau };
@@ -51,7 +53,7 @@ function servants(
   contexte: Contexte,
 ): { cdn: DetectionCdn | null; reseau: CoucheReseau[]; servants: Servant[] } {
   const adresses = [...observation.a, ...observation.aaaa];
-  const reseau = adresses.map((a) => coucheReseau(a, contexte.iptoasn, contexte.ris));
+  const reseau = adresses.map((a) => (contexte.coucheReseau ?? coucheReseau)(a, contexte.iptoasn, contexte.ris));
   const asns = [...new Set(reseau.flatMap((r) => r.asns))];
   const cdn = detecterCdn(observation.chaineCname, adresses, asns, contexte.cdn, contexte.plages);
   if (cdn) {

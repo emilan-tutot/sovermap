@@ -72,7 +72,7 @@ export function construireEtat(
       perimetre: d.perimetre,
       raisons: d.raisons,
       plateforme: d.plateforme,
-      organismes: d.organismes,
+      organismes: d.organismes.length,
       ministeres: d.ministeres,
       noms: d.noms.length,
       zone: { etat: z.etat, ns: z.ns, soa: z.soa?.mname ?? null, ds: z.ds.length > 0, caa: z.caa },

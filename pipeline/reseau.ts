@@ -35,6 +35,7 @@ export type LigneIpToAsn = { debut: bigint; fin: bigint; asn: number; pays: stri
 export class TableIpToAsn {
   readonly #v4: LigneIpToAsn[] = [];
   readonly #v6: LigneIpToAsn[] = [];
+  readonly #descriptions = new Map<number, string>();
 
   constructor(contenu: string) {
     for (const ligne of contenu.split("\n")) {
@@ -49,6 +50,7 @@ export class TableIpToAsn {
         description: description.join(" ").trim(),
       };
       (d.famille === 4 ? this.#v4 : this.#v6).push(entree);
+      if (entree.asn !== 0 && !this.#descriptions.has(entree.asn)) this.#descriptions.set(entree.asn, entree.description);
     }
     const ordre = (x: LigneIpToAsn, y: LigneIpToAsn) => (x.debut < y.debut ? -1 : x.debut > y.debut ? 1 : 0);
     this.#v4.sort(ordre);
@@ -57,6 +59,11 @@ export class TableIpToAsn {
 
   get taille(): number {
     return this.#v4.length + this.#v6.length;
+  }
+
+  /** The description IPtoASN gives an AS (its registry handle and name), or null for an AS it does not know. */
+  descriptionAs(asn: number): string | null {
+    return this.#descriptions.get(asn) ?? null;
   }
 
   /** The routed AS of an address (AS 0 means « not routed »), or null. */

@@ -2,7 +2,7 @@
 // measurement, the web name and the MX of every domain of the « État » perimeter, the web names of 3 % of the other
 // domains drawn at random, and the witnesses; Cloudflare 1.1.1.1 gets the witnesses only. Their answers make the
 // address layer « confirmé » when they agree (methode § 5); the witnesses, whose behaviour is known and dated in
-// referentiels/temoins.json, must all be found again, or nothing is published (methode § 8).
+// referentiels/temoins.json, must all be found again, or nothing is published (methode § 7).
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type Etat, type MesureNom, mesurerNom } from "./mesure";
 import { Cadence, type Horloge, HORLOGE_REELLE, melanger } from "./politesse";

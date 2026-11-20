@@ -36,7 +36,7 @@ const domaine = (d: string, perimetre: "État" | "hors État" = "État"): Enregi
   perimetre,
   raisons: perimetre === "État" ? ["gouv.fr"] : [],
   plateforme: false,
-  organismes: [],
+  organismes: 0,
   ministeres: [],
   noms: 1,
   zone: { etat: "ok", ns: [`ns1.${d}`], soa: `ns1.${d}`, ds: false, caa: [] },
