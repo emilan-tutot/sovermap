@@ -47,6 +47,11 @@ export function ellipseDeLArc(elevation = ELEVATION_DES_POINTS, sommet = SOMMET_
   const a = (elevation * Math.PI) / 180;
   const px = Math.cos(a);
   const py = -Math.sin(a);
+  // The arc's top stays above the dots and below the ellipse's top over them (ry − py): below, no ellipse joins the
+  // three points; above, the arc drawn from dot to dot (svgLogo's flags) would be the lower one.
+  if (!(sommet > -py && sommet < ry - py)) {
+    throw new RangeError(`sommet de l'arc ${sommet} hors de ]${(-py).toFixed(3)} ; ${(ry - py).toFixed(3)}[`);
+  }
   const cy = ry - sommet;
   // The dot lies on the ellipse: (px / rx)² + ((py − cy) / ry)² = 1.
   const rx = px / Math.sqrt(1 - ((py - cy) / ry) ** 2);

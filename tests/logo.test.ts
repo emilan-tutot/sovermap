@@ -49,6 +49,15 @@ describe("the logo (A.5, the owner's choice of 20/11/2026)", () => {
     expect(svgLogo(LOGO_FIDELE)).toBe(svgLogo({ ...LOGO_FIDELE, sommet: SOMMET_DE_L_ARC }));
   });
 
+  it("refuses an arc's top that no ellipse joins to the dots, or that would draw the lower arc", () => {
+    for (const sommet of [0.2, 0.9, Number.NaN]) {
+      expect(() => ellipseDeLArc(ELEVATION_DES_POINTS, sommet)).toThrow(RangeError);
+    }
+    for (const sommet of [LOGO_PETIT.sommet ?? SOMMET_DE_L_ARC, SOMMET_DE_L_ARC]) {
+      expect(Number.isFinite(ellipseDeLArc(ELEVATION_DES_POINTS, sommet).rx)).toBe(true);
+    }
+  });
+
   it("escapes its title, so that the SVG stays well formed", () => {
     expect(svgLogo({ ...LOGO_PETIT, titre: "A & B <c>" })).toContain("<title>A &amp; B &lt;c&gt;</title>");
   });
