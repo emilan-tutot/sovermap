@@ -17,11 +17,13 @@ export type DebitServeurs = {
   coupesChaudes: { coupe: string; secondes: number }[];
 };
 
-const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?/;
+const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?/;
 const HORODATAGE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/;
 
 /** The limit of brief B.3. */
 export const LIMITE_PAR_SERVEUR = 10;
+/** How long a server is remembered as serving a zone (a shared server serves many: all wait when it is busy). */
+const MEMOIRE_SECONDES = 60;
 /** The brake engages at 8 questions within a second to one server: the questions that would go to it wait. */
 export const SEUIL_FREIN = 8;
 /** At 9, one question more and the limit is near: every question waits, whatever its zone (a backstop). */
@@ -29,10 +31,20 @@ export const SEUIL_ARRET = LIMITE_PAR_SERVEUR - 1;
 
 /** A zone cut as Knot writes it (« exemple. », « . » for the root), in lower case, without its final dot. */
 const coupeNormale = (c: string) => c.toLowerCase().replace(/\.$/, "");
+/** Notes that `adresse` was seen with `cle` at second `t`. */
+const noter = (memoire: Map<string, Map<string, number>>, adresse: string, cle: string, t: number) => {
+  const vues = memoire.get(adresse) ?? new Map<string, number>();
+  vues.set(cle, t);
+  memoire.set(adresse, vues);
+};
+
 /** Is `nom` the zone `coupe` or below it? The root (« ») holds every name. */
 export const sous = (nom: string, coupe: string) => coupe === "" || nom === coupe || nom.endsWith(`.${coupe}`);
 
 export class CompteurServeurs {
+  /** `zoneDe`: the registered zone of a name, the same as the collection's (its questions are held by zone). */
+  constructor(private readonly zoneDe: (nom: string) => string = (nom) => nom) {}
+
   #questions = 0;
   #depassements = 0;
   #chargeCourante = 0;
@@ -43,6 +55,10 @@ export class CompteurServeurs {
   #parAdresse = new Map<string, number>();
   #coupesParAdresse = new Map<string, Set<string>>();
   #secondesChaudes = new Map<string, number>();
+  /** Per address, the zone cuts it served and the registered zones of the names it was asked about, last minute. */
+  #coupesRecentes = new Map<string, Map<string, number>>();
+  #zonesRecentes = new Map<string, Map<string, number>>();
+  #oubli = 0;
 
   /** One line of `docker logs --timestamps` (its timestamp, then Knot's line). */
   lire(ligne: string): void {
@@ -60,10 +76,22 @@ export class CompteurServeurs {
     this.#questions += 1;
     const n = (this.#parAdresse.get(question[1]) ?? 0) + 1;
     this.#parAdresse.set(question[1], n);
+    const t = Date.parse(`${seconde}Z`) / 1000;
     if (question[2] !== undefined) {
+      const coupe = coupeNormale(question[2]);
       const coupes = this.#coupesParAdresse.get(question[1]) ?? new Set<string>();
-      coupes.add(coupeNormale(question[2]));
+      coupes.add(coupe);
       this.#coupesParAdresse.set(question[1], coupes);
+      noter(this.#coupesRecentes, question[1], coupe, t);
+    }
+    if (question[3] !== undefined) noter(this.#zonesRecentes, question[1], this.zoneDe(coupeNormale(question[3])), t);
+    if (t - this.#oubli >= 10) {
+      this.#oubli = t;
+      for (const memoire of [this.#coupesRecentes, this.#zonesRecentes])
+        for (const [adresse, vues] of memoire) {
+          for (const [cle, vue] of vues) if (t - vue > MEMOIRE_SECONDES) vues.delete(cle);
+          if (vues.size === 0) memoire.delete(adresse);
+        }
     }
     this.#chargeCourante = Math.max(this.#chargeCourante, n);
     if (n > this.#max) {
@@ -82,19 +110,23 @@ export class CompteurServeurs {
   }
 
   /**
-   * Must a question about `nom` (in the registered zone `zone`) wait, as the logs tell it now? It waits when a server
-   * of its zone, or of a zone between its zone and itself, got SEUIL_FREIN questions within the current second; the
-   * first question of a new domain (`ouverture`) also waits for a busy parent (a top-level domain, a public suffix),
-   * which it will ask for the domain's delegation. Every question waits when one server reached SEUIL_ARRET. Never
-   * when the logs are more than 2 seconds behind (a silent log never holds the collection).
+   * Must a question about `nom` (in the registered zone `zone`) wait, as the logs tell it now? A server that got
+   * SEUIL_FREIN questions within the current second holds back every question of a zone it was asked about in the last
+   * minute (a shared server serves many zones; a zone that is not delegated is served by its parent's servers), and of
+   * a zone cut it served between the zone and the name. A question that goes to the parents too (`ouverture`: the
+   * first question of a zone, the DS) also waits for a busy parent: a top-level domain, a public suffix. Every question
+   * waits when one server reached SEUIL_ARRET. Never when the logs are more than 2 seconds behind (a silent log never
+   * holds the collection).
    */
   freine(nom: string, zone: string, ouverture: boolean, maintenant: number): boolean {
     if (!this.#frais(maintenant)) return false;
     for (const [adresse, n] of this.#parAdresse) {
       if (n >= SEUIL_ARRET) return true;
       if (n < SEUIL_FREIN) continue;
-      for (const coupe of this.#coupesParAdresse.get(adresse) ?? []) {
-        if (ouverture ? sous(zone, coupe) : sous(nom, coupe) && sous(coupe, zone)) return true;
+      if (this.#zonesRecentes.get(adresse)?.has(zone)) return true;
+      for (const coupe of this.#coupesRecentes.get(adresse)?.keys() ?? []) {
+        if (sous(nom, coupe) && sous(coupe, zone)) return true;
+        if (ouverture && sous(zone, coupe)) return true;
       }
     }
     return false;

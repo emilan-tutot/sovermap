@@ -2,8 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { CompteurServeurs } from "./debit-serveurs";
 
-const ligne = (seconde: string, adresse: string, coupe = "exemple.") =>
-  `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: 'ns1.exemple.'@'${adresse}' zone cut: '${coupe}' qname: 'www.exemple.' qtype: 'A' proto: 'udp'`;
+const ligne = (seconde: string, adresse: string, coupe = "exemple.", qname = "www.exemple.") =>
+  `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: 'ns1.exemple.'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: 'A' proto: 'udp'`;
 
 describe("the pace towards each authoritative server", () => {
   it("keeps the highest count of questions to one address within one second", () => {
@@ -57,6 +57,12 @@ describe("the pace towards each authoritative server", () => {
     expect(parent.freine("nouveau.example", "nouveau.example", true, t + 5_000)).toBe(false);
     parent.lire(ligne("05", "198.51.100.53", "example."));
     expect(parent.freine("www.autre.example", "autre.example", false, t)).toBe(true);
+    // A shared server busy now holds back the zones it served in the last minute, even when not asked this second.
+    const partage = new CompteurServeurs();
+    partage.lire(ligne("01", "203.0.113.53", "autre.example.", "www.autre.example."));
+    for (let i = 0; i < 8; i += 1) partage.lire(ligne("05", "203.0.113.53", "mairie.example.", "www.mairie.example."));
+    expect(partage.freine("mail.autre.example", "autre.example", false, t)).toBe(true);
+    expect(partage.freine("www.tierce.example", "tierce.example", false, t)).toBe(false);
     // The summary names the zones whose servers were busy.
     parent.lire(ligne("06", "198.51.100.53", "example."));
     expect(parent.resultat().coupesChaudes).toEqual([{ coupe: "example", secondes: 1 }]);

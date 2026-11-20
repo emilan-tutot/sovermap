@@ -201,7 +201,12 @@ export function bilan(jour: Etat, veille: Etat | null, publie: Etat | null, regl
 
   // On a day of new rules, the published state is rebased on yesterday, classified with the new rules: nothing of the
   // rules' effect ever enters the journal.
-  const base: Etat = reglesChangees && veille !== null ? veille : publie;
+  const sansReduits = <T extends { reduit?: true }>(hier: Map<string, T>, publies: Map<string, T>) =>
+    new Map([...hier].map(([cle, e]) => [cle, e.reduit ? (publies.get(cle) ?? e) : e] as const));
+  const base: Etat =
+    reglesChangees && veille !== null
+      ? { noms: sansReduits(veille.noms, publie.noms), domaines: sansReduits(veille.domaines, publie.domaines) }
+      : publie;
   const garder = <T extends { reduit?: true }>(
     cle: string,
     aujourdhui: T,

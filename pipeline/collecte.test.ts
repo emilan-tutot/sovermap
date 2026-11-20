@@ -139,9 +139,13 @@ describe("the scheduling of a collection", () => {
         (ouverture ? ouvertures : questions).push(`${nom} ${zone}`);
       },
     });
-    expect(questions).toHaveLength(r.questions.length);
+    // Each question once, and each domain's opening once more.
+    const domaines = [...new Set(noms.values())];
+    expect(questions.length + ouvertures.length).toBe(r.questions.length + domaines.length);
     expect(questions).toContain("www.mairie.example mairie.example");
-    expect([...ouvertures].sort()).toEqual([...new Set(noms.values())].sort().map((d) => `${d} ${zoneDe(d)}`));
+    for (const d of domaines) expect(ouvertures).toContain(`${d} ${zoneDe(d)}`);
+    // The opening, the zone's first question and its DS question go to the parents: three waits like an opening.
+    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(3);
   });
 
   it("opens the domains slowly at first: one per second, then faster", async () => {

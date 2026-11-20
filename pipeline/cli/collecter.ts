@@ -241,13 +241,16 @@ function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson }
 /** The brake's waits, for the summary: how many questions waited, and for how long in all. */
 type Attentes = { ouvertures: number; questions: number; secondes: number };
 
-function suivreDebit(conteneur: string | undefined): {
+function suivreDebit(
+  conteneur: string | undefined,
+  zoneDe: (nom: string) => string,
+): {
   frein: OptionsCollecte["frein"];
   arreter: () => { debit: DebitServeurs | null; attentes: Attentes };
 } {
   const attentes: Attentes = { ouvertures: 0, questions: 0, secondes: 0 };
   if (conteneur === undefined) return { frein: undefined, arreter: () => ({ debit: null, attentes }) };
-  const compteur = new CompteurServeurs();
+  const compteur = new CompteurServeurs(zoneDe);
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -266,8 +269,9 @@ function suivreDebit(conteneur: string | undefined): {
       const debut = Date.now();
       if (ouverture) attentes.ouvertures += 1;
       else attentes.questions += 1;
-      for (let i = 0; i < 100 && compteur.freine(nom, zone, ouverture, Date.now()); i += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      // A random step (100 to 300 ms) spreads the questions that waited, instead of releasing them all at once.
+      while (Date.now() - debut < 10_000 && compteur.freine(nom, zone, ouverture, Date.now())) {
+        await new Promise((resolve) => setTimeout(resolve, 100 + Math.floor(Math.random() * 200)));
       }
       attentes.secondes += (Date.now() - debut) / 1000;
     },
@@ -377,7 +381,7 @@ async function principal(): Promise<number> {
   const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
   const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
-  const debit = suivreDebit(o.conteneur);
+  const debit = suivreDebit(o.conteneur, zoneDe);
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
     collecter(noms, knot, {
@@ -414,15 +418,27 @@ async function principal(): Promise<number> {
   const ECHECS_DNS = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
   const pannes: Pannes = { noms: new Set<string>(), zones: new Set<string>(), resolveur: "quad9" };
   const aConfirmer = domainesMesures.filter(
-    (d) => mesures.domaines.get(d.domaine)?.etat === "echec" || mesures.noms.get(d.nomWeb)?.etat === "echec",
+    (d) =>
+      mesures.domaines.get(d.domaine)?.etat === "echec" ||
+      mesures.domaines.get(d.domaine)?.mxEtat === "echec" ||
+      mesures.noms.get(d.nomWeb)?.etat === "echec",
   );
+  // The domains whose MX question alone failed, and Quad9's too (for the guard only: nothing else is published).
+  const pannesMx = new Set<string>();
   const confirmer = async () => {
     for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finControles; d = aConfirmer.shift()) {
       const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
-      const r = await quad9.demander(zoneEnEchec ? d.domaine : d.nomWeb, zoneEnEchec ? "NS" : "A");
+      const webEnEchec = mesures.noms.get(d.nomWeb)?.etat === "echec";
+      const [nom, type] = zoneEnEchec
+        ? [d.domaine, "NS" as const]
+        : webEnEchec
+          ? [d.nomWeb, "A" as const]
+          : [d.domaine, "MX" as const];
+      const r = await quad9.demander(nom, type);
       if (!ECHECS_DNS.has(r.code)) continue;
       if (zoneEnEchec) (pannes.zones as Set<string>).add(d.domaine);
-      if (mesures.noms.get(d.nomWeb)?.etat === "echec") (pannes.noms as Set<string>).add(d.nomWeb);
+      if (webEnEchec) (pannes.noms as Set<string>).add(d.nomWeb);
+      if (type === "MX") pannesMx.add(d.domaine);
     }
   };
   await Promise.all(Array.from({ length: 8 }, confirmer));
@@ -485,7 +501,9 @@ async function principal(): Promise<number> {
   const domainesEnEchec = unitesEnEchec.length;
   const pannesConfirmees = unitesEnEchec.filter(
     (d) =>
-      (d.zone.echec?.confirmePar ?? null) !== null || (jour.noms.get(d.nomWeb)?.echec?.confirmePar ?? null) !== null,
+      (d.zone.echec?.confirmePar ?? null) !== null ||
+      (jour.noms.get(d.nomWeb)?.echec?.confirmePar ?? null) !== null ||
+      pannesMx.has(d.domaine),
   ).length;
   const echecsNonConfirmes = domainesEnEchec - pannesConfirmees;
   const part = (x: number) => (jour.domaines.size === 0 ? 1 : x / jour.domaines.size);
@@ -727,8 +745,16 @@ async function principal(): Promise<number> {
         ? "non mesuré"
         : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
     }.`,
-    `- Frein : ${attentesFrein.ouvertures} ouvertures de domaine et ${attentesFrein.questions} questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; zones dont un serveur a été le plus souvent chargé : ${
-      (debitServeurs?.coupesChaudes ?? []).map((c) => `${c.coupe} (${c.secondes} s)`).join(", ") || "aucune"
+    // Only the top-level zones are named in this public summary; the others (a host's customers, a CDN…) are counted.
+    `- Frein : ${attentesFrein.ouvertures} ouvertures de domaine et ${attentesFrein.questions} questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${
+      [
+        ...(debitServeurs?.coupesChaudes ?? [])
+          .filter((c) => !c.coupe.includes(".") || c.coupe === ".")
+          .map((c) => `${c.coupe} (${c.secondes} s)`),
+        ...(debitServeurs?.coupesChaudes ?? [])
+          .filter((c) => c.coupe.includes(".") && c.coupe !== ".")
+          .map((c) => `une autre zone (${c.secondes} s)`),
+      ].join(", ") || "aucune"
     }.`,
     `- Sources lues de la veille ou en échec : ${etatJson.lecturesEnEchec}.`,
     `- Enregistrements réduits (schéma) : ${rapportJour.reduits} ; en erreur : ${rapportJour.erreurs}.`,

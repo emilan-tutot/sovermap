@@ -68,6 +68,8 @@ export type ResultatCollecte = {
 class ClientParZone implements ClientDns {
   readonly id: string;
   readonly #zones: ParZone;
+  /** The zones already asked in this run: the first question of a zone also goes to its parents (the delegation). */
+  readonly #vues = new Set<string>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
@@ -79,7 +81,10 @@ class ClientParZone implements ClientDns {
   }
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
-    if (this.frein) await this.frein(nom, zone, false);
+    // A DS question, and the first question of a zone, go to its parents too.
+    const ouverture = type === "DS" || !this.#vues.has(zone);
+    this.#vues.add(zone);
+    if (this.frein) await this.frein(nom, zone, ouverture);
     await this.#zones.prendre(zone);
     try {
       return await this.base.demander(nom, type);

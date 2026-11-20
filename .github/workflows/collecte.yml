@@ -65,7 +65,7 @@ jobs:
           # A trustworthy measurement of today, kept for tomorrow but not published (stopped by the circuit breaker,
           # or a failed publication), also ends the day: a change of more than 2 % is confirmed by tomorrow's
           # measurement, never by the run of 09:47 (brief B.7). A failed publication is redone by « Re-run failed jobs ».
-          gardees=$(gh cache list --repo "$REPO" --key "collecte-veille-$DATE-" --json key --jq 'length' 2> /dev/null || echo 0)
+          gardees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-veille-$DATE-" --json key --jq 'length' 2> /dev/null || echo 0)
           echo "Mesures du jour gardées pour demain : ${gardees:-0}"
           if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
 
