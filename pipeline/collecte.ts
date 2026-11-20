@@ -14,7 +14,7 @@ export type OptionsCollecte = {
   nomsParSeconde: number;
   domainesParSeconde: number;
   parZone: number;
-  /** Names in flight at once (each one may wait for its domain to open). */
+  /** Names in flight at once (each one may wait for its domain to open, or for a slow server). */
   enVol: number;
   /** The domains' rate climbs from `depart` per second to `domainesParSeconde` (a cold cache never bursts). */
   montee: Montee | null;
@@ -43,7 +43,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   nomsParSeconde: 25,
   domainesParSeconde: 8,
   parZone: 2,
-  enVol: 64,
+  enVol: 128,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
@@ -198,16 +198,19 @@ export async function collecter(
     else resultat.spf.delete(domaine);
   };
 
+  // A domain opens at the domains' pace (its first questions go to its parents). Its measurement then runs on its own
+  // (hosts, SPF, slow servers can take seconds): its names go as soon as it has opened, never held behind it.
   const ouverts = new Map<string, Promise<void>>();
+  const mesuresDomaines: Promise<void>[] = [];
   const ouvrir = (domaine: string): Promise<void> => {
     const deja = ouverts.get(domaine);
     if (deja) return deja;
-    const promesse = cadenceDomaines.attendre().then(async () => {
+    const ouverture = cadenceDomaines.attendre().then(async () => {
       await options.frein?.(domaine, options.zoneDe(domaine), true);
-      await mesurerDomaine(domaine);
     });
-    ouverts.set(domaine, promesse);
-    return promesse;
+    ouverts.set(domaine, ouverture);
+    mesuresDomaines.push(ouverture.then(() => mesurerDomaine(domaine)));
+    return ouverture;
   };
 
   const mesurerUnNom = async (nom: string): Promise<void> => {
@@ -228,7 +231,7 @@ export async function collecter(
     await Promise.all(Array.from({ length: Math.min(options.enVol, file.length) }, ouvrier));
   };
 
-  // First pass: every name, in random order; each one opens its domain first.
+  // First pass: every name, in random order; each one opens its domain first; then the domains' measurements end.
   const ordre = melanger([...noms.keys()], options.aleatoire);
   await passe(
     ordre.map((nom) => async () => {
@@ -237,6 +240,7 @@ export async function collecter(
       await mesurerUnNom(nom);
     }),
   );
+  await Promise.all(mesuresDomaines);
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).
   for (let reprise = 1; reprise <= options.reprises; reprise += 1) {
