@@ -22,7 +22,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 
 | # | Source | Ce qu'on en tire | Licence ou conditions | Accès automatique | Décision |
 |---|---|---|---|---|---|
-| 1 | Liste des noms de domaine des organismes publics (DINUM, forge de l'ADULLACT) | La liste de référence à jour | etalab-2.0 (affichée sur la forge, relevé humain) | **Non** : robots.txt et anti-robots | En attente |
+| 1 | Liste des noms de domaine des organismes publics (DINUM, forge de l'ADULLACT) | La liste de référence à jour | etalab-2.0 (affichée sur la forge, relevé humain) | **Non** : robots.txt et anti-robots | **Retenue en relevé manuel** (le propriétaire, au plus une fois par trimestre) ; accès automatique en attente |
 | 2 | Copie archivée de cette liste (GitHub, Etalab) | 103 398 noms et leur type, au 11/12/2024 | Licence Ouverte 2.0 | Oui | **Retenue** (base datée) |
 | 3 | API Annuaire de l'administration (DILA) | `site_internet` des services | Licence Ouverte ; service API : licence non renseignée | **Non** : `Disallow: /api/` | Écartée comme canal |
 | 4 | Référentiel de l'organisation administrative de l'État (DILA) | 7 915 services, 1 135 noms d'hôtes, hiérarchie | Licence Ouverte 2.0 | Oui (fichier quotidien) | **Retenue** |
@@ -62,6 +62,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 39 | Rapports annuels des groupes | Confirmation des maisons mères | Faits seulement, aucune reproduction | Au cas par cas | **Retenue** (méthode) |
 | 40 | Liste SecNumCloud de l'ANSSI | Offres qualifiées, par société | Non vérifiée | **Non** : anti-robots | En attente (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
+| 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
 
 ## Constats qui valent pour tout le projet
 
@@ -116,8 +117,9 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
   - Le robots.txt (https://gitlab.adullact.net/robots.txt, HTTP 200, 3 230 octets) ferme aux robots : `/api/v*`, `/*/raw`, `/*/archive/`, `/*/repository/archive*`, `/*/*.git$` et `/*/*.git/*`.
   - Une page « Making sure you're not a bot! » (Anubis, preuve de travail) répond aux clients automatiques.
   - Date du dernier changement et nombre de domaines de la version actuelle : **non vérifiés**. Le propriétaire a lu « dernière synchronisation il y a environ un mois » le 18/11/2026.
-- **Décision : en attente.**
-  - Il faut une copie ouverte aux robots, par exemple une ressource lisible par l'API tabulaire de data.gouv.fr, ou l'accord de la DINUM.
+- **Décision : retenue en relevé manuel** (20/11/2026) ; **accès automatique : en attente.**
+  - Relevé du 20/11/2026 : fichier `domains.csv` de la branche `master` (commit `aeeec2e9cd70b5dbfe86620321e6958d807cb1d0`, fichiers du 19/11/2026), téléchargé dans son navigateur par le propriétaire ; colonnes lues d'abord (`name`, `http_status`, `https_status`, `SIREN`, `type`, `sources`, `script`) ; seules `name` et `type` sont gardées, la colonne `sources` (noms de contributeurs) n'est écrite nulle part. Copie nettoyée : `referentiels/listes/liste-dinum-2026-11-19.csv` (121 927 lignes lues, 121 869 noms).
+  - Pour un accès automatique, il faut une copie ouverte aux robots, par exemple une ressource lisible par l'API tabulaire de data.gouv.fr, ou l'accord de la DINUM.
   - Cette demande passera par une adresse de contact sur sovermap.com (plus tard).
   - D'ici là, la fiche 2 sert de base.
   - **Relevé manuel** (décision du propriétaire, 19/11/2026) : le propriétaire peut télécharger lui-même la liste à jour dans son navigateur, sous licence etalab-2.0, une fois par trimestre au plus. Chaque fichier est daté et versé dans les données (T3).
@@ -540,12 +542,27 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 - **Attribution à afficher** : aucune exigée. Par courtoisie : « Fond de carte : Natural Earth (domaine public) ».
 - **Décision : retenue.** Le fichier est copié dans le dépôt, pas téléchargé à chaque build.
 
+## F. Règles de calcul
+
+### 42. Public Suffix List (Mozilla et contributeurs)
+- **Producteur** : projet Public Suffix List, tenu par des bénévoles sous l'égide de la Mozilla Foundation.
+- **Adresse** : https://publicsuffix.org/list/public_suffix_list.dat (le fichier demande d'être pris là, et seulement là : « Please pull this list from, and only from https://publicsuffix.org/list/public_suffix_list.dat »).
+- **Ce qu'on en tire** : la règle qui donne le domaine enregistré d'un nom (`www.service.gouv.fr` → `service.gouv.fr`), l'unité que compte le chiffre (décision D1). Elle remplace la courte liste de suffixes de l'outil v0.
+- **Licence, mot pour mot** (en tête du fichier) : « This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. » (lu le 20/11/2026).
+  - La MPL 2.0 permet de modifier et de redistribuer le fichier, sous la même licence, en gardant ses mentions de licence (§ 3.4). La copie du dépôt garde l'en-tête de licence, la version, le commit d'origine, les marqueurs de sections et toutes les règles, sans les autres commentaires : ceux-ci nomment des contributeurs et donnent leurs adresses e-mail (aucune donnée personnelle gardée, brief du chantier 2, § 0.2). Les règles sont inchangées (test : même nombre de règles que l'original). L'original complet se retrouve par sa version et son commit.
+- **Limites de débit** : aucune chiffrée. Sovermap ne la télécharge pas à chaque collecte : une copie datée est épinglée dans `referentiels/psl/` et se met à jour par une PR (`pipeline/cli/epingler-psl.ts`).
+- **robots.txt** (https://publicsuffix.org/robots.txt, lu le 20/11/2026) : `Disallow: /images/` seulement.
+- **Téléchargement testé** : oui, le 20/11/2026 : HTTP 200, 342 725 octets, `Last-Modified: Thu, 19 Nov 2026 08:30:26 GMT` ; version `2026-11-19_08-30-20_UTC`, commit `f7796455091118a5617cc7588523b083a8223301`. Copie réduite : 149 382 octets.
+- **Données personnelles** : des noms et des adresses e-mail de contributeurs dans les commentaires ; écartés de la copie, jamais lus par la collecte.
+- **Attribution à afficher** : par courtoisie : « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
+- **Décision : retenue** (outil de calcul ; rien de la liste n'est republié dans les données, sinon la copie épinglée dans le code source).
+
 ## Attributions à afficher sur la page Données
 
 Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers utilisés. Aucune ne suggère un aval du producteur.
 
 **Exigées par la licence ou les conditions :**
-- **DINUM / Etalab** : « liste des noms de domaine des organismes publics, copie du 11/12/2024, Licence Ouverte 2.0 ».
+- **DINUM / Etalab** : « liste des noms de domaine des organismes publics, copie du 11/12/2024, Licence Ouverte 2.0 » ; et, pour la liste à jour (fiche 1) : « Source : DINUM, liste des noms de domaine des organismes publics, version du <date>, Licence Ouverte 2.0 ».
 - **DILA** : « Source : Service-Public.gouv.fr / DILA — Référentiel de l'organisation administrative de l'État, fichier <nom> du <date>, <adresse longue>, Licence Ouverte ».
 - **SIG** : « Observatoire de l'écosystème numérique de l'État – Sites internet, mise à jour du <date>, Licence Ouverte 2.0 ».
 - **Ministère de l'Enseignement supérieur** : « Principaux établissements d'enseignement supérieur, mis à jour le <date>, Licence Ouverte ».
@@ -556,4 +573,5 @@ Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers ut
 - registres Internet régionaux : « fichiers statistiques des registres Internet régionaux (RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC) » ;
 - « IP → AS : IPtoASN (iptoasn.com), PDDL 1.0 » ;
 - « Données LEI : GLEIF, copie du <date> », sans la marque GLEIF ;
-- « Fond de carte : Natural Earth (domaine public) ».
+- « Fond de carte : Natural Earth (domaine public) » ;
+- « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
