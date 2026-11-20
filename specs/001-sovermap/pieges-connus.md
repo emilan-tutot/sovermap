@@ -147,3 +147,16 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : ne formater que ce que l'on change, ou formater le fichier seul dans un commit à part ; relire `git diff` avant d'indexer.
 34. **Une étape de tournage qui porte deux mots-clés est lue selon le premier trouvé** (20/11/2026) : un glissement avec `"images": 54` était filmé comme une pause ; seul le contrôle image par image l'a montré (aucun mouvement « glisser » dans sa liste).
     - Parade : `filmer.ts` cherche les actions avant les pauses ; après tout changement d'un parcours, lire la liste des mouvements que donne `verifier-film.ts`.
+
+## Collecte (chantier 2, partie B)
+
+35. **Le Référentiel de la DILA ne met pas les ministères à la racine** (20/11/2026) : l'arbre lit « Administration centrale » › « Gouvernement (Premier ministre et ministères) » › les 20 ministères, avec « Autorités indépendantes » et « Institutions et juridictions » à côté. La racine d'un service n'est donc jamais son ministère.
+    - Parade : le ministère d'un service est son plus haut ancêtre (ou lui-même) du type « Administration centrale (ou Ministère) » (`pipeline/dila.ts`) ; ce sont les identifiants du SIG (`id_ministere`).
+36. **Les listes officielles hébergent des sites de communes chez des créateurs de sites** (20/11/2026) : e-monsite.com (252 noms), jimdo.com (221), wordpress.com (123)… Leur domaine enregistré est celui de la plateforme : sans précaution, des centaines de communes se fondraient en un seul « domaine ».
+    - Parade : `referentiels/plateformes-tierces.json` ; un nom qui en dépend est sa propre unité, hors du périmètre « État ».
+37. **Un motif privé du propriétaire peut se trouver dans une donnée publique** (20/11/2026) : le domaine d'une commune en contenait un ; `scan:prive` refuse la ligne.
+    - Parade : la ligne est écartée de la copie versée (2 noms, notés au `LISEZMOI`), jamais le garde-fou affaibli. La même question se posera en C.6 pour le fichier des communes.
+38. **La Public Suffix List nomme des contributeurs dans ses commentaires** (adresses e-mail comprises).
+    - Parade : la copie épinglée garde l'en-tête de licence, la version et les règles seulement (`reduireListeSuffixes`) ; un test vérifie qu'elle donne les mêmes règles et aucune adresse.
+39. **Une adresse `mailto:` passe pour un site si on lui ajoute `https://`** : `new URL("https://mailto:x@y.example")` lit « mailto » comme identifiant et `y.example` comme hôte.
+    - Parade : `hoteDuSite` refuse tout autre schéma, et toute adresse qui porte un identifiant ou un mot de passe.

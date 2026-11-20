@@ -131,8 +131,9 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
 - **Liste** : elle est tenue à la main, et chaque entrée cite la documentation du fournisseur.
 - **Conséquence** : le site est « diffusé par » ce CDN, et son hébergeur d'origine est « non observable ».
 
-### Couche 10 — La messagerie (MX), si la décision D3 l'ajoute
-- **Valeur** : les serveurs de messagerie du domaine, et la même chaîne (adresse, réseau, société, maison mère, pays).
+### Couche 10 — La messagerie (MX et SPF)
+- **Valeur** : les serveurs de messagerie du domaine, et la même chaîne (adresse, réseau, société, maison mère, pays) ; les expéditeurs autorisés par son enregistrement SPF (`v=spf1`), réduits à leurs AS, ses `include` et `redirect` suivis dans la limite de 10 recherches de la RFC 7208 (les macros ne sont jamais évaluées).
+- **Décision C2-1** (20/11/2026) : mesurée depuis la collecte v1, avec son propre chiffre, à part du chiffre-titre. Un MX nul (RFC 7505) se dit « nul », l'absence de MX « aucun ». Ce qu'elle montre et ce qu'elle ne montre pas sera écrit en méthode 0.3 (C.2) ; d'ici là, son chiffre est provisoire.
 - **À la main** : `Resolve-DnsName -Name impots.gouv.fr -Type MX -Server 9.9.9.9`, ou `dig MX impots.gouv.fr @9.9.9.9`.
 
 ## 5. Croisements et niveaux de confiance
@@ -183,7 +184,8 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
 
 - **Hystérésis** : un changement (un « déménagement ») n'est publié qu'après deux collectes successives concordantes.
 - **Disjoncteur** : si une collecte change plus de 2 % des classements, rien n'est publié, une alerte part, et l'état de la veille reste affiché. Ce seuil est provisoire : il sera justifié par la variation mesurée d'un jour à l'autre pendant les premières semaines de collecte.
-- **Domaines témoins** : un petit panel fixe, au comportement connu, est contrôlé à chaque collecte. Un écart bloque la publication.
+- **Domaines témoins** : un petit panel fixe, au comportement connu, est contrôlé à chaque collecte (`referentiels/temoins.json`) : le résolveur de la collecte, Quad9 et Cloudflare doivent tous retrouver chaque témoin tel qu'il est connu. Un écart bloque la publication.
+- **Échecs DNS** : au-delà de 2 % de noms en échec, rien n'est publié.
 - **Échecs** : plusieurs essais espacés. Un échec reste un échec, jamais un « pas de site ».
 - **Politesse** :
   - débit limité, et respect des conditions de chaque source ;
@@ -301,3 +303,4 @@ Vérifiés le 18/11/2026. Ces travaux sont cités pour situer Sovermap, pas copi
 |---------|------|------------|
 | 0.1 | 18/11/2026 | Première rédaction, éprouvée sur 21 noms réels. Provisoire. |
 | 0.2 | 19/11/2026 | Décisions D1 et corrections de l'ARRÊT 1 : noms internes exclus (§ 3), unité et périmètre (§ 3), contrôle de tous les domaines de l'État (§ 5), règle d'IPtoASN (§ 5), catégorie la plus éloignée (§ 6), agent utilisateur (§ 7). |
+| 0.2 (collecte v1) | 20/11/2026 | Sans changement de la règle du chiffre : couche 10 mesurée (C2-1) ; domaine enregistré par la Public Suffix List ; un nom hébergé sur une plateforme tierce (créateur de sites, réseau social) est sa propre unité ; le nom web d'un domaine (www. s'il est dans la liste, sinon l'apex) est ajouté aux noms mesurés s'il n'y est pas ; périmètre « État » provisoire : .gouv.fr et les sites du Référentiel de la DILA (C.5 le complètera) ; témoins et échecs DNS parmi les garde-fous (§ 7). |

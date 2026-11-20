@@ -294,7 +294,8 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
 - **Adresse** : https://iptoasn.com/data/ip2asn-combined.tsv.gz
 - **Ce qu'on en tire** : pour chaque plage d'adresses IPv4 et IPv6, l'AS d'origine, le pays d'enregistrement de l'AS (jamais un lieu) et sa description.
   - 719 149 lignes ; environ 86 900 AS.
-- **Licence, mot pour mot** : « Licensed under Public Domain (PDDL v1.0) » (pied de page de https://iptoasn.com/). robots.txt : `Allow: /`.
+- **Licence, mot pour mot** : « Licensed under Public Domain (PDDL v1.0) » (pied de page de https://iptoasn.com/). robots.txt (lecture du 18/11/2026) : `Allow: /`.
+- **robots.txt relu le 20/11/2026** (https://iptoasn.com/robots.txt, en entier) : un premier groupe `User-agent: *` permet tout (`Allow: /`, `Crawl-delay: 1`), mais le dernier groupe `User-agent: *`, commenté « Disallow heavy downloads for bots (they should use direct links) », ferme `Disallow: /data/*.gz$`. Les deux groupes se combinent (RFC 9309) : la règle la plus longue, celle qui ferme les fichiers `.gz`, l'emporte. **Le téléchargement automatique du fichier est donc interdit aux robots** ; le téléchargeur de la collecte l'a refusé (essai du 20/11/2026).
 - **Limites de débit** : aucune pour les fichiers. L'API publique est arrêtée depuis le 31/12/2020.
 - **Attribution à afficher** : aucune exigée. Par courtoisie : « IP → AS : IPtoASN (iptoasn.com), PDDL 1.0 ».
 - **Téléchargement automatique testé** : **oui**. HTTP 200, 10 955 454 octets, `last-modified` du 01/11/2026.
@@ -303,7 +304,7 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
   - le même AS pour 4 485 adresses ;
   - un AS différent pour 2 ;
   - et 513 adresses sont « non routées » pour IPtoASN.
-- **Décision : retenue**, comme source principale quotidienne.
+- **Décision : retenue**, comme source principale quotidienne. **Accès automatique fermé depuis au moins le 20/11/2026** : la façon de l'obtenir (relevé manuel daté, comme la fiche 1, ou une autre source pour la couche réseau) est une question posée au propriétaire au point 02 du chantier 2.
   - Son accord avec la table RIS **du jour** suffit pour le niveau « confirmé », quel que soit l'âge du fichier IPtoASN (décision du 19/11/2026).
   - La dernière copie datée est gardée, au cas où le projet s'arrêterait.
 

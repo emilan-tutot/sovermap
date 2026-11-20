@@ -75,6 +75,14 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
    - un index par organisme, par ministère et par société ;
    - le journal des changements ;
    - `etat.json`, qui porte la date, la version de la méthode et les sommes de contrôle.
+
+   **Ce que la partie B du chantier 2 a fixé** (20/11/2026, `pipeline/publication.ts`) :
+   - `noms/<aa>/<bb>.json` et `domaines/<aa>/<bb>.json` : le seau d'un enregistrement est fait des quatre premiers chiffres hexadécimaux du SHA-256 de son nom, si bien qu'il ne change jamais de fichier ; 256 entrées au plus par dossier, avec les sommes de contrôle de chaque dossier (`sommes.json`) ; un fragment de plus de 8 Ko arrête la collecte ;
+   - des valeurs stables et triées, écrites en JSON déterministe : ni heure ni TTL par nom (**écart à EX-02** : l'heure est dans `etat.json`, les TTL et les adresses exactes dans l'archive mensuelle), et, pour une adresse, son AS et sa plage d'IPtoASN, jamais l'adresse exacte (celles des CDN tournent chaque jour) ni le préfixe de RIS (source « en contrôle seulement ») ;
+   - les index : par AS, par exploitant (avec la liste des domaines de chacun), par pays, par organisme et par ministère (Référentiel de la DILA) ; les territoires viendront en C.6 ;
+   - les clés en français, comme le code (`"statut": "preparation"`, B.6) ; les noms anglais de D5 et F.1 viendront avec les fichiers ouverts de la partie F ;
+   - l'hystérésis porte sur tout le contenu d'un enregistrement : il ne change que si deux collectes de suite donnent le même nouveau contenu ; le journal ne garde que les changements d'hébergement (adresses, serveurs de noms, messagerie), jamais un passage par un échec ;
+   - les observations brutes de la veille (et ses fichiers sources) restent dans le cache des Actions, jamais publiées : elles servent au reclassement de la veille avec les règles du jour (B.7 bis) et au disjoncteur.
 3. **Lecture.** Le serveur du site lit ces fichiers publics, par `https://raw.githubusercontent.com/<compte>/sovermap/donnees/…`, sans clé :
    - mise en cache côté serveur (§ 11) ;
    - pages servies par le CDN de Vercel ;
@@ -94,6 +102,15 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
    - Une Release accepte 1 000 fichiers de moins de 2 Gio chacun, sans limite de taille totale ni de bande passante (docs.github.com, « About releases », lu le 18/11/2026).
 
 ## 5. Durée d'une collecte complète
+
+**Recalculé le 20/11/2026 (chantier 2, partie B), avec la messagerie (C2-1)** :
+- **Noms mesurés** : 105 728 (les deux listes réunies, 122 209 noms distincts, moins 30 157 noms internes ou techniques, plus les sites du Référentiel de la DILA et 507 noms web ajoutés), dans **41 720 unités** (domaines enregistrés, ou noms d'une plateforme tierce), dont 1 903 dans le périmètre « État ».
+- **Requêtes au résolveur** : A et AAAA par nom (≈ 212 000) ; NS, SOA, DS, CAA, MX et TXT par domaine (≈ 250 000) ; A et AAAA de chaque serveur de noms et de messagerie, une fois par hôte (**hypothèse** : 15 000 hôtes, ≈ 30 000) ; les recherches SPF, 10 au plus par domaine (**hypothèse** : ≈ 20 000). Total : **≈ 510 000 requêtes**.
+- **Contrôle à Quad9** (2 par seconde, en parallèle) : nom web et MX des 1 903 domaines « État », nom web de 3 % des autres, témoins, puis adresses des serveurs de noms et de messagerie de l'État : **≈ 10 000 requêtes**, soit environ 1 h 20 de temps propre, dont 15 à 20 min après la mesure.
+- **Débit** : 25 noms par seconde, et 8 domaines ouverts par seconde au plus (une seule demande de délégation par domaine nouveau aux serveurs d'un domaine de premier niveau) ; 2 questions simultanées par zone. Les ouvertures de domaines fixent le rythme : 41 720 ÷ 8 ≈ 1 h 27.
+- **Durée attendue** : environ 1 h 30 pour la première passe, 2 h avec les deux reprises (10 min d'attente chacune) et le contrôle des hôtes de l'État : **sous les 3 h** (CS-05). La première collecte complète le mesurera (B.11).
+
+Calcul d'origine (19/11/2026, sans la messagerie) :
 
 - **Noms à mesurer** : environ 96 000.
   - Ce sont les 90 803 noms publics de la liste, une fois écartés les noms internes ou techniques (`docs/methode.md` § 3).
@@ -140,14 +157,14 @@ Principe :
 
 | Source | Usage | Requêtes | Volume | Limite documentée (lue le 18/11/2026) |
 |---|---|---|---|---|
-| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5) | ≈ 322 000 par jour au résolveur, réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, mélange aléatoire des noms |
-| Quad9 | Contrôle : tous les domaines du périmètre « État », 3 % des autres, et les témoins | ≈ 6 000 par jour | — | Pas de plafond chiffré ; contact demandé avant un « large-scale DNS traffic » |
+| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5), messagerie comprise | ≈ 510 000 par jour au résolveur (recalcul du 20/11/2026), réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, mesuré chaque jour sur les journaux du résolveur (`etat.json`, `debitMaxParServeur`) ; mélange aléatoire des noms ; 8 domaines nouveaux par seconde au plus |
+| Quad9 | Contrôle : nom web et MX de tous les domaines du périmètre « État », 3 % des autres, les témoins, et les hôtes des serveurs de noms et de messagerie de l'État | ≈ 10 000 par jour, à 2 par seconde | — | Pas de plafond chiffré ; contact demandé avant un « large-scale DNS traffic » |
 | Cloudflare 1.1.1.1 | Contrôle (témoins) | ≈ 100 par jour | — | Aucune limite publiée |
 | IPtoASN | IP → AS | 1 fichier par jour | 10,9 Mo | Aucune ; fichiers faits pour cet usage |
 | RIS (riswhoisdump IPv4 et IPv6) | Confirmation de l'AS | 2 fichiers par jour | 7 Mo | Aucune écrite |
 | Fichiers de délégation des 5 registres | Pays d'enregistrement | 5 fichiers par jour | 46 Mo | Aucune écrite |
 | Fichiers « split » du RIPE | AS → organisation | 2 fichiers par semaine | 14,4 Mo | « insubstantial part » seulement (art. 4.5) |
-| Listes des CDN (Cloudflare, CloudFront, Fastly ; Azure chaque semaine) | Indicateur CDN | 4 par jour, plus 2 par semaine | 2,8 Mo par jour | Aucune écrite |
+| Listes des CDN (Cloudflare, CloudFront, Fastly ; Azure chaque semaine) | Indicateur CDN | 4 par jour, plus 2 par semaine | 2,8 Mo par jour | Aucune écrite. Partie B : Cloudflare (2 fichiers) et Fastly ; CloudFront et Azure avec C.3 |
 | Team Cymru (DNS) | Troisième avis sur l'AS | ≤ 100 par jour | — | Interface DNS conseillée pour un usage régulier |
 | RIPEstat | Contrôles | ≤ 140 par jour | — | Inscription au-delà de 1 000 par jour ; 8 requêtes simultanées par IP |
 | RDAP des registres | Titulaire d'un nouvel AS | ≤ 50 par jour | — | Usage raisonnable ; 3 connexions simultanées (RIPE) |
