@@ -13,7 +13,7 @@ import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { estPlage, type PlagesOfficielles, type ReferentielCdn } from "../cdn";
-import { collecter, POLITESSE } from "../collecte";
+import { collecter, type OptionsCollecte, POLITESSE } from "../collecte";
 import { ClientCadence, controler, planDeControle, type ReferentielTemoins, verifierTemoins } from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
@@ -53,8 +53,6 @@ import { lireZip } from "../zip";
 
 /** Point 02, Q2: confirmed breakdowns above 8 % of the domains, or up by more than 2 points in a day, stop it all. */
 const SEUIL_PANNES = 0.08;
-/** The brake engages at 8 questions within a second to one server, under the limit of 10 (brief B.3). */
-const SEUIL_FREIN = 8;
 const HAUSSE_PANNES = 0.02;
 /** Records built reduced (an error, or a value their schema refuses): above 0.1 % of all, nothing is published. */
 const SEUIL_REDUITES = 0.001;
@@ -240,11 +238,15 @@ function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson }
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Knot Resolver's debug lines, read from the container's logs while the collection runs (brief B.3). */
+/** The brake's waits, for the summary: how many questions waited, and for how long in all. */
+type Attentes = { ouvertures: number; questions: number; secondes: number };
+
 function suivreDebit(conteneur: string | undefined): {
-  frein: (() => Promise<void>) | undefined;
-  arreter: () => DebitServeurs | null;
+  frein: OptionsCollecte["frein"];
+  arreter: () => { debit: DebitServeurs | null; attentes: Attentes };
 } {
-  if (conteneur === undefined) return { frein: undefined, arreter: () => null };
+  const attentes: Attentes = { ouvertures: 0, questions: 0, secondes: 0 };
+  if (conteneur === undefined) return { frein: undefined, arreter: () => ({ debit: null, attentes }) };
   const compteur = new CompteurServeurs();
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -256,16 +258,22 @@ function suivreDebit(conteneur: string | undefined): {
     enErreur = true;
   });
   return {
-    // The brake (brief B.3, point 02): while one address already got SEUIL_FREIN questions within the current second,
-    // every new question waits (10 seconds at most, so a stalled log never stops the collection).
-    frein: async () => {
-      for (let i = 0; i < 40 && compteur.charge(Date.now()) >= SEUIL_FREIN; i += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
+    // The brake (brief B.3, point 02): a question that would go to a server already at SEUIL_FREIN questions within
+    // the current second waits, and every question waits at SEUIL_ARRET (debit-serveurs.ts); 10 seconds at most, so
+    // a stalled log never stops the collection.
+    frein: async (nom, zone, ouverture) => {
+      if (!compteur.freine(nom, zone, ouverture, Date.now())) return;
+      const debut = Date.now();
+      if (ouverture) attentes.ouvertures += 1;
+      else attentes.questions += 1;
+      for (let i = 0; i < 100 && compteur.freine(nom, zone, ouverture, Date.now()); i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
+      attentes.secondes += (Date.now() - debut) / 1000;
     },
     arreter: () => {
       enfant.kill();
-      return enErreur ? null : compteur.resultat();
+      return { debit: enErreur ? null : compteur.resultat(), attentes };
     },
   };
 }
@@ -418,7 +426,7 @@ async function principal(): Promise<number> {
     }
   };
   await Promise.all(Array.from({ length: 8 }, confirmer));
-  const debitServeurs = debit.arreter();
+  const { debit: debitServeurs, attentes: attentesFrein } = debit.arreter();
   for (const c of [knot, quad9, cloudflare]) c.fermer();
   const controles: Controles = {
     noms: new Map(
@@ -679,7 +687,16 @@ async function principal(): Promise<number> {
         ecarts: temoins.verdicts.filter((v) => !v.ok).map((v) => `${v.nom} (${v.resolveur})`),
       },
       controle: { resolveur: "quad9", noms: plan.noms.length + hotesEtat.length, mx: plan.mx.length },
-      debitMaxParServeur: debitServeurs,
+      debitMaxParServeur:
+        debitServeurs === null
+          ? null
+          : {
+              questions: debitServeurs.questions,
+              depassements: debitServeurs.depassements,
+              max: debitServeurs.max,
+              adresse: debitServeurs.adresse,
+              seconde: debitServeurs.seconde,
+            },
       disjoncteur: b.disjoncteur,
     },
     journal: { etatInitial: b.etatInitial, reglesChangees: b.reglesChangees, changements: b.changements.length },
@@ -709,6 +726,9 @@ async function principal(): Promise<number> {
       debitServeurs === null
         ? "non mesuré"
         : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
+    }.`,
+    `- Frein : ${attentesFrein.ouvertures} ouvertures de domaine et ${attentesFrein.questions} questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; zones dont un serveur a été le plus souvent chargé : ${
+      (debitServeurs?.coupesChaudes ?? []).map((c) => `${c.coupe} (${c.secondes} s)`).join(", ") || "aucune"
     }.`,
     `- Sources lues de la veille ou en échec : ${etatJson.lecturesEnEchec}.`,
     `- Enregistrements réduits (schéma) : ${rapportJour.reduits} ; en erreur : ${rapportJour.erreurs}.`,

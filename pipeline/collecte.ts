@@ -22,7 +22,11 @@ export type OptionsCollecte = {
    * Waited before every question: the collection slows down while an authoritative server got too many questions
    * within the current second (the resolver's logs, debit-serveurs.ts; brief B.3).
    */
-  frein?: () => Promise<void>;
+  /**
+   * The brake (brief B.3): resolves when a question about `nom`, in the registered zone `zone`, may go; `ouverture`:
+   * the first question of a new domain, which asks its parents for the delegation.
+   */
+  frein?: (nom: string, zone: string, ouverture: boolean) => Promise<void>;
   /**
    * No new attempt starts after this moment (milliseconds since 1970), so that the controls and the building of the
    * day still fit in the job's time limit (collecter.ts).
@@ -68,14 +72,14 @@ class ClientParZone implements ClientDns {
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
     parZone: number,
-    private readonly frein: (() => Promise<void>) | undefined = undefined,
+    private readonly frein: OptionsCollecte["frein"] = undefined,
   ) {
     this.id = base.id;
     this.#zones = new ParZone(parZone);
   }
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
-    if (this.frein) await this.frein();
+    if (this.frein) await this.frein(nom, zone, false);
     await this.#zones.prendre(zone);
     try {
       return await this.base.demander(nom, type);
@@ -172,7 +176,10 @@ export async function collecter(
   const ouvrir = (domaine: string): Promise<void> => {
     const deja = ouverts.get(domaine);
     if (deja) return deja;
-    const promesse = cadenceDomaines.attendre().then(() => mesurerDomaine(domaine));
+    const promesse = cadenceDomaines.attendre().then(async () => {
+      await options.frein?.(domaine, options.zoneDe(domaine), true);
+      await mesurerDomaine(domaine);
+    });
     ouverts.set(domaine, promesse);
     return promesse;
   };
@@ -224,6 +231,7 @@ export async function collecter(
     await passe([
       ...melanger(domainesEchoues, options.aleatoire).map((d) => async () => {
         await cadenceDomaines.attendre();
+        await options.frein?.(d, options.zoneDe(d), true);
         await mesurerDomaine(d);
       }),
       ...melanger(hotesEchoues, options.aleatoire).map((h) => async () => {

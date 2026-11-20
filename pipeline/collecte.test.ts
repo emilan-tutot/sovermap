@@ -127,18 +127,21 @@ describe("the scheduling of a collection", () => {
     expect(horloge.attentes.filter((ms) => ms === 10 * 60 * 1000)).toHaveLength(2);
   });
 
-  it("waits for the brake before every question", async () => {
-    let freinages = 0;
+  it("waits for the brake before every question, and before opening each domain", async () => {
+    const questions: string[] = [];
+    const ouvertures: string[] = [];
     const r = new ResolveurSimule(ZONE, zoneDe);
     await collecter(noms, r, {
       ...POLITESSE,
       zoneDe,
       horloge: fausseHorloge(),
-      frein: async () => {
-        freinages += 1;
+      frein: async (nom, zone, ouverture) => {
+        (ouverture ? ouvertures : questions).push(`${nom} ${zone}`);
       },
     });
-    expect(freinages).toBe(r.questions.length);
+    expect(questions).toHaveLength(r.questions.length);
+    expect(questions).toContain("www.mairie.example mairie.example");
+    expect([...ouvertures].sort()).toEqual([...new Set(noms.values())].sort().map((d) => `${d} ${zoneDe(d)}`));
   });
 
   it("opens the domains slowly at first: one per second, then faster", async () => {
