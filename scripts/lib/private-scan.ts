@@ -84,6 +84,21 @@ export function scanText(text: string, where: string, context: ScanContext): Fin
   return findings;
 }
 
+/**
+ * The one line a commit message may hold with GitHub's support address: Dependabot's sign-off, exactly (brief of
+ * chantier 2, A.1). Assembled at run time, so that this file itself holds no full address.
+ */
+export const DEPENDABOT_SIGNOFF = `Signed-off-by: dependabot[bot] <support${"@"}github.com>`;
+
+/** A commit message: the rules of any text, except that exact sign-off line (the same address elsewhere still fails). */
+export function scanCommitMessage(message: string, where: string, context: ScanContext): Finding[] {
+  const kept = message
+    .split(/\r?\n/)
+    .map((line) => (line === DEPENDABOT_SIGNOFF ? "" : line))
+    .join("\n");
+  return scanText(kept, where, context);
+}
+
 export type CommitIdentity = { authorName: string; authorEmail: string; committerName: string; committerEmail: string };
 
 /** Robots whose name and no-reply address may sign a commit (GitHub's merges, Actions, Dependabot). */
