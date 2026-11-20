@@ -97,11 +97,13 @@ const OUTILS = new Set([
 
 export type RaisonExclusion = "zone interne" | "environnement" | "outil technique";
 
-/** Why a name is internal or technical (never measured, never shown), or null for a public name. */
-export function raisonExclusion(name: string): RaisonExclusion | null {
+/**
+ * Why a name is internal or technical (never measured, never shown), or null for a public name. `registrable` is its
+ * registrable domain (the Public Suffix List's, in the collection; the short list of this file by default).
+ */
+export function raisonExclusion(name: string, registrable = domaineEnregistre(name)): RaisonExclusion | null {
   const n = normaliser(name);
   if (ZONES_INTERNES.some((zone) => n === zone || n.endsWith(`.${zone}`))) return "zone interne";
-  const registrable = domaineEnregistre(n);
   const sousDomaine = n === registrable ? [] : n.slice(0, -(registrable.length + 1)).split(".");
   const morceaux = sousDomaine.flatMap((label) => label.split(/[-_]/));
   if (morceaux.some((m) => ENVIRONNEMENTS.has(m))) return "environnement";

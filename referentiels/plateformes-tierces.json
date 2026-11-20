@@ -1,0 +1,24 @@
+{
+  "version": "2026-11-20",
+  "note": "Domaines de plateformes qui hébergent les sites ou les pages de leurs clients sous leur propre nom (créateurs de sites, blogs, réseaux sociaux). Un nom de la liste qui en dépend est sa propre unité, et n'entre jamais dans le périmètre « État ». Liste provisoire de la partie B, tirée des noms les plus fréquents des listes officielles hors des domaines publics ; revue en C.5.",
+  "domaines": [
+    "blog4ever.com",
+    "canalblog.com",
+    "dailymotion.com",
+    "e-monsite.com",
+    "facebook.com",
+    "instagram.com",
+    "jimdo.com",
+    "jimdofree.com",
+    "linkedin.com",
+    "over-blog.com",
+    "sitew.com",
+    "twitter.com",
+    "weebly.com",
+    "wifeo.com",
+    "wix.com",
+    "wordpress.com",
+    "x.com",
+    "youtube.com"
+  ]
+}
