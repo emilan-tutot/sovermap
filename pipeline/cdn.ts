@@ -92,7 +92,9 @@ export function detecterCdn(
         societe: f.societe,
         methode: "plage",
         niveau: "confirmé",
-        preuve: `plage ${plage} de la liste officielle (${officielles.date})`,
+        // No date in the proof: a record must stay the same from one day to the next (the hysteresis compares them);
+        // the list's date is in etat.json, with its source.
+        preuve: `plage ${plage} de la liste officielle`,
       };
     }
   }

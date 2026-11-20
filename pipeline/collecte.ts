@@ -23,7 +23,10 @@ export type OptionsCollecte = {
    * within the current second (the resolver's logs, debit-serveurs.ts; brief B.3).
    */
   frein?: () => Promise<void>;
-  /** No new attempt starts after this moment (milliseconds since 1970): the job always ends before its time limit. */
+  /**
+   * No new attempt starts after this moment (milliseconds since 1970), so that the controls and the building of the
+   * day still fit in the job's time limit (collecter.ts).
+   */
   echeance?: number;
   reprises: number;
   delaiRepriseMs: number;

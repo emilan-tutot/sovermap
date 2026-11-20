@@ -155,6 +155,18 @@ describe("the scheduling of a collection", () => {
     expect(ecarts.at(-1)).toBeCloseTo(125, 6);
   });
 
+  it("asks again a domain whose DS question failed, and keeps the DS unknown, never « no DNSSEC »", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["mairie.example DS"]));
+    const resultat = await collecter(new Map([["www.mairie.example", "mairie.example"]]), r, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+    });
+    // The first pass and its two attempts.
+    expect(r.questions.filter((q) => q === "mairie.example DS")).toHaveLength(3);
+    expect(resultat.domaines.get("mairie.example")).toMatchObject({ etat: "ok", echecs: ["DS"] });
+  });
+
   it("asks 13 name servers of a domain at most, however many it names", async () => {
     const nombreux: ZoneSimulee = {
       ...ZONE,

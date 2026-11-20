@@ -64,9 +64,21 @@ describe("the low-level DNS client", () => {
         ttl: 1,
         data: { flags: 0, tag: "iodef", value: "mailto:securite@site.example" },
       },
+      {
+        type: "CAA",
+        name: "site.example",
+        ttl: 1,
+        data: { flags: 0, tag: "issuewild", value: "AC2.example; accounturi=https://ac2.example/compte/1234" },
+      },
+      { type: "CAA", name: "site.example", ttl: 1, data: { flags: 0, tag: "issue", value: ";" } },
     ]);
     const lusCaa = lireReponse(Buffer.from(caa), 2, "site.example", "CAA", 1)?.reponse?.reponses ?? [];
-    expect(lusCaa.map((r) => r.donnee)).toEqual([{ type: "CAA", propriete: "issue", valeur: "ac.example" }]);
+    // Only the issuer's name: never a parameter (an account, a contact), never an iodef address.
+    expect(lusCaa.map((r) => r.donnee)).toEqual([
+      { type: "CAA", propriete: "issue", valeur: "ac.example" },
+      { type: "CAA", propriete: "issuewild", valeur: "ac2.example" },
+      { type: "CAA", propriete: "issue", valeur: "" },
+    ]);
     const txt = reponse(3, "site.example", "TXT", [
       { type: "TXT", name: "site.example", ttl: 1, data: ["v=spf1 ip4:192.0.2.0/24 -all"] },
       { type: "TXT", name: "site.example", ttl: 1, data: ["contact: securite@site.example"] },
@@ -125,6 +137,26 @@ describe("the low-level DNS client", () => {
       client.fermer();
       udp.close();
       tcp.close();
+    }
+  });
+
+  it("ends a question at once on a datagram that is not a DNS message (ERREUR, not a TIMEOUT)", async () => {
+    const resolveur = dgram.createSocket("udp4");
+    await new Promise<void>((ok) => resolveur.bind(0, "127.0.0.1", () => ok()));
+    resolveur.on("message", (q, client) => {
+      // The right id, then bytes that decode to nothing.
+      const illisible = Buffer.from([0, 0, 0xff, 0xff, 0xff]);
+      illisible.writeUInt16BE(dnsPacket.decode(q).id ?? 0, 0);
+      resolveur.send(illisible, client.port, client.address);
+    });
+    const client = new ClientUdp("essai", "127.0.0.1", resolveur.address().port, 10_000);
+    try {
+      const debut = performance.now();
+      expect((await client.demander("a.example", "A")).code).toBe("ERREUR");
+      expect(performance.now() - debut).toBeLessThan(5_000);
+    } finally {
+      client.fermer();
+      resolveur.close();
     }
   });
 

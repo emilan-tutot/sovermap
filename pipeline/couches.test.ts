@@ -95,6 +95,8 @@ describe("the layers v1", () => {
     const cdn = coucheAdresses(mesure("www.site.example", ["198.51.100.7"]), null, "hors État", avecPlages, "t");
     expect(cdn.cdn).toMatchObject({ id: "cdn-exemple", methode: "plage" });
     expect(JSON.stringify(cdn)).not.toContain("198.51.100.7");
+    // No date in the proof either: the record stays the same from one day to the next (the hysteresis compares them).
+    expect(JSON.stringify(cdn)).not.toContain("2026-11-20");
   });
 
   it("gives the description of an AS", () => {

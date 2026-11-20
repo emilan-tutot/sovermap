@@ -26,7 +26,10 @@ export class ResolveurSimule implements ClientDns {
     this.maxEnVol.set(z, Math.max(this.maxEnVol.get(z) ?? 0, enVol));
     await new Promise((resolve) => setTimeout(resolve, 1));
     this.#enVol.set(z, (this.#enVol.get(z) ?? 1) - 1);
-    if (this.echecs.has(nom)) return { code: "SERVFAIL", ad: false, reponses: [], duree: 1 };
+    // A failure for every question about a name (« nom »), or for one type only (« nom TYPE »).
+    if (this.echecs.has(nom) || this.echecs.has(`${nom} ${type}`)) {
+      return { code: "SERVFAIL", ad: false, reponses: [], duree: 1 };
+    }
     const reponses: Reponse["reponses"] = [];
     let courant = nom;
     for (let i = 0; i < 12; i += 1) {

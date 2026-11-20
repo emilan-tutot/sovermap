@@ -129,7 +129,8 @@ describe("the records of a day", () => {
     );
     expect(rapport).toEqual({ erreurs: 0, reduits: 1 });
     const n = etat.noms.get("www.ministere.example");
-    expect(n?.tronque).toBe(true);
+    expect(n?.reduit).toBe(true);
+    expect(n?.tronque).toBeUndefined();
     expect(valider(n, NOM)).toEqual([]);
     expect(etat.domaines.get("ministere.example")?.tronque).toBeUndefined();
   });

@@ -53,7 +53,10 @@ function principal(): void {
     date: string;
     noms: [string, MesureNom][];
   };
-  const exactes = new Map(observations.noms);
+  // The exact addresses come from the observations of the published day only: when the kept measurement is of
+  // another day (one stopped by the circuit breaker, or not published), the archive gives none rather than mix days.
+  const memeJour = observations.date === etat.date;
+  const exactes = new Map(memeJour ? observations.noms : []);
   const noms = lireFragments<EnregistrementNom>(donnees, "noms").sort((a, b) => (a.nom < b.nom ? -1 : 1));
   const domaines = lireFragments<EnregistrementDomaine>(donnees, "domaines").sort((a, b) =>
     a.domaine < b.domaine ? -1 : 1,
@@ -72,7 +75,7 @@ function principal(): void {
         avertissement,
         mois,
         etatDu: etat.date,
-        observationsDu: observations.date,
+        observationsDu: memeJour ? observations.date : null,
         noms: noms.map((n) => ({ ...n, adressesExactes: adresses(n.nom) })),
         domaines,
       }),
@@ -100,7 +103,10 @@ function principal(): void {
     }),
   ];
   writeFileSync(path.join(sortie, `donnees-${mois}.csv.gz`), gzipSync(`${lignes.join("\n")}\n`));
-  console.log(`archives : ${noms.length} noms, ${domaines.length} domaines (état du ${etat.date}).`);
+  console.log(
+    `archives : ${noms.length} noms, ${domaines.length} domaines (état du ${etat.date})` +
+      (memeJour ? "." : ` ; observations du ${observations.date} : sans les adresses exactes.`),
+  );
 }
 
 principal();

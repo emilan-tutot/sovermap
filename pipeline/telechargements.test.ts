@@ -74,6 +74,32 @@ describe("the day's downloads", () => {
     );
   });
 
+  it("takes a body its source does not give (an error page with status 200) as a failure: yesterday's copy serves", async () => {
+    const verifiee: Source[] = [
+      {
+        id: "plages",
+        fiche: 1,
+        url: "https://a.example/plages",
+        frequence: "jour",
+        verifier: (c) => {
+          if (!/^[0-9.]+\/\d+$/m.test(c.toString("utf8"))) throw new Error("aucune plage");
+        },
+      },
+    ];
+    const hier = temporaire();
+    await telechargerSources(faux({ "https://a.example/plages": "192.0.2.0/24\n" }), hier, null, new Date(), verifiee);
+    const aujourdhui = temporaire();
+    const r = await telechargerSources(
+      faux({ "https://a.example/plages": "<html>Erreur</html>" }),
+      aujourdhui,
+      hier,
+      new Date(),
+      verifiee,
+    );
+    expect(r.map((s) => `${s.id} ${s.etat}`)).toEqual(["plages de la veille"]);
+    expect(readFileSync(path.join(aujourdhui, "sources", "plages"), "utf8")).toBe("192.0.2.0/24\n");
+  });
+
   it("says « en échec » when there is no copy at all", async () => {
     const r = await telechargerSources(faux({}), temporaire(), null, new Date(), SOURCES);
     expect(r.map((s) => s.etat)).toEqual(["en échec", "en échec"]);

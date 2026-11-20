@@ -151,6 +151,44 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
     const b = bilan(etat(100, 3), etat(100, 0), etat(100, 0), false);
     expect(b.disjoncteur).toEqual({ compares: 100, changes: 3, part: 0.03 });
   });
+
+  it("compares layer by layer: a layer that fails on either day is not a change", () => {
+    const hier = etat(100, 0);
+    const jour = etat(100, 0);
+    // Today, the zones of 5 domains fail: their name servers' layer is undetermined, their addresses are compared.
+    for (let i = 0; i < 5; i += 1) {
+      const d = jour.domaines.get(`d${i}.example`) as EnregistrementDomaine;
+      jour.domaines.set(d.domaine, {
+        ...d,
+        zone: { ...d.zone, etat: "echec", echec: { code: "SERVFAIL", confirmePar: null } },
+      });
+    }
+    expect(bilan(jour, hier, hier, false).disjoncteur).toEqual({ compares: 100, changes: 0, part: 0 });
+  });
+
+  it("never compares a reduced record, and never publishes it in place of the published one", () => {
+    const publie = etat(10, 0);
+    const reduire = (e: Etat) => {
+      const d = e.domaines.get("d0.example") as EnregistrementDomaine;
+      const n = e.noms.get("www.d0.example") as EnregistrementNom;
+      e.domaines.set(d.domaine, { ...d, reduit: true });
+      e.noms.set(n.nom, {
+        ...n,
+        exploitants: [],
+        categorie: "non déterminé",
+        horsUE: null,
+        niveau: "non déterminé",
+        reduit: true,
+      });
+      return e;
+    };
+    // Two days in a row reduced: the published records stay, no change enters the journal, the breaker sees nothing.
+    const b = bilan(reduire(etat(10, 0)), reduire(etat(10, 0)), publie, false);
+    expect(b.etat.noms.get("www.d0.example")).toEqual(publie.noms.get("www.d0.example"));
+    expect(b.etat.domaines.get("d0.example")).toEqual(publie.domaines.get("d0.example"));
+    expect(b.changements).toEqual([]);
+    expect(b.disjoncteur).toEqual({ compares: 9, changes: 0, part: 0 });
+  });
 });
 
 describe("the figures", () => {

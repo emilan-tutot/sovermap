@@ -85,8 +85,9 @@ export const NOM: Schema = objet(
     niveau,
     controle: { ...objet({ resolveur: texte(60), accord: { type: "boolean" } }), type: ["object", "null"] },
     tronque: { enum: [true] },
+    reduit: { enum: [true] },
   },
-  ["tronque"],
+  ["tronque", "reduit"],
 );
 
 export const DOMAINE: Schema = objet(
@@ -130,8 +131,9 @@ export const DOMAINE: Schema = objet(
       },
     }),
     tronque: { enum: [true] },
+    reduit: { enum: [true] },
   },
-  ["tronque"],
+  ["tronque", "reduit"],
 );
 
 export const FRAGMENT_NOMS: Schema = {

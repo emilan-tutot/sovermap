@@ -6,6 +6,7 @@ import dgram from "node:dgram";
 import { randomInt } from "node:crypto";
 import net from "node:net";
 import * as dnsPacket from "dns-packet";
+import { estNomDns } from "./schemas";
 
 export type TypeRr = "A" | "AAAA" | "CNAME" | "NS" | "SOA" | "DS" | "CAA" | "MX" | "TXT";
 export type Code = "NOERROR" | "NXDOMAIN" | "SERVFAIL" | "REFUSED" | "TIMEOUT" | "ERREUR";
@@ -75,11 +76,17 @@ export function lireEnregistrement(rr: dnsPacket.Answer): Enregistrement | null 
         },
       };
     case "CAA": {
-      // « iodef », « contactemail » and « contactphone » may hold contacts: only the issuers are kept.
+      // « iodef », « contactemail » and « contactphone » may hold contacts: only the issuers are kept. An issuer's
+      // parameters (after « ; »: an account, a contact, RFC 8657 and 8659) are free text and never kept either: the
+      // value is the issuer's domain name, or empty (« no authority may issue »).
       const tag = rr.data.tag.toLowerCase();
-      return tag === "issue" || tag === "issuewild"
-        ? { proprietaire, ttl, donnee: { type: "CAA", propriete: tag, valeur: rr.data.value.slice(0, 255) } }
-        : null;
+      if (tag !== "issue" && tag !== "issuewild") return null;
+      const emetteur = (rr.data.value.split(";")[0] ?? "").trim().toLowerCase();
+      return {
+        proprietaire,
+        ttl,
+        donnee: { type: "CAA", propriete: tag, valeur: estNomDns(emetteur) ? emetteur : "" },
+      };
     }
     case "MX":
       return {
@@ -128,6 +135,16 @@ export function lireReponse(
   });
   const drapeaux = paquet as { flag_ad?: boolean; flag_tc?: boolean };
   return { reponse: { code, ad: drapeaux.flag_ad === true, reponses, duree }, tronquee: drapeaux.flag_tc === true };
+}
+
+/** Is this datagram a DNS message at all? */
+function lisible(message: Buffer): boolean {
+  try {
+    dnsPacket.decode(message);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 const DRAPEAUX = dnsPacket.RECURSION_DESIRED | dnsPacket.AUTHENTIC_DATA;
@@ -200,7 +217,13 @@ export class ClientUdp implements ClientDns {
         resolve(null);
       }, this.#delaiMs);
       this.#attente.set(id, (m) => {
-        const r = lireReponse(m, id, nom, type, Math.round(performance.now() - depart));
+        const r =
+          lireReponse(m, id, nom, type, Math.round(performance.now() - depart)) ??
+          // Not a DNS message at all: the question ends at once (ERREUR). A well-formed answer to another question (a
+          // late one that had the same id) is ignored, and the question keeps waiting.
+          (lisible(m)
+            ? null
+            : { reponse: { code: "ERREUR" as const, ad: false, reponses: [], duree: 0 }, tronquee: false });
         if (r === null) return false;
         clearTimeout(minuterie);
         this.#attente.delete(id);

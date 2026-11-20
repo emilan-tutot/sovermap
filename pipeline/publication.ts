@@ -36,6 +36,11 @@ export type EnregistrementNom = {
   controle: { resolveur: string; accord: boolean } | null;
   /** The record was shortened to stay within its size (borner.ts): its lists are partial. */
   tronque?: true;
+  /**
+   * The record could not be built today (an error, or a value its schema refuses): only its identity is given. Never
+   * compared (circuit breaker, journal), and never published in place of an earlier record (etat-du-jour.ts).
+   */
+  reduit?: true;
 };
 
 export type Hote = {
@@ -80,6 +85,11 @@ export type EnregistrementDomaine = {
   };
   /** The record was shortened to stay within its size (borner.ts): its lists are partial. */
   tronque?: true;
+  /**
+   * The record could not be built today (an error, or a value its schema refuses): only its identity is given. Never
+   * compared (circuit breaker, journal), and never published in place of an earlier record (etat-du-jour.ts).
+   */
+  reduit?: true;
 };
 
 export type Etat = { noms: Map<string, EnregistrementNom>; domaines: Map<string, EnregistrementDomaine> };
@@ -126,8 +136,11 @@ export type Couche = "adresses" | "serveursDeNoms" | "messagerie";
 const cles = (e: Exploitant[]) => [...new Set(e.map((x) => x.societe ?? x.preuve))].sort().join(",");
 
 export function signatures(d: EnregistrementDomaine, web: EnregistrementNom | undefined): Record<Couche, string> {
-  const adresses =
-    web === undefined || web.etat !== "ok"
+  // A reduced record says nothing about its layers: undetermined, never compared.
+  if (d.reduit) return { adresses: "nul", serveursDeNoms: "nul", messagerie: "nul" };
+  const adresses = web?.reduit
+    ? "nul"
+    : web === undefined || web.etat !== "ok"
       ? (web?.etat ?? "absent")
       : `${web.categorie}|${web.horsUE}|${cles(web.exploitants)}|${web.cdn?.id ?? ""}`;
   const ns = d.serveursDeNoms;
@@ -189,9 +202,16 @@ export function bilan(jour: Etat, veille: Etat | null, publie: Etat | null, regl
   // On a day of new rules, the published state is rebased on yesterday, classified with the new rules: nothing of the
   // rules' effect ever enters the journal.
   const base: Etat = reglesChangees && veille !== null ? veille : publie;
-  const garder = <T>(cle: string, aujourdhui: T, hier: Map<string, T> | undefined, publies: Map<string, T>): T => {
+  const garder = <T extends { reduit?: true }>(
+    cle: string,
+    aujourdhui: T,
+    hier: Map<string, T> | undefined,
+    publies: Map<string, T>,
+  ): T => {
     const avant = publies.get(cle);
     if (avant === undefined) return aujourdhui; // A name or domain new to the list.
+    // A record that could not be built today never replaces the published one.
+    if (aujourdhui.reduit && !avant.reduit) return avant;
     const v = hier?.get(cle);
     const texte = jsonStable(aujourdhui);
     return v !== undefined && jsonStable(v) === texte && jsonStable(avant) !== texte ? aujourdhui : avant;

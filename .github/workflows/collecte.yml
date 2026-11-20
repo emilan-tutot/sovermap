@@ -41,10 +41,13 @@ env:
   LIMITE_ESSAI: "8000"
 
 jobs:
-  # Is today already published? (The run of 09:47 UTC then does nothing.)
+  # Is today already done? (The run of 09:47 UTC then does nothing.)
   jour:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     outputs:
       date: ${{ steps.date.outputs.date }}
       faite: ${{ steps.publie.outputs.faite }}
@@ -59,7 +62,12 @@ jobs:
         run: |
           publie=$( (gh api "repos/$REPO/contents/etat.json?ref=donnees" --jq .content | base64 -d | jq -r '.date // ""') 2>/dev/null || true)
           echo "Dernier jour publié : ${publie:-aucun}"
-          if [ "$ESSAI" != "true" ] && [ "$publie" = "$DATE" ]; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
+          # A trustworthy measurement of today, kept for tomorrow but not published (stopped by the circuit breaker,
+          # or a failed publication), also ends the day: a change of more than 2 % is confirmed by tomorrow's
+          # measurement, never by the run of 09:47 (brief B.7). A failed publication is redone by « Re-run failed jobs ».
+          gardees=$(gh cache list --repo "$REPO" --key "collecte-veille-$DATE-" --json key --jq 'length' 2> /dev/null || echo 0)
+          echo "Mesures du jour gardées pour demain : ${gardees:-0}"
+          if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
 
   mesurer:
     needs: jour
@@ -158,7 +166,8 @@ jobs:
           if-no-files-found: error
 
       # Today becomes tomorrow's « yesterday » when the measurement is trustworthy (every guard green but, maybe, the
-      # circuit breaker: after a real change of more than 2 %, the next day confirms it), and only for a real collection.
+      # circuit breaker: after a real change of more than 2 %, tomorrow's measurement confirms it; the run of 09:47
+      # does not measure again a day kept here), and only for a real collection.
       - if: steps.collecte.outputs.veille == 'true' && env.ESSAI != 'true'
         run: |
           rm -rf veille
@@ -231,7 +240,7 @@ jobs:
 
   alerter:
     needs: [jour, mesurer, publier]
-    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.mesurer.result == 'failure' || needs.mesurer.result == 'cancelled' || needs.mesurer.outputs.publiable == 'false' || needs.publier.result == 'failure')
+    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.mesurer.result == 'failure' || needs.mesurer.result == 'cancelled' || needs.mesurer.outputs.publiable == 'false' || needs.publier.result == 'failure' || needs.publier.result == 'cancelled')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -251,10 +260,12 @@ jobs:
         run: |
           {
             if [ "$ESSAI" = "true" ]; then echo "**Essai** (déclenché exprès, rien n'a été publié, la série des jours n'est pas cassée)."; echo; fi
-            if [ "$PUBLICATION" = "failure" ]; then echo "**La publication a échoué** (envoi sur la branche donnees ou Release) : la mesure s'est bien passée."; echo; fi
+            publication_ratee=false
+            if [ "$PUBLICATION" = "failure" ] || [ "$PUBLICATION" = "cancelled" ]; then publication_ratee=true; fi
+            if [ "$publication_ratee" = true ]; then echo "**La publication a échoué ou a été interrompue** (branche donnees ou Release) : la mesure s'est bien passée. Pour la publier : Actions › cette exécution › « Re-run failed jobs »."; echo; fi
             if [ -f collecte/resume.md ]; then cat collecte/resume.md; else echo "La tâche de mesure a échoué avant de rendre son résumé."; fi
             echo
-            echo "L'état de la veille reste publié. Exécution : $RUN"
+            if [ "$publication_ratee" = true ]; then echo "Voir dans l'exécution ce qui a été envoyé. Exécution : $RUN"; else echo "L'état de la veille reste publié. Exécution : $RUN"; fi
           } > corps.md
           titre="Collecte bloquée"
           n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty")

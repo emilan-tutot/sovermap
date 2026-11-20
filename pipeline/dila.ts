@@ -39,8 +39,13 @@ export function hoteDuSite(adresse: string): string | null {
   }
 }
 
+const ID_VALIDE = /^[A-Za-z0-9-]{1,64}$/;
+
 /** Reads the JSON file of the Référentiel (`{ "service": [...] }`); `fichier` is its dated name, kept for attribution. */
-export function lireDila(json: string, fichier: string): ReferentielDila {
+export function lireDila(json: string, fichierBrut: string): ReferentielDila {
+  // The name comes from the archive: only its last part, and only a plain file name, is kept (it is published).
+  const dernier = fichierBrut.split("/").pop() ?? "";
+  const fichier = /^[A-Za-z0-9._-]{1,100}$/.test(dernier) ? dernier : "referentiel-dila.json";
   const brut: unknown = JSON.parse(json);
   if (!objet(brut) || !Array.isArray(brut.service)) throw new Error(`${fichier} : liste « service » attendue`);
   const lus = new Map<string, Omit<ServiceDila, "parent" | "ministere"> & { enfants: string[] }>();
@@ -48,7 +53,8 @@ export function lireDila(json: string, fichier: string): ReferentielDila {
     if (!objet(s)) continue;
     const id = texte(s.id);
     const nom = texte(s.nom);
-    if (id === null || nom === null) continue;
+    // Identifiers are short codes (UUIDs today): anything else is left out, so no record ever carries a long or odd one.
+    if (id === null || nom === null || !ID_VALIDE.test(id)) continue;
     const enfants = (Array.isArray(s.hierarchie) ? s.hierarchie : []).flatMap((h) =>
       objet(h) && h.type_hierarchie === "Service Fils" && texte(h.service) !== null ? [texte(h.service) as string] : [],
     );

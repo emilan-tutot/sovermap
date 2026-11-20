@@ -5,11 +5,53 @@
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { gunzipSync } from "node:zlib";
+import { lireDila } from "./dila";
 import type { Telechargeur } from "./sources";
+import { validerListeFastly } from "./valider";
+import { lireZip } from "./zip";
 
-export type Source = { id: string; fiche: number; url: string; frequence: "jour" | "semaine" };
+export type Source = {
+  id: string;
+  fiche: number;
+  url: string;
+  frequence: "jour" | "semaine";
+  /**
+   * Throws when the body is not what the source gives (an error page served with status 200, a cut file): the
+   * download then counts as failed, and yesterday's copy serves (plan § 13.4). Nothing malformed reaches the day.
+   */
+  verifier?: (corps: Buffer) => void;
+};
 
-const RIR = (id: string, url: string): Source => ({ id: `rir-${id}`, fiche: 21, url, frequence: "jour" });
+/** A gzip file that opens and is not empty. */
+const gzip = (corps: Buffer): void => {
+  if (gunzipSync(corps).length === 0) throw new Error("fichier gzip vide");
+};
+/** The Référentiel of the DILA: a zip that holds its JSON file of services. */
+const archiveDila = (corps: Buffer): void => {
+  const [nom, contenu] = [...lireZip(corps, (n) => n.endsWith(".json")).entries()][0] ?? [];
+  if (nom === undefined || contenu === undefined) throw new Error("aucun fichier JSON dans l'archive");
+  lireDila(contenu.toString("utf8"), nom);
+};
+/** A delegation file of a registry: lines « registry|country|asn|… ». */
+const delegations = (corps: Buffer): void => {
+  if (!/^[a-z]+\|[A-Z]{2}\|asn\|/m.test(corps.toString("latin1"))) throw new Error("aucune ligne d'AS");
+};
+/** A list of ranges, one per line. */
+const listePlages = (corps: Buffer): void => {
+  if (!/^[0-9a-f.:]+\/\d{1,3}$/im.test(corps.toString("utf8"))) throw new Error("aucune plage");
+};
+const listeFastly = (corps: Buffer): void => {
+  if (validerListeFastly(JSON.parse(corps.toString("utf8")) as unknown).length === 0) throw new Error("liste vide");
+};
+
+const RIR = (id: string, url: string): Source => ({
+  id: `rir-${id}`,
+  fiche: 21,
+  url,
+  frequence: "jour",
+  verifier: delegations,
+});
 
 export const SOURCES: readonly Source[] = [
   {
@@ -17,9 +59,22 @@ export const SOURCES: readonly Source[] = [
     fiche: 4,
     url: "https://echanges.dila.gouv.fr/OPENDATA/RefOrgaAdminEtat/FluxAnneeCourante/dila_refOrga_admin_Etat_fr_latest.zip",
     frequence: "jour",
+    verifier: archiveDila,
   },
-  { id: "ris-ipv4", fiche: 19, url: "https://www.ris.ripe.net/dumps/riswhoisdump.IPv4.gz", frequence: "jour" },
-  { id: "ris-ipv6", fiche: 19, url: "https://www.ris.ripe.net/dumps/riswhoisdump.IPv6.gz", frequence: "jour" },
+  {
+    id: "ris-ipv4",
+    fiche: 19,
+    url: "https://www.ris.ripe.net/dumps/riswhoisdump.IPv4.gz",
+    frequence: "jour",
+    verifier: gzip,
+  },
+  {
+    id: "ris-ipv6",
+    fiche: 19,
+    url: "https://www.ris.ripe.net/dumps/riswhoisdump.IPv6.gz",
+    frequence: "jour",
+    verifier: gzip,
+  },
   RIR("ripencc", "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest"),
   RIR("arin", "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest"),
   RIR("apnic", "https://ftp.apnic.net/stats/apnic/delegated-apnic-extended-latest"),
@@ -30,16 +85,36 @@ export const SOURCES: readonly Source[] = [
     fiche: 22,
     url: "https://ftp.ripe.net/ripe/dbase/split/ripe.db.aut-num.gz",
     frequence: "semaine",
+    verifier: gzip,
   },
   {
     id: "ripe-organisation",
     fiche: 22,
     url: "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
     frequence: "semaine",
+    verifier: gzip,
   },
-  { id: "cloudflare-ipv4", fiche: 27, url: "https://www.cloudflare.com/ips-v4", frequence: "jour" },
-  { id: "cloudflare-ipv6", fiche: 27, url: "https://www.cloudflare.com/ips-v6", frequence: "jour" },
-  { id: "fastly", fiche: 27, url: "https://api.fastly.com/public-ip-list", frequence: "jour" },
+  {
+    id: "cloudflare-ipv4",
+    fiche: 27,
+    url: "https://www.cloudflare.com/ips-v4",
+    frequence: "jour",
+    verifier: listePlages,
+  },
+  {
+    id: "cloudflare-ipv6",
+    fiche: 27,
+    url: "https://www.cloudflare.com/ips-v6",
+    frequence: "jour",
+    verifier: listePlages,
+  },
+  {
+    id: "fastly",
+    fiche: 27,
+    url: "https://api.fastly.com/public-ip-list",
+    frequence: "jour",
+    verifier: listeFastly,
+  },
 ];
 
 export type EtatSource = {
@@ -137,6 +212,7 @@ export async function telechargerSources(
       const r = await telechargeur.obtenir(s.url);
       if (r.statut !== 200) throw new Error(`HTTP ${r.statut}`);
       if (r.corps.length === 0 || r.corps.length > AU_PLUS) throw new Error(`taille ${r.corps.length}`);
+      s.verifier?.(r.corps);
       const derniere = r.entetes.get("last-modified");
       const meta: Meta = {
         date:

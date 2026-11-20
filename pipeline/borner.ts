@@ -40,6 +40,8 @@ export function bornerDomaine(d: EnregistrementDomaine): EnregistrementDomaine {
   const spf = d.messagerie.spf;
   const borne: EnregistrementDomaine = {
     ...d,
+    // At most 20 ministries (a domain named by services of many ministries keeps the first ones, sorted).
+    ministeres: d.ministeres.slice(0, 20),
     zone: {
       ...d.zone,
       ns: noms(d.zone.ns, 13),

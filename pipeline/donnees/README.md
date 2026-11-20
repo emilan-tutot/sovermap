@@ -14,7 +14,9 @@ Cette branche est écrite chaque jour par la collecte automatique de Sovermap (G
 - `journal/` : les changements d'hébergement confirmés par deux collectes concordantes, jour par jour. Un changement de liste, de référentiel ou de méthode n'y entre jamais.
 - `schemas/` : les schémas JSON des fragments et du journal.
 
-Le fragment d'un nom est `noms/<aa>/<bb>.json`, où `aabb` sont les quatre premiers chiffres hexadécimaux de l'empreinte SHA-256 du nom (de même pour `domaines/`). Les heures, les durées de vie (TTL) et les adresses exactes ne sont pas ici : elles iront dans les archives mensuelles (Releases `donnees-AAAA-MM`).
+Le fragment d'un nom est `noms/<aa>/<bb>.json`, où `aabb` sont les quatre premiers chiffres hexadécimaux de l'empreinte SHA-256 du nom (de même pour `domaines/`). Un fragment qui dépasserait 8 Ko est découpé en parties : `<bb>.json`, puis `<bb>.1.json`, `<bb>.2.json`…, la première disant combien il y en a (`parties`). Chaque dossier a ses sommes de contrôle (`sommes.json`). Les heures, les durées de vie (TTL) et les adresses exactes ne sont pas ici : elles iront dans les archives mensuelles (Releases `donnees-AAAA-MM`).
+
+Un enregistrement marqué `tronque` a des listes raccourcies (il dépassait 3 Ko). Un enregistrement marqué `reduit` n'a pas pu être construit ce jour-là : il ne donne que son identité, et il ne remplace jamais un enregistrement déjà publié.
 
 ## Méthode
 

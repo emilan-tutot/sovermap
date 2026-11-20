@@ -56,6 +56,8 @@ const SEUIL_PANNES = 0.08;
 /** The brake engages at 8 questions within a second to one server, under the limit of 10 (brief B.3). */
 const SEUIL_FREIN = 8;
 const HAUSSE_PANNES = 0.02;
+/** Records built reduced (an error, or a value their schema refuses): above 0.1 % of all, nothing is published. */
+const SEUIL_REDUITES = 0.001;
 
 /** The version of the records' building (couches.ts, etat-du-jour.ts): a change rebases the state like new rules. */
 const VERSION_CLASSEMENT = 1;
@@ -138,15 +140,7 @@ type Referentiels = ReturnType<typeof referentiels>;
 // a move of the hosting.
 function contexteDe(dossier: string, ref: Referentiels, risDuJour: boolean, iptoasn: string): ContexteV1 {
   const fichier = (id: string) => path.join(dossier, "sources", id);
-  const dateDe = (id: string) => {
-    try {
-      return (
-        (JSON.parse(readFileSync(`${fichier(id)}.meta.json`, "utf8")) as { date?: string }).date?.slice(0, 10) ?? ""
-      );
-    } catch {
-      return "";
-    }
-  };
+
   const texte = (id: string) => (existsSync(fichier(id)) ? readFileSync(fichier(id), "utf8") : "");
   const gz = (id: string) => (existsSync(fichier(id)) ? gunzipSync(readFileSync(fichier(id))).toString("utf8") : "");
   const plages: PlagesOfficielles = {};
@@ -157,12 +151,12 @@ function contexteDe(dossier: string, ref: Referentiels, risDuJour: boolean, ipto
     plages.cloudflare = {
       plages: cloudflare,
       source: "https://www.cloudflare.com/ips-v4 et /ips-v6",
-      date: dateDe("cloudflare-ipv4"),
+      date: "",
     };
   if (existsSync(fichier("fastly"))) {
     try {
       const fastly = validerListeFastly(JSON.parse(texte("fastly")) as unknown).filter(estPlage);
-      plages.fastly = { plages: fastly, source: "https://api.fastly.com/public-ip-list", date: dateDe("fastly") };
+      plages.fastly = { plages: fastly, source: "https://api.fastly.com/public-ip-list", date: "" };
     } catch {
       // A list of another shape is left out: the CDN is then recognised by its CNAME suffix or its AS only.
     }
@@ -355,10 +349,14 @@ async function principal(): Promise<number> {
   let tirage = echantillon(liste.noms.size);
   if (o.limite !== undefined) {
     const limite = Number(o.limite);
+    if (!Number.isInteger(limite) || limite < 1) {
+      throw new Error(`--limite : un nombre entier de noms, au moins 1 (reçu « ${o.limite} »)`);
+    }
     for (let nombre = limite; nombre > 0; nombre = Math.floor(nombre * 0.9)) {
       tirage = echantillon(nombre);
       if (tirage.noms.size <= limite) break;
     }
+    if (tirage.noms.size > limite) throw new Error(`--limite ${limite} : trop petite pour un nom et son nom web`);
   }
   const domainesMesures = tirage.domaines;
   const noms = tirage.noms;
@@ -378,7 +376,7 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: maintenant.getTime() + 200 * 60_000,
+      echeance: maintenant.getTime() + 150 * 60_000,
       zoneDe,
       suivi,
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
@@ -397,7 +395,10 @@ async function principal(): Promise<number> {
         }),
     ),
   ].sort();
-  const controleHotes = await controler(quad9, hotesEtat, []);
+  // The controls after the measurement stop at 205 minutes: what is left keeps its level without control (« probable »),
+  // and the job always has time to build and keep the day (it stops at 240 minutes).
+  const finControles = maintenant.getTime() + 205 * 60_000;
+  const controleHotes = await controler(quad9, hotesEtat, [], 8, finControles);
   const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
   // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
   // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
@@ -408,7 +409,7 @@ async function principal(): Promise<number> {
     (d) => mesures.domaines.get(d.domaine)?.etat === "echec" || mesures.noms.get(d.nomWeb)?.etat === "echec",
   );
   const confirmer = async () => {
-    for (let d = aConfirmer.shift(); d !== undefined; d = aConfirmer.shift()) {
+    for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finControles; d = aConfirmer.shift()) {
       const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
       const r = await quad9.demander(zoneEnEchec ? d.domaine : d.nomWeb, zoneEnEchec ? "NS" : "A");
       if (!ECHECS_DNS.has(r.code)) continue;
@@ -467,10 +468,11 @@ async function principal(): Promise<number> {
   for (const m of mesures.noms.values())
     if (m.etat === "echec") echecsParCode[m.echec ?? "ERREUR"] = (echecsParCode[m.echec ?? "ERREUR"] ?? 0) + 1;
   const tauxEchec = mesuresNoms.length === 0 ? 1 : echecs / mesuresNoms.length;
-  // The guard counts the units (the domains of decision D1): a domain fails when its zone or its web name fails. One
+  // The guard counts the units (the domains of decision D1): a domain fails when its zone, its mail exchangers' question
+  // or its web name fails. One
   // broken zone that holds hundreds of names of the list does not block the publication by itself.
   const unitesEnEchec = [...jour.domaines.values()].filter(
-    (d) => d.zone.etat === "echec" || jour.noms.get(d.nomWeb)?.etat === "echec",
+    (d) => d.zone.etat === "echec" || d.messagerie.etat === "echec" || jour.noms.get(d.nomWeb)?.etat === "echec",
   );
   const domainesEnEchec = unitesEnEchec.length;
   const pannesConfirmees = unitesEnEchec.filter(
@@ -575,6 +577,7 @@ async function principal(): Promise<number> {
     return schema === null ? [] : valider(JSON.parse(texte), schema).map((e) => `${chemin} ${e.chemin} : ${e.attendu}`);
   });
 
+  const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
   const gardes = [
     {
       nom: "témoins concordants",
@@ -606,6 +609,11 @@ async function principal(): Promise<number> {
         : b.disjoncteur.part === null
           ? "veille absente : sans objet"
           : `${b.disjoncteur.changes} sur ${b.disjoncteur.compares} (${(100 * b.disjoncteur.part).toFixed(2)} %)`,
+    },
+    {
+      nom: "fiches réduites sous 0,1 %",
+      ok: partReduites < SEUIL_REDUITES,
+      detail: `${rapportJour.reduits + rapportJour.erreurs} sur ${jour.noms.size + jour.domaines.size} (schéma refusé : ${rapportJour.reduits} ; erreur : ${rapportJour.erreurs})`,
     },
     { nom: "schémas valides", ok: erreursSchema.length === 0, detail: erreursSchema.slice(0, 5).join(" ; ") },
   ];

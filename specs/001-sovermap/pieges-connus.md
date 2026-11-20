@@ -160,3 +160,9 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : la copie épinglée garde l'en-tête de licence, la version et les règles seulement (`reduireListeSuffixes`) ; un test vérifie qu'elle donne les mêmes règles et aucune adresse.
 39. **Une adresse `mailto:` passe pour un site si on lui ajoute `https://`** : `new URL("https://mailto:x@y.example")` lit « mailto » comme identifiant et `y.example` comme hôte.
     - Parade : `hoteDuSite` refuse tout autre schéma, et toute adresse qui porte un identifiant ou un mot de passe.
+40. **Une seule mesure à la fois, et la place en attente se perd** (20/11/2026) : le groupe de concurrence `collecte-mesure` (`collecte.yml`) garde une mesure en cours et une seule en attente ; une nouvelle venue annule celle qui attendait. Un essai de PR lancé pendant qu'un autre tourne peut donc prendre la place de la mesure du jour qui attendait.
+    - Parade : jamais d'envoi sur une PR qui touche la collecte entre 03:00 et 07:30 UTC ni entre 09:30 et 11:30 UTC ; les essais de PR restent courts (`LIMITE_ESSAI`) ; une mesure annulée ouvre l'issue « Collecte bloquée », et celle de 09:47 refait le jour.
+41. **Une date dans une preuve casse l'hystérésis** (20/11/2026) : la date de la liste officielle d'un CDN changeait chaque jour dans la preuve ; deux mesures de suite ne donnaient donc jamais la même fiche, et la fiche publiée ne changeait plus.
+    - Parade : une fiche ne porte que des valeurs stables (plan § 4) ; les dates des sources sont dans `etat.json`.
+42. **Le dossier `node_modules` suit la dernière branche installée** : après un `npm install` sur une autre branche, `npm run check` ne juge plus la branche courante comme la CI.
+    - Parade : `npm ci` après chaque changement de branche dont le fichier de verrouillage diffère.

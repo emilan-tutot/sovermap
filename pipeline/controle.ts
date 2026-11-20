@@ -64,12 +64,16 @@ export type ResultatControle = {
   mx: Map<string, string[] | null>;
 };
 
-/** Asks the control resolver, a few questions in flight, at its own pace (the client is a ClientCadence). */
+/**
+ * Asks the control resolver, a few questions in flight, at its own pace (the client is a ClientCadence). No question
+ * starts after `echeance` (milliseconds since 1970): what is left stays without control.
+ */
 export async function controler(
   client: ClientDns,
   noms: readonly string[],
   mx: readonly string[],
   enVol = 8,
+  echeance = Number.POSITIVE_INFINITY,
 ): Promise<ResultatControle> {
   const resultat: ResultatControle = { resolveur: client.id, noms: new Map(), mx: new Map() };
   const taches: (() => Promise<void>)[] = [
@@ -87,7 +91,7 @@ export async function controler(
     }),
   ];
   const ouvrier = async () => {
-    for (let t = taches.shift(); t !== undefined; t = taches.shift()) await t();
+    for (let t = taches.shift(); t !== undefined && Date.now() < echeance; t = taches.shift()) await t();
   };
   await Promise.all(Array.from({ length: Math.min(enVol, taches.length) }, ouvrier));
   return resultat;

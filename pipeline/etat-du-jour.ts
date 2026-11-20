@@ -34,6 +34,20 @@ function assurer<T>(
   return reduit();
 }
 
+/** The reduced record, checked too: when even its identity fails its schema, its lists are emptied. */
+function reduitValide<T extends { provenances?: string[]; types?: string[]; ministeres?: string[] }>(
+  e: T,
+  schema: Parameters<typeof valider>[1],
+): T {
+  if (valider(e, schema).length === 0) return e;
+  return {
+    ...e,
+    ...(e.provenances === undefined ? {} : { provenances: [] }),
+    ...(e.types === undefined ? {} : { types: [] }),
+    ...(e.ministeres === undefined ? {} : { ministeres: [] }),
+  };
+}
+
 const INDETERMINE = { categorie: "non déterminé" as const, horsUE: null, niveau: "non déterminé" as const };
 
 export type Mesures = Pick<ResultatCollecte, "noms" | "domaines" | "hotes" | "spf">;
@@ -82,7 +96,7 @@ export function construireEtat(
       exploitants: [],
       ...INDETERMINE,
       controle: null,
-      tronque: true,
+      reduit: true,
     });
     const construire = () => {
       const c = coucheAdresses(m, controles.noms.get(entree.nom) ?? null, domaine.perimetre, contexte, heure);
@@ -104,7 +118,10 @@ export function construireEtat(
         controle: c.controle,
       });
     };
-    noms.set(entree.nom, assurer(construire, reduit, NOM, rapport));
+    noms.set(
+      entree.nom,
+      assurer(construire, () => reduitValide(reduit(), NOM), NOM, rapport),
+    );
   }
   const domaines = new Map<string, EnregistrementDomaine>();
   for (const d of [...liste.domaines.values()].sort((a, b) => (a.domaine < b.domaine ? -1 : 1))) {
@@ -126,7 +143,7 @@ export function construireEtat(
       zone: { etat: z.etat, echec: echecZone, ns: [], soa: null, ds: null, caa: null },
       serveursDeNoms: { hotes: [], ...INDETERMINE },
       messagerie: { etat: z.mxEtat, mx: [], hotes: [], ...INDETERMINE, spf: null },
-      tronque: true,
+      reduit: true,
     });
     const construire = () => {
       const ns = coucheHotes(z.ns, mesures.hotes, controles.noms, d.perimetre, contexte, heure);
@@ -178,7 +195,10 @@ export function construireEtat(
         },
       });
     };
-    domaines.set(d.domaine, assurer(construire, reduit, DOMAINE, rapport));
+    domaines.set(
+      d.domaine,
+      assurer(construire, () => reduitValide(reduit(), DOMAINE), DOMAINE, rapport),
+    );
   }
   return { noms, domaines };
 }
