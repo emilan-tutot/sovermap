@@ -95,6 +95,85 @@ Une case par point du brief. Une case cochée porte sa preuve. Les rapports cit�
 - [x] E.5 Recherche de la marque « Sovermap » (INPI, EUIPO), sans dépôt. Preuve : TMview (EUIPO, INPI et les autres offices) : aucune marque « sovermap » ; 7 marques voisines par la recherche approximative, aucune dans les classes 35, 38 ou 41 ; data.inpi.fr : 0 marque, 0 entreprise ; `journal-T1.md` (19/11/2026).
 - [x] E.5 bis Avant les relectures : outils de tournage, de contrôle des vidéos, de planches et de mesure sur l'image rangés dans `feat/t1-socle`, propres et sans donnée privée ; `pieges-connus.md` complété avec les pièges de T1 ; toutes les cases de T1 revérifiées. Preuve : `scripts/design/` (17 outils, commit `df2c668`), chacun lancé une fois sur la page d'attente et sur une copie des prototypes, avec les mesures de `journal-design.md` ; `pieges-connus.md`, pièges 28 à 34 (commit `d582ed9`) ; cases revérifiées le 20/11/2026 : chacune porte sa preuve.
 - [x] E.6 Relectures : `/code-review` (niveau high) et `/security-review` sur `main...feat/t1-socle`. Preuve : `/code-review` : 10 constats, tous vrais, corrigés avec leurs tests (commits `3c038c2`, `32f1891`, `7b1bdd4`, `626856c`) ; `/security-review` par un sous-agent neuf sur tout le diff (121 fichiers) : aucune faille de confiance haute, deux remarques sous le seuil listées au rapport ; `npm run check` vert (51 tests), e2e 12/12, CI verte ; `journal-T1.md` (20/11/2026).
-- [ ] E.7 Fusion : PR prête, CI verte, contrôles obligatoires, squash, `probe:prod`, production vérifiée, CodeQL. Preuve : `journal-T1.md` et `03_rapport.md` (cette case se coche au chantier suivant).
-- [ ] E.8 Ménage : branches, processus, dossiers temporaires, traces de Playwright, le reste d'`essais/` (les outils rangés restent), `echantillon/`, sauvegarde ; préversions et déploiements annulés ou en erreur devenus inutiles (dont 19tnii5d9), un par un, jamais une production réussie ; PR de Dependabot laissées ouvertes et listées ; `SOVERMAP_CAHIER.md` et `SOVERMAP_DA.html` rangés ; `MEGA_T1_sovermap.md` et `LANCEMENT_T1_sovermap.txt` supprimés en tout dernier, après `03_rapport.md`. Preuve : `journal-T1.md` et `03_rapport.md` (cette case se coche au chantier suivant).
-- [ ] Rapport final en trois blocs, copié dans `03_rapport.md`, avec l'adresse de production, la liste des suppressions, l'état final, le découpage de T2 à T11 en deux grands chantiers et la tenue de l'anglais. Preuve : `03_rapport.md` (cette case se coche au chantier suivant).
+- [x] E.7 Fusion : PR prête, CI verte, contrôles obligatoires, squash, `probe:prod`, production vérifiée, CodeQL. Preuve : `journal-T1.md` (20/11/2026, 00:05 UTC) : PR n° 1 fusionnée en squash le 20/11/2026, commit `95844e6` sur `main` ; CI verte (`check` 32 s, `e2e-public` 47 s) ; production Ready, `probe:prod` vert ; CodeQL activé, 0 alerte ; `03_rapport.md` § 1 (dossier du propriétaire). Case cochée au chantier 2 (A.3).
+- [x] E.8 Ménage : branches, processus, dossiers temporaires, traces de Playwright, le reste d'`essais/` (les outils rangés restent), `echantillon/`, sauvegarde ; préversions et déploiements annulés ou en erreur devenus inutiles (dont 19tnii5d9), un par un, jamais une production réussie ; PR de Dependabot laissées ouvertes et listées ; `SOVERMAP_CAHIER.md` et `SOVERMAP_DA.html` rangés ; `MEGA_T1_sovermap.md` et `LANCEMENT_T1_sovermap.txt` supprimés en tout dernier, après `03_rapport.md`. Preuve : `journal-T1.md` (20/11/2026, 00:07 et 00:15 UTC) : 5 déploiements inutiles supprimés un par un (ghysm5r3u, n14wncezb, 19tnii5d9, er6wyszhk, av9x2moei), seule la production reste ; branches : `main` et les 2 de Dependabot ; `essais/` (378 fichiers), `echantillon/`, `test-results/`, dossiers temporaires et sauvegarde effacés ; les deux fichiers du MEGA de T1 supprimés en dernier ; `03_rapport.md` § 1. Case cochée au chantier 2 (A.3).
+- [x] Rapport final en trois blocs, copié dans `03_rapport.md`, avec l'adresse de production, la liste des suppressions, l'état final, le découpage de T2 à T11 en deux grands chantiers et la tenue de l'anglais. Preuve : `03_rapport.md` du 20/11/2026 (dossier du propriétaire) : « Fait et prouvé », « Ce que tu dois faire », « Ce qui reste », avec ces cinq éléments. Case cochée au chantier 2 (A.3).
+
+## C2 — Les vraies données et le vrai site (T2 à T6)
+
+Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.md` § 15. Une case qui ne se prouve qu'après une fusion se coche dans la PR suivante ; après la dernière fusion, sa preuve va au rapport et la case se coche au chantier 3.
+
+### Départ
+- [x] Prérequis : session non administrateur, `main` = `95844e6`, à jour et propre, CI de `main` verte, `probe:prod` vert, `gh` et la CLI Vercel connectés, Edge répond. Preuve : `journal-C2.md` (20/11/2026, 02:56 UTC, dossier du propriétaire).
+- [x] Message unique au propriétaire (liste officielle des domaines, liste SecNumCloud, logo facultatif, double authentification de Vercel). Preuve : `journal-C2.md` (20/11/2026, 03:08 UTC).
+
+### Partie A — Départ propre (`feat/c2-depart`)
+- [ ] A.1 `scan:prive` accepte exactement la ligne de signature de Dependabot dans un message de commit, et rien d'autre (tests) ; puis la PR n° 3 (ESLint 10) fusionnée après `@dependabot rebase`, CI verte et lecture des notes de version ; la PR n° 2 (TypeScript 7) fermée avec une phrase ; puis `feat/c2-dependabot` : plus de montée majeure proposée.
+- [x] A.2 Le crochet d'arrêt lit le nouveau nom d'un fichier renommé (essai avec un fichier renommé, diff au rapport). Preuve : `.claude/hooks/stop-check.mjs` ; essai du 20/11/2026 (`journal-C2.md`, 04:10 UTC) : un fichier suivi renommé par `git mv`, avec une faute ESLint (`no-explicit-any`) : sortie 0 avant la correction, sortie 2 après, la faute signalée sur le nouveau nom ; essai annulé.
+- [x] A.3 Cases de T1 (E.7, E.8, rapport) cochées avec leurs preuves ; cette section recopiée. Preuve : ce fichier.
+- [x] A.4 `CLAUDE.md` et mémoire : les points ; le DNS seulement ; le registre d'abord ; jamais « société » pour un organisme public ; la règle de la porte. Preuve : `CLAUDE.md` (70 lignes) ; cinq fiches de mémoire du projet (points, porte de la production, DNS seulement, registre d'abord, organisme public).
+- [ ] A.5 Le logo, s'il est déposé : lisible à 16 px, icônes tirées (onglet, écran d'accueil, image de partage) ; sinon rien.
+- [ ] A.6 La porte de la production : fermée sauf `SITE_PUBLIC=open` ; liste blanche à un seul endroit ; `probe:prod` et des tests e2e sur une liste d'adresses, une adresse réelle par famille.
+
+### Partie B — T2, la collecte quotidienne (`feat/c2-collecte`)
+- [ ] B.1 Pipeline v1 : la liste de référence (copie du 11/12/2024, liste à jour, compléments), provenance et dates par nom, exclusions, domaine enregistré par la Public Suffix List datée et épinglée.
+- [ ] B.2 Requêtes par Knot Resolver (image épinglée par empreinte, en cache) : A, AAAA, CNAME ; NS, SOA sans RNAME, DS, CAA ; MX, adresses des MX, SPF (couche 10).
+- [ ] B.3 Politesse : noms mélangés, 25 noms par seconde, 2 requêtes simultanées par zone, 10 par seconde par serveur faisant autorité (mesuré), 2 nouvelles tentatives.
+- [ ] B.4 Contrôles : Quad9 (périmètre « État », 3 % des autres, témoins), Cloudflare (témoins) ; pilote ECS du point de mesure.
+- [ ] B.5 Réseau : IPtoASN et RIS du jour (« confirmé »), Team Cymru, fichiers de délégation, fichiers « split » du RIPE, listes des CDN.
+- [ ] B.6 Publication dans la branche orpheline `donnees` (fragments, index, journal, `etat.json`, README), croissance maîtrisée, aucun déploiement ni aucune exécution d'Actions né d'un envoi, règle de la branche.
+- [ ] B.7 Garde-fous avant publication (témoins, échecs, disjoncteur, schéma) et issue « Collecte bloquée ».
+- [ ] B.7 bis Un changement de règles n'est pas un déménagement (veille reclassée).
+- [ ] B.8 Workflows `collecte.yml`, `fraicheur.yml`, `archives.yml`, épinglés et aux droits minimaux.
+- [ ] B.9 Lecture par le serveur du site (cache, état de la veille, journaux des échecs).
+- [ ] B.9 bis Canal de secours : la Release `donnees-courant`.
+- [ ] B.10 Essais : 200 noms au plus hors des Actions (test) ; première collecte complète sur les runners.
+- [ ] B.11 Preuves : première collecte publiée (durée, échecs, couverture, chiffres par couche) ; disjoncteur et fraîcheur déclenchés exprès ; jours publiés de suite.
+- [ ] B.12 `plan.md`, `pieges-connus.md` et README à jour.
+
+### Partie C — T3, référentiels, périmètre et données en plus (`feat/c2-referentiels`)
+- [ ] C.1 AS → exploitant → maison mère ultime → pays, deux sources datées par ligne, 95 % des adresses « État » en « confirmé ».
+- [ ] C.2 Méthode 0.3 (C2-4 et son effet chiffré, relais de sécurité, couche 10, qualifications, territoires, leçons des collectes).
+- [ ] C.3 `referentiels/cdn.yaml` complet.
+- [ ] C.4 Qualifications : SecNumCloud (relevé daté), HDS.
+- [ ] C.5 Le périmètre : liste à jour versée par PR, périmètre « État ».
+- [ ] C.6 Les territoires : annuaire local, codes officiels, rattachements, fond de carte.
+- [ ] C.7 Pays et libellés (`referentiels/pays.yaml`, noms anglais).
+- [ ] C.8 Encore plus de données, légalement (registre d'abord).
+- [ ] C.9 Contre-vérification de 30 domaines (`docs/contre-verification.md`).
+- [ ] C.10 Preuves : deux sources datées par ligne (test), 95 % « confirmé », part « non déterminé », contre-vérification.
+
+### Partie D — T4, le vrai site (`feat/c2-site-…`)
+- [ ] D.1 Le site complet dans les préversions protégées et en local ; la production derrière la porte.
+- [ ] D.2 Les pages : Atlas, pays, Radiographie, ministères, exploitants, territoires, démarches (si C.8), journal, recherche, qualité et fraîcheur.
+- [ ] D.3 Le design (`DESIGN.md`) et les cinq corrections des vidéos de Brume douce.
+- [ ] D.4 Vitesse et coûts (budgets, poids, cache, projection des quotas).
+- [ ] D.5 Sécurité (aucun tiers, CS-09 ; essai de `experimental.sri`).
+- [ ] D.6 Accessibilité (WCAG 2.2 AA, axe, alternatives en texte).
+- [ ] D.7 Fondations du référencement (`docs/referencement.md`).
+- [ ] D.8 Tests (e2e de chaque type de page, unitaires, contrôles D.4 de T1).
+
+### Partie E — T5, les textes et les pages légales (`feat/c2-textes`)
+- [ ] E.1 Les pages de texte, datées et sourcées.
+- [ ] E.2 Le droit, revérifié (`docs/juridique.md`).
+- [ ] E.3 L'article 50 du règlement sur l'IA.
+- [ ] E.4 La fiche des options pour l'identité de l'éditeur.
+- [ ] E.5 La relecture du propriétaire (`textes.md`, à un point).
+- [ ] E.6 Preuves (test des dates et des sources de chaque page de texte).
+
+### Partie F — T6, les données ouvertes (`feat/c2-donnees-ouvertes`)
+- [ ] F.1 La page Données (CSV, JSON, schéma, licences, attributions, sommes de contrôle).
+- [ ] F.2 Les archives mensuelles (pre-release jusqu'à l'ouverture).
+- [ ] F.3 Les contrôles (schéma, aucune donnée personnelle, rien d'une source « en contrôle seulement »).
+- [ ] F.4 Preuves.
+
+### Parties G et H — Vérifications et fin
+- [ ] G.1 Build de production local avec les données du jour, puis la préversion dans Edge.
+- [ ] G.2 Après la dernière fusion : CI de `main` verte, `probe:prod` vert.
+- [ ] G.3 Les données (jours de suite, durée, échecs, essais, couverture, parts, contre-vérification, taille ajoutée par jour).
+- [ ] G.4 Les coûts (Actions, Vercel, déploiements, taille du dépôt et de `donnees`).
+- [ ] H.1 Documents et mémoire à jour.
+- [ ] H.2 Propreté (branches, processus, dossiers, code mort, Vercel, issues d'essai, dossier du chantier).
+- [ ] H.3 Les deux fichiers du brief supprimés de Téléchargements, après `rapport-C2.md`.
+- [ ] Les points avec le propriétaire (`points\point-NN`, réponses recopiées dans `consignes-point-NN.md`).
+- [ ] Rapport final en trois blocs, copié dans `rapport-C2.md`.

@@ -357,7 +357,7 @@ Sources :
 |---|---|---|
 | **D1** Chiffre-titre et périmètre | a2 (a1 publié comme sous-chiffre), b2, c1, d1, e1, et la définition proposée | La catégorie « Europe hors UE » reste visible. Le chiffre ne compte que le « confirmé » : il se lit « au moins X % », avec à côté la part hors UE au niveau « probable » et la part « non déterminé ». |
 | **D2** Chaîne de Sovermap | Option 0 | Page « Sovermap passé à sa propre radiographie » ; réexamen en T9 ; option 1 (DNS européen) gardée ouverte, décision en T8. |
-| **D3** Couches de la V1 | Le web seul | La messagerie (MX) en V2. |
+| **D3** Couches de la V1 | Le web seul | La messagerie (MX) en V2. **Modifiée le 20/11/2026 (C2-1)** : la messagerie entre dans le chantier 2, avec son propre chiffre. |
 | **D4** Licences | B | Code sous EUPL 1.2 ; données sous Licence Ouverte 2.0 ; titulaire « Les contributeurs de Sovermap ». |
 | **D5** Anglais | Après l'ouverture | Chantier T11, en dernier, après l'ouverture ; les autres chantiers gardent leur numéro (§ 17). |
 | **D6** Identité publique | A | Dépôt public sous le compte actuel, Vercel relié au dépôt. Règles de `scan:prive` ci-dessous. |
@@ -391,6 +391,14 @@ Sources :
 - **Couleurs de la 3D** : la conversion des couleurs vers l'écran (sRGB) s'applique partout ; les jetons de Brume sont recalés pour garder l'aspect affiché (écart OKLab de 0,02 au plus, mesuré sur l'image).
 - **Autonomie** : une règle durable entre dans `CLAUDE.md` (les actions du projet qui se refont ou se rattrapent se décident seules et se notent au journal ; ce qui est irréversible ou hors du projet se regroupe en un seul message, à un arrêt).
 - **Pour la suite** (à noter seulement) : les notes de l'ARRÊT 2 bis restent valables. Retouche : aux points des grands chantiers, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement.
+
+### Décisions du propriétaire (chantier 2, 20/11/2026)
+
+- **C2-1 — La messagerie entre dans le chantier 2** (D3 modifiée). Couche 10 de la méthode : les serveurs de messagerie (MX) et les expéditeurs autorisés (SPF), avec la même chaîne (adresse, réseau, exploitant, maison mère, pays). Elle a son propre chiffre, affiché à côté ; elle n'entre pas dans le chiffre-titre.
+- **C2-2 — Les territoires** : les sites des collectivités se rangent aussi par région, département et commune (ou groupement), avec une carte de France.
+- **C2-3 — Les dépendances** : ESLint 10 fusionné quand tout est vert ; TypeScript 7 attend que `typescript-eslint` l'accepte. Ensuite, Dependabot ne propose plus de montée de version majeure ; les majeures se regardent au début de chaque chantier.
+- **C2-4 — La règle de l'ARRÊT 2 (cas Imperva)** : un domaine compte comme dépendant si la société qui le sert **ou** sa maison mère ultime a son siège hors de l'UE (texte vérifié dans les consignes de l'ARRÊT 2 du 19/11/2026). La définition du chiffre-titre (D1) change en conséquence avec la méthode 0.3 (chantier 2, partie C), qui en publie l'effet chiffré.
+- **La production** reste sur la page d'attente jusqu'à l'ouverture (chantier 3), derrière la porte de la production (spec, EX-23 bis).
 
 Ci-dessous, les options étudiées pour chaque décision, avec leurs effets. Les recommandations datent du 18/11/2026.
 
