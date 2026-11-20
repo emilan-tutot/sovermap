@@ -18,7 +18,6 @@ export const SOURCES: readonly Source[] = [
     url: "https://echanges.dila.gouv.fr/OPENDATA/RefOrgaAdminEtat/FluxAnneeCourante/dila_refOrga_admin_Etat_fr_latest.zip",
     frequence: "jour",
   },
-  { id: "iptoasn", fiche: 18, url: "https://iptoasn.com/data/ip2asn-combined.tsv.gz", frequence: "jour" },
   { id: "ris-ipv4", fiche: 19, url: "https://www.ris.ripe.net/dumps/riswhoisdump.IPv4.gz", frequence: "jour" },
   { id: "ris-ipv6", fiche: 19, url: "https://www.ris.ripe.net/dumps/riswhoisdump.IPv6.gz", frequence: "jour" },
   RIR("ripencc", "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest"),
@@ -47,7 +46,7 @@ export type EtatSource = {
   id: string;
   fiche: number;
   url: string;
-  etat: "du jour" | "de la semaine" | "de la veille" | "en échec";
+  etat: "du jour" | "de la semaine" | "de la veille" | "relevé manuel" | "en échec";
   /** The copy's date: its Last-Modified header, else the day it was downloaded. */
   date: string | null;
   octets: number;
@@ -58,6 +57,42 @@ type Meta = { date: string; telecharge: string; octets: number; sha256: string }
 
 const AU_PLUS = 300 * 1024 * 1024;
 const JOUR = 24 * 60 * 60 * 1000;
+
+/**
+ * A source surveyed by hand (IPtoASN, whose files are closed to robots, docs/sources.md card 18): the owner's copy,
+ * dated by its survey (`<name>-AAAA-MM-JJ.<ext>`), reaches the runners through a release of the repository and is put
+ * among the day's sources; never downloaded from its producer by the collection.
+ */
+export function releverManuel(
+  travail: string,
+  id: string,
+  fiche: number,
+  fichier: string,
+  maintenant: Date,
+): EtatSource {
+  const releve = /-(\d{4}-\d{2}-\d{2})\.[a-z.]+$/.exec(path.basename(fichier))?.[1];
+  if (releve === undefined) throw new Error(`${fichier} : nom sans date de relevé (-AAAA-MM-JJ)`);
+  const corps = readFileSync(fichier);
+  const dossier = path.join(travail, "sources");
+  mkdirSync(dossier, { recursive: true });
+  const meta: Meta = {
+    date: `${releve}T00:00:00.000Z`,
+    telecharge: maintenant.toISOString(),
+    octets: corps.length,
+    sha256: createHash("sha256").update(corps).digest("hex"),
+  };
+  writeFileSync(path.join(dossier, id), corps);
+  writeFileSync(path.join(dossier, `${id}.meta.json`), `${JSON.stringify(meta)}\n`);
+  return {
+    id,
+    fiche,
+    url: `relevé manuel du ${releve}`,
+    etat: "relevé manuel",
+    date: meta.date,
+    octets: meta.octets,
+    sha256: meta.sha256,
+  };
+}
 
 /**
  * Downloads every source into `travail/sources/` (a file and its `.meta.json`). `veille` is the folder of the last

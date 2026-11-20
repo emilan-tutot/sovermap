@@ -111,9 +111,16 @@ jobs:
             git worktree add --detach publie FETCH_HEAD
           fi
 
+      # IPtoASN is surveyed by hand (its files are closed to robots, docs/sources.md card 18): the latest copy comes
+      # from the release « sources-iptoasn » of this repository, never from iptoasn.com.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download sources-iptoasn --repo "$GITHUB_REPOSITORY" --pattern 'ip2asn-combined-*.tsv.gz' --dir releves || true
       - id: collecte
         run: |
           args=(--travail travail --veille veille --conteneur knot)
+          releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
+          if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
           if [ "$ESSAI" = "true" ]; then args+=(--essai --limite 200 --delai-reprise-minutes 1); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi

@@ -304,7 +304,11 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
   - le même AS pour 4 485 adresses ;
   - un AS différent pour 2 ;
   - et 513 adresses sont « non routées » pour IPtoASN.
-- **Décision : retenue**, comme source principale quotidienne. **Accès automatique fermé depuis au moins le 20/11/2026** : la façon de l'obtenir (relevé manuel daté, comme la fiche 1, ou une autre source pour la couche réseau) est une question posée au propriétaire au point 02 du chantier 2.
+- **Décision : retenue en relevé manuel par le propriétaire** (réponse au point 02 du chantier 2, 20/11/2026). La collecte ne télécharge jamais ce fichier depuis iptoasn.com.
+  - Le propriétaire le télécharge lui-même dans son navigateur, environ une fois par trimestre (à redemander au point qui suit ses 80 jours) ; la copie, datée du jour du relevé, est versée dans la Release `sources-iptoasn` du dépôt, d'où la collecte la prend, sans geste de sa part.
+  - Premier relevé : 20/11/2026, `ip2asn-combined-2026-11-20.tsv.gz`, 10 955 454 octets, SHA-256 `1634a0e449f3ee11088bba85493447a51007b44dff3ac18328f1f2d9127c0a9e`, 719 149 lignes (la version servie portait la date du 01/11/2026).
+  - L'âge de la copie est publié chaque jour (`etat.json`, `sources`, `ageJours`) et le sera sur la page Qualité ; quand RIS la contredit le jour même, le niveau est « non déterminé ».
+  - Pour le chantier 3 : demander à l'auteur, depuis une adresse sovermap.com, si un téléchargement automatique quotidien est permis (option C).
   - Son accord avec la table RIS **du jour** suffit pour le niveau « confirmé », quel que soit l'âge du fichier IPtoASN (décision du 19/11/2026).
   - La dernière copie datée est gardée, au cas où le projet s'arrêterait.
 

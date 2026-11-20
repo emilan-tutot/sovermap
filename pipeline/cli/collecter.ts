@@ -1,13 +1,13 @@
 // The daily collection (brief B, plan § 4 to § 13):
 //   npx tsx pipeline/cli/collecter.ts --travail <dir> [--veille <dir>] [--donnees <dir>] [--resolveur 127.0.0.1:5300]
 //     [--controle 9.9.9.9] [--temoins 1.1.1.1] [--conteneur <docker name>] [--date AAAA-MM-JJ] [--limite N]
-//     [--noms-par-seconde 25] [--essai] [--essai-disjoncteur]
+//     [--noms-par-seconde 25] [--iptoasn <ip2asn-combined-AAAA-MM-JJ.tsv.gz>] [--essai] [--essai-disjoncteur]
 // Downloads of the day, the reference list, the DNS measurement at the polite pace with its controls, the
 // classification, yesterday classified again with today's rules, the guards, and the state to publish, written to
 // <travail>/sortie/. Exit 0: every guard passes and <travail>/sortie/ may be published; exit 2: a guard failed and
 // nothing may be published (<travail>/resume.md says why); exit 1: an error. Outside GitHub Actions, 200 names at most.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
@@ -47,7 +47,7 @@ import { fichiersSchemas, schemaDe, valider } from "../schemas";
 import { chaineDepuisSociete, type ReferentielAs, type ReferentielSocietes, validerReferentiels } from "../societes";
 import { Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
-import { type EtatSource, telechargerSources } from "../telechargements";
+import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
 
@@ -69,6 +69,8 @@ const { values: o } = parseArgs({
     "noms-par-seconde": { type: "string", default: "25" },
     // A local trial may wait less between two attempts (the collection on the runners keeps 10 minutes).
     "delai-reprise-minutes": { type: "string", default: "10" },
+    // IPtoASN, surveyed by hand (docs/sources.md, card 18): its files are closed to robots, never downloaded here.
+    iptoasn: { type: "string" },
     essai: { type: "boolean", default: false },
     // Brief B.11: a trial that trips the circuit breaker on purpose (nothing is published).
     "essai-disjoncteur": { type: "boolean", default: false },
@@ -250,6 +252,39 @@ async function principal(): Promise<number> {
     o.veille ?? null,
     maintenant,
   );
+  // IPtoASN: the copy surveyed by hand (the workflow takes the latest one from the release « sources-iptoasn »);
+  // without it, the last copy kept in the cache; never a download from iptoasn.com.
+  const copieVeille = o.veille === undefined ? null : path.join(o.veille, "sources", "iptoasn");
+  if (o.iptoasn !== undefined) {
+    sources.push(releverManuel(travail, "iptoasn", 18, o.iptoasn, maintenant));
+  } else if (copieVeille !== null && existsSync(copieVeille) && existsSync(`${copieVeille}.meta.json`)) {
+    const meta = json<{ date: string; octets: number; sha256: string }>(`${copieVeille}.meta.json`);
+    if (path.resolve(copieVeille) !== path.resolve(travail, "sources", "iptoasn")) {
+      copyFileSync(copieVeille, path.join(travail, "sources", "iptoasn"));
+      copyFileSync(`${copieVeille}.meta.json`, path.join(travail, "sources", "iptoasn.meta.json"));
+    }
+    sources.push({
+      id: "iptoasn",
+      fiche: 18,
+      url: "relevé manuel",
+      etat: "de la veille",
+      date: meta.date,
+      octets: meta.octets,
+      sha256: meta.sha256,
+    });
+  } else {
+    sources.push({
+      id: "iptoasn",
+      fiche: 18,
+      url: "relevé manuel",
+      etat: "en échec",
+      date: null,
+      octets: 0,
+      sha256: null,
+    });
+  }
+  const ageJours = (date: string | null) =>
+    date === null ? null : Math.floor((maintenant.getTime() - Date.parse(date)) / 86_400_000);
   const source = (id: string) => sources.find((s) => s.id === id);
   let dila: ReferentielDila | null = null;
   if (source("dila")?.etat !== "en échec") {
@@ -489,6 +524,7 @@ async function principal(): Promise<number> {
       fiche: s.fiche,
       etat: s.etat,
       date: s.date,
+      ageJours: ageJours(s.date),
       octets: s.octets,
       sha256: s.sha256,
     })),
@@ -538,6 +574,13 @@ async function principal(): Promise<number> {
     `- Changements confirmés : ${b.changements.length}${b.etatInitial ? " (état initial)" : ""}${b.reglesChangees ? " (règles nouvelles : rien au journal)" : ""}.`,
     `- Débit maximal vers un même serveur faisant autorité : ${debitServeurs === null ? "non mesuré" : `${debitServeurs.max} questions en une seconde`}.`,
     `- Sources lues de la veille ou en échec : ${etatJson.lecturesEnEchec}.`,
+    `- IPtoASN (relevé manuel) : ${(() => {
+      const ip = sources.find((s) => s.id === "iptoasn");
+      const age = ageJours(ip?.date ?? null);
+      return age === null
+        ? "absent"
+        : `copie du ${(ip?.date ?? "").slice(0, 10)}, âgée de ${age} jours${age > 80 ? " : plus de 80 jours, à renouveler" : ""}`;
+    })()}.`,
     `- Échecs DNS par code : ${
       Object.entries(echecsParCode)
         .map(([c, n]) => `${c} ${n}`)

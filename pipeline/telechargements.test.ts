@@ -1,10 +1,10 @@
 // Tests of the day's downloads: a fake downloader and temporary folders (no network). Hosts under `.example`.
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Reponse, Telechargeur } from "./sources";
-import { type Source, telechargerSources } from "./telechargements";
+import { releverManuel, type Source, telechargerSources } from "./telechargements";
 
 const dossiers: string[] = [];
 const temporaire = () => {
@@ -59,6 +59,19 @@ describe("the day's downloads", () => {
     expect(second.map((s) => `${s.id} ${s.etat}`)).toEqual(["quotidien de la veille", "hebdo de la semaine"]);
     expect(t.demandes).toEqual(["https://a.example/q"]);
     expect(readFileSync(path.join(aujourdhui, "sources", "quotidien"), "utf8")).toBe("q1");
+  });
+
+  it("takes a copy surveyed by hand, dated by its name, never downloaded", () => {
+    const depot = temporaire();
+    const fichier = path.join(depot, "ip2asn-combined-2026-11-20.tsv.gz");
+    writeFileSync(fichier, "copie");
+    const travail = temporaire();
+    const s = releverManuel(travail, "iptoasn", 18, fichier, new Date("2026-11-21T03:17:00Z"));
+    expect(s).toMatchObject({ id: "iptoasn", etat: "relevé manuel", date: "2026-11-20T00:00:00.000Z", octets: 5 });
+    expect(readFileSync(path.join(travail, "sources", "iptoasn"), "utf8")).toBe("copie");
+    expect(() => releverManuel(travail, "iptoasn", 18, path.join(depot, "sans-date.tsv.gz"), new Date())).toThrow(
+      /date/,
+    );
   });
 
   it("says « en échec » when there is no copy at all", async () => {
