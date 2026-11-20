@@ -35,9 +35,10 @@ describe("site", () => {
     expect(servedVersion({})).toBe("local");
     expect(servedVersion({ VERCEL_GIT_COMMIT_SHA: "pas-un-sha" })).toBe("local");
   });
-  it("opens indexing only on SITE_INDEXING=open", () => {
-    expect(indexingOpen({ SITE_INDEXING: "open" })).toBe(true);
-    expect(indexingOpen({ SITE_INDEXING: "closed" })).toBe(false);
+  it("opens indexing only on SITE_INDEXING=open, through an open door (SITE_PUBLIC=open)", () => {
+    expect(indexingOpen({ SITE_PUBLIC: "open", SITE_INDEXING: "open" })).toBe(true);
+    expect(indexingOpen({ SITE_INDEXING: "open" })).toBe(false);
+    expect(indexingOpen({ SITE_PUBLIC: "open", SITE_INDEXING: "closed" })).toBe(false);
     expect(indexingOpen({})).toBe(false);
   });
 });
@@ -47,8 +48,13 @@ describe("robots.txt", () => {
   it("is closed to every robot while the site is not open", () => {
     vi.stubEnv("SITE_INDEXING", "");
     expect(robots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
+    // Behind a closed door, SITE_INDEXING=open alone changes nothing.
+    vi.stubEnv("SITE_PUBLIC", "");
+    vi.stubEnv("SITE_INDEXING", "open");
+    expect(robots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
   });
   it("announces the sitemap by its absolute address once open, and leaves it out without the site's address", () => {
+    vi.stubEnv("SITE_PUBLIC", "open");
     vi.stubEnv("SITE_INDEXING", "open");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://site.example/");
     expect(robots().sitemap).toBe("https://site.example/sitemap.xml");

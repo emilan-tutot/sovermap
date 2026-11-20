@@ -113,6 +113,11 @@ Ce qui distingue Sovermap :
 - **EX-21** Aucune chaîne n'est écrite en dur dans les composants : tout passe par des clés de traduction.
 - **EX-22** En-têtes de sécurité : CSP stricte sans tiers, HSTS, `nosniff`, `frame-ancestors 'none'`, Referrer-Policy, Permissions-Policy fermée, COOP. Aucune carte de sources en production.
 - **EX-23** La production reste fermée à l'indexation tant que `SITE_INDEXING` ne vaut pas `open` : `robots.txt` qui interdit tout, `noindex` en en-tête et en balise, sitemap vide.
+- **EX-23 bis** La porte de la production (chantier 2, A.6, 20/11/2026). La production reste fermée : seule `SITE_PUBLIC=open`, posée seulement à l'ouverture sur décision du propriétaire, l'ouvre ; porte fermée, aucune lecture de données.
+  - Porte fermée, seules répondent les adresses de la page d'attente : la racine, ses fichiers et ses icônes, `robots.txt` (qui interdit tout) et le plan du site vide. Toute autre adresse répond par la page 404 : pages, requêtes internes de Next.js, index de recherche, images de partage, plans du site, routes d'API, fichiers de données.
+  - Une liste blanche, à un seul endroit (`lib/porte.ts`), appliquée au routage, au build.
+  - L'indexation exige la porte ouverte et `SITE_INDEXING=open`.
+  - Preuve : `npm run probe:prod` (la production) et `e2e/porte.spec.ts` (le build local) interrogent la même liste d'adresses, au moins une adresse réelle par famille.
 - **EX-24** WCAG 2.2 AA ; axe sans violation ; une alternative en texte à la 3D et à chaque graphique.
 - **EX-25** Le site écrit, sur l'accueil, la méthode et chaque radiographie, ce qu'il montre et ce qu'il ne montre pas (cahier §2).
 

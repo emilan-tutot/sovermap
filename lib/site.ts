@@ -9,7 +9,15 @@ export function servedVersion(env: Env = process.env): string {
   return /^[0-9a-f]{7,40}$/i.test(sha) ? sha.slice(0, 7).toLowerCase() : "local";
 }
 
-/** Search engines may index the site only when SITE_INDEXING is "open" (at launch, on the owner's decision). */
+/**
+ * The production door (brief of chantier 2, A.6): open only on the exact value SITE_PUBLIC=open, set at the launch on
+ * the owner's decision. Absent, empty or any other value keeps it closed: the waiting page only, and no data read.
+ */
+export function sitePublic(env: Env = process.env): boolean {
+  return env["SITE_PUBLIC"] === "open";
+}
+
+/** Search engines may index the site only through an open door AND with SITE_INDEXING "open" (at launch). */
 export function indexingOpen(env: Env = process.env): boolean {
-  return env["SITE_INDEXING"] === "open";
+  return sitePublic(env) && env["SITE_INDEXING"] === "open";
 }

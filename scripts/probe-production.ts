@@ -2,11 +2,15 @@
 // The deployed site as a stranger and a robot see it (brief B.5 and E.7):
 //   1. it serves the expected commit (meta « sovermap-version »), waiting up to --wait seconds;
 //   2. the security headers of cahier §6, and a CSP without any third party;
-//   3. closed to indexing until the launch (X-Robots-Tag, meta robots, robots.txt, empty sitemap), unless --open;
+//   3. until the launch (unless --open): closed to indexing (X-Robots-Tag, meta robots), and the closed production
+//      door at every address of lib/porte.ts (brief of chantier 2, A.6): the waiting page at the root, robots.txt
+//      that forbids everything, the empty sitemap, the 404 page everywhere else, and nowhere a sign of data;
 //   4. no source map, no cookie, nothing served that must not be (/.env, /.git), a real 404.
 // Adapted from a generic tool of another project of the owner.
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
+import { ADRESSES_PORTE } from "../lib/porte";
+import { ecartsPorte } from "./lib/porte-controle";
 
 const { values } = parseArgs({
   options: {
@@ -71,14 +75,20 @@ async function main() {
   if (!(h.get("permissions-policy") ?? "").includes("camera=()")) problems.push("Permissions-Policy absente ou ouverte");
   if (h.get("set-cookie")) problems.push("un cookie est posé");
 
-  // 3. Indexing.
+  // 3. Indexing, and the closed production door at every address of its list.
   if (!values.open) {
     if (!(h.get("x-robots-tag") ?? "").includes("noindex")) problems.push("en-tête X-Robots-Tag noindex absent");
     if (!/<meta name="robots" content="noindex, ?nofollow"/.test(home.text)) problems.push("balise robots noindex absente");
-    const robots = await get(`${origin}/robots.txt`);
-    if (robots.status !== 200 || !/Disallow:\s*\/\s*$/m.test(robots.text)) problems.push("robots.txt n'interdit pas tout");
-    const sitemap = await get(`${origin}/sitemap.xml`);
-    if (/<url>/.test(sitemap.text)) problems.push("le sitemap n'est pas vide");
+    for (const adresse of ADRESSES_PORTE) {
+      const reponse = await get(`${origin}${adresse.chemin}`);
+      problems.push(
+        ...ecartsPorte(adresse, {
+          status: reponse.status,
+          contentType: reponse.headers.get("content-type") ?? "",
+          texte: reponse.text,
+        }),
+      );
+    }
   }
 
   // 4. No source map, nothing private served, a real 404.
@@ -99,7 +109,7 @@ async function main() {
     throw new ProbeFailure(`${problems.length} écart(s).`);
   }
   console.log(
-    `probe:prod : OK (${origin}) : commit ${commit}, en-têtes de sécurité, ${values.open ? "indexation ouverte" : "fermé à l'indexation"}, aucune carte de sources, aucun cookie, fichiers privés non servis, 404.`,
+    `probe:prod : OK (${origin}) : commit ${commit}, en-têtes de sécurité, ${values.open ? "indexation ouverte" : `fermé à l'indexation, porte fermée sur ${ADRESSES_PORTE.length} adresses`}, aucune carte de sources, aucun cookie, fichiers privés non servis, 404.`,
   );
 }
 

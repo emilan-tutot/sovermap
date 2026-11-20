@@ -6,7 +6,7 @@ Sovermap est un instrument de mesure public. Pour chaque site public français, 
 - dans quel pays sont les sièges ;
 - quelle part de l’État dépend de sociétés dont la maison mère est hors de l’Union européenne.
 
-**État du projet** : en construction (chantier T1). Le site n’est pas ouvert, et aucune donnée n’est publiée pour l’instant.
+**État du projet** : en construction (chantier 2). Le site n’est pas ouvert : la production ne montre qu’une page d’attente, derrière une porte fermée (`SITE_PUBLIC`, [`lib/porte.ts`](lib/porte.ts)), et aucune donnée n’est publiée pour l’instant.
 
 ## Principes
 

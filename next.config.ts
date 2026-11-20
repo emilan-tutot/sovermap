@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
+import { reecrituresPorte } from "./lib/porte";
 import { securityHeaders } from "./lib/security/headers";
+import { indexingOpen } from "./lib/site";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -17,10 +19,14 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders({
           development: process.env.NODE_ENV !== "production",
-          indexing: process.env.SITE_INDEXING === "open",
+          indexing: indexingOpen(),
         }),
       },
     ];
+  },
+  // The production door (lib/porte.ts): while SITE_PUBLIC is not exactly « open », only the waiting page answers.
+  async rewrites() {
+    return { beforeFiles: reecrituresPorte(), afterFiles: [], fallback: [] };
   },
 };
 
