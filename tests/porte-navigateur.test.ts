@@ -72,4 +72,11 @@ describe("the browser script of the door's list (point 01 of chantier 2)", () =>
   it("asks one second apart by default", () => {
     expect(scriptNavigateur()).toContain("derniere + 1000 - Date.now()");
   });
+
+  it("is written in ASCII only, so that copying it by hand loses no character", () => {
+    const script = scriptNavigateur();
+    expect([...script].every((c) => c.charCodeAt(0) < 128)).toBe(true);
+    // The texts keep their non-breaking space and apostrophes, escaped.
+    expect(script).toContain("Qui h\\u00e9berge l\\u2019\\u00c9tat\\u00a0?");
+  });
 });

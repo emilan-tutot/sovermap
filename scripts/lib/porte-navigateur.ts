@@ -7,11 +7,25 @@ import { ADRESSES_PORTE } from "../../lib/porte";
 import { ecartsPorte, estHtml, SIGNES_DE_DONNEES, TEXTES_PORTE, texteLisible } from "./porte-controle";
 
 /**
+ * A text in ASCII only: every other UTF-16 unit becomes a « \u » escape, valid in the strings, templates and regular
+ * expressions of the script (the only places where it holds such characters). The script is copied by hand into a
+ * tool, where a non-breaking space or a typographic apostrophe could silently become another character.
+ */
+export function enAscii(texte: string): string {
+  let sortie = "";
+  for (let i = 0; i < texte.length; i += 1) {
+    const code = texte.charCodeAt(i);
+    sortie += code < 128 ? texte.charAt(i) : `\\u${code.toString(16).padStart(4, "0")}`;
+  }
+  return sortie;
+}
+
+/**
  * The text of the script; the browser tool returns its last value: `{ origine, version, adresses, ecarts }`.
  * `espacementMs`: the pause between two requests to the site (one second at least, brief § 0.2; the tests use 0).
  */
 export function scriptNavigateur(espacementMs = 1_000): string {
-  return `await (async () => {
+  return enAscii(`await (async () => {
   // A script run by tsx names its functions with __name (specs/001-sovermap/pieges-connus.md, 30).
   const __name = (f) => f;
   const TEXTES_PORTE = ${JSON.stringify(TEXTES_PORTE)};
@@ -46,5 +60,5 @@ export function scriptNavigateur(espacementMs = 1_000): string {
   }
   const version = document.querySelector('meta[name="sovermap-version"]')?.getAttribute("content") ?? null;
   return { origine: location.origin, version, adresses: adresses.length, ecarts };
-})()`;
+})()`);
 }
