@@ -396,6 +396,8 @@ async function principal(): Promise<number> {
     controler(quad9, plan.noms, plan.mx),
     controler(cloudflare, nomsTemoins, []),
   ]);
+  const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
+  suivi(`mesure et contrôles parallèles finis à ${minutes()} min`);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 once they are known.
   const hotesEtat = [
     ...new Set(
@@ -411,6 +413,7 @@ async function principal(): Promise<number> {
   // and the job always has time to build and keep the day (it stops at 240 minutes).
   const finControles = maintenant.getTime() + 205 * 60_000;
   const controleHotes = await controler(quad9, hotesEtat, [], 8, finControles);
+  suivi(`contrôle de ${hotesEtat.length} hôtes de l'État fini à ${minutes()} min`);
   const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
   // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
   // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
@@ -441,7 +444,9 @@ async function principal(): Promise<number> {
       if (type === "MX") pannesMx.add(d.domaine);
     }
   };
+  const nombreAConfirmer = aConfirmer.length;
   await Promise.all(Array.from({ length: 8 }, confirmer));
+  suivi(`confirmation de ${nombreAConfirmer} pannes finie à ${minutes()} min`);
   const { debit: debitServeurs, attentes: attentesFrein } = debit.arreter();
   for (const c of [knot, quad9, cloudflare]) c.fermer();
   const controles: Controles = {

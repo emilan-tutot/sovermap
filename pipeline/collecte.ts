@@ -201,7 +201,7 @@ export async function collecter(
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
         await tache();
         faites += 1;
-        if (faites % 10_000 === 0) options.suivi?.(`${faites} / ${taches.length}`);
+        if (faites % 2_000 === 0) options.suivi?.(`${faites} / ${taches.length}`);
       }
     };
     await Promise.all(Array.from({ length: Math.min(options.enVol, file.length) }, ouvrier));
