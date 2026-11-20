@@ -145,8 +145,10 @@ function question(id: number, nom: string, type: TypeRr): Buffer {
 }
 
 /**
- * A client of one resolver over UDP, falling back to TCP for a truncated answer. One socket, many questions in flight
- * (each with its own random id); a question without answer within `delaiMs` is a TIMEOUT.
+ * A client of one resolver over UDP, falling back to TCP for a truncated answer. One socket, connected to the resolver
+ * (the system drops any datagram from another address or port, and the source is checked again), many questions in
+ * flight, each with its own random id; an answer must also echo the question asked; a question without answer within
+ * `delaiMs` is a TIMEOUT.
  */
 export class ClientUdp implements ClientDns {
   readonly id: string;
@@ -154,6 +156,7 @@ export class ClientUdp implements ClientDns {
   readonly #port: number;
   readonly #delaiMs: number;
   readonly #socket: dgram.Socket;
+  readonly #connecte: Promise<void>;
   readonly #attente = new Map<number, (message: Buffer) => void>();
 
   constructor(id: string, hote: string, port = 53, delaiMs = 5000) {
@@ -162,10 +165,14 @@ export class ClientUdp implements ClientDns {
     this.#port = port;
     this.#delaiMs = delaiMs;
     this.#socket = dgram.createSocket(net.isIPv6(hote) ? "udp6" : "udp4");
-    this.#socket.on("message", (message: Buffer) => {
-      if (message.length < 2) return;
+    this.#socket.on("message", (message: Buffer, source: dgram.RemoteInfo) => {
+      // Only the resolver may answer: a datagram from any other address or port is dropped.
+      if (source.address !== this.#hote || source.port !== this.#port || message.length < 2) return;
       const recue = message.readUInt16BE(0);
       this.#attente.get(recue)?.(message);
+    });
+    this.#connecte = new Promise((resolve, reject) => {
+      this.#socket.connect(port, hote, (erreur?: Error) => (erreur ? reject(erreur) : resolve()));
     });
     this.#socket.unref();
   }
@@ -181,6 +188,7 @@ export class ClientUdp implements ClientDns {
     const nom = normaliserNom(nomBrut);
     const id = this.#nouvelId();
     const depart = performance.now();
+    await this.#connecte;
     const message = await new Promise<Buffer | null>((resolve) => {
       const minuterie = setTimeout(() => {
         this.#attente.delete(id);
@@ -191,7 +199,7 @@ export class ClientUdp implements ClientDns {
         this.#attente.delete(id);
         resolve(m);
       });
-      this.#socket.send(question(id, nom, type), this.#port, this.#hote);
+      this.#socket.send(question(id, nom, type));
     });
     const duree = Math.round(performance.now() - depart);
     if (message === null) return { code: "TIMEOUT", ad: false, reponses: [], duree };

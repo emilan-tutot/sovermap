@@ -45,20 +45,44 @@ export function lireRobots(texte: string, agent = "sovermap-bot"): Robots {
   };
 }
 
-const enMotif = (chemin: string) =>
-  new RegExp(
-    `^${chemin
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*/g, ".*")
-      .replace(/\\\$$/, "$")}`,
-  );
+/**
+ * RFC 9309 path matching without any regular expression (a robots.txt is data, and a crafted rule must never make a
+ * matcher backtrack for ever): « * » matches any sequence, a final « $ » anchors the end, otherwise the rule is a
+ * prefix. The classic two-pointer wildcard match: at most |rule| × |path| steps.
+ */
+export function correspond(regle: string, chemin: string): boolean {
+  const ancree = regle.endsWith("$");
+  const motif = ancree ? regle.slice(0, -1) : `${regle}*`;
+  let i = 0;
+  let j = 0;
+  let etoile = -1;
+  let reprise = 0;
+  while (j < chemin.length) {
+    if (i < motif.length && motif[i] === "*") {
+      etoile = i;
+      i += 1;
+      reprise = j;
+    } else if (i < motif.length && motif[i] === chemin[j]) {
+      i += 1;
+      j += 1;
+    } else if (etoile >= 0) {
+      i = etoile + 1;
+      reprise += 1;
+      j = reprise;
+    } else {
+      return false;
+    }
+  }
+  while (i < motif.length && motif[i] === "*") i += 1;
+  return i === motif.length;
+}
 
 /** RFC 9309: the longest matching rule wins; on a tie, « allow » wins; no matching rule: allowed. */
 export function autorise(robots: Robots, chemin: string): boolean {
   let meilleure: { autorise: boolean; longueur: number } | null = null;
   for (const r of robots.regles) {
     if (r.chemin === "") continue;
-    if (!enMotif(r.chemin).test(chemin)) continue;
+    if (!correspond(r.chemin, chemin)) continue;
     const longueur = r.chemin.length;
     if (meilleure === null || longueur > meilleure.longueur || (longueur === meilleure.longueur && r.autorise)) {
       meilleure = { autorise: r.autorise, longueur };

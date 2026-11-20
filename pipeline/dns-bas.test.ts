@@ -1,8 +1,9 @@
 // Tests of the low-level DNS client: answers built with dns-packet itself, documentation names and addresses only
 // (RFC 2606, RFC 5737, RFC 3849). No network.
+import dgram from "node:dgram";
 import * as dnsPacket from "dns-packet";
 import { describe, expect, it } from "vitest";
-import { lireReponse } from "./dns-bas";
+import { ClientUdp, lireReponse } from "./dns-bas";
 
 const reponse = (id: number, nom: string, type: string, answers: dnsPacket.Answer[], flags = 0, rcode = "NOERROR") =>
   dnsPacket.encode({
@@ -71,6 +72,41 @@ describe("the low-level DNS client", () => {
     ]);
     const lusTxt = lireReponse(Buffer.from(txt), 3, "site.example", "TXT", 1)?.reponse?.reponses ?? [];
     expect(lusTxt.map((r) => r.donnee)).toEqual([{ type: "TXT", spf: "v=spf1 ip4:192.0.2.0/24 -all" }]);
+  });
+
+  it("drops an answer from any address or port but the resolver's", async () => {
+    const resolveur = dgram.createSocket("udp4");
+    const usurpateur = dgram.createSocket("udp4");
+    await new Promise<void>((ok) => resolveur.bind(0, "127.0.0.1", () => ok()));
+    await new Promise<void>((ok) => usurpateur.bind(0, "127.0.0.1", () => ok()));
+    const reponseA = (id: number, adresse: string) =>
+      dnsPacket.encode({
+        type: "response",
+        id,
+        flags: 0,
+        questions: [{ type: "A", name: "a.example", class: "IN" }],
+        answers: [{ type: "A", name: "a.example", ttl: 1, data: adresse }],
+      });
+    resolveur.on("message", (question, client) => {
+      const id = dnsPacket.decode(question).id ?? 0;
+      // Another port answers first, with the right id and question; the resolver answers 50 ms later.
+      usurpateur.send(reponseA(id, "203.0.113.66"), client.port, client.address);
+      setTimeout(() => resolveur.send(reponseA(id, "192.0.2.1"), client.port, client.address), 50);
+    });
+    const client = new ClientUdp("essai", "127.0.0.1", resolveur.address().port, 2000);
+    try {
+      const r = await client.demander("a.example", "A");
+      expect(r.reponses.map((e) => e.donnee)).toEqual([{ type: "A", adresse: "192.0.2.1" }]);
+    } finally {
+      client.fermer();
+      resolveur.close();
+      usurpateur.close();
+    }
+  });
+
+  it("tells a truncated answer, to be asked again over TCP", () => {
+    const tronquee = Buffer.from(reponse(4, "a.example", "TXT", [], dnsPacket.TRUNCATED_RESPONSE));
+    expect(lireReponse(tronquee, 4, "a.example", "TXT", 1)?.tronquee).toBe(true);
   });
 
   it("refuses an answer to another question or with another id", () => {
