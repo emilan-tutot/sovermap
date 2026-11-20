@@ -6,7 +6,8 @@ import type { Niveau } from "./types";
 
 /** An IPv4 or IPv6 address as a big integer, with its family. */
 export function adresseEnEntier(ip: string): { famille: 4 | 6; valeur: bigint } {
-  const famille = isIP(ip);
+  // node:net accepts a zone index (« fe80::1%eth0 »): it is never an address of ours.
+  const famille = /^[0-9a-f:.]+$/i.test(ip) ? isIP(ip) : 0;
   if (famille === 4) {
     const valeur = ip.split(".").reduce((acc, octet) => (acc << 8n) + BigInt(Number(octet)), 0n);
     return { famille: 4, valeur };
@@ -23,6 +24,7 @@ export function adresseEnEntier(ip: string): { famille: 4 | 6; valeur: bigint } 
     const fin = groupes(queue);
     const manquants = queue === undefined ? 0 : 8 - debut.length - fin.length;
     const tous = [...debut, ...Array<string>(manquants).fill("0"), ...fin];
+    if (tous.length !== 8 || tous.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) throw new Error("adresse IP invalide");
     const valeur = tous.reduce((acc, g) => (acc << 16n) + BigInt(parseInt(g, 16)), 0n);
     return { famille: 6, valeur };
   }
@@ -41,6 +43,9 @@ export class TableIpToAsn {
     for (const ligne of contenu.split("\n")) {
       const [debut, fin, asn, pays = "", ...description] = ligne.split("\t");
       if (debut === undefined || fin === undefined || asn === undefined || debut === "") continue;
+      // A malformed line of the file is skipped, never fatal.
+      if (!/^[0-9a-f:.]+$/i.test(debut) || !/^[0-9a-f:.]+$/i.test(fin) || isIP(debut) === 0 || isIP(fin) === 0)
+        continue;
       const d = adresseEnEntier(debut);
       const entree = {
         debut: d.valeur,
@@ -50,7 +55,8 @@ export class TableIpToAsn {
         description: description.join(" ").trim(),
       };
       (d.famille === 4 ? this.#v4 : this.#v6).push(entree);
-      if (entree.asn !== 0 && !this.#descriptions.has(entree.asn)) this.#descriptions.set(entree.asn, entree.description);
+      if (entree.asn !== 0 && !this.#descriptions.has(entree.asn))
+        this.#descriptions.set(entree.asn, entree.description);
     }
     const ordre = (x: LigneIpToAsn, y: LigneIpToAsn) => (x.debut < y.debut ? -1 : x.debut > y.debut ? 1 : 0);
     this.#v4.sort(ordre);
@@ -127,7 +133,7 @@ export class TableRis {
         let table: Map<number | string, PrefixeRis>;
         let cle: number | string;
         if (adresse.includes(":")) {
-          if (isIP(adresse) !== 6 || longueur > 128) continue;
+          if (!/^[0-9a-f:.]+$/i.test(adresse) || isIP(adresse) !== 6 || longueur > 128) continue;
           cle = (adresseEnEntier(adresse).valeur & masque6(longueur)).toString(16);
           table = (this.#v6.get(longueur) ?? new Map<string, PrefixeRis>()) as Map<number | string, PrefixeRis>;
           this.#v6.set(longueur, table as Map<string, PrefixeRis>);

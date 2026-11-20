@@ -63,8 +63,10 @@ export type EnregistrementDomaine = {
     echec: Echec | null;
     ns: string[];
     soa: string | null;
-    ds: boolean;
-    caa: { propriete: string; valeur: string }[];
+    /** null: the DS question failed. */
+    ds: boolean | null;
+    /** null: the CAA question failed. */
+    caa: { propriete: string; valeur: string }[] | null;
   };
   serveursDeNoms: { hotes: Hote[]; categorie: Categorie; horsUE: boolean | null; niveau: Niveau };
   messagerie: {
@@ -162,6 +164,7 @@ export type Bilan = {
  * list, the referentials or the method changed since the published state (brief B.7 bis).
  */
 export function bilan(jour: Etat, veille: Etat | null, publie: Etat | null, reglesChangees: boolean): Bilan {
+  // Layer by layer, like the journal: a layer undetermined on either side (a failure, no MX…) is not compared.
   const comparer = (): Bilan["disjoncteur"] => {
     if (veille === null) return { compares: 0, changes: 0, part: null };
     let compares = 0;
@@ -171,10 +174,12 @@ export function bilan(jour: Etat, veille: Etat | null, publie: Etat | null, regl
       if (hier === undefined) continue;
       const a = signatures(d, jour.noms.get(d.nomWeb));
       const b = signatures(hier, veille.noms.get(hier.nomWeb));
-      if (indetermine(a.adresses) || indetermine(b.adresses)) continue;
+      const couches = (["adresses", "serveursDeNoms", "messagerie"] as const).filter(
+        (c) => !indetermine(a[c]) && !indetermine(b[c]),
+      );
+      if (couches.length === 0) continue;
       compares += 1;
-      if (a.adresses !== b.adresses || a.serveursDeNoms !== b.serveursDeNoms || a.messagerie !== b.messagerie)
-        changes += 1;
+      if (couches.some((c) => a[c] !== b[c])) changes += 1;
     }
     return { compares, changes, part: compares === 0 ? null : changes / compares };
   };
@@ -218,29 +223,52 @@ export function bilan(jour: Etat, veille: Etat | null, publie: Etat | null, regl
 
 export type Fichiers = Map<string, string>;
 
-/** The fragments of one kind of record (« noms » or « domaines »), and each folder's checksums. */
-export function fragments<T>(dossier: string, enregistrements: Iterable<[string, T]>): Fichiers {
+/**
+ * The fragments of one kind of record (« noms » or « domaines »), and each folder's checksums. A bucket whose records
+ * weigh more than 8 KB together is cut into numbered parts (`<bb>.json`, `<bb>.1.json`…), each of 8 KB at most — always
+ * possible, a record weighing 3 KB at most (borner.ts); the first part says how many there are (`parties`).
+ */
+export function fragments<T>(
+  dossier: string,
+  enregistrements: Iterable<[string, T]>,
+  seauDe: (cle: string) => string = seau,
+): Fichiers {
   const parSeau = new Map<string, [string, T][]>();
   for (const [cle, e] of enregistrements) {
-    const s = seau(cle);
+    const s = seauDe(cle);
     parSeau.set(s, [...(parSeau.get(s) ?? []), [cle, e]]);
   }
   const fichiers: Fichiers = new Map();
   const sommes = new Map<string, Record<string, string>>();
+  const ecrire = (liste: T[], parties: number) =>
+    `${jsonStable({ [dossier]: liste, ...(parties > 1 ? { parties } : {}) })}\n`;
   for (const [s, liste] of [...parSeau.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {
     liste.sort(([a], [b]) => (a < b ? -1 : 1));
-    const texte = `${jsonStable({ [dossier]: liste.map(([, e]) => e) })}\n`;
-    if (Buffer.byteLength(texte) > TAILLE_MAX_FRAGMENT) {
-      const [cle, taille] = liste
-        .map(([c, e]) => [c, Buffer.byteLength(jsonStable(e))] as const)
-        .reduce((x, y) => (y[1] > x[1] ? y : x));
-      throw new Error(
-        `${dossier}/${s}.json : ${Buffer.byteLength(texte)} octets, plus de 8 Ko (le plus gros : ${cle}, ${taille} octets)`,
-      );
+    // Records in key order, packed while they fit (with room for « parties » in the first part).
+    const parts: T[][] = [];
+    let courante: T[] = [];
+    for (const [, e] of liste) {
+      const essai = [...courante, e];
+      if (courante.length > 0 && Buffer.byteLength(ecrire(essai, 99)) > TAILLE_MAX_FRAGMENT) {
+        parts.push(courante);
+        courante = [e];
+      } else {
+        courante = essai;
+      }
     }
-    fichiers.set(`${dossier}/${s}.json`, texte);
+    parts.push(courante);
     const [haut, bas] = s.split("/") as [string, string];
-    sommes.set(haut, { ...(sommes.get(haut) ?? {}), [`${bas}.json`]: sha256(texte) });
+    parts.forEach((part, k) => {
+      const texte = ecrire(part, k === 0 ? parts.length : 1);
+      if (Buffer.byteLength(texte) > TAILLE_MAX_FRAGMENT) {
+        throw new Error(
+          `${dossier}/${s} : un enregistrement dépasse à lui seul 8 Ko (${Buffer.byteLength(texte)} octets)`,
+        );
+      }
+      const nom = k === 0 ? `${bas}.json` : `${bas}.${k}.json`;
+      fichiers.set(`${dossier}/${haut}/${nom}`, texte);
+      sommes.set(haut, { ...(sommes.get(haut) ?? {}), [nom]: sha256(texte) });
+    });
   }
   for (const [haut, liste] of sommes) fichiers.set(`${dossier}/${haut}/sommes.json`, `${jsonStable(liste)}\n`);
   return fichiers;

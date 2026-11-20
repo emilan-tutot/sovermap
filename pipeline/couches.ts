@@ -233,31 +233,39 @@ export function coucheHotes(
 }
 
 export type CoucheSpf = {
+  /** « echec » when the record or one of its lookups failed: the list of senders is then incomplete. */
   statut: ResultatSpf["statut"];
   inclus: string[];
-  /** The AS numbers of the networks allowed to send mail, with their IPtoASN description (« probable »: one source). */
-  reseaux: { as: number; descriptionAs: string | null }[];
-  /** How many AS the record allows in all (the list keeps the first 50, by number). */
+  /**
+   * The AS numbers of the networks allowed to send mail (« probable »: one source), the first 50 by number. Their
+   * descriptions live in index/as.json only when the company is known (a description may name a person).
+   */
+  reseaux: { as: number }[];
+  /** How many AS the record allows in all. */
   reseauxTotal: number;
   /** Terms that depend on the sender (macros, exists, ptr), never evaluated: the list is then incomplete. */
   nonEvalues: number;
 };
 
-/** The SPF record's networks, reduced to their AS (the first address of each network). */
+/** The SPF record's networks, reduced to their AS (the first address of each network); a bad network is skipped. */
 export function coucheSpf(r: ResultatSpf, contexte: ContexteV1): CoucheSpf {
-  const parAs = new Map<number, string | null>();
+  const parAs = new Set<number>();
   for (const { reseau } of r.reseaux) {
-    const adresse = reseau.split("/")[0] ?? "";
-    const ligne = adresse === "" ? undefined : contexte.iptoasn.chercher(adresse);
-    if (ligne && !parAs.has(ligne.asn)) parAs.set(ligne.asn, ligne.description);
+    try {
+      const adresse = reseau.split("/")[0] ?? "";
+      const ligne = adresse === "" ? null : contexte.iptoasn.chercher(adresse);
+      if (ligne) parAs.add(ligne.asn);
+    } catch {
+      // A network that is not an address (written by the domain itself) is skipped, never fatal.
+    }
   }
   return {
     statut: r.statut,
     inclus: [...r.inclus].sort(),
-    reseaux: [...parAs.entries()]
-      .map(([as, descriptionAs]) => ({ as, descriptionAs }))
-      .sort((x, y) => x.as - y.as)
-      .slice(0, 50),
+    reseaux: [...parAs]
+      .sort((x, y) => x - y)
+      .slice(0, 50)
+      .map((as) => ({ as })),
     reseauxTotal: parAs.size,
     nonEvalues: r.nonEvalues.length,
   };

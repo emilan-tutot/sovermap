@@ -1,6 +1,7 @@
 // Tests of the low-level DNS client: answers built with dns-packet itself, documentation names and addresses only
 // (RFC 2606, RFC 5737, RFC 3849). No network.
 import dgram from "node:dgram";
+import net from "node:net";
 import * as dnsPacket from "dns-packet";
 import { describe, expect, it } from "vitest";
 import { ClientUdp, lireReponse } from "./dns-bas";
@@ -101,6 +102,57 @@ describe("the low-level DNS client", () => {
       client.fermer();
       resolveur.close();
       usurpateur.close();
+    }
+  });
+
+  it("ends a TCP question when the server closes without a whole answer, well before the time limit", async () => {
+    const udp = dgram.createSocket("udp4");
+    await new Promise<void>((ok) => udp.bind(0, "127.0.0.1", () => ok()));
+    const port = udp.address().port;
+    // The UDP answer is truncated: the client asks again over TCP, where the server closes at once.
+    udp.on("message", (q, client) => {
+      const id = dnsPacket.decode(q).id ?? 0;
+      udp.send(reponse(id, "a.example", "TXT", [], dnsPacket.TRUNCATED_RESPONSE), client.port, client.address);
+    });
+    const tcp = net.createServer((s) => s.end());
+    await new Promise<void>((ok) => tcp.listen(port, "127.0.0.1", () => ok()));
+    const client = new ClientUdp("essai", "127.0.0.1", port, 10_000);
+    try {
+      const debut = performance.now();
+      expect((await client.demander("a.example", "TXT")).code).toBe("TIMEOUT");
+      expect(performance.now() - debut).toBeLessThan(5_000);
+    } finally {
+      client.fermer();
+      udp.close();
+      tcp.close();
+    }
+  });
+
+  it("ignores a late answer to another question that had the same id", async () => {
+    const resolveur = dgram.createSocket("udp4");
+    await new Promise<void>((ok) => resolveur.bind(0, "127.0.0.1", () => ok()));
+    resolveur.on("message", (q, client) => {
+      const id = dnsPacket.decode(q).id ?? 0;
+      // First an answer to another name with the same id, then the right one.
+      resolveur.send(reponse(id, "autre.example", "A", []), client.port, client.address);
+      setTimeout(
+        () =>
+          resolveur.send(
+            reponse(id, "a.example", "A", [{ type: "A", name: "a.example", ttl: 1, data: "192.0.2.1" }]),
+            client.port,
+            client.address,
+          ),
+        30,
+      );
+    });
+    const client = new ClientUdp("essai", "127.0.0.1", resolveur.address().port, 2_000);
+    try {
+      const r = await client.demander("a.example", "A");
+      expect(r.code).toBe("NOERROR");
+      expect(r.reponses.map((e) => e.donnee)).toEqual([{ type: "A", adresse: "192.0.2.1" }]);
+    } finally {
+      client.fermer();
+      resolveur.close();
     }
   });
 

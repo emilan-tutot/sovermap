@@ -24,7 +24,7 @@ function lireFragments<T>(dossier: string, sorte: "noms" | "domaines"): T[] {
   if (!existsSync(racine)) return [];
   return readdirSync(racine).flatMap((haut) =>
     readdirSync(path.join(racine, haut))
-      .filter((f) => /^[0-9a-f]{2}\.json$/.test(f))
+      .filter((f) => /^[0-9a-f]{2}(\.\d+)?\.json$/.test(f))
       .flatMap(
         (f) => (JSON.parse(readFileSync(path.join(racine, haut, f), "utf8")) as Record<string, T[]>)[sorte] ?? [],
       ),

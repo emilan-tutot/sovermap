@@ -84,6 +84,8 @@ export type MesureZone = {
   mxEtat: "ok" | "aucun" | "nul" | "echec";
   /** The SPF record, the only TXT record ever kept. */
   spf: string | null;
+  /** The questions that failed (DS, CAA, TXT): their answer is unknown, never « none ». */
+  echecs: ("DS" | "CAA" | "TXT")[];
 };
 
 const deType = <T extends Enregistrement["donnee"]["type"]>(reponse: Reponse, proprietaire: string, type: T) =>
@@ -130,5 +132,12 @@ export async function mesurerZone(domaine: string, client: ClientDns): Promise<M
     mx: nul ? [] : mxs,
     mxEtat: ECHECS.has(rmx.code) ? "echec" : nul ? "nul" : mxs.length > 0 ? "ok" : "aucun",
     spf: deType(rtxt, domaine, "TXT")[0]?.donnee.spf ?? null,
+    echecs: (
+      [
+        ["DS", rds],
+        ["CAA", rcaa],
+        ["TXT", rtxt],
+      ] as const
+    ).flatMap(([type, r]) => (ECHECS.has(r.code) ? [type] : [])),
   };
 }

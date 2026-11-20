@@ -77,6 +77,29 @@ describe("the fragments", () => {
     expect(fragments("noms", [...e.noms.entries()].reverse())).toEqual(f);
   });
 
+  it("cut a heavy bucket into parts of 8 KB at most, the first one saying how many, all in the checksums", () => {
+    const lourds = new Map(
+      Array.from(
+        { length: 6 },
+        (_, i) => [`d${i}.example`, { domaine: `d${i}.example`, texte: "x".repeat(1800) }] as const,
+      ),
+    );
+    const f = fragments("domaines", lourds, () => "00/00");
+    expect([...f.keys()].filter((k) => k.startsWith("domaines/00/00")).sort()).toEqual([
+      "domaines/00/00.1.json",
+      "domaines/00/00.json",
+    ]);
+    for (const [chemin, texte] of f) expect(Buffer.byteLength(texte), chemin).toBeLessThanOrEqual(8 * 1024);
+    expect(JSON.parse(f.get("domaines/00/00.json") ?? "{}").parties).toBe(2);
+    expect(Object.keys(JSON.parse(f.get("domaines/00/sommes.json") ?? "{}"))).toEqual(["00.1.json", "00.json"]);
+    const tous = [...f.entries()]
+      .filter(([k]) => !k.endsWith("sommes.json"))
+      .flatMap(([, texte]) =>
+        (JSON.parse(texte) as { domaines: { domaine: string }[] }).domaines.map((d) => d.domaine),
+      );
+    expect(tous.sort()).toEqual([...lourds.keys()].sort());
+  });
+
   it("write the same text whatever the order of the keys", () => {
     expect(jsonStable({ b: 1, a: { d: 2, c: 3 } })).toBe('{"a":{"c":3,"d":2},"b":1}');
   });

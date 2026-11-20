@@ -157,7 +157,8 @@ export class ClientUdp implements ClientDns {
   readonly #delaiMs: number;
   readonly #socket: dgram.Socket;
   readonly #connecte: Promise<void>;
-  readonly #attente = new Map<number, (message: Buffer) => void>();
+  /** The questions in flight, by id: each one takes a datagram only if it answers its own question. */
+  readonly #attente = new Map<number, (message: Buffer) => boolean>();
 
   constructor(id: string, hote: string, port = 53, delaiMs = 5000) {
     this.id = id;
@@ -192,22 +193,24 @@ export class ClientUdp implements ClientDns {
     const id = this.#nouvelId();
     const depart = performance.now();
     await this.#connecte;
-    const message = await new Promise<Buffer | null>((resolve) => {
+    // A late answer to an earlier question that had the same id is ignored: the question keeps waiting.
+    const lue = await new Promise<ReturnType<typeof lireReponse>>((resolve) => {
       const minuterie = setTimeout(() => {
         this.#attente.delete(id);
         resolve(null);
       }, this.#delaiMs);
       this.#attente.set(id, (m) => {
+        const r = lireReponse(m, id, nom, type, Math.round(performance.now() - depart));
+        if (r === null) return false;
         clearTimeout(minuterie);
         this.#attente.delete(id);
-        resolve(m);
+        resolve(r);
+        return true;
       });
       this.#socket.send(question(id, nom, type));
     });
     const duree = Math.round(performance.now() - depart);
-    if (message === null) return { code: "TIMEOUT", ad: false, reponses: [], duree };
-    const lue = lireReponse(message, id, nom, type, duree);
-    if (lue === null) return { code: "ERREUR", ad: false, reponses: [], duree };
+    if (lue === null) return { code: "TIMEOUT", ad: false, reponses: [], duree };
     return lue.tronquee ? this.#parTcp(nom, type, depart) : lue.reponse;
   }
 
@@ -217,12 +220,19 @@ export class ClientUdp implements ClientDns {
     const message = await new Promise<Buffer | null>((resolve) => {
       const morceaux: Buffer[] = [];
       const socket = net.connect({ host: this.#hote, port: this.#port });
+      // Settled once, whatever happens first: the whole answer, an error, a close without a whole answer, or the time
+      // limit (absolute, not reset by a trickle of bytes).
+      let fini = false;
       const fin = (m: Buffer | null) => {
+        if (fini) return;
+        fini = true;
+        clearTimeout(limite);
         socket.destroy();
         resolve(m);
       };
-      socket.setTimeout(this.#delaiMs, () => fin(null));
+      const limite = setTimeout(() => fin(null), this.#delaiMs);
       socket.on("error", () => fin(null));
+      socket.on("close", () => fin(null));
       socket.on("connect", () => {
         const q = question(id, nom, type);
         const longueur = Buffer.alloc(2);

@@ -104,8 +104,11 @@ export const DOMAINE: Schema = objet(
       echec,
       ns: liste(nomDns, 50),
       soa: { type: ["string", "null"], maxLength: 253 },
-      ds: { type: "boolean" },
-      caa: liste(objet({ propriete: { enum: ["issue", "issuewild"] }, valeur: texte(255) }), 50),
+      ds: { type: ["boolean", "null"] },
+      caa: {
+        ...liste(objet({ propriete: { enum: ["issue", "issuewild"] }, valeur: texte(255) }), 50),
+        type: ["array", "null"],
+      },
     }),
     serveursDeNoms: objet({ hotes: liste(hote, 50), categorie, horsUE, niveau }),
     messagerie: objet({
@@ -117,12 +120,9 @@ export const DOMAINE: Schema = objet(
       niveau,
       spf: {
         ...objet({
-          statut: { enum: ["absent", "lu", "limite dépassée", "boucle"] },
+          statut: { enum: ["absent", "lu", "limite dépassée", "boucle", "echec"] },
           inclus: liste(nomDns, 50),
-          reseaux: liste(
-            objet({ as: { type: "integer", minimum: 0 }, descriptionAs: { type: ["string", "null"], maxLength: 200 } }),
-            50,
-          ),
+          reseaux: liste(objet({ as: { type: "integer", minimum: 0 } }), 50),
           reseauxTotal: { type: "integer", minimum: 0 },
           nonEvalues: { type: "integer", minimum: 0 },
         }),
@@ -138,14 +138,14 @@ export const FRAGMENT_NOMS: Schema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "fragment-noms.schema.json",
   title: "Sovermap : un fragment de noms mesurés",
-  ...objet({ noms: liste(NOM, 500) }),
+  ...objet({ noms: liste(NOM, 500), parties: { type: "integer", minimum: 2 } }, ["parties"]),
 };
 
 export const FRAGMENT_DOMAINES: Schema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "fragment-domaines.schema.json",
   title: "Sovermap : un fragment de domaines enregistrés",
-  ...objet({ domaines: liste(DOMAINE, 500) }),
+  ...objet({ domaines: liste(DOMAINE, 500), parties: { type: "integer", minimum: 2 } }, ["parties"]),
 };
 
 export const JOURNAL: Schema = {
@@ -220,8 +220,8 @@ export function valider(valeur: unknown, schema: Schema, chemin = "$", erreurs: 
 
 /** The schema of a published file, by its path; null for files checked otherwise (indexes, README). */
 export function schemaDe(chemin: string): Schema | null {
-  if (/^noms\/[0-9a-f]{2}\/[0-9a-f]{2}\.json$/.test(chemin)) return FRAGMENT_NOMS;
-  if (/^domaines\/[0-9a-f]{2}\/[0-9a-f]{2}\.json$/.test(chemin)) return FRAGMENT_DOMAINES;
+  if (/^noms\/[0-9a-f]{2}\/[0-9a-f]{2}(\.\d+)?\.json$/.test(chemin)) return FRAGMENT_NOMS;
+  if (/^domaines\/[0-9a-f]{2}\/[0-9a-f]{2}(\.\d+)?\.json$/.test(chemin)) return FRAGMENT_DOMAINES;
   if (/^journal\/\d{4}\/\d{2}\/\d{4}-\d{2}-\d{2}\.json$/.test(chemin)) return JOURNAL;
   return null;
 }

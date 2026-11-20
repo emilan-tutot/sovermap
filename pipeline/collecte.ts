@@ -8,7 +8,7 @@
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
 import { Cadence, type Horloge, HORLOGE_REELLE, melanger, type Montee, ParZone } from "./politesse";
-import { etendreSpf, type ResolveurSpf, type ResultatSpf } from "./spf";
+import { EchecRecherche, etendreSpf, type ResolveurSpf, type ResultatSpf } from "./spf";
 
 export type OptionsCollecte = {
   nomsParSeconde: number;
@@ -83,29 +83,38 @@ class ClientParZone implements ClientDns {
   }
 }
 
+const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
+/** A failed lookup makes the SPF expansion « echec » (its list would be incomplete), never « none ». */
+const verifier = (r: Reponse, nom: string): Reponse => {
+  if (CODES_EN_ECHEC.has(r.code)) throw new EchecRecherche(`${nom} : ${r.code}`);
+  return r;
+};
+
 /** The SPF expansion asks through the same polite client. */
 export function resolveurSpf(client: ClientDns): ResolveurSpf {
   return {
     spf: async (domaine) => {
-      const r = await client.demander(domaine, "TXT");
+      const r = verifier(await client.demander(domaine, "TXT"), domaine);
       for (const e of r.reponses) if (e.donnee.type === "TXT") return e.donnee.spf;
       return null;
     },
     adresses: async (nom) => {
-      const [a, aaaa] = await Promise.all([client.demander(nom, "A"), client.demander(nom, "AAAA")]);
+      const [a, aaaa] = (await Promise.all([client.demander(nom, "A"), client.demander(nom, "AAAA")])).map((r) =>
+        verifier(r, nom),
+      ) as [Reponse, Reponse];
       return [...a.reponses, ...aaaa.reponses].flatMap((e) =>
         e.donnee.type === "A" || e.donnee.type === "AAAA" ? [e.donnee.adresse] : [],
       );
     },
     mx: async (domaine) => {
-      const r = await client.demander(domaine, "MX");
+      const r = verifier(await client.demander(domaine, "MX"), domaine);
       return r.reponses.flatMap((e) => (e.donnee.type === "MX" && e.donnee.hote !== "" ? [e.donnee.hote] : []));
     },
   };
 }
 
 const enEchec = (m: MesureNom) => m.etat === "echec";
-const domaineEnEchec = (z: MesureZone) => z.etat === "echec" || z.mxEtat === "echec";
+const domaineEnEchec = (z: MesureZone) => z.etat === "echec" || z.mxEtat === "echec" || z.echecs.length > 0;
 
 /**
  * Measures every name (and the registrable domain each one belongs to). `noms` maps each name to its registrable

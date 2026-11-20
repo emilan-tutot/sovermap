@@ -34,7 +34,12 @@ export function estPlage(plage: string): boolean {
   const morceaux = plage.trim().split("/");
   const [base = "", longueurTexte = ""] = morceaux;
   const famille = isIP(base);
-  return morceaux.length === 2 && famille !== 0 && /^\d{1,3}$/.test(longueurTexte) && Number(longueurTexte) <= (famille === 4 ? 32 : 128);
+  return (
+    morceaux.length === 2 &&
+    famille !== 0 &&
+    /^\d{1,3}$/.test(longueurTexte) &&
+    Number(longueurTexte) <= (famille === 4 ? 32 : 128)
+  );
 }
 
 function dansPlage(adresse: string, plage: string): boolean {
@@ -78,15 +83,16 @@ export function detecterCdn(
   }
   for (const f of referentiel.fournisseurs) {
     const officielles = plages[f.id];
-    const adresse = officielles ? adresses.find((a) => officielles.plages.some((p) => dansPlage(a, p))) : undefined;
-    if (officielles && adresse) {
+    // The proof is the official range, never the address (a CDN's addresses change every day: plan § 4).
+    const plage = officielles?.plages.find((p) => adresses.some((a) => dansPlage(a, p)));
+    if (officielles && plage) {
       return {
         id: f.id,
         nom: f.nom,
         societe: f.societe,
         methode: "plage",
         niveau: "confirmé",
-        preuve: `${adresse} dans la liste officielle (${officielles.date})`,
+        preuve: `plage ${plage} de la liste officielle (${officielles.date})`,
       };
     }
   }

@@ -76,6 +76,27 @@ describe("the layers v1", () => {
     expect(JSON.stringify(desaccord)).not.toContain("64511");
   });
 
+  it("skips a network that is not an address, and names a CDN's official range, never the address", () => {
+    const c = coucheSpf(
+      {
+        statut: "lu",
+        reseaux: [{ reseau: "fe80::%x/128", depuis: "x.example" }],
+        inclus: [],
+        nonEvalues: [],
+        recherches: 0,
+      },
+      contexte,
+    );
+    expect(c.reseaux).toEqual([]);
+    const avecPlages = {
+      ...contexte,
+      plages: { "cdn-exemple": { plages: ["198.51.100.0/24"], source: "liste", date: "2026-11-20" } },
+    };
+    const cdn = coucheAdresses(mesure("www.site.example", ["198.51.100.7"]), null, "hors État", avecPlages, "t");
+    expect(cdn.cdn).toMatchObject({ id: "cdn-exemple", methode: "plage" });
+    expect(JSON.stringify(cdn)).not.toContain("198.51.100.7");
+  });
+
   it("gives the description of an AS", () => {
     expect(contexte.iptoasn.descriptionAs(64496)).toBe("EXEMPLE-HEBERGEUR");
     expect(contexte.iptoasn.descriptionAs(64511)).toBeNull();
@@ -98,10 +119,7 @@ describe("the layers v1", () => {
     expect(c).toEqual({
       statut: "lu",
       inclus: ["spf.nuage.example"],
-      reseaux: [
-        { as: 64496, descriptionAs: "EXEMPLE-HEBERGEUR" },
-        { as: 64501, descriptionAs: "EXEMPLE-CLOUD" },
-      ],
+      reseaux: [{ as: 64496 }, { as: 64501 }],
       reseauxTotal: 2,
       nonEvalues: 0,
     });

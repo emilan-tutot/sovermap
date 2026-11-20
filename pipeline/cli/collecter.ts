@@ -210,7 +210,8 @@ function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson }
     if (!existsSync(racine)) continue;
     for (const haut of readdirSync(racine)) {
       for (const f of readdirSync(path.join(racine, haut))) {
-        if (!/^[0-9a-f]{2}\.json$/.test(f)) continue;
+        // A bucket and its parts (<bb>.json, <bb>.1.json…).
+        if (!/^[0-9a-f]{2}(\.\d+)?\.json$/.test(f)) continue;
         const contenu = json<Record<string, unknown[]>>(racine, haut, f);
         for (const e of contenu[sorte] ?? []) {
           if (sorte === "noms") noms.set((e as EnregistrementNom).nom, e as EnregistrementNom);

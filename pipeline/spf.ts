@@ -37,7 +37,13 @@ export function lireSpf(enregistrement: string): Mecanisme[] {
       case "ip6": {
         const adresse = valeur ?? "";
         const longueur = m[3] ?? (nom === "ip4" ? "32" : "128");
-        if (isIP(adresse) === (nom === "ip4" ? 4 : 6)) sortie.push({ type: nom, reseau: `${adresse}/${longueur}` });
+        // An address only: digits and dots (ip4), hexadecimal digits, colons and dots (ip6) — never a zone index
+        // (« fe80::%x », which node:net accepts), never a length beyond the family's.
+        const forme = nom === "ip4" ? /^[0-9.]+$/ : /^[0-9a-f:.]+$/i;
+        const maximum = nom === "ip4" ? 32 : 128;
+        if (forme.test(adresse) && isIP(adresse) === (nom === "ip4" ? 4 : 6) && Number(longueur) <= maximum) {
+          sortie.push({ type: nom, reseau: `${adresse}/${longueur}` });
+        }
         break;
       }
       case "include":
@@ -71,8 +77,11 @@ export type ResolveurSpf = {
   mx(domaine: string): Promise<string[]>;
 };
 
+/** A lookup failed (SERVFAIL, TIMEOUT…): the list of senders is then incomplete, never « read ». */
+export class EchecRecherche extends Error {}
+
 export type ResultatSpf = {
-  statut: "absent" | "lu" | "limite dépassée" | "boucle";
+  statut: "absent" | "lu" | "limite dépassée" | "boucle" | "echec";
   /** Every network authorised, with the domain whose record names it. */
   reseaux: { reseau: string; depuis: string }[];
   /** The domains included or redirected to. */
@@ -89,7 +98,13 @@ const LIMITE = 10;
 export async function etendreSpf(domaine: string, resolveur: ResolveurSpf): Promise<ResultatSpf> {
   const resultat: ResultatSpf = { statut: "lu", reseaux: [], inclus: [], nonEvalues: [], recherches: 0 };
   const vus = new Set<string>();
-  const premier = await resolveur.spf(domaine);
+  let premier: string | null;
+  try {
+    premier = await resolveur.spf(domaine);
+  } catch (erreur) {
+    if (erreur instanceof EchecRecherche) return { ...resultat, statut: "echec" };
+    throw erreur;
+  }
   if (premier === null) return { ...resultat, statut: "absent" };
 
   async function parcourir(nom: string, enregistrement: string): Promise<void> {
@@ -145,6 +160,11 @@ export async function etendreSpf(domaine: string, resolveur: ResolveurSpf): Prom
       }
     }
   }
-  await parcourir(domaine, premier);
+  try {
+    await parcourir(domaine, premier);
+  } catch (erreur) {
+    if (!(erreur instanceof EchecRecherche)) throw erreur;
+    resultat.statut = "echec";
+  }
   return resultat;
 }

@@ -44,7 +44,7 @@ export function bornerDomaine(d: EnregistrementDomaine): EnregistrementDomaine {
       ...d.zone,
       ns: noms(d.zone.ns, 13),
       soa: d.zone.soa !== null && estNomDns(d.zone.soa) ? d.zone.soa : null,
-      caa: d.zone.caa.slice(0, 10),
+      caa: d.zone.caa === null ? null : d.zone.caa.slice(0, 10),
     },
     serveursDeNoms: {
       ...d.serveursDeNoms,
@@ -66,7 +66,11 @@ export function bornerDomaine(d: EnregistrementDomaine): EnregistrementDomaine {
   if (taille(borne) <= TAILLE_MAX_ENREGISTREMENT) return borne;
   const court: EnregistrementDomaine = {
     ...borne,
-    zone: { ...borne.zone, ns: borne.zone.ns.slice(0, 4), caa: borne.zone.caa.slice(0, 3) },
+    zone: {
+      ...borne.zone,
+      ns: borne.zone.ns.slice(0, 4),
+      caa: borne.zone.caa === null ? null : borne.zone.caa.slice(0, 3),
+    },
     serveursDeNoms: { ...borne.serveursDeNoms, hotes: borne.serveursDeNoms.hotes.slice(0, 4).map((h) => hote(h, 2)) },
     messagerie: {
       ...borne.messagerie,
@@ -86,7 +90,7 @@ export function bornerDomaine(d: EnregistrementDomaine): EnregistrementDomaine {
   if (taille(court) <= TAILLE_MAX_ENREGISTREMENT) return court;
   return {
     ...court,
-    zone: { ...court.zone, ns: [], caa: [] },
+    zone: { ...court.zone, ns: [], caa: court.zone.caa === null ? null : [] },
     serveursDeNoms: { ...court.serveursDeNoms, hotes: [] },
     messagerie: {
       ...court.messagerie,

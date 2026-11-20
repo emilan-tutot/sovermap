@@ -99,8 +99,8 @@ export function construireEtat(
               : null,
           ns: z.ns,
           soa: z.soa?.mname ?? null,
-          ds: z.ds.length > 0,
-          caa: z.caa,
+          ds: z.echecs.includes("DS") ? null : z.ds.length > 0,
+          caa: z.echecs.includes("CAA") ? null : z.caa,
         },
         serveursDeNoms: { hotes: ns.hotes.map(hoteDe), categorie: ns.categorie, horsUE: ns.horsUE, niveau: ns.niveau },
         messagerie: {
@@ -110,7 +110,11 @@ export function construireEtat(
           categorie: mx.categorie,
           horsUE: mx.horsUE,
           niveau: desaccordMx ? "non déterminé" : mx.niveau,
-          spf: spf === undefined ? null : coucheSpf(spf, contexte),
+          spf: z.echecs.includes("TXT")
+            ? { statut: "echec", inclus: [], reseaux: [], reseauxTotal: 0, nonEvalues: 0 }
+            : spf === undefined
+              ? null
+              : coucheSpf(spf, contexte),
         },
       }),
     );

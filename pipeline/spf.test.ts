@@ -1,6 +1,6 @@
 // Tests of the SPF reading (couche 10): a simulated resolver, documentation names and addresses only.
 import { describe, expect, it } from "vitest";
-import { etendreSpf, lireSpf, type ResolveurSpf } from "./spf";
+import { EchecRecherche, etendreSpf, lireSpf, type ResolveurSpf } from "./spf";
 
 const resolveur = (
   spf: Record<string, string>,
@@ -26,6 +26,25 @@ describe("SPF", () => {
       texte: "exists:%{i}.liste.example",
     });
     expect(lireSpf("v=spf2 ip4:192.0.2.1")).toEqual([]);
+  });
+
+  it("says « echec » when a lookup fails, never « lu » with a partial list", async () => {
+    const enPanne: ResolveurSpf = {
+      spf: async (d) => {
+        if (d === "panne.example") throw new EchecRecherche("panne.example : SERVFAIL");
+        return d === "site.example" ? "v=spf1 ip4:192.0.2.1 include:panne.example -all" : null;
+      },
+      adresses: async () => [],
+      mx: async () => [],
+    };
+    expect((await etendreSpf("site.example", enPanne)).statut).toBe("echec");
+  });
+
+  it("never takes a zone index, letters or a length too long for an address", () => {
+    expect(lireSpf("v=spf1 ip6:fe80::%x ip6:2001:db8::/200 ip4:192.0.2.1 ip4:999.1.1.1 -all")).toEqual([
+      { type: "ip4", reseau: "192.0.2.1/32" },
+      { type: "all", qualificatif: "-" },
+    ]);
   });
 
   it("follows include, redirect, a and mx, and names the networks with the record that gives them", async () => {
