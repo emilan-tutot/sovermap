@@ -21,6 +21,9 @@ type Schema = {
 
 const texte = (maxLength = 300): Schema => ({ type: "string", maxLength });
 // A DNS name: letters, digits, hyphens and underscores (_spf, _domainkey…), never markup.
+const MOTIF_NOM_DNS = /^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$/;
+/** A value read from the DNS may be published as a name only if it looks like one (253 characters at most). */
+export const estNomDns = (n: string) => n.length <= 253 && MOTIF_NOM_DNS.test(n);
 const nomDns: Schema = {
   type: "string",
   maxLength: 253,
@@ -55,65 +58,73 @@ const hote = objet({
   niveau,
 });
 
-export const NOM: Schema = objet({
-  nom: nomDns,
-  domaine: nomDns,
-  provenances: liste(texte(120), 20),
-  types: liste(texte(80), 20),
-  etat: etatNom,
-  cname: liste(nomDns, 10),
-  dnssec: { type: "boolean" },
-  reseaux: liste(
-    objet({ as: { type: "integer", minimum: 0 }, plage: { type: ["string", "null"], maxLength: 100 } }),
-    100,
-  ),
-  cdn: { ...objet({ id: texte(60), methode: { enum: ["cname", "plage", "as"] } }), type: ["object", "null"] },
-  exploitants: liste(exploitant, 100),
-  categorie,
-  horsUE,
-  niveau,
-  controle: { ...objet({ resolveur: texte(60), accord: { type: "boolean" } }), type: ["object", "null"] },
-});
-
-export const DOMAINE: Schema = objet({
-  domaine: nomDns,
-  nomWeb: nomDns,
-  perimetre: { enum: ["État", "hors État"] },
-  raisons: liste({ enum: ["gouv.fr", "dila"] }, 5),
-  plateforme: { type: "boolean" },
-  organismes: { type: "integer", minimum: 0 },
-  ministeres: liste(texte(80), 50),
-  noms: { type: "integer", minimum: 1 },
-  zone: objet({
+export const NOM: Schema = objet(
+  {
+    nom: nomDns,
+    domaine: nomDns,
+    provenances: liste(texte(120), 20),
+    types: liste(texte(80), 20),
     etat: etatNom,
-    ns: liste(nomDns, 50),
-    soa: { type: ["string", "null"], maxLength: 253 },
-    ds: { type: "boolean" },
-    caa: liste(objet({ propriete: { enum: ["issue", "issuewild"] }, valeur: texte(255) }), 50),
-  }),
-  serveursDeNoms: objet({ hotes: liste(hote, 50), categorie, horsUE, niveau }),
-  messagerie: objet({
-    etat: { enum: ["ok", "aucun", "nul", "echec"] },
-    mx: liste(objet({ preference: { type: "integer", minimum: 0 }, hote: nomDns }), 50),
-    hotes: liste(hote, 50),
+    cname: liste(nomDns, 10),
+    dnssec: { type: "boolean" },
+    reseaux: liste(
+      objet({ as: { type: "integer", minimum: 0 }, plage: { type: ["string", "null"], maxLength: 100 } }),
+      100,
+    ),
+    cdn: { ...objet({ id: texte(60), methode: { enum: ["cname", "plage", "as"] } }), type: ["object", "null"] },
+    exploitants: liste(exploitant, 100),
     categorie,
     horsUE,
     niveau,
-    spf: {
-      ...objet({
-        statut: { enum: ["absent", "lu", "limite dépassée", "boucle"] },
-        inclus: liste(nomDns, 50),
-        reseaux: liste(
-          objet({ as: { type: "integer", minimum: 0 }, descriptionAs: { type: ["string", "null"], maxLength: 200 } }),
-          50,
-        ),
-        reseauxTotal: { type: "integer", minimum: 0 },
-        nonEvalues: { type: "integer", minimum: 0 },
-      }),
-      type: ["object", "null"],
-    },
-  }),
-});
+    controle: { ...objet({ resolveur: texte(60), accord: { type: "boolean" } }), type: ["object", "null"] },
+    tronque: { enum: [true] },
+  },
+  ["tronque"],
+);
+
+export const DOMAINE: Schema = objet(
+  {
+    domaine: nomDns,
+    nomWeb: nomDns,
+    perimetre: { enum: ["État", "hors État"] },
+    raisons: liste({ enum: ["gouv.fr", "dila"] }, 5),
+    plateforme: { type: "boolean" },
+    organismes: { type: "integer", minimum: 0 },
+    ministeres: liste(texte(80), 50),
+    noms: { type: "integer", minimum: 1 },
+    zone: objet({
+      etat: etatNom,
+      ns: liste(nomDns, 50),
+      soa: { type: ["string", "null"], maxLength: 253 },
+      ds: { type: "boolean" },
+      caa: liste(objet({ propriete: { enum: ["issue", "issuewild"] }, valeur: texte(255) }), 50),
+    }),
+    serveursDeNoms: objet({ hotes: liste(hote, 50), categorie, horsUE, niveau }),
+    messagerie: objet({
+      etat: { enum: ["ok", "aucun", "nul", "echec"] },
+      mx: liste(objet({ preference: { type: "integer", minimum: 0 }, hote: nomDns }), 50),
+      hotes: liste(hote, 50),
+      categorie,
+      horsUE,
+      niveau,
+      spf: {
+        ...objet({
+          statut: { enum: ["absent", "lu", "limite dépassée", "boucle"] },
+          inclus: liste(nomDns, 50),
+          reseaux: liste(
+            objet({ as: { type: "integer", minimum: 0 }, descriptionAs: { type: ["string", "null"], maxLength: 200 } }),
+            50,
+          ),
+          reseauxTotal: { type: "integer", minimum: 0 },
+          nonEvalues: { type: "integer", minimum: 0 },
+        }),
+        type: ["object", "null"],
+      },
+    }),
+    tronque: { enum: [true] },
+  },
+  ["tronque"],
+);
 
 export const FRAGMENT_NOMS: Schema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",

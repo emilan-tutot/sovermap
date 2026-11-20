@@ -108,6 +108,31 @@ describe("the polite downloader", () => {
     }
   });
 
+  it("refuses a body larger than its limit, announced or not", async () => {
+    let horloge = 0;
+    const vraieDate = Date.now;
+    Date.now = () => horloge;
+    try {
+      const fetchFaux = (async (entree: string | URL | Request) => {
+        const url = entree.toString();
+        if (url.endsWith("/robots.txt")) return new Response("", { status: 404 });
+        if (url.endsWith("/annonce"))
+          return new Response("x".repeat(10), { status: 200, headers: { "content-length": "999999" } });
+        return new Response("x".repeat(2_000), { status: 200 });
+      }) as typeof fetch;
+      const t = new Telechargeur({
+        agent: "Sovermap-bot/1",
+        fetch: fetchFaux,
+        dormir: async (ms) => void (horloge += ms),
+        tailleMax: 1_000,
+      });
+      await expect(t.obtenir("https://e.example/annonce")).rejects.toThrow(/trop grand/);
+      await expect(t.obtenir("https://e.example/flux")).rejects.toThrow(/trop grand/);
+    } finally {
+      Date.now = vraieDate;
+    }
+  });
+
   it("forbids everything when robots.txt answers a server error", async () => {
     const f = faux({ "https://d.example/robots.txt": { status: 503 } });
     try {

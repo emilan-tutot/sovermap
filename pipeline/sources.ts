@@ -103,8 +103,21 @@ export class Telechargeur {
   readonly #fetch: typeof fetch;
   readonly #dormir: (ms: number) => Promise<void>;
 
-  constructor(options: { agent: string; fetch?: typeof fetch; dormir?: (ms: number) => Promise<void> }) {
+  readonly #tailleMax: number;
+  readonly #delaiMs: number;
+
+  constructor(options: {
+    agent: string;
+    fetch?: typeof fetch;
+    dormir?: (ms: number) => Promise<void>;
+    /** A body larger than this is refused as it arrives (300 MiB by default). */
+    tailleMax?: number;
+    /** Time limit of one request (5 minutes by default). */
+    delaiMs?: number;
+  }) {
     this.#agent = options.agent;
+    this.#tailleMax = options.tailleMax ?? 300 * 1024 * 1024;
+    this.#delaiMs = options.delaiMs ?? 5 * 60 * 1000;
     this.#fetch = options.fetch ?? fetch;
     this.#dormir = options.dormir ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   }
@@ -136,6 +149,27 @@ export class Telechargeur {
     return robots;
   }
 
+  /** The body, read piece by piece: refused as soon as it is, or says it will be, larger than the limit. */
+  async #corps(reponse: Response): Promise<Buffer> {
+    const annonce = Number(reponse.headers.get("content-length") ?? "0");
+    if (annonce > this.#tailleMax) throw new Error(`fichier trop grand : ${annonce} octets annoncés`);
+    if (reponse.body === null) return Buffer.alloc(0);
+    const morceaux: Uint8Array[] = [];
+    let total = 0;
+    const lecteur = reponse.body.getReader();
+    for (;;) {
+      const { done, value } = await lecteur.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > this.#tailleMax) {
+        await lecteur.cancel();
+        throw new Error(`fichier trop grand : plus de ${this.#tailleMax} octets`);
+      }
+      morceaux.push(value);
+    }
+    return Buffer.concat(morceaux);
+  }
+
   /** A GET that obeys robots.txt at every hop (5 redirects at most). */
   async obtenir(adresse: string, entetes: Record<string, string> = {}): Promise<Reponse> {
     let url = new URL(adresse);
@@ -148,6 +182,7 @@ export class Telechargeur {
       const reponse = await this.#fetch(url, {
         headers: { "user-agent": this.#agent, ...entetes },
         redirect: "manual",
+        signal: AbortSignal.timeout(this.#delaiMs),
       });
       if (reponse.status >= 300 && reponse.status < 400) {
         const suivante = reponse.headers.get("location");
@@ -159,7 +194,7 @@ export class Telechargeur {
         url: url.toString(),
         statut: reponse.status,
         entetes: reponse.headers,
-        corps: Buffer.from(await reponse.arrayBuffer()),
+        corps: await this.#corps(reponse),
       };
     }
     throw new Error(`plus de 5 redirections : ${adresse}`);

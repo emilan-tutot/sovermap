@@ -36,6 +36,11 @@ describe("the zip reader", () => {
     expect(lireZip(archive("dila.json", contenu)).get("dila.json")?.toString()).toBe('{"service":[]}');
   });
 
+  it("reads only the entries asked for", () => {
+    const zip = archive("lisez-moi.txt", Buffer.from("non lu"));
+    expect(lireZip(zip, (n) => n.endsWith(".json")).size).toBe(0);
+  });
+
   it("refuses an entry that inflates beyond its declared size, and a file that is not a zip", () => {
     expect(() => lireZip(archive("bombe.json", Buffer.alloc(100_000), 10))).toThrow();
     expect(() => lireZip(Buffer.from("pas une archive, juste du texte"))).toThrow(/fin du répertoire/);

@@ -30,6 +30,8 @@ export type EnregistrementNom = {
   horsUE: boolean | null;
   niveau: Niveau;
   controle: { resolveur: string; accord: boolean } | null;
+  /** The record was shortened to stay within its size (borner.ts): its lists are partial. */
+  tronque?: true;
 };
 
 export type Hote = {
@@ -63,6 +65,8 @@ export type EnregistrementDomaine = {
     niveau: Niveau;
     spf: CoucheSpf | null;
   };
+  /** The record was shortened to stay within its size (borner.ts): its lists are partial. */
+  tronque?: true;
 };
 
 export type Etat = { noms: Map<string, EnregistrementNom>; domaines: Map<string, EnregistrementDomaine> };

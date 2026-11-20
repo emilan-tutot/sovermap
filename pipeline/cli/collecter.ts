@@ -253,7 +253,7 @@ async function principal(): Promise<number> {
   const source = (id: string) => sources.find((s) => s.id === id);
   let dila: ReferentielDila | null = null;
   if (source("dila")?.etat !== "en échec") {
-    const entrees = lireZip(readFileSync(path.join(travail, "sources", "dila")));
+    const entrees = lireZip(readFileSync(path.join(travail, "sources", "dila")), (n) => n.endsWith(".json"));
     const [nom, contenu] = [...entrees.entries()].find(([n]) => n.endsWith(".json")) ?? [];
     if (nom !== undefined && contenu !== undefined) dila = lireDila(contenu.toString("utf8"), nom);
   }

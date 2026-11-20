@@ -115,7 +115,7 @@ jobs:
         run: |
           args=(--travail travail --veille veille --conteneur knot)
           if [ -d publie ]; then args+=(--donnees publie); fi
-          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite 200); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite 200 --delai-reprise-minutes 1); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"
