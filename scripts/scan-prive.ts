@@ -10,6 +10,7 @@ import {
   type ScanContext,
   ownerFromRemote,
   parseMotifs,
+  scanCommitMessage,
   scanIdentity,
   scanText,
 } from "./lib/private-scan";
@@ -62,7 +63,7 @@ function scanUnpublishedCommits(ctx: ScanContext): { findings: Finding[]; count:
       sha,
     ).split("\0");
     findings.push(...scanIdentity({ authorName, authorEmail, committerName, committerEmail }, `commit ${short}`, ctx));
-    findings.push(...scanText(message.join("\0"), `commit ${short} (message)`, ctx));
+    findings.push(...scanCommitMessage(message.join("\0"), `commit ${short} (message)`, ctx));
     const added = git("show", "--format=", "--unified=0", "--no-color", "--no-ext-diff", sha)
       .split("\n")
       .filter((line) => line.startsWith("+") && !line.startsWith("+++"))

@@ -6,7 +6,8 @@
   "git": {
     "deploymentEnabled": {
       "dependabot/**": false,
-      "donnees": false
+      "donnees": false,
+      "feat/c2-*": false
     }
   }
 }

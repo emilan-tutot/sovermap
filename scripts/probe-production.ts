@@ -1,30 +1,46 @@
-// npm run probe:prod -- --url <origin> [--commit <sha>] [--wait <seconds>] [--open]
+// npm run probe:prod -- --url <origin> [--commit <sha>] [--wait <seconds>] [--porte-ouverte] [--indexation-ouverte]
 // The deployed site as a stranger and a robot see it (brief B.5 and E.7):
 //   1. it serves the expected commit (meta « sovermap-version »), waiting up to --wait seconds;
 //   2. the security headers of cahier §6, and a CSP without any third party;
-//   3. closed to indexing until the launch (X-Robots-Tag, meta robots, robots.txt, empty sitemap), unless --open;
-//   4. no source map, no cookie, nothing served that must not be (/.env, /.git), a real 404.
+//   3. until indexing opens (unless --indexation-ouverte): X-Robots-Tag and meta robots noindex, robots.txt that
+//      forbids everything, the empty sitemap;
+//   4. until the launch (unless --porte-ouverte): the closed production door at every address of lib/porte.ts (brief of
+//      chantier 2, A.6): the waiting page at the root, the 404 page everywhere else, and nowhere a sign of data;
+//   5. no source map, no cookie, nothing served that must not be (/.env, /.git), a real 404.
+// The two switches of the site are separate (SITE_PUBLIC, then SITE_INDEXING), and so are the two options.
 // Adapted from a generic tool of another project of the owner.
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
+import { ADRESSES_PORTE } from "../lib/porte";
+import { ecartsPorte } from "./lib/porte-controle";
 
 const { values } = parseArgs({
   options: {
     url: { type: "string", default: process.env["SOVERMAP_PRODUCTION_URL"] ?? "" },
     commit: { type: "string" },
     wait: { type: "string", default: "0" },
-    open: { type: "boolean", default: false },
+    "porte-ouverte": { type: "boolean", default: false },
+    "indexation-ouverte": { type: "boolean", default: false },
   },
 });
 
 class ProbeFailure extends Error {}
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function get(url: string): Promise<{ status: number; text: string; headers: Headers }> {
+async function get(
+  url: string,
+  headers?: Readonly<Record<string, string>>,
+): Promise<{ status: number; text: string; headers: Headers }> {
   let lastError: unknown = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const response = await fetch(url, { cache: "no-store", redirect: "manual" });
+      // A request that carries headers imitates an internal navigation of Next.js, which may be redirected once to add
+      // its `_rsc` check: it follows redirects; every other request sees the first answer.
+      const response = await fetch(url, {
+        cache: "no-store",
+        redirect: headers === undefined ? "manual" : "follow",
+        headers: { ...headers },
+      });
       return { status: response.status, text: await response.text(), headers: response.headers };
     } catch (error) {
       lastError = error;
@@ -45,6 +61,8 @@ async function main() {
     .toLowerCase();
   const waitSeconds = Number(values.wait);
   if (!Number.isFinite(waitSeconds) || waitSeconds < 0) throw new ProbeFailure("--wait attend un nombre de secondes.");
+  const porteOuverte = values["porte-ouverte"] === true;
+  const indexationOuverte = values["indexation-ouverte"] === true;
 
   // 1. The expected commit.
   const deadline = Date.now() + waitSeconds * 1000;
@@ -71,17 +89,31 @@ async function main() {
   if (!(h.get("permissions-policy") ?? "").includes("camera=()")) problems.push("Permissions-Policy absente ou ouverte");
   if (h.get("set-cookie")) problems.push("un cookie est posé");
 
-  // 3. Indexing.
-  if (!values.open) {
+  // 3. Closed to search engines until indexing opens.
+  if (!indexationOuverte) {
     if (!(h.get("x-robots-tag") ?? "").includes("noindex")) problems.push("en-tête X-Robots-Tag noindex absent");
     if (!/<meta name="robots" content="noindex, ?nofollow"/.test(home.text)) problems.push("balise robots noindex absente");
     const robots = await get(`${origin}/robots.txt`);
-    if (robots.status !== 200 || !/Disallow:\s*\/\s*$/m.test(robots.text)) problems.push("robots.txt n'interdit pas tout");
+    if (robots.status !== 200 || !/^Disallow:\s*\/\s*$/m.test(robots.text)) problems.push("robots.txt n'interdit pas tout");
     const sitemap = await get(`${origin}/sitemap.xml`);
-    if (/<url>/.test(sitemap.text)) problems.push("le sitemap n'est pas vide");
+    if (/<url>|<sitemap>/i.test(sitemap.text)) problems.push("le plan du site n'est pas vide");
   }
 
-  // 4. No source map, nothing private served, a real 404.
+  // 4. The closed production door, at every address of its list.
+  if (!porteOuverte) {
+    for (const adresse of ADRESSES_PORTE) {
+      const reponse = await get(`${origin}${adresse.chemin}`, adresse.entetes);
+      problems.push(
+        ...ecartsPorte(adresse, {
+          status: reponse.status,
+          contentType: reponse.headers.get("content-type") ?? "",
+          texte: reponse.text,
+        }),
+      );
+    }
+  }
+
+  // 5. No source map, nothing private served, a real 404.
   const scripts = [...home.text.matchAll(/<script[^>]+src="(\/_next\/static\/[^"]+\.js)"/g)].map((m) => m[1] ?? "");
   for (const src of scripts.slice(0, 5)) {
     const map = await get(`${origin}${src}.map`);
@@ -98,8 +130,12 @@ async function main() {
     for (const problem of problems) console.error(`probe:prod : ${problem}`);
     throw new ProbeFailure(`${problems.length} écart(s).`);
   }
+  const etat = [
+    indexationOuverte ? "indexation ouverte" : "fermé à l'indexation",
+    porteOuverte ? "porte ouverte" : `porte fermée sur ${ADRESSES_PORTE.length} adresses`,
+  ].join(", ");
   console.log(
-    `probe:prod : OK (${origin}) : commit ${commit}, en-têtes de sécurité, ${values.open ? "indexation ouverte" : "fermé à l'indexation"}, aucune carte de sources, aucun cookie, fichiers privés non servis, 404.`,
+    `probe:prod : OK (${origin}) : commit ${commit}, en-têtes de sécurité, ${etat}, aucune carte de sources, aucun cookie, fichiers privés non servis, 404.`,
   );
 }
 

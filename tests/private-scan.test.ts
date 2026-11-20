@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEPENDABOT_SIGNOFF,
   emailAllowed,
   ownerFromRemote,
   parseMotifs,
   type ScanContext,
+  scanCommitMessage,
   scanIdentity,
   scanText,
   withoutAllowedContexts,
@@ -109,6 +111,46 @@ describe("scanIdentity", () => {
     for (const b of bad) {
       expect(scanIdentity({ ...b, committerName: own.name, committerEmail: own.email }, "c", ctx).length).toBe(1);
     }
+  });
+});
+
+describe("Dependabot's sign-off line (brief of chantier 2, A.1)", () => {
+  const support = mail("support", "github.com");
+  const message = (...lines: string[]) =>
+    ["build(deps-dev): Bump eslint from 9.39.5 to 10.15.0", "", "Bumps eslint.", "", ...lines].join("\n");
+
+  it("is the exact line Dependabot writes", () => {
+    expect(DEPENDABOT_SIGNOFF).toBe(`Signed-off-by: dependabot[bot] <${support}>`);
+  });
+  it("passes in a commit message, alone or with Windows line ends", () => {
+    expect(scanCommitMessage(message(DEPENDABOT_SIGNOFF), "commit a (message)", ctx)).toEqual([]);
+    expect(scanCommitMessage(message(DEPENDABOT_SIGNOFF).replace(/\n/g, "\r\n"), "commit a (message)", ctx)).toEqual([]);
+  });
+  it("still refuses the same address anywhere else: another line of a message, a file, a changed line", () => {
+    const kinds = (findings: { kind: string }[]) => findings.map((f) => f.kind);
+    for (const line of [
+      `Signed-off-by: quelqu-un <${support}>`,
+      `${DEPENDABOT_SIGNOFF} et plus`,
+      ` ${DEPENDABOT_SIGNOFF}`,
+      `écrire à ${support}`,
+      `écrire à ${mail("security", "github.com")}`,
+    ]) {
+      expect(kinds(scanCommitMessage(message(line), "commit a (message)", ctx)), line).toEqual([
+        "adresse e-mail non autorisée (@github.com)",
+      ]);
+    }
+    expect(scanText(DEPENDABOT_SIGNOFF, "f.md", ctx)).toHaveLength(1);
+  });
+  it("keeps GitHub's committer address valid, and refuses the support address as an author", () => {
+    const robot = { authorName: "dependabot[bot]", authorEmail: mail("49699333+dependabot[bot]", "users.noreply.github.com") };
+    expect(scanIdentity({ ...robot, committerName: "GitHub", committerEmail: mail("noreply", "github.com") }, "c", ctx)).toEqual([]);
+    expect(
+      scanIdentity(
+        { authorName: "dependabot[bot]", authorEmail: support, committerName: "GitHub", committerEmail: mail("noreply", "github.com") },
+        "c",
+        ctx,
+      ),
+    ).toHaveLength(1);
   });
 });
 

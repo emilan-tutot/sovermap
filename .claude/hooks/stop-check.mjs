@@ -40,7 +40,12 @@ if (status.status !== 0) process.exit(0);
 const CODE = /\.(ts|tsx|mts|css|json)$/;
 const changed = status.stdout
   .split("\n")
-  .map((line) => line.slice(3).trim().replace(/^"|"$/g, ""))
+  .map((line) => {
+    // A rename or a copy reads « R  old -> new »: the new name is the file to check.
+    const entry = line.slice(3).trim();
+    const arrow = entry.lastIndexOf(" -> ");
+    return (arrow === -1 ? entry : entry.slice(arrow + 4)).replace(/^"|"$/g, "");
+  })
   .filter(
     (file) =>
       file !== "" &&

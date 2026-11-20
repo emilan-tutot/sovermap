@@ -84,6 +84,9 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 
 14 quinquies. **Une citation peut contenir une adresse e-mail** : celle d'un service, ou un exemple tiré d'une documentation. Le contrôle `scan:prive` n'accepte que les adresses noreply de GitHub et d'Anthropic, celles en `@sovermap.com` et les exemples en `example.com` ou `.example`. Parade : remplacer l'adresse par « [adresse omise] » dans la citation, et le dire.
 
+14 quinquies bis. **Dependabot signe ses messages de commit avec l'adresse de support de GitHub** (`Signed-off-by: dependabot[bot] <…>`, vu sur la PR n° 3, 20/11/2026). `scan:prive` la refusait, et toute PR de Dependabot échouait en CI. Son auteur (adresse noreply du robot) et son committer (`noreply` de GitHub) passaient déjà.
+   - Parade (chantier 2, A.1) : `scanCommitMessage` accepte exactement cette ligne dans un message de commit, et rien d'autre ; la même adresse ailleurs (fichier, autre ligne, auteur) échoue toujours. L'adresse n'est jamais écrite en entier dans le dépôt : le code l'assemble à l'exécution.
+
 ## Vercel
 
 14 octies. **Le tout premier déploiement d'un projet part en production**, même sans `--prod` (« This is the project's first deployment, so it was assigned to production »).
