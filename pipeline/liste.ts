@@ -41,7 +41,10 @@ export function* lignesCsv(texte: string): Generator<string[]> {
  */
 export function nomValide(brut: string): string | null {
   const nom = domainToASCII(brut.trim().toLowerCase().replace(/\.$/, ""));
-  return /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63}$/.test(nom) ? nom : null;
+  // Every label, the last one included, begins and ends with a letter or a digit.
+  return /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(nom)
+    ? nom
+    : null;
 }
 
 /**

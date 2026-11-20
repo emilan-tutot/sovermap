@@ -8,7 +8,7 @@ import type { ListeReference } from "./perimetre";
 import { generateur } from "./politesse";
 import { fragments } from "./publication";
 import { ResolveurSimule } from "./resolveur-simule";
-import { schemaDe, valider } from "./schemas";
+import { NOM, schemaDe, valider } from "./schemas";
 
 const zoneDe = (nom: string) => nom.split(".").slice(-2).join(".");
 
@@ -96,6 +96,42 @@ describe("the records of a day", () => {
       const schema = schemaDe(chemin);
       if (schema !== null) expect(valider(JSON.parse(texte), schema), chemin).toEqual([]);
     }
+  });
+
+  it("reduces a record that fails its schema, counts it, and goes on", async () => {
+    let t = 0;
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const hostile: ListeReference = {
+      ...liste,
+      noms: new Map([
+        [
+          "www.ministere.example",
+          {
+            ...(liste.noms.get("www.ministere.example") as NonNullable<ReturnType<typeof liste.noms.get>>),
+            provenances: [`dila:${"x".repeat(300)}`],
+          },
+        ],
+      ]),
+    };
+    const rapport = { erreurs: 0, reduits: 0 };
+    const etat = construireEtat(
+      hostile,
+      mesures,
+      { noms: new Map(), mx: new Map() },
+      contexteEssai(),
+      "t",
+      undefined,
+      rapport,
+    );
+    expect(rapport).toEqual({ erreurs: 0, reduits: 1 });
+    const n = etat.noms.get("www.ministere.example");
+    expect(n?.tronque).toBe(true);
+    expect(valider(n, NOM)).toEqual([]);
+    expect(etat.domaines.get("ministere.example")?.tronque).toBeUndefined();
   });
 
   it("shows a disagreement of the control resolver on the mail exchangers, never settles it", async () => {

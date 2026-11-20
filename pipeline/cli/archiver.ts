@@ -45,6 +45,8 @@ function principal(): void {
     throw new Error("options : --donnees <dossier> --veille <dossier> --mois AAAA-MM --sortie <dossier>");
   }
   const etat = JSON.parse(readFileSync(path.join(donnees, "etat.json"), "utf8")) as { date: string };
+  // The archive of a month holds a day of that month, never the next one's (brief B.8).
+  if (!etat.date.startsWith(`${mois}-`)) throw new Error(`l'état publié est du ${etat.date}, hors du mois ${mois}`);
   const observations = JSON.parse(
     gunzipSync(readFileSync(path.join(veille, "observations.json.gz"))).toString("utf8"),
   ) as {

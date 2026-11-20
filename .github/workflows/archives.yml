@@ -1,14 +1,14 @@
 name: Archives
 
-# On the 1st of each month (brief B.8 and F.2), the release « donnees-AAAA-MM » of the month that ended: the full state
-# of its last published day, in JSON and CSV, compressed, with each name's exact addresses and their TTL (left out of
+# On the 1st of each month at 00:13 UTC, before that day's collection (brief B.8 and F.2), the release « donnees-AAAA-MM »
+# of the month that ended: the full state of its last published day, in JSON and CSV, compressed, with each name's exact addresses and their TTL (left out of
 # the daily fragments). Marked « pre-release » and « en préparation » until the opening.
 # Emergency gesture if GitHub disables this workflow after 60 days without activity: Actions › Archives ›
 # « Enable workflow ».
 
 on:
   schedule:
-    - cron: "13 6 1 * *"
+    - cron: "13 0 1 * *"
   workflow_dispatch:
 
 permissions:
@@ -24,8 +24,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,8 +47,10 @@ jobs:
       - env:
           MOIS: ${{ steps.mois.outputs.mois }}
         run: npx tsx pipeline/cli/archiver.ts --donnees publie --veille veille --mois "$MOIS" --sortie archives
+      # The only step that holds the token: npm and the archive's code never see it.
       - env:
           MOIS: ${{ steps.mois.outputs.mois }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           tag="donnees-$MOIS"
           if gh release view "$tag" > /dev/null 2>&1; then

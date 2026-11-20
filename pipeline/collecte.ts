@@ -23,6 +23,8 @@ export type OptionsCollecte = {
    * within the current second (the resolver's logs, debit-serveurs.ts; brief B.3).
    */
   frein?: () => Promise<void>;
+  /** No new attempt starts after this moment (milliseconds since 1970): the job always ends before its time limit. */
+  echeance?: number;
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -156,7 +158,9 @@ export async function collecter(
     essai(domaine);
     const zone = await mesurerZone(domaine, client);
     resultat.domaines.set(domaine, zone);
-    await Promise.all([...zone.ns, ...zone.mx.map((m) => m.hote)].map(mesurerHote));
+    // At most 13 name servers and 10 mail exchangers per domain are asked: a domain that names hundreds of slow hosts
+    // can never hold the collection (the records keep as many).
+    await Promise.all([...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((m) => m.hote)].map(mesurerHote));
     if (zone.spf !== null) resultat.spf.set(domaine, await etendreSpf(domaine, spfClient));
     else resultat.spf.delete(domaine);
   };
@@ -204,6 +208,10 @@ export async function collecter(
     const domainesEchoues = [...resultat.domaines.values()].filter(domaineEnEchec).map((z) => z.domaine);
     const hotesEchoues = [...resultat.hotes.values()].filter(enEchec).map((m) => m.nom);
     if (nomsEchoues.length + domainesEchoues.length + hotesEchoues.length === 0) break;
+    if (options.echeance !== undefined && Date.now() + options.delaiRepriseMs > options.echeance) {
+      options.suivi?.(`reprise ${reprise} abandonnée : l'heure limite approche`);
+      break;
+    }
     options.suivi?.(
       `reprise ${reprise} dans ${options.delaiRepriseMs / 60_000} min : ${nomsEchoues.length} noms, ` +
         `${domainesEchoues.length} domaines, ${hotesEchoues.length} hôtes`,

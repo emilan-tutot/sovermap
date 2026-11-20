@@ -7,6 +7,34 @@ import { coucheAdresses, type ContexteV1, coucheHotes, coucheSpf } from "./couch
 import type { MesureNom } from "./mesure";
 import type { ListeReference } from "./perimetre";
 import { type EnregistrementDomaine, type EnregistrementNom, type Etat, exploitantsDe, hoteDe } from "./publication";
+import { DOMAINE, NOM, valider } from "./schemas";
+
+/** Records built in a reduced form: after an error, or because they failed their schema. */
+export type RapportConstruction = { erreurs: number; reduits: number };
+
+/**
+ * One record, built on its own: an error or a record that fails its schema gives the reduced record instead, counted,
+ * and never stops the collection (no measured domain may stop the publication of the others).
+ */
+function assurer<T>(
+  construire: () => T,
+  reduit: () => T,
+  schema: Parameters<typeof valider>[1],
+  rapport: RapportConstruction,
+): T {
+  let e: T;
+  try {
+    e = construire();
+  } catch {
+    rapport.erreurs += 1;
+    return reduit();
+  }
+  if (valider(e, schema).length === 0) return e;
+  rapport.reduits += 1;
+  return reduit();
+}
+
+const INDETERMINE = { categorie: "non déterminé" as const, horsUE: null, niveau: "non déterminé" as const };
 
 export type Mesures = Pick<ResultatCollecte, "noms" | "domaines" | "hotes" | "spf">;
 
@@ -29,25 +57,42 @@ export function construireEtat(
   contexte: ContexteV1,
   heure: string,
   pannes: Pannes = AUCUNE_PANNE,
+  rapport: RapportConstruction = { erreurs: 0, reduits: 0 },
 ): Etat {
   const noms = new Map<string, EnregistrementNom>();
   for (const entree of [...liste.noms.values()].sort((a, b) => (a.nom < b.nom ? -1 : 1))) {
     const m = mesures.noms.get(entree.nom);
     const domaine = liste.domaines.get(entree.domaine);
     if (m === undefined || domaine === undefined) continue;
-    const c = coucheAdresses(m, controles.noms.get(entree.nom) ?? null, domaine.perimetre, contexte, heure);
-    noms.set(
-      entree.nom,
-      bornerNom({
+    const echec =
+      m.etat === "echec"
+        ? { code: m.echec ?? "ERREUR", confirmePar: pannes.noms.has(entree.nom) ? pannes.resolveur : null }
+        : null;
+    const reduit = (): EnregistrementNom => ({
+      nom: entree.nom,
+      domaine: entree.domaine,
+      provenances: entree.provenances.slice(0, 20).map((p) => p.slice(0, 120)),
+      types: entree.types.slice(0, 20).map((x) => x.slice(0, 80)),
+      etat: m.etat,
+      echec,
+      cname: [],
+      dnssec: false,
+      reseaux: [],
+      cdn: null,
+      exploitants: [],
+      ...INDETERMINE,
+      controle: null,
+      tronque: true,
+    });
+    const construire = () => {
+      const c = coucheAdresses(m, controles.noms.get(entree.nom) ?? null, domaine.perimetre, contexte, heure);
+      return bornerNom({
         nom: entree.nom,
         domaine: entree.domaine,
         provenances: entree.provenances,
         types: entree.types,
         etat: c.etat,
-        echec:
-          m.etat === "echec"
-            ? { code: m.echec ?? "ERREUR", confirmePar: pannes.noms.has(entree.nom) ? pannes.resolveur : null }
-            : null,
+        echec,
         cname: c.cname,
         dnssec: c.dnssec,
         reseaux: c.reseaux.map((r) => ({ as: r.as, plage: r.plage })),
@@ -57,32 +102,50 @@ export function construireEtat(
         horsUE: c.horsUE,
         niveau: c.niveau,
         controle: c.controle,
-      }),
-    );
+      });
+    };
+    noms.set(entree.nom, assurer(construire, reduit, NOM, rapport));
   }
   const domaines = new Map<string, EnregistrementDomaine>();
   for (const d of [...liste.domaines.values()].sort((a, b) => (a.domaine < b.domaine ? -1 : 1))) {
     const z = mesures.domaines.get(d.domaine);
     if (z === undefined) continue;
-    const ns = coucheHotes(z.ns, mesures.hotes, controles.noms, d.perimetre, contexte, heure);
-    const mx = coucheHotes(
-      z.mx.map((m) => m.hote),
-      mesures.hotes,
-      controles.noms,
-      d.perimetre,
-      contexte,
-      heure,
-    );
-    // The control resolver saw other mail exchangers: the disagreement is shown, never settled (methode § 5).
-    const vusParControle = controles.mx.get(d.domaine);
-    const desaccordMx =
-      vusParControle !== undefined &&
-      vusParControle !== null &&
-      vusParControle.join(",") !== [...new Set(z.mx.map((m) => m.hote))].sort().join(",");
-    const spf = mesures.spf.get(d.domaine);
-    domaines.set(
-      d.domaine,
-      bornerDomaine({
+    const echecZone =
+      z.etat === "echec"
+        ? { code: z.echec ?? "ERREUR", confirmePar: pannes.zones.has(d.domaine) ? pannes.resolveur : null }
+        : null;
+    const reduit = (): EnregistrementDomaine => ({
+      domaine: d.domaine,
+      nomWeb: d.nomWeb,
+      perimetre: d.perimetre,
+      raisons: d.raisons,
+      plateforme: d.plateforme,
+      organismes: d.organismes.length,
+      ministeres: d.ministeres.slice(0, 50),
+      noms: d.noms.length,
+      zone: { etat: z.etat, echec: echecZone, ns: [], soa: null, ds: null, caa: null },
+      serveursDeNoms: { hotes: [], ...INDETERMINE },
+      messagerie: { etat: z.mxEtat, mx: [], hotes: [], ...INDETERMINE, spf: null },
+      tronque: true,
+    });
+    const construire = () => {
+      const ns = coucheHotes(z.ns, mesures.hotes, controles.noms, d.perimetre, contexte, heure);
+      const mx = coucheHotes(
+        z.mx.map((m) => m.hote),
+        mesures.hotes,
+        controles.noms,
+        d.perimetre,
+        contexte,
+        heure,
+      );
+      // The control resolver saw other mail exchangers: the disagreement is shown, never settled (methode § 5).
+      const vusParControle = controles.mx.get(d.domaine);
+      const desaccordMx =
+        vusParControle !== undefined &&
+        vusParControle !== null &&
+        vusParControle.join(",") !== [...new Set(z.mx.map((m) => m.hote))].sort().join(",");
+      const spf = mesures.spf.get(d.domaine);
+      return bornerDomaine({
         domaine: d.domaine,
         nomWeb: d.nomWeb,
         perimetre: d.perimetre,
@@ -93,10 +156,7 @@ export function construireEtat(
         noms: d.noms.length,
         zone: {
           etat: z.etat,
-          echec:
-            z.etat === "echec"
-              ? { code: z.echec ?? "ERREUR", confirmePar: pannes.zones.has(d.domaine) ? pannes.resolveur : null }
-              : null,
+          echec: echecZone,
           ns: z.ns,
           soa: z.soa?.mname ?? null,
           ds: z.echecs.includes("DS") ? null : z.ds.length > 0,
@@ -116,8 +176,9 @@ export function construireEtat(
               ? null
               : coucheSpf(spf, contexte),
         },
-      }),
-    );
+      });
+    };
+    domaines.set(d.domaine, assurer(construire, reduit, DOMAINE, rapport));
   }
   return { noms, domaines };
 }

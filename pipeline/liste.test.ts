@@ -72,6 +72,12 @@ describe("the official lists (C.5)", () => {
   it("refuses a list without its name or type column", () => {
     expect(() => nettoyerListe("domaine,genre\na.example,x\n")).toThrow();
   });
+  it("refuses a last label that begins or ends with a hyphen", () => {
+    expect(nomValide("www.exemple.fr-")).toBeNull();
+    expect(nomValide("www.exemple.-fr")).toBeNull();
+    expect(nomValide("www.exemple.fr")).toBe("www.exemple.fr");
+  });
+
   it("writes an internationalised name in its ASCII form, and refuses what is not a name", () => {
     expect(nomValide("ÉTÉ.example")).toBe("xn--t-9fab.example");
     expect(nomValide("pas un nom")).toBeNull();

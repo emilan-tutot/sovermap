@@ -155,6 +155,22 @@ describe("the scheduling of a collection", () => {
     expect(ecarts.at(-1)).toBeCloseTo(125, 6);
   });
 
+  it("asks 13 name servers of a domain at most, however many it names", async () => {
+    const nombreux: ZoneSimulee = {
+      ...ZONE,
+      "large.example": {
+        NS: Array.from({ length: 40 }, (_, i) => ({ type: "NS" as const, cible: `ns${i}.large.example` })),
+      },
+    };
+    const r = new ResolveurSimule(nombreux, zoneDe);
+    await collecter(new Map([["large.example", "large.example"]]), r, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+    });
+    expect(new Set(r.questions.filter((q) => /^ns\d+\.large\.example A$/.test(q))).size).toBe(13);
+  });
+
   it("keeps the pace: 25 names per second at most", async () => {
     const horloge = fausseHorloge();
     const cent = new Map(Array.from({ length: 100 }, (_, i) => [`n${i}.mairie.example`, "mairie.example"] as const));

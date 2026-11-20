@@ -57,6 +57,9 @@ const SEUIL_PANNES = 0.08;
 const SEUIL_FREIN = 8;
 const HAUSSE_PANNES = 0.02;
 
+/** The version of the records' building (couches.ts, etat-du-jour.ts): a change rebases the state like new rules. */
+const VERSION_CLASSEMENT = 1;
+
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
 const METHODE = "0.2";
 const RACINE = process.cwd();
@@ -121,6 +124,8 @@ function referentiels() {
     societes: societes.version,
     as: tableAs.version,
     methode: METHODE,
+    schema: VERSION_SCHEMA,
+    classement: VERSION_CLASSEMENT,
   };
   return { copies, psl, plateformes: new Set(plateformes.domaines), temoins, cdn, societes, tableAs, regles };
 }
@@ -129,8 +134,19 @@ type Referentiels = ReturnType<typeof referentiels>;
 // ---------------------------------------------------------------------------------------------------------------
 // The classification context, from a folder of downloaded sources (today's or yesterday's).
 
-function contexteDe(dossier: string, ref: Referentiels, risDuJour: boolean): ContexteV1 {
+// IPtoASN is the day's copy for yesterday too: a new copy surveyed by hand is a change of rules (brief B.7 bis), never
+// a move of the hosting.
+function contexteDe(dossier: string, ref: Referentiels, risDuJour: boolean, iptoasn: string): ContexteV1 {
   const fichier = (id: string) => path.join(dossier, "sources", id);
+  const dateDe = (id: string) => {
+    try {
+      return (
+        (JSON.parse(readFileSync(`${fichier(id)}.meta.json`, "utf8")) as { date?: string }).date?.slice(0, 10) ?? ""
+      );
+    } catch {
+      return "";
+    }
+  };
   const texte = (id: string) => (existsSync(fichier(id)) ? readFileSync(fichier(id), "utf8") : "");
   const gz = (id: string) => (existsSync(fichier(id)) ? gunzipSync(readFileSync(fichier(id))).toString("utf8") : "");
   const plages: PlagesOfficielles = {};
@@ -138,17 +154,21 @@ function contexteDe(dossier: string, ref: Referentiels, risDuJour: boolean): Con
     .map((l) => l.trim())
     .filter((l) => l !== "" && estPlage(l));
   if (cloudflare.length > 0)
-    plages.cloudflare = { plages: cloudflare, source: "https://www.cloudflare.com/ips-v4 et /ips-v6", date: "" };
+    plages.cloudflare = {
+      plages: cloudflare,
+      source: "https://www.cloudflare.com/ips-v4 et /ips-v6",
+      date: dateDe("cloudflare-ipv4"),
+    };
   if (existsSync(fichier("fastly"))) {
     try {
       const fastly = validerListeFastly(JSON.parse(texte("fastly")) as unknown).filter(estPlage);
-      plages.fastly = { plages: fastly, source: "https://api.fastly.com/public-ip-list", date: "" };
+      plages.fastly = { plages: fastly, source: "https://api.fastly.com/public-ip-list", date: dateDe("fastly") };
     } catch {
       // A list of another shape is left out: the CDN is then recognised by its CNAME suffix or its AS only.
     }
   }
   return {
-    iptoasn: new TableIpToAsn(gz("iptoasn")),
+    iptoasn: new TableIpToAsn(existsSync(iptoasn) ? gunzipSync(readFileSync(iptoasn)).toString("utf8") : ""),
     // Without the day's RIS files, the network layer cannot be « confirmé » (plan § 13.4).
     ris: new TableRis(risDuJour ? [gz("ris-ipv4"), gz("ris-ipv6")] : []),
     cdn: ref.cdn,
@@ -322,14 +342,27 @@ async function principal(): Promise<number> {
   const liste = construireListe(ref.copies, dila, ref.psl, ref.plateformes);
   const zoneDe = (nom: string) => domaineEnregistrable(nom, ref.psl) ?? nom;
   const graine = Number(date.replaceAll("-", ""));
-  let aMesurer = [...liste.noms.values()];
-  if (o.limite !== undefined) aMesurer = melanger(aMesurer, generateur(graine)).slice(0, Number(o.limite));
-  verifierLimite(aMesurer.length);
-  const unites = new Set(aMesurer.map((e) => e.domaine));
-  const domainesMesures = [...liste.domaines.values()].filter((d) => unites.has(d.domaine));
-  // Each unit's web name is measured too (it carries the domain's addresses layer).
-  const noms = new Map<string, string>(aMesurer.map((e) => [e.nom, e.domaine]));
-  for (const d of domainesMesures) noms.set(d.nomWeb, d.domaine);
+  // Each unit's web name is measured too (it carries the domain's addresses layer); a trial draws a sample whose
+  // names, web names included, never exceed its limit.
+  const echantillon = (nombre: number) => {
+    const tires = melanger([...liste.noms.values()], generateur(graine)).slice(0, nombre);
+    const unites = new Set(tires.map((e) => e.domaine));
+    const domaines = [...liste.domaines.values()].filter((d) => unites.has(d.domaine));
+    const choisis = new Map<string, string>(tires.map((e) => [e.nom, e.domaine]));
+    for (const d of domaines) choisis.set(d.nomWeb, d.domaine);
+    return { domaines, noms: choisis };
+  };
+  let tirage = echantillon(liste.noms.size);
+  if (o.limite !== undefined) {
+    const limite = Number(o.limite);
+    for (let nombre = limite; nombre > 0; nombre = Math.floor(nombre * 0.9)) {
+      tirage = echantillon(nombre);
+      if (tirage.noms.size <= limite) break;
+    }
+  }
+  const domainesMesures = tirage.domaines;
+  const noms = tirage.noms;
+  verifierLimite(noms.size);
 
   // The measurement, with Quad9 and Cloudflare alongside, at their own pace.
   const [hote, port] = adresseEtPort(o.resolveur);
@@ -345,6 +378,7 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
+      echeance: maintenant.getTime() + 200 * 60_000,
       zoneDe,
       suivi,
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
@@ -359,7 +393,7 @@ async function principal(): Promise<number> {
         .filter((d) => d.perimetre === "État")
         .flatMap((d) => {
           const z = mesures.domaines.get(d.domaine);
-          return z === undefined ? [] : [...z.ns, ...z.mx.map((m) => m.hote)];
+          return z === undefined ? [] : [...z.ns.slice(0, 13), ...z.mx.slice(0, 10).map((m) => m.hote)];
         }),
     ),
   ].sort();
@@ -408,8 +442,10 @@ async function principal(): Promise<number> {
 
   // Today's state.
   const risDuJour = source("ris-ipv4")?.etat === "du jour" && source("ris-ipv6")?.etat === "du jour";
-  const contexte = contexteDe(travail, ref, risDuJour);
-  const jour = construireEtat(liste, mesures, controles, contexte, heure, pannes);
+  const copieIptoasn = path.join(travail, "sources", "iptoasn");
+  const contexte = contexteDe(travail, ref, risDuJour, copieIptoasn);
+  const rapportJour = { erreurs: 0, reduits: 0 };
+  const jour = construireEtat(liste, mesures, controles, contexte, heure, pannes, rapportJour);
 
   // The guards (brief B.7): witnesses, DNS failures, circuit breaker, schemas.
   const profil = (m: MesureNom) => {
@@ -454,12 +490,17 @@ async function principal(): Promise<number> {
           liste,
           veilleObs.mesures,
           veilleObs.controles,
-          contexteDe(o.veille, ref, true),
+          contexteDe(o.veille, ref, true, copieIptoasn),
           heure,
           veilleObs.pannes,
         );
   const publie = lirePublie(o.donnees);
-  const reglesChangees = publie !== null && jsonStable(publie.meta.versions.regles) !== jsonStable(ref.regles);
+  // The rules: the lists and referentials of the repository, and the date of the IPtoASN copy.
+  const regles = { ...ref.regles, iptoasn: source("iptoasn")?.date ?? null };
+  const reglesChangees = publie !== null && jsonStable(publie.meta.versions.regles) !== jsonStable(regles);
+  // New rules without yesterday (the cache was lost): the records keep the published classification, so etat.json keeps
+  // the published rules too, and the rebase happens on the next day that has a yesterday (brief B.7 bis).
+  const reglesPubliees = reglesChangees && veille === null ? (publie?.meta.versions.regles ?? regles) : regles;
   // The confirmed breakdowns of the last published day, for the second safety of point 02 (Q2).
   const pannesVeille =
     publie?.meta.qualite?.pannesConfirmeesPourcent === undefined
@@ -511,9 +552,11 @@ async function principal(): Promise<number> {
         [...asVus].map((a) => [
           a,
           {
-            description: descriptions.get(a) ?? null,
+            // A description or a holder's name may name a person (an AS held by an individual): both are published
+            // only for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data).
+            description: ref.tableAs.as[String(a)] === undefined ? null : (descriptions.get(a) ?? null),
             paysEnregistrement: contexte.paysAs.get(a) ?? null,
-            titulaire: ripe.get(a)?.orgName ?? null,
+            titulaire: ref.tableAs.as[String(a)] === undefined ? null : (ripe.get(a)?.orgName ?? null),
           },
         ]),
       ),
@@ -567,6 +610,9 @@ async function principal(): Promise<number> {
     { nom: "schémas valides", ok: erreursSchema.length === 0, detail: erreursSchema.slice(0, 5).join(" ; ") },
   ];
   const publiable = gardes.every((g) => g.ok);
+  // A trustworthy measurement (every guard green but, maybe, the circuit breaker) becomes tomorrow's yesterday: after a
+  // real change of more than 2 %, the next day compares with it, and the change is confirmed (no manual gesture).
+  const veilleUtilisable = gardes.filter((g) => !g.nom.startsWith("disjoncteur")).every((g) => g.ok);
 
   const sommes = Object.fromEntries(
     [...fichiers]
@@ -592,7 +638,7 @@ async function principal(): Promise<number> {
       pointDeMesure: "serveur de GitHub Actions (ubuntu-24.04)",
       resolveur: "Knot Resolver 6.5.1, validation DNSSEC",
     },
-    versions: { regles: ref.regles, dila: dila?.fichier ?? null, schema: VERSION_SCHEMA },
+    versions: { regles: reglesPubliees, dila: dila?.fichier ?? null, schema: VERSION_SCHEMA },
     sources: sources.map((s) => ({
       id: s.id,
       fiche: s.fiche,
@@ -610,6 +656,8 @@ async function principal(): Promise<number> {
       echecs,
       echecsParCode,
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
+      enregistrementsReduits: rapportJour.reduits,
+      enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,
       tauxEchecNonConfirmesPourcent: Math.round(10000 * tauxEchecDomaines) / 100,
@@ -655,6 +703,7 @@ async function principal(): Promise<number> {
         : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
     }.`,
     `- Sources lues de la veille ou en échec : ${etatJson.lecturesEnEchec}.`,
+    `- Enregistrements réduits (schéma) : ${rapportJour.reduits} ; en erreur : ${rapportJour.erreurs}.`,
     `- IPtoASN (relevé manuel) : ${(() => {
       const ip = sources.find((s) => s.id === "iptoasn");
       const age = ageJours(ip?.date ?? null);
@@ -677,7 +726,10 @@ async function principal(): Promise<number> {
       : "**Un garde-fou est rouge : rien n'est publié, l'état de la veille reste.**",
   ].join("\n");
   writeFileSync(path.join(travail, "resume.md"), `${resume}\n`);
-  writeFileSync(path.join(travail, "rapport.json"), `${JSON.stringify({ date, publiable, gardes }, null, 2)}\n`);
+  writeFileSync(
+    path.join(travail, "rapport.json"),
+    `${JSON.stringify({ date, publiable, veilleUtilisable, gardes }, null, 2)}\n`,
+  );
   console.log(resume);
   return publiable ? 0 : 2;
 }
