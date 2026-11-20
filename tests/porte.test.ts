@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
 import { describe, expect, it } from "vitest";
@@ -13,6 +13,8 @@ const [regle] = reecrituresPorte({});
 const correspond =
   regle === undefined ? () => false : getPathMatch(regle.source, { strict: true, removeUnnamedParams: true });
 const fermee = (chemin: string) => correspond(chemin) !== false;
+/** The door's target, as a name: no file, folder or route may ever carry it. */
+const CIBLE = CHEMIN_FERME.slice(1);
 
 describe("the production door (brief of chantier 2, A.6)", () => {
   it("opens only on the exact value SITE_PUBLIC=open", () => {
@@ -36,12 +38,27 @@ describe("the production door (brief of chantier 2, A.6)", () => {
     expect(regle?.destination).toBe(CHEMIN_FERME);
     // One segment whose name starts with « _ »: a private folder of the App Router, never a route.
     expect(CHEMIN_FERME).toMatch(/^\/_[a-z-]+$/);
-    // No file of that name in public/, and no page that would answer it.
-    expect(existsSync(`public${CHEMIN_FERME}`)).toBe(false);
-    expect(existsSync(`app${CHEMIN_FERME}/page.tsx`)).toBe(false);
+    // Nothing in public/ starts with the target's name: on Vercel, the suffixes of Next.js' internal requests (.rsc,
+    // .prefetch.rsc, .segments/…) are added after the door, so a file « _porte-fermee.rsc » would answer them.
+    expect(readdirSync("public").filter((nom) => nom.toLowerCase().startsWith(CIBLE))).toEqual([]);
   });
 
-  it("finds no dynamic segment at the root of the site, which would turn the door's target into a page", () => {
+  it("leaves no other way around the door: no proxy, no other rewrite", async () => {
+    // A proxy (formerly « middleware ») runs before the door; afterFiles and fallback rewrites run after the file
+    // system and could take the target; a rewrite of vercel.json runs on the platform. Adding one means reviewing the
+    // door first (lib/porte.ts).
+    for (const nom of ["proxy", "middleware"]) {
+      for (const fichier of [".ts", ".tsx", ".js", ".mjs"].flatMap((ext) => [`${nom}${ext}`, `src/${nom}${ext}`])) {
+        expect(existsSync(fichier), fichier).toBe(false);
+      }
+    }
+    const config = (await import("../next.config")).default;
+    expect(await config.rewrites?.()).toEqual({ beforeFiles: reecrituresPorte(), afterFiles: [], fallback: [] });
+    const vercel = JSON.parse(readFileSync("vercel.json", "utf8")) as Record<string, unknown>;
+    expect(Object.keys(vercel).filter((cle) => ["rewrites", "routes"].includes(cle))).toEqual([]);
+  });
+
+  it("finds no dynamic segment, nor a folder named after the target, at the root of the site", () => {
     // Route groups « (x) » and parallel routes « @x » add no segment to the address: their children are at the root.
     const segmentsALaRacine = (dossier: string): string[] =>
       readdirSync(dossier, { withFileTypes: true })
@@ -49,8 +66,18 @@ describe("the production door (brief of chantier 2, A.6)", () => {
         .flatMap((entree) =>
           /^[(@]/.test(entree.name) ? segmentsALaRacine(join(dossier, entree.name)) : [entree.name],
         );
-    const dynamiques = segmentsALaRacine("app").filter((nom) => nom.startsWith("["));
+    const segments = segmentsALaRacine("app");
+    const dynamiques = segments.filter((nom) => nom.startsWith("["));
     expect(dynamiques, "un segment dynamique à la racine prendrait la cible de la porte pour une valeur").toEqual([]);
+    // A folder « %5Fporte-fermee » is a real route at /_porte-fermee (an encoded « _ » is not a private folder).
+    const decode = (nom: string) => {
+      try {
+        return decodeURIComponent(nom).toLowerCase();
+      } catch {
+        return nom.toLowerCase();
+      }
+    };
+    expect(segments.filter((nom) => decode(nom).startsWith(CIBLE))).toEqual([]);
   });
 
   it("lets the waiting page's addresses through", () => {
