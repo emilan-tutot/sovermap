@@ -255,7 +255,7 @@ Les quotas sont mensuels et communs à toute l'équipe Hobby, que Sovermap parta
 | ISR Writes (unités de 8 Ko) | 200 000 | 0 | 200 000 | ≤ 100 000 | ≈ 60 000 (400 pages agrégées × 5 unités × 30 jours) |
 | ISR Reads (unités de 8 Ko) | 1 000 000 | 15 000 | 985 000 | ≤ 492 000 | ≈ 60 000 |
 | Provisioned Memory | 360 Go-h | 3,6 Go-h | 356 Go-h | ≤ 178 Go-h | ≈ 30 Go-h (115 000 invocations × 1 s × 1 Go au plus, en comptant large) |
-| Déploiements par jour | 100 | — | — | ≤ 10 | Quelques-uns (PR et fusions) |
+| Déploiements par jour | 100 | — | — | ≤ 10 | Quelques-uns (fusions) ; depuis le 20/11/2026, aucune préversion automatique pour les branches `feat/c2-*` (`vercel.json`) : préversions à la demande (`npx vercel deploy`, jamais `--prod`) |
 | Durée d'un build | 45 min par build ; 1 build à la fois | — | — | ≤ 10 min | ≈ 3 min (**hypothèse** : fiches et agrégats rendus à la demande, donc rien de lourd au build) |
 
 Sources :
