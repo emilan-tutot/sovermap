@@ -33,6 +33,12 @@ const niveau: Schema = { enum: ["confirmé", "probable", "non déterminé"] };
 const categorie: Schema = { enum: ["France", "UE hors France", "Europe hors UE", "hors d'Europe", "non déterminé"] };
 const horsUE: Schema = { type: ["boolean", "null"] };
 const etatNom: Schema = { enum: ["ok", "nxdomain", "nodata", "echec"] };
+const echec: Schema = {
+  type: ["object", "null"],
+  properties: { code: { type: "string", maxLength: 20 }, confirmePar: { type: ["string", "null"], maxLength: 20 } },
+  required: ["code", "confirmePar"],
+  additionalProperties: false,
+};
 const liste = (items: Schema, maxItems = 1000): Schema => ({ type: "array", items, maxItems });
 const objet = (properties: Record<string, Schema>, optionnelles: string[] = []): Schema => ({
   type: "object",
@@ -65,6 +71,7 @@ export const NOM: Schema = objet(
     provenances: liste(texte(120), 20),
     types: liste(texte(80), 20),
     etat: etatNom,
+    echec,
     cname: liste(nomDns, 10),
     dnssec: { type: "boolean" },
     reseaux: liste(
@@ -94,6 +101,7 @@ export const DOMAINE: Schema = objet(
     noms: { type: "integer", minimum: 1 },
     zone: objet({
       etat: etatNom,
+      echec,
       ns: liste(nomDns, 50),
       soa: { type: ["string", "null"], maxLength: 253 },
       ds: { type: "boolean" },

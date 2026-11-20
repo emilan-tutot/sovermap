@@ -17,12 +17,18 @@ export type Controles = {
   mx: ReadonlyMap<string, string[] | null>;
 };
 
+/** The failures the control resolver confirmed after every attempt (methode § 7): names and zones. */
+export type Pannes = { noms: ReadonlySet<string>; zones: ReadonlySet<string>; resolveur: string };
+
+const AUCUNE_PANNE: Pannes = { noms: new Set(), zones: new Set(), resolveur: "quad9" };
+
 export function construireEtat(
   liste: ListeReference,
   mesures: Mesures,
   controles: Controles,
   contexte: ContexteV1,
   heure: string,
+  pannes: Pannes = AUCUNE_PANNE,
 ): Etat {
   const noms = new Map<string, EnregistrementNom>();
   for (const entree of [...liste.noms.values()].sort((a, b) => (a.nom < b.nom ? -1 : 1))) {
@@ -38,6 +44,10 @@ export function construireEtat(
         provenances: entree.provenances,
         types: entree.types,
         etat: c.etat,
+        echec:
+          m.etat === "echec"
+            ? { code: m.echec ?? "ERREUR", confirmePar: pannes.noms.has(entree.nom) ? pannes.resolveur : null }
+            : null,
         cname: c.cname,
         dnssec: c.dnssec,
         reseaux: c.reseaux.map((r) => ({ as: r.as, plage: r.plage })),
@@ -81,7 +91,17 @@ export function construireEtat(
         organismes: d.organismes.length,
         ministeres: d.ministeres,
         noms: d.noms.length,
-        zone: { etat: z.etat, ns: z.ns, soa: z.soa?.mname ?? null, ds: z.ds.length > 0, caa: z.caa },
+        zone: {
+          etat: z.etat,
+          echec:
+            z.etat === "echec"
+              ? { code: z.echec ?? "ERREUR", confirmePar: pannes.zones.has(d.domaine) ? pannes.resolveur : null }
+              : null,
+          ns: z.ns,
+          soa: z.soa?.mname ?? null,
+          ds: z.ds.length > 0,
+          caa: z.caa,
+        },
         serveursDeNoms: { hotes: ns.hotes.map(hoteDe), categorie: ns.categorie, horsUE: ns.horsUE, niveau: ns.niveau },
         messagerie: {
           etat: z.mxEtat,

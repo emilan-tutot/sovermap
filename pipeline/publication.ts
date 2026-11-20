@@ -15,12 +15,16 @@ export const SEUIL_ECHECS = 0.02;
 
 export type Exploitant = { role: string; societe: string | null; preuve: string; niveau: Niveau };
 
+/** A failure after every attempt: its DNS code, and the resolver that confirmed it (« quad9 »), if any. */
+export type Echec = { code: string; confirmePar: string | null };
+
 export type EnregistrementNom = {
   nom: string;
   domaine: string;
   provenances: string[];
   types: string[];
   etat: CoucheAdresses["etat"];
+  echec: Echec | null;
   cname: string[];
   dnssec: boolean;
   reseaux: { as: number; plage: string | null }[];
@@ -54,7 +58,14 @@ export type EnregistrementDomaine = {
   organismes: number;
   ministeres: string[];
   noms: number;
-  zone: { etat: string; ns: string[]; soa: string | null; ds: boolean; caa: { propriete: string; valeur: string }[] };
+  zone: {
+    etat: string;
+    echec: Echec | null;
+    ns: string[];
+    soa: string | null;
+    ds: boolean;
+    caa: { propriete: string; valeur: string }[];
+  };
   serveursDeNoms: { hotes: Hote[]; categorie: Categorie; horsUE: boolean | null; niveau: Niveau };
   messagerie: {
     etat: string;

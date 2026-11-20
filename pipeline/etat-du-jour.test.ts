@@ -79,6 +79,25 @@ describe("the records of a day", () => {
     }
   });
 
+  it("publishes a failure Quad9 confirmed as the domain's own breakdown, never as « no site »", async () => {
+    let t = 0;
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe, new Set(["www.ministere.example"])),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const pannes = { noms: new Set(["www.ministere.example"]), zones: new Set<string>(), resolveur: "quad9" };
+    const etat = construireEtat(liste, mesures, { noms: new Map(), mx: new Map() }, contexteEssai(), "t", pannes);
+    expect(etat.noms.get("www.ministere.example")).toMatchObject({
+      etat: "echec",
+      echec: { code: "SERVFAIL", confirmePar: "quad9" },
+    });
+    for (const [chemin, texte] of fragments("noms", etat.noms)) {
+      const schema = schemaDe(chemin);
+      if (schema !== null) expect(valider(JSON.parse(texte), schema), chemin).toEqual([]);
+    }
+  });
+
   it("shows a disagreement of the control resolver on the mail exchangers, never settles it", async () => {
     let t = 0;
     const mesures = await collecter(

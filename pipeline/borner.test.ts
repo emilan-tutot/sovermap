@@ -14,6 +14,7 @@ const nom: EnregistrementNom = {
   provenances: ["dinum:2026-11-19"],
   types: [],
   etat: "ok",
+  echec: null,
   cname: ["<script>.example", ...Array.from({ length: 10 }, (_, i) => long(i))],
   dnssec: false,
   reseaux: Array.from({ length: 40 }, (_, i) => ({ as: 64496 + (i % 16), plage: `192.0.2.${i}-192.0.2.${i}` })),
@@ -44,7 +45,14 @@ const domaine: EnregistrementDomaine = {
   organismes: 0,
   ministeres: [],
   noms: 1,
-  zone: { etat: "ok", ns: Array.from({ length: 40 }, (_, i) => long(i)), soa: "pas un nom !", ds: false, caa: [] },
+  zone: {
+    etat: "ok",
+    echec: null,
+    ns: Array.from({ length: 40 }, (_, i) => long(i)),
+    soa: "pas un nom !",
+    ds: false,
+    caa: [],
+  },
   serveursDeNoms: {
     hotes: Array.from({ length: 40 }, (_, i) => hoteLong(i)),
     categorie: "France",

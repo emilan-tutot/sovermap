@@ -8,6 +8,7 @@ const nomValide = {
   provenances: ["dinum:2026-11-19"],
   types: ["Commune"],
   etat: "ok",
+  echec: null,
   cname: [],
   dnssec: false,
   reseaux: [{ as: 64496, plage: "192.0.2.0-192.0.2.255" }],

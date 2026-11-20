@@ -19,6 +19,7 @@ const nom = (n: string, domaine: string, societe: string, horsUE: boolean): Enre
   provenances: ["dinum:2026-11-19"],
   types: [],
   etat: "ok",
+  echec: null,
   cname: [],
   dnssec: false,
   reseaux: [{ as: horsUE ? 64501 : 64496, plage: null }],
@@ -39,7 +40,7 @@ const domaine = (d: string, perimetre: "État" | "hors État" = "État"): Enregi
   organismes: 0,
   ministeres: [],
   noms: 1,
-  zone: { etat: "ok", ns: [`ns1.${d}`], soa: `ns1.${d}`, ds: false, caa: [] },
+  zone: { etat: "ok", echec: null, ns: [`ns1.${d}`], soa: `ns1.${d}`, ds: false, caa: [] },
   serveursDeNoms: { hotes: [], categorie: "France", horsUE: false, niveau: "probable" },
   messagerie: {
     etat: "aucun",

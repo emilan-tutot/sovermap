@@ -19,7 +19,7 @@ import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couch
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
-import { construireEtat, type Controles, type Mesures } from "../etat-du-jour";
+import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { verifierLimite } from "../garde";
 import { type MesureNom, mesurerNom } from "../mesure";
 import { construireListe, type CopieListe } from "../perimetre";
@@ -50,6 +50,10 @@ import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
+
+/** Point 02, Q2: confirmed breakdowns above 8 % of the domains, or up by more than 2 points in a day, stop it all. */
+const SEUIL_PANNES = 0.08;
+const HAUSSE_PANNES = 0.02;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
 const METHODE = "0.2";
@@ -166,9 +170,13 @@ type Observations = {
   spf: [string, ResultatSpf][];
   controleNoms: [string, { resolveur: string; mesure: MesureNom }][];
   controleMx: [string, string[] | null][];
+  /** The failures Quad9 confirmed (point 02, Q2). */
+  pannes?: { noms: string[]; zones: string[] };
 };
 
-function lireObservations(dossier: string): { mesures: Mesures; controles: Controles; date: string } | null {
+function lireObservations(
+  dossier: string,
+): { mesures: Mesures; controles: Controles; pannes: Pannes; date: string } | null {
   const fichier = path.join(dossier, "observations.json.gz");
   if (!existsSync(fichier)) return null;
   const o = JSON.parse(gunzipSync(readFileSync(fichier)).toString("utf8")) as Observations;
@@ -176,13 +184,19 @@ function lireObservations(dossier: string): { mesures: Mesures; controles: Contr
     date: o.date,
     mesures: { noms: new Map(o.noms), domaines: new Map(o.domaines), hotes: new Map(o.hotes), spf: new Map(o.spf) },
     controles: { noms: new Map(o.controleNoms), mx: new Map(o.controleMx) },
+    pannes: { noms: new Set(o.pannes?.noms ?? []), zones: new Set(o.pannes?.zones ?? []), resolveur: "quad9" },
   };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 // The published state (the « donnees » branch, checked out read-only).
 
-type EtatJson = { date: string; jours: number; versions: { regles: Record<string, unknown> } };
+type EtatJson = {
+  date: string;
+  jours: number;
+  versions: { regles: Record<string, unknown> };
+  qualite?: { pannesConfirmeesPourcent?: number };
+};
 
 function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson } | null {
   if (dossier === undefined || !existsSync(path.join(dossier, "etat.json"))) return null;
@@ -337,6 +351,24 @@ async function principal(): Promise<number> {
   ].sort();
   const controleHotes = await controler(quad9, hotesEtat, []);
   const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
+  // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
+  // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
+  // par Quad9 »; the others are the collection's, and only they count in the guard of 2 %.
+  const ECHECS_DNS = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
+  const pannes: Pannes = { noms: new Set<string>(), zones: new Set<string>(), resolveur: "quad9" };
+  const aConfirmer = domainesMesures.filter(
+    (d) => mesures.domaines.get(d.domaine)?.etat === "echec" || mesures.noms.get(d.nomWeb)?.etat === "echec",
+  );
+  const confirmer = async () => {
+    for (let d = aConfirmer.shift(); d !== undefined; d = aConfirmer.shift()) {
+      const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
+      const r = await quad9.demander(zoneEnEchec ? d.domaine : d.nomWeb, zoneEnEchec ? "NS" : "A");
+      if (!ECHECS_DNS.has(r.code)) continue;
+      if (zoneEnEchec) (pannes.zones as Set<string>).add(d.domaine);
+      if (mesures.noms.get(d.nomWeb)?.etat === "echec") (pannes.noms as Set<string>).add(d.nomWeb);
+    }
+  };
+  await Promise.all(Array.from({ length: 8 }, confirmer));
   const debitServeurs = debit.arreter();
   for (const c of [knot, quad9, cloudflare]) c.fermer();
   const controles: Controles = {
@@ -356,13 +388,14 @@ async function principal(): Promise<number> {
     spf: [...mesures.spf],
     controleNoms: [...controles.noms],
     controleMx: [...controles.mx],
+    pannes: { noms: [...pannes.noms].sort(), zones: [...pannes.zones].sort() },
   };
   writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
 
   // Today's state.
   const risDuJour = source("ris-ipv4")?.etat === "du jour" && source("ris-ipv6")?.etat === "du jour";
   const contexte = contexteDe(travail, ref, risDuJour);
-  const jour = construireEtat(liste, mesures, controles, contexte, heure);
+  const jour = construireEtat(liste, mesures, controles, contexte, heure, pannes);
 
   // The guards (brief B.7): witnesses, DNS failures, circuit breaker, schemas.
   const profil = (m: MesureNom) => {
@@ -386,18 +419,38 @@ async function principal(): Promise<number> {
   const tauxEchec = mesuresNoms.length === 0 ? 1 : echecs / mesuresNoms.length;
   // The guard counts the units (the domains of decision D1): a domain fails when its zone or its web name fails. One
   // broken zone that holds hundreds of names of the list does not block the publication by itself.
-  const domainesEnEchec = [...jour.domaines.values()].filter(
+  const unitesEnEchec = [...jour.domaines.values()].filter(
     (d) => d.zone.etat === "echec" || jour.noms.get(d.nomWeb)?.etat === "echec",
+  );
+  const domainesEnEchec = unitesEnEchec.length;
+  const pannesConfirmees = unitesEnEchec.filter(
+    (d) =>
+      (d.zone.echec?.confirmePar ?? null) !== null || (jour.noms.get(d.nomWeb)?.echec?.confirmePar ?? null) !== null,
   ).length;
-  const tauxEchecDomaines = jour.domaines.size === 0 ? 1 : domainesEnEchec / jour.domaines.size;
+  const echecsNonConfirmes = domainesEnEchec - pannesConfirmees;
+  const part = (x: number) => (jour.domaines.size === 0 ? 1 : x / jour.domaines.size);
+  const tauxEchecDomaines = part(echecsNonConfirmes);
+  const tauxPannes = part(pannesConfirmees);
 
   const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
   const veille =
     veilleObs === null || o.veille === undefined
       ? null
-      : construireEtat(liste, veilleObs.mesures, veilleObs.controles, contexteDe(o.veille, ref, true), heure);
+      : construireEtat(
+          liste,
+          veilleObs.mesures,
+          veilleObs.controles,
+          contexteDe(o.veille, ref, true),
+          heure,
+          veilleObs.pannes,
+        );
   const publie = lirePublie(o.donnees);
   const reglesChangees = publie !== null && jsonStable(publie.meta.versions.regles) !== jsonStable(ref.regles);
+  // The confirmed breakdowns of the last published day, for the second safety of point 02 (Q2).
+  const pannesVeille =
+    publie?.meta.qualite?.pannesConfirmeesPourcent === undefined
+      ? null
+      : publie.meta.qualite.pannesConfirmeesPourcent / 100;
   const b = bilan(jour, veille, publie?.etat ?? null, reglesChangees);
 
   // The files.
@@ -475,11 +528,18 @@ async function principal(): Promise<number> {
         .join(", "),
     },
     {
-      nom: "échecs DNS sous 2 %",
+      nom: "échecs non confirmés sous 2 %",
       ok: tauxEchecDomaines < SEUIL_ECHECS,
       detail:
-        `domaines : ${domainesEnEchec} sur ${jour.domaines.size} (${(100 * tauxEchecDomaines).toFixed(2)} %) ; ` +
-        `noms : ${echecs} sur ${mesuresNoms.length} (${(100 * tauxEchec).toFixed(2)} %)`,
+        `domaines : ${echecsNonConfirmes} sur ${jour.domaines.size} (${(100 * tauxEchecDomaines).toFixed(2)} %) ; ` +
+        `noms en échec : ${echecs} sur ${mesuresNoms.length}`,
+    },
+    {
+      nom: "pannes confirmées sous 8 % et à moins de 2 points de la veille",
+      ok: tauxPannes <= SEUIL_PANNES && (pannesVeille === null || tauxPannes - pannesVeille <= HAUSSE_PANNES),
+      detail:
+        `${pannesConfirmees} sur ${jour.domaines.size} (${(100 * tauxPannes).toFixed(2)} %)` +
+        (pannesVeille === null ? "" : ` ; la veille : ${(100 * pannesVeille).toFixed(2)} %`),
     },
     {
       nom: "disjoncteur sous 2 %",
@@ -537,7 +597,10 @@ async function principal(): Promise<number> {
       echecsParCode,
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
       domainesEnEchec,
-      tauxEchecDomainesPourcent: Math.round(10000 * tauxEchecDomaines) / 100,
+      echecsNonConfirmes,
+      tauxEchecNonConfirmesPourcent: Math.round(10000 * tauxEchecDomaines) / 100,
+      pannesConfirmees,
+      pannesConfirmeesPourcent: Math.round(10000 * tauxPannes) / 100,
       domaines: b.etat.domaines.size,
       domainesEtat: [...b.etat.domaines.values()].filter((d) => d.perimetre === "État").length,
       exclus: Object.fromEntries(liste.exclus),
