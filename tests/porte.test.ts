@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
 import { describe, expect, it } from "vitest";
 import { fr } from "../lib/i18n/fr";
@@ -29,15 +30,27 @@ describe("the production door (brief of chantier 2, A.6)", () => {
     expect(indexingOpen({})).toBe(false);
   });
 
-  it("rewrites nothing when open, and one rule, to a static route that always answers 404, when closed", () => {
+  it("rewrites nothing when open, and one rule, to an address nothing can serve, when closed", () => {
     expect(reecrituresPorte({ SITE_PUBLIC: "open" })).toEqual([]);
     expect(reecrituresPorte({ SITE_PUBLIC: "" })).toHaveLength(1);
     expect(regle?.destination).toBe(CHEMIN_FERME);
-    // A static route outranks any dynamic segment at the root ([lang], [...slug]); it only calls notFound().
-    const page = `app${CHEMIN_FERME}/page.tsx`;
-    expect(existsSync(page)).toBe(true);
-    expect(readFileSync(page, "utf8")).toMatch(/^\s*notFound\(\);$/m);
+    // One segment whose name starts with « _ »: a private folder of the App Router, never a route.
+    expect(CHEMIN_FERME).toMatch(/^\/_[a-z-]+$/);
+    // No file of that name in public/, and no page that would answer it.
     expect(existsSync(`public${CHEMIN_FERME}`)).toBe(false);
+    expect(existsSync(`app${CHEMIN_FERME}/page.tsx`)).toBe(false);
+  });
+
+  it("finds no dynamic segment at the root of the site, which would turn the door's target into a page", () => {
+    // Route groups « (x) » and parallel routes « @x » add no segment to the address: their children are at the root.
+    const segmentsALaRacine = (dossier: string): string[] =>
+      readdirSync(dossier, { withFileTypes: true })
+        .filter((entree) => entree.isDirectory())
+        .flatMap((entree) =>
+          /^[(@]/.test(entree.name) ? segmentsALaRacine(join(dossier, entree.name)) : [entree.name],
+        );
+    const dynamiques = segmentsALaRacine("app").filter((nom) => nom.startsWith("["));
+    expect(dynamiques, "un segment dynamique à la racine prendrait la cible de la porte pour une valeur").toEqual([]);
   });
 
   it("lets the waiting page's addresses through", () => {

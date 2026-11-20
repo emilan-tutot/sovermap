@@ -28,10 +28,23 @@ export function texteLisible(html: string): string {
     .replace(/&amp;/g, "&");
 }
 
-const estHtml = (r: Reponse) => /text\/html/i.test(r.contentType);
+export const estHtml = (r: Reponse) => /text\/html/i.test(r.contentType);
 
-/** The problems of one answer, in French; an empty list when the closed door answers as it must. */
-export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
+/** The texts a closed door shows, from the dictionary. */
+export type TextesPorte = { question: string; titreAttente: string; statutAttente: string; titre404: string };
+
+export const TEXTES_PORTE: TextesPorte = {
+  question: fr.site.question,
+  titreAttente: fr.attente.title,
+  statutAttente: fr.attente.status,
+  titre404: fr.notFound.title,
+};
+
+/**
+ * The problems of one answer, in French; an empty list when the closed door answers as it must. It refers to nothing
+ * imported (the texts come as a parameter): the browser script copies its source (scripts/lib/porte-navigateur.ts).
+ */
+export function ecartsPorte(adresse: AdressePorte, reponse: Reponse, textes: TextesPorte = TEXTES_PORTE): string[] {
   const ecarts: string[] = [];
   const ou =
     adresse.entetes === undefined ? adresse.chemin : `${adresse.chemin} (${Object.keys(adresse.entetes).join(", ")})`;
@@ -43,17 +56,21 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
     case "attente":
       statut(200);
       if (!estHtml(reponse)) ecarts.push(`${ou} n'est pas une page HTML`);
-      for (const attendu of [fr.site.question, fr.attente.title, fr.attente.status]) {
+      for (const attendu of [textes.question, textes.titreAttente, textes.statutAttente]) {
         if (!texte.includes(attendu)) ecarts.push(`${ou} : la page d'attente ne dit pas « ${attendu} »`);
       }
       if (!/<link rel="icon" href="\/icon\.svg"/.test(reponse.texte))
         ecarts.push(`${ou} : l'icône de la page d'attente manque`);
+      if (!/<link rel="apple-touch-icon" href="\/apple-touch-icon\.png"/.test(reponse.texte))
+        ecarts.push(`${ou} : l'icône d'écran d'accueil manque`);
+      if (!/<meta property="og:image" content="https?:\/\/[^"]+\/partage\.png"/.test(reponse.texte))
+        ecarts.push(`${ou} : l'image de partage manque`);
       break;
     case "attente-rsc":
       statut(200);
       if (!/text\/x-component/i.test(reponse.contentType))
         ecarts.push(`${ou} n'est pas une réponse de navigation interne`);
-      if (!reponse.texte.includes(fr.attente.status)) ecarts.push(`${ou} : ce n'est pas la page d'attente`);
+      if (!reponse.texte.includes(textes.statutAttente)) ecarts.push(`${ou} : ce n'est pas la page d'attente`);
       break;
     case "robots-ferme":
       statut(200);
@@ -70,8 +87,7 @@ export function ecartsPorte(adresse: AdressePorte, reponse: Reponse): string[] {
       break;
     case "introuvable":
       statut(404);
-      if (estHtml(reponse) && !texte.includes(fr.notFound.title))
-        ecarts.push(`${ou} : ce n'est pas la page 404 du site`);
+      if (estHtml(reponse) && !texte.includes(textes.titre404)) ecarts.push(`${ou} : ce n'est pas la page 404 du site`);
       break;
     case "refusee":
       if (reponse.status < 400 || reponse.status > 499)
