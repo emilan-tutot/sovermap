@@ -237,8 +237,7 @@ function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson }
 
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Knot Resolver's debug lines, read from the container's logs while the collection runs (brief B.3). */
-/** The brake's waits, for the summary: how many questions waited, and for how long in all. */
+/** The brake's waits, for the summary: how many questions waited, and for how long in all (brief B.3). */
 type Attentes = { ouvertures: number; questions: number; secondes: number };
 
 function suivreDebit(
@@ -751,7 +750,7 @@ async function principal(): Promise<number> {
         : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
     }.`,
     // Only the top-level zones are named in this public summary; the others (a host's customers, a CDN…) are counted.
-    `- Frein : ${attentesFrein.ouvertures} ouvertures de domaine et ${attentesFrein.questions} questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${
+    `- Frein : ${attentesFrein.ouvertures} questions vers une zone parente (ouverture, première question d’une zone, DS) et ${attentesFrein.questions} autres questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${
       [
         ...(debitServeurs?.coupesChaudes ?? [])
           .filter((c) => !c.coupe.includes(".") || c.coupe === ".")

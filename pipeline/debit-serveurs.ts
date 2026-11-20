@@ -17,7 +17,7 @@ export type DebitServeurs = {
   coupesChaudes: { coupe: string; secondes: number }[];
 };
 
-const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?/;
+const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?(?: qtype: '([^']*)')?/;
 const HORODATAGE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/;
 
 /** The limit of brief B.3. */
@@ -84,7 +84,15 @@ export class CompteurServeurs {
       this.#coupesParAdresse.set(question[1], coupes);
       noter(this.#coupesRecentes, question[1], coupe, t);
     }
-    if (question[3] !== undefined) noter(this.#zonesRecentes, question[1], this.zoneDe(coupeNormale(question[3])), t);
+    if (question[3] !== undefined) {
+      const zone = this.zoneDe(coupeNormale(question[3]));
+      const coupe = question[2] === undefined ? null : coupeNormale(question[2]);
+      // A parent asked for a zone's delegation or its DS (« <zone> NS », QNAME minimisation; « <zone> DS ») does not
+      // serve the zone: only its openings wait for it. A zone that is not delegated is learned from its other questions.
+      const auParent =
+        coupe !== null && coupe !== zone && sous(zone, coupe) && (question[4] === "NS" || question[4] === "DS");
+      if (!auParent) noter(this.#zonesRecentes, question[1], zone, t);
+    }
     if (t - this.#oubli >= 10) {
       this.#oubli = t;
       for (const memoire of [this.#coupesRecentes, this.#zonesRecentes])

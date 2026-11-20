@@ -19,12 +19,9 @@ export type OptionsCollecte = {
   /** The domains' rate climbs from `depart` per second to `domainesParSeconde` (a cold cache never bursts). */
   montee: Montee | null;
   /**
-   * Waited before every question: the collection slows down while an authoritative server got too many questions
-   * within the current second (the resolver's logs, debit-serveurs.ts; brief B.3).
-   */
-  /**
-   * The brake (brief B.3): resolves when a question about `nom`, in the registered zone `zone`, may go; `ouverture`:
-   * the first question of a new domain, which asks its parents for the delegation.
+   * The brake (brief B.3, debit-serveurs.ts), waited before every question and every opening of a domain: it resolves
+   * when a question about `nom`, in the registered zone `zone`, may go; `ouverture`: a question that also goes to the
+   * zone's parents (the opening of a domain, the first question of a zone, a DS question).
    */
   frein?: (nom: string, zone: string, ouverture: boolean) => Promise<void>;
   /**
@@ -38,7 +35,7 @@ export type OptionsCollecte = {
   zoneDe: (nom: string) => string;
   aleatoire?: () => number;
   horloge?: Horloge;
-  /** Progress lines (one every 10 000 names), for the job's log. */
+  /** Progress lines (one every 2,000 names), for the job's log. */
   suivi?: (ligne: string) => void;
 };
 
@@ -65,11 +62,15 @@ export type ResultatCollecte = {
 };
 
 /** The client, with the per-zone limit on every question. */
-class ClientParZone implements ClientDns {
+export class ClientParZone implements ClientDns {
   readonly id: string;
   readonly #zones: ParZone;
-  /** The zones already asked in this run: the first question of a zone also goes to its parents (the delegation). */
-  readonly #vues = new Set<string>();
+  /**
+   * The zones already asked in this run, each with the end of its first question: that question also goes to the
+   * zone's parents (the delegation); the zone's other questions wait for its answer, after which the delegation is
+   * known (they never ask the parents in parallel).
+   */
+  readonly #premieres = new Map<string, Promise<void>>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
@@ -81,12 +82,32 @@ class ClientParZone implements ClientDns {
   }
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
-    // A DS question, and the first question of a zone, go to its parents too.
-    const ouverture = type === "DS" || !this.#vues.has(zone);
-    this.#vues.add(zone);
+    const premiere = this.#premieres.get(zone);
+    if (premiere === undefined) {
+      let finie: () => void = () => {};
+      this.#premieres.set(
+        zone,
+        new Promise<void>((resolve) => {
+          finie = resolve;
+        }),
+      );
+      try {
+        return await this.#poser(nom, zone, type, true);
+      } finally {
+        finie();
+      }
+    }
+    await premiere;
+    // A DS question goes to the parents too.
+    return this.#poser(nom, zone, type, type === "DS");
+  }
+
+  async #poser(nom: string, zone: string, type: TypeRr, ouverture: boolean): Promise<Reponse> {
     if (this.frein) await this.frein(nom, zone, ouverture);
     await this.#zones.prendre(zone);
     try {
+      // The load may have changed while the question waited for its turn in the zone.
+      if (this.frein) await this.frein(nom, zone, ouverture);
       return await this.base.demander(nom, type);
     } finally {
       this.#zones.rendre(zone);

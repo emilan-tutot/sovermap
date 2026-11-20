@@ -188,11 +188,12 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
     expect(b.etat.domaines.get("d0.example")).toEqual(publie.domaines.get("d0.example"));
     expect(b.changements).toEqual([]);
     expect(b.disjoncteur).toEqual({ compares: 9, changes: 0, part: 0 });
-    // On a day of new rules, the base is yesterday reclassified: a record of yesterday that was reduced never takes
-    // the place of the published one.
-    const regles = bilan(etat(10, 0), reduire(etat(10, 0)), publie, true);
-    expect(regles.etat.noms.get("www.d0.example")).toEqual(publie.noms.get("www.d0.example"));
-    expect(regles.etat.noms.get("www.d0.example")?.reduit).toBeUndefined();
+    // On a day of new rules, the base is yesterday reclassified: a record of yesterday that was reduced is replaced by
+    // today's (the new rules), never by the published one (the old rules), and nothing enters the journal.
+    const nouvelles = etat(10, 1);
+    const regles = bilan(nouvelles, reduire(etat(10, 0)), publie, true);
+    expect(regles.etat.noms.get("www.d0.example")).toEqual(nouvelles.noms.get("www.d0.example"));
+    expect(regles.changements).toEqual([]);
   });
 });
 

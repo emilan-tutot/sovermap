@@ -1,7 +1,8 @@
 // Tests of the measurement and of its scheduling: a simulated resolver, a fake clock, documentation names and
 // addresses only (RFC 2606, RFC 5737, RFC 3849).
 import { describe, expect, it } from "vitest";
-import { collecter, POLITESSE } from "./collecte";
+import { ClientParZone, collecter, POLITESSE } from "./collecte";
+import type { ClientDns } from "./dns-bas";
 import type { Horloge } from "./politesse";
 import { Cadence, generateur } from "./politesse";
 import { mesurerNom, mesurerZone } from "./mesure";
@@ -139,13 +140,14 @@ describe("the scheduling of a collection", () => {
         (ouverture ? ouvertures : questions).push(`${nom} ${zone}`);
       },
     });
-    // Each question once, and each domain's opening once more.
+    // Each question twice (before and after its turn in the zone), and each domain's opening once more.
     const domaines = [...new Set(noms.values())];
-    expect(questions.length + ouvertures.length).toBe(r.questions.length + domaines.length);
+    expect(questions.length + ouvertures.length).toBe(2 * r.questions.length + domaines.length);
     expect(questions).toContain("www.mairie.example mairie.example");
     for (const d of domaines) expect(ouvertures).toContain(`${d} ${zoneDe(d)}`);
-    // The opening, the zone's first question and its DS question go to the parents: three waits like an opening.
-    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(3);
+    // The opening, the zone's first question and its DS question go to the parents: they wait like an opening.
+    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(5);
+    expect(questions).not.toContain("mairie.example.example mairie.example");
   });
 
   it("opens the domains slowly at first: one per second, then faster", async () => {
@@ -160,6 +162,34 @@ describe("the scheduling of a collection", () => {
     expect(ecarts[0]).toBe(1000);
     expect(ecarts.every((e, i) => i === 0 || e <= (ecarts[i - 1] ?? Infinity) + 1e-6)).toBe(true);
     expect(ecarts.at(-1)).toBeCloseTo(125, 6);
+  });
+
+  it("sends the first question of a zone alone: the zone's other questions wait for its answer", async () => {
+    const journal: string[] = [];
+    let repondre: () => void = () => {};
+    const lent: ClientDns = {
+      id: "lent",
+      demander: async (nom, type) => {
+        journal.push(`début ${nom} ${type}`);
+        if (journal.length === 1) await new Promise<void>((resolve) => (repondre = resolve));
+        journal.push(`fin ${nom} ${type}`);
+        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(lent, zoneDe, 2);
+    const a = client.demander("www.nouveau.example", "A");
+    const aaaa = client.demander("www.nouveau.example", "AAAA");
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(journal).toEqual(["début www.nouveau.example A"]);
+    repondre();
+    await Promise.all([a, aaaa]);
+    expect(journal).toEqual([
+      "début www.nouveau.example A",
+      "fin www.nouveau.example A",
+      "début www.nouveau.example AAAA",
+      "fin www.nouveau.example AAAA",
+    ]);
   });
 
   it("asks again a domain whose DS question failed, and keeps the DS unknown, never « no DNSSEC »", async () => {

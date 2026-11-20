@@ -201,11 +201,18 @@ export function bilan(jour: Etat, veille: Etat | null, publie: Etat | null, regl
 
   // On a day of new rules, the published state is rebased on yesterday, classified with the new rules: nothing of the
   // rules' effect ever enters the journal.
-  const sansReduits = <T extends { reduit?: true }>(hier: Map<string, T>, publies: Map<string, T>) =>
-    new Map([...hier].map(([cle, e]) => [cle, e.reduit ? (publies.get(cle) ?? e) : e] as const));
+  // A record of yesterday that was reduced is replaced by today's (the new rules), else left out: never the published
+  // one, classified with the old rules (its difference would enter tomorrow's journal).
+  const sansReduits = <T extends { reduit?: true }>(hier: Map<string, T>, aujourdhui: Map<string, T>) =>
+    new Map(
+      [...hier].flatMap(([cle, e]) => {
+        const remplacant = e.reduit ? aujourdhui.get(cle) : e;
+        return remplacant === undefined || remplacant.reduit ? [] : [[cle, remplacant] as const];
+      }),
+    );
   const base: Etat =
     reglesChangees && veille !== null
-      ? { noms: sansReduits(veille.noms, publie.noms), domaines: sansReduits(veille.domaines, publie.domaines) }
+      ? { noms: sansReduits(veille.noms, jour.noms), domaines: sansReduits(veille.domaines, jour.domaines) }
       : publie;
   const garder = <T extends { reduit?: true }>(
     cle: string,

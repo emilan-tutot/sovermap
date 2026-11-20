@@ -2,8 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { CompteurServeurs } from "./debit-serveurs";
 
-const ligne = (seconde: string, adresse: string, coupe = "exemple.", qname = "www.exemple.") =>
-  `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: 'ns1.exemple.'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: 'A' proto: 'udp'`;
+const ligne = (seconde: string, adresse: string, coupe = "exemple.", qname = "www.exemple.", qtype = "A") =>
+  `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: 'ns1.exemple.'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: '${qtype}' proto: 'udp'`;
 
 describe("the pace towards each authoritative server", () => {
   it("keeps the highest count of questions to one address within one second", () => {
@@ -63,6 +63,14 @@ describe("the pace towards each authoritative server", () => {
     for (let i = 0; i < 8; i += 1) partage.lire(ligne("05", "203.0.113.53", "mairie.example.", "www.mairie.example."));
     expect(partage.freine("mail.autre.example", "autre.example", false, t)).toBe(true);
     expect(partage.freine("www.tierce.example", "tierce.example", false, t)).toBe(false);
+    // A busy top-level server asked for delegations (NS) and DS only: the zones' own questions go, openings wait.
+    const delegations = new CompteurServeurs((n) => n.split(".").slice(-2).join("."));
+    for (let i = 0; i < 4; i += 1) {
+      delegations.lire(ligne("05", "192.0.2.1", "example.", `zone${i}.example.`, "NS"));
+      delegations.lire(ligne("05", "192.0.2.1", "example.", `zone${i}.example.`, "DS"));
+    }
+    expect(delegations.freine("www.zone0.example", "zone0.example", false, t)).toBe(false);
+    expect(delegations.freine("zone0.example", "zone0.example", true, t)).toBe(true);
     // The summary names the zones whose servers were busy.
     parent.lire(ligne("06", "198.51.100.53", "example."));
     expect(parent.resultat().coupesChaudes).toEqual([{ coupe: "example", secondes: 1 }]);
