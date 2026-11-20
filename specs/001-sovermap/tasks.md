@@ -175,7 +175,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] H.1 Documents et mémoire à jour.
 - [ ] H.2 Propreté (branches, processus, dossiers, code mort, Vercel, issues d'essai, dossier du chantier).
 - [ ] H.3 Les deux fichiers du brief supprimés de Téléchargements, après `rapport-C2.md`.
-- [ ] Les points avec le propriétaire (`points\point-NN`, réponses recopiées dans `consignes-point-NN.md`). Avancement : point 01 (20/11/2026, arrêt du § 0.3, point 6 : `probe:prod` rouge après la fusion de la PR n° 4) ; réponse « A » recopiée dans `consignes-point-01.md` (dossier du propriétaire), appliquée par `feat/c2-porte`.
+- [ ] Les points avec le propriétaire (`points\point-NN`, réponses recopiées dans `consignes-point-NN.md`). Avancement : point 01 (20/11/2026, arrêt du § 0.3, point 6 : `probe:prod` rouge après la fusion de la PR n° 4) ; réponse « A » recopiée dans `consignes-point-01.md` (dossier du propriétaire), appliquée par `feat/c2-porte` ; point 02 (20/11/2026, 17:55 UTC : planche du logo, Q1 sur IPtoASN fermé aux robots, Q2 sur le garde-fou des échecs DNS).
 - [ ] Rapport final en trois blocs, copié dans `rapport-C2.md`.
 
 ### Pour le chantier 3
