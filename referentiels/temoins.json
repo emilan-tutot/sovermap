@@ -7,9 +7,7 @@
       "attendu": {
         "etat": "ok",
         "cdn": null,
-        "as": [
-          16276
-        ]
+        "as": [16276]
       },
       "releve": {
         "le": "2026-11-18",
@@ -43,9 +41,7 @@
       "attendu": {
         "etat": "ok",
         "cdn": null,
-        "as": [
-          2060
-        ]
+        "as": [2060]
       },
       "releve": {
         "le": "2026-11-18",
