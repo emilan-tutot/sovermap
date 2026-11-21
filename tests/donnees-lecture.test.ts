@@ -347,6 +347,42 @@ describe("the site's reading of the data (B.9)", () => {
     });
   });
 
+  it("keeps in memory the state of the day before, once read from the shared cache", async () => {
+    const horloge = { t: DEBUT };
+    const cache = partage(horloge);
+    let lectures = 0;
+    const compte: Memoriser = (f, cle, options) => {
+      const partagee = cache.memoriser(f, cle, options);
+      return async (...args) => {
+        if (cle[1] === "etat-du-jour") lectures += 1;
+        return partagee(...args);
+      };
+    };
+    const g = github();
+    publier(g, "2026-11-22", { nom: "a" });
+    const chaud = lecteur(g, { memoriser: compte, horloge });
+    await chaud.l.fichier("noms/ab/cd.json");
+    // The 23rd is published; GitHub refuses the files; a first function reads the 23rd into the shared cache.
+    publier(g, "2026-11-23", { nom: "b" }, { jours: 2 });
+    g.fichiers.set("noms/ab/sommes.json", 429);
+    g.fichiers.set("noms/ab/cd.json", 429);
+    horloge.t += HEURE;
+    await chaud.l.etat();
+    horloge.t += 1000;
+    // A new function serves the 23rd and falls back on the 22nd five times: it asks the shared cache for the 23rd
+    // (to keep it there) and for the 22nd once, never again.
+    const froid = lecteur(g, { memoriser: compte, horloge });
+    lectures = 0;
+    for (let i = 0; i < 5; i += 1) {
+      expect(await froid.l.fichier("noms/ab/cd.json")).toEqual({
+        statut: "ok",
+        donnees: [{ nom: "a" }],
+        date: "2026-11-22",
+      });
+    }
+    expect(lectures).toBe(2);
+  });
+
   it("never serves from yesterday a file that is no longer published today", async () => {
     const g = github();
     publier(g, "2026-11-22", { nom: "a" });
@@ -410,6 +446,7 @@ describe("the site's reading of the data (B.9)", () => {
     expect(lireEtatPublie([])).toBeNull();
     expect(lireEtatPublie({ statut: "ok", date: "22/11/2026", sommes: {} })).toBeNull();
     expect(lireEtatPublie({ statut: "ok", date: "2026-13-45", sommes: {} })).toBeNull();
+    expect(lireEtatPublie({ statut: "ok", date: "2026-02-30", sommes: {} })).toBeNull();
     expect(lireEtatPublie({ statut: "ok", date: "2026-11-22", jours: 0, sommes: {} })?.jours).toBe(1);
     expect(lireEtatPublie({ statut: "ok", date: "2026-11-22", jours: 3, sommes: {} })?.jours).toBe(3);
     expect(lireEtatPublie({ statut: 1, date: "2026-11-22", sommes: {} })).toBeNull();

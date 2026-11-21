@@ -8,8 +8,10 @@
 //   folders' checksums at every request (the free plan's quotas, plan § 11).
 // Every file is checked against its checksum (etat.json gives those of the folders' sommes.json and of the top-level
 // files, a folder's sommes.json those of its fragments): a file that does not match is never kept. A file of the day
-// that cannot be read gives way to its version of the day before, from the caches only, with that day; a file that is
-// no longer published is never served. Every failed read (a 429, a 5xx, a network error, a file that does not match) is
+// that cannot be read gives way to its version of the day before, from the caches only, with that day; a file the day's
+// state no longer publishes is never served from the day before (the guarantee holds per file, not per name: when the
+// day's state cannot be read down to the file, the day before is served as it was, with its date). Every failed read (a
+// 429, a 5xx, a network error, a file that does not match) is
 // written to the server's logs; after it, GitHub is left alone for a minute (all of it after a 429, a 5xx or a network
 // error; that file only otherwise). Behind the closed production door, nothing is read at all (lib/porte.ts).
 import "server-only";
@@ -98,7 +100,9 @@ export function lireEtatPublie(valeur: unknown): EtatPublie | null {
   const sommes = propre(brut, "sommes");
   const jours = propre(brut, "jours");
   if (typeof date !== "string" || !MOTIF_DATE.test(date) || typeof statut !== "string") return null;
-  if (Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return null;
+  // A real day: « 2026-02-30 » would be read as the 2nd of March.
+  const jour = Date.parse(`${date}T00:00:00Z`);
+  if (Number.isNaN(jour) || new Date(jour).toISOString().slice(0, 10) !== date) return null;
   if (typeof sommes !== "object" || sommes === null || Array.isArray(sommes)) return null;
   const propres: Record<string, string> = Object.create(null) as Record<string, string>;
   for (const [chemin, somme] of Object.entries(sommes)) {
@@ -122,6 +126,8 @@ export class LecteurDonnees {
   #etat: { etat: EtatPublie; luA: number } | null = null;
   /** The states of the days before, kept in memory when the day changes (the latest few). */
   readonly #anciens = new Map<string, EtatPublie>();
+  /** Days the shared cache did not have, and until when they are not asked again. */
+  readonly #veillesAbsentes = new Map<string, number>();
   #essaiSuivant = 0;
   #etatEnCours: Promise<void> | null = null;
   /** No read from GitHub before this time (after a 429, a 5xx, a network error, a missing configuration). */
@@ -269,12 +275,15 @@ export class LecteurDonnees {
       return false;
     }
     if (memoire !== null && etat.date === memoire.etat.date && lu.luA < memoire.luA) return false;
-    if (memoire !== null && memoire.etat.date < etat.date) {
-      this.#anciens.set(memoire.etat.date, memoire.etat);
-      for (const date of [...this.#anciens.keys()].sort().slice(0, -ANCIENS_EN_MEMOIRE)) this.#anciens.delete(date);
-    }
+    if (memoire !== null && memoire.etat.date < etat.date) this.#garderAncien(memoire.etat);
     this.#etat = { etat, luA: lu.luA };
     return memoire === null || memoire.etat.date !== etat.date;
+  }
+
+  /** Keeps the state of a day before in memory (the latest few), so that it is not asked again. */
+  #garderAncien(etat: EtatPublie) {
+    this.#anciens.set(etat.date, etat);
+    for (const date of [...this.#anciens.keys()].sort().slice(0, -ANCIENS_EN_MEMOIRE)) this.#anciens.delete(date);
   }
 
   async #rafraichir(maintenant: number): Promise<void> {
@@ -316,12 +325,21 @@ export class LecteurDonnees {
     if (date === undefined) return null;
     const enMemoire = this.#anciens.get(date);
     if (enMemoire !== undefined) return enMemoire;
+    // A day the shared cache did not have is not asked again for a minute.
+    const maintenant = this.#deps.maintenant();
+    if (maintenant < (this.#veillesAbsentes.get(date) ?? 0)) return null;
     try {
       const veille = lireEtatPublie(await this.#etatDuJourPartage(date));
-      return veille !== null && veille.date === date ? veille : null;
+      if (veille !== null && veille.date === date) {
+        this.#garderAncien(veille);
+        return veille;
+      }
     } catch {
-      return null;
+      // Not in the shared cache.
     }
+    if (this.#veillesAbsentes.size >= 10) this.#veillesAbsentes.clear();
+    this.#veillesAbsentes.set(date, maintenant + ATTENTE_MS);
+    return null;
   }
 
   #garder(cle: string, valeur: unknown) {
@@ -382,7 +400,7 @@ export class LecteurDonnees {
   /**
    * A published file: an aggregate, an index, the journal, or a folder's fragment (noms/<aa>/<bb>.json, and its parts
    * <bb>.1.json…), checked against its checksum. If today's version cannot be read, yesterday's, from the caches only,
-   * with its day; a file that is no longer published is never served.
+   * with its day; a file the day's state no longer publishes is never served from the day before.
    */
   async fichier(chemin: string): Promise<Lecture<unknown>> {
     if (!MOTIF_CHEMIN.test(chemin)) {
