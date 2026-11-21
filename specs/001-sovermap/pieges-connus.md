@@ -182,3 +182,9 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 49. **Arrêter la tâche de fond n'arrête pas le serveur Node** (21/11/2026) : sous Windows, la tâche qui a lancé `npx next start` s'arrête, mais le serveur Node continue d'écouter. Lire la ligne de commande du PID qui écoute (`Get-CimInstance Win32_Process`), vérifier que c'est bien le sien, puis l'arrêter par ce PID, jamais d'après le port.
 
 50. **L'heure d'une entrée du journal se lit, elle ne s'estime pas** (21/11/2026) : une entrée datée de 18:38 a été écrite à 18:21. L'heure se lit (`date -u`) juste avant d'écrire chaque entrée.
+
+51. **Lire tous les chiffres d'un diagnostic avant de l'expliquer** (21/11/2026) : la pire seconde du jour 1 comptait « 1 coupures de zone, 1 zones, DS 19 ». J'ai conclu à beaucoup d'ouvertures sous `gouv.fr` sans relire le « 1 zones », qui l'excluait, et préparé une correction pour la mauvaise cause (jamais envoyée). Parade : une hypothèse écrit d'abord les chiffres qui la démentiraient, et on les lit avant d'écrire du code.
+
+52. **Les essais des PR passent l'un après l'autre, pas l'essai lancé à la main** (21/11/2026) : la mesure d'un essai de PR est dans le groupe de concurrence `collecte-mesure-essai` (l'un après l'autre) ; un essai lancé à la main (`workflow_dispatch`, comme celui du disjoncteur) est dans `collecte-mesure-jour`, celui de la collecte quotidienne, et peut tourner en même temps qu'un essai de PR : deux fois la charge sur les mêmes serveurs. Le lancer seulement quand aucun essai de PR ne tourne ni n'attend.
+
+53. **Sous Windows, Python écrit des fins de ligne CRLF en mode texte** (21/11/2026) : un script de mutation qui restaure un fichier avec `write_text` y met des CRLF (vu par git avant l'enregistrement). Restaurer en octets (`read_bytes`, puis `write_bytes`), ou ouvrir avec `newline=""`, puis vérifier l'égalité à l'octet près.
