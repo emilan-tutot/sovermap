@@ -1,7 +1,7 @@
 // Tests of the controls: the plan of the day, the control resolver's pace, the witnesses. Simulated resolver, fake
 // clock, documentation names, addresses and AS numbers only (RFC 2606, RFC 5737, RFC 5398).
 import { describe, expect, it } from "vitest";
-import { ClientCadence, conforme, controler, planDeControle, verifierTemoins } from "./controle";
+import { ClientCadence, conforme, ControleEnContinu, controler, planDeControle, verifierTemoins } from "./controle";
 import type { MesureNom } from "./mesure";
 import { generateur, type Horloge } from "./politesse";
 import { ResolveurSimule } from "./resolveur-simule";
@@ -35,6 +35,38 @@ describe("the controls", () => {
     expect(r.mx.get("a.example")).toEqual([]);
     // 5 questions (A and AAAA for two names, one MX): the last one starts 2 s after the first, at least.
     expect(t).toBeGreaterThanOrEqual(2000);
+  });
+
+  it("controls the names it is fed while the measurement runs, each one once, at the client's pace", async () => {
+    let t = 0;
+    const horloge: Horloge = { maintenant: () => t, dormir: async (ms) => void (t += ms) };
+    const zone = {
+      "a.example": { A: [{ type: "A" as const, adresse: "192.0.2.1" }] },
+      "b.example": { A: [{ type: "A" as const, adresse: "192.0.2.2" }] },
+    };
+    const simule = new ResolveurSimule(zone, zoneDe);
+    const client = new ClientCadence(simule, 2, horloge);
+    const controle = new ControleEnContinu(client, 8);
+    controle.ajouter(["a.example", "a.example"]);
+    // Later, while the workers wait for more: they wake up and ask the new name.
+    await new Promise((fin) => setTimeout(fin, 5));
+    controle.ajouter(["b.example", "a.example"]);
+    const r = await controle.fermer();
+    expect([...r.noms.keys()].sort()).toEqual(["a.example", "b.example"]);
+    expect(r.noms.get("b.example")?.etat).toBe("ok");
+    expect(controle.noms).toEqual(["a.example", "b.example"]);
+    // Each name asked once (A and AAAA), at 2 questions per second at most.
+    expect(simule.questions.filter((q) => q.startsWith("a.example "))).toHaveLength(2);
+    expect(t).toBeGreaterThanOrEqual(1500);
+  });
+
+  it("stops controlling at its deadline: what is left is not asked", async () => {
+    const simule = new ResolveurSimule({}, zoneDe);
+    const controle = new ControleEnContinu(simule, 2, Date.now() - 1);
+    controle.ajouter(["a.example"]);
+    const r = await controle.fermer();
+    expect(r.noms.size).toBe(0);
+    expect(simule.questions).toEqual([]);
   });
 
   it("agrees only when every resolver finds every witness as it is known", () => {
