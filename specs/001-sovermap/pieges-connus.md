@@ -172,3 +172,13 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 44. **Un serveur de noms partagé reçoit la somme des rythmes de ses zones** (21/11/2026) : une cadence par zone ne borne pas la charge d'un serveur qui sert des centaines de domaines (hébergeurs, ministères) ; avec 128 domaines en vol, plusieurs de ses zones avançaient ensemble (19 questions en une seconde à l'essai 44861921566). Le rythme se règle par serveur de noms, et une question prend le même instant chez tous les serveurs de sa zone (`instantCommun`).
 
 45. **Un nom qui a des noms en dessous existe** (21/11/2026) : le résolveur simulé des tests répondait NXDOMAIN pour `hebergeur.example` alors que `ns1.hebergeur.example` existait ; dans le vrai DNS, un tel nom répond NOERROR sans données (RFC 8020). Depuis que la collecte ne pose plus de question sous un domaine qui n'existe pas, cette erreur du simulateur cachait des questions : il répond maintenant comme le vrai DNS.
+
+46. **Reprendre un nom à moitié en échec peut lancer une tempête de questions** (21/11/2026) : quand une famille d'adresses échoue durablement (une preuve DNSSEC cassée), chaque reprise du nom relance les questions DNSKEY du résolveur : 37 par seconde vers un même serveur à l'essai 44927717383 (7f0b1c6). Seul un SERVFAIL d'une famille laisse le nom « ok » avec l'autre, son hébergement « non déterminé », jamais comparé.
+
+47. **Un `fetch` en `no-store` rend une page dynamique** (21/11/2026) : dans une page de Next, `cache: "no-store"` (ou `revalidate: 0`) rend la route dynamique, ce qui casserait l'ISR prévue pour les pages agrégées (plan § 11). À l'intérieur d'`unstable_cache`, il ne compte pas (`patch-fetch.js` : « Inside unstable-cache we treat it the same as force-no-store on the page », sans marquer la route) : la lecture des données (B.9) passe par `unstable_cache`.
+
+48. **Dans un arbre de travail séparé, `scan:prive` saute les motifs privés** (21/11/2026) : leur fichier est dans `.git/info` du dossier principal, absent d'un arbre créé par `git worktree`, et le crochet `pre-push` lancé depuis cet arbre ne les lit donc pas. Une branche préparée dans un arbre séparé s'envoie depuis le dossier principal.
+
+49. **Arrêter la tâche de fond n'arrête pas le serveur Node** (21/11/2026) : sous Windows, la tâche qui a lancé `npx next start` s'arrête, mais le serveur Node continue d'écouter. Lire la ligne de commande du PID qui écoute (`Get-CimInstance Win32_Process`), vérifier que c'est bien le sien, puis l'arrêter par ce PID, jamais d'après le port.
+
+50. **L'heure d'une entrée du journal se lit, elle ne s'estime pas** (21/11/2026) : une entrée datée de 18:38 a été écrite à 18:21. L'heure se lit (`date -u`) juste avant d'écrire chaque entrée.
