@@ -101,7 +101,7 @@
       "mere": "imperva-inc",
       "sources": [
         {
-          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS19551 « INCAPSULA - Incapsula Inc » ; aucun LEI trouvé dans GLEIF",
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS19551 « INCAPSULA - Incapsula Inc », pays US ; aucun LEI trouvé dans GLEIF",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-21"
         }
@@ -577,7 +577,7 @@
         }
       ],
       "sources_mere": [],
-      "note": "Maison mère non établie par une source permise (21/11/2026). GLEIF : aucune entité française parmi les six résultats « Eurofiber » ; Eurofiber Nederland B.V. a pour parent ultime ANTIN ELEPHANT BIDCO B.V. (Pays-Bas, LEI 213800G9QN7P1DCM3137), mais aucune source ne relie Eurofiber France à ces sociétés. Le robots.txt d'eurofiber.com ferme le site aux agents d'IA : aucun document du groupe n'y a été lu. La page du groupe lue le 19/11/2026 (partie B) n'est plus citée : le site eurofiber.com ferme son robots.txt aux agents d'IA (écart corrigé le 21/11/2026)."
+      "note": "Maison mère non établie par une source permise (21/11/2026). GLEIF : aucune entité française parmi les six résultats « Eurofiber » ; Eurofiber Nederland B.V. a pour parent ultime ANTIN ELEPHANT BIDCO B.V. (Pays-Bas, LEI 213800G9QN7P1DCM3137), mais aucune source ne relie Eurofiber France à ces sociétés. Le robots.txt d'eurofiber.com ferme le site aux agents d'IA : une page du groupe y avait été lue le 19/11/2026 (partie B) ; elle n'est plus citée (écart corrigé le 21/11/2026)."
     },
     "cegedim-cloud": {
       "nom": "Cegedim.cloud",

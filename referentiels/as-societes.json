@@ -44,11 +44,6 @@
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS20940 « AKAMAI-ASN1 Akamai International B.V. »",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-21"
-        },
-        {
-          "titre": "Base du RIPE, fichiers du 19/11/2026 (fiche 22) : AS20940 « AKAMAI-ASN1 », organisation ORG-AT1-RIPE, Akamai International B.V. (NL)",
-          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.aut-num.gz",
-          "lu_le": "2026-11-21"
         }
       ]
     },
@@ -57,8 +52,13 @@
       "titulaire_registre": "Incapsula Inc",
       "sources": [
         {
-          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS19551 INCAPSULA, titulaire Incapsula Inc, pays d'enregistrement US",
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS19551 « INCAPSULA - Incapsula Inc », US",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Fichier de délégation de l'ARIN du 20/11/2026 (fiche 21) : l'AS19551 a le même titulaire que 6 des 11 plages IPv4 de la liste officielle d'Imperva (fiche 27)",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
           "lu_le": "2026-11-21"
         }
       ]
