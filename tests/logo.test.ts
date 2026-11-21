@@ -58,8 +58,16 @@ describe("the logo (A.5, the owner's choice of 20/11/2026)", () => {
     }
   });
 
-  it("escapes its title, so that the SVG stays well formed", () => {
+  it("escapes its title completely, quotes included, so that the SVG stays well formed and inert", () => {
     expect(svgLogo({ ...LOGO_PETIT, titre: "A & B <c>" })).toContain("<title>A &amp; B &lt;c&gt;</title>");
+    const piege = `"><script>alert(1)</script><x a='`;
+    const svg = svgLogo({ ...LOGO_PETIT, titre: piege });
+    expect(svg).toContain("<title>&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;x a=&#39;</title>");
+    // Nothing of the title can close a tag or an attribute: no raw quote, angle bracket or script tag is left in it.
+    const titre = /<title>([\s\S]*?)<\/title>/.exec(svg)?.[1];
+    if (titre === undefined) throw new Error("le titre manque au dessin");
+    expect(titre).not.toMatch(/["'<>]/);
+    expect(svg).not.toContain("<script>");
   });
 
   it("serves the tab icon exactly as the code draws it (public/icon.svg)", () => {
