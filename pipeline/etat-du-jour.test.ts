@@ -80,6 +80,31 @@ describe("the records of a day", () => {
     }
   });
 
+  it("publishes the SOA's primary only when it reads as a DNS name", async () => {
+    let t = 0;
+    const piege = {
+      ...zone,
+      "ministere.example": {
+        ...zone["ministere.example"],
+        SOA: [{ type: "SOA" as const, mname: "<b>ns1", serial: 1 }],
+      },
+    };
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(piege, zoneDe),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const etat = construireEtat(liste, mesures, { noms: new Map(), mx: new Map() }, contexteEssai(), "t");
+    expect(etat.domaines.get("ministere.example")?.zone.soa).toBeNull();
+    const sain = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const etatSain = construireEtat(liste, sain, { noms: new Map(), mx: new Map() }, contexteEssai(), "t");
+    expect(etatSain.domaines.get("ministere.example")?.zone.soa).toBe("ns1.nuage.example");
+  });
+
   it("publishes a failure Quad9 confirmed as the domain's own breakdown, never as « no site »", async () => {
     let t = 0;
     const mesures = await collecter(

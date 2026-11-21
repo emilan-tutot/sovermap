@@ -27,7 +27,7 @@ import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
-import { verifierLimite } from "../garde";
+import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, mesurerNom } from "../mesure";
 import { construireListe, type CopieListe } from "../perimetre";
 import {
@@ -65,9 +65,6 @@ import { type EtatSource, releverManuel, telechargerSources } from "../telecharg
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
 
-/** Point 02, Q2: confirmed breakdowns above 8 % of the domains, or up by more than 2 points in a day, stop it all. */
-const SEUIL_PANNES = 0.08;
-const HAUSSE_PANNES = 0.02;
 /** Records built reduced (an error, or a value their schema refuses): above 0.1 % of all, nothing is published. */
 const SEUIL_REDUITES = 0.001;
 
@@ -200,11 +197,13 @@ type Observations = {
   controleMx: [string, string[] | null][];
   /** The failures Quad9 confirmed (point 02, Q2). */
   pannes?: { noms: string[]; zones: string[] };
+  /** The day's share of domains with a confirmed breakdown: tomorrow's guard compares with it. */
+  tauxPannes?: number;
 };
 
 function lireObservations(
   dossier: string,
-): { mesures: Mesures; controles: Controles; pannes: Pannes; date: string } | null {
+): { mesures: Mesures; controles: Controles; pannes: Pannes; date: string; tauxPannes: number | null } | null {
   const fichier = path.join(dossier, "observations.json.gz");
   if (!existsSync(fichier)) return null;
   const o = JSON.parse(gunzipSync(readFileSync(fichier)).toString("utf8")) as Observations;
@@ -213,6 +212,10 @@ function lireObservations(
     mesures: { noms: new Map(o.noms), domaines: new Map(o.domaines), hotes: new Map(o.hotes), spf: new Map(o.spf) },
     controles: { noms: new Map(o.controleNoms), mx: new Map(o.controleMx) },
     pannes: { noms: new Set(o.pannes?.noms ?? []), zones: new Set(o.pannes?.zones ?? []), resolveur: "quad9" },
+    tauxPannes:
+      typeof o.tauxPannes === "number" && Number.isFinite(o.tauxPannes) && o.tauxPannes >= 0 && o.tauxPannes <= 1
+        ? o.tauxPannes
+        : null,
   };
 }
 
@@ -535,7 +538,6 @@ async function principal(): Promise<number> {
     controleMx: [...controles.mx],
     pannes: { noms: [...pannes.noms].sort(), zones: [...pannes.zones].sort() },
   };
-  writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
 
   // Today's state.
   const risDuJour = source("ris-ipv4")?.etat === "du jour" && source("ris-ipv6")?.etat === "du jour";
@@ -581,6 +583,9 @@ async function principal(): Promise<number> {
   const part = (x: number) => (jour.domaines.size === 0 ? 1 : x / jour.domaines.size);
   const tauxEchecDomaines = part(echecsNonConfirmes);
   const tauxPannes = part(pannesConfirmees);
+  // The day's observations, kept as tomorrow's yesterday when the day is trustworthy, with its breakdowns' share.
+  observations.tauxPannes = tauxPannes;
+  writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
 
   const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
   const veille =
@@ -602,11 +607,15 @@ async function principal(): Promise<number> {
   // New rules without yesterday (the cache was lost): the records keep the published classification, so etat.json keeps
   // the published rules too, and the rebase happens on the next day that has a yesterday (brief B.7 bis).
   const reglesPubliees = reglesChangees && veille === null ? (publie?.meta.versions.regles ?? regles) : regles;
-  // The confirmed breakdowns of the last published day, for the second safety of point 02 (Q2).
+  // The confirmed breakdowns of the day before, for the second safety of point 02 (Q2): yesterday's kept measurement
+  // when there is one (a day stopped by this guard alone is kept: a lasting change passes the next day), else the last
+  // published day.
   const pannesVeille =
-    publie?.meta.qualite?.pannesConfirmeesPourcent === undefined
+    veilleObs?.tauxPannes ??
+    (publie?.meta.qualite?.pannesConfirmeesPourcent === undefined
       ? null
-      : publie.meta.qualite.pannesConfirmeesPourcent / 100;
+      : publie.meta.qualite.pannesConfirmeesPourcent / 100);
+  const gardePannes = gardesPannes(tauxPannes, pannesVeille);
   const b = bilan(jour, veille, publie?.etat ?? null, reglesChangees);
 
   // The files.
@@ -677,7 +686,7 @@ async function principal(): Promise<number> {
   });
 
   const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
-  const gardes = [
+  const gardes: Garde[] = [
     {
       nom: "témoins concordants",
       ok: temoins.concordants,
@@ -694,14 +703,22 @@ async function principal(): Promise<number> {
         `noms en échec : ${echecs} sur ${mesuresNoms.length}`,
     },
     {
-      nom: "pannes confirmées sous 8 % et à moins de 2 points de la veille",
-      ok: tauxPannes <= SEUIL_PANNES && (pannesVeille === null || tauxPannes - pannesVeille <= HAUSSE_PANNES),
+      nom: "pannes confirmées sous 8 %",
+      ok: gardePannes.plafond,
+      detail: `${pannesConfirmees} sur ${jour.domaines.size} (${(100 * tauxPannes).toFixed(2)} %)`,
+    },
+    {
+      nom: "pannes confirmées à moins de 2 points de la veille",
+      ok: gardePannes.hausse,
+      relatifALaVeille: true,
       detail:
-        `${pannesConfirmees} sur ${jour.domaines.size} (${(100 * tauxPannes).toFixed(2)} %)` +
-        (pannesVeille === null ? "" : ` ; la veille : ${(100 * pannesVeille).toFixed(2)} %`),
+        pannesVeille === null
+          ? "veille absente : sans objet"
+          : `${(100 * tauxPannes).toFixed(2)} % ; la veille : ${(100 * pannesVeille).toFixed(2)} %`,
     },
     {
       nom: "disjoncteur sous 2 %",
+      relatifALaVeille: true,
       ok: !o["essai-disjoncteur"] && (b.disjoncteur.part === null || b.disjoncteur.part < SEUIL_DISJONCTEUR),
       detail: o["essai-disjoncteur"]
         ? "essai : disjoncteur déclenché exprès"
@@ -717,9 +734,10 @@ async function principal(): Promise<number> {
     { nom: "schémas valides", ok: erreursSchema.length === 0, detail: erreursSchema.slice(0, 5).join(" ; ") },
   ];
   const publiable = gardes.every((g) => g.ok);
-  // A trustworthy measurement (every guard green but, maybe, the circuit breaker) becomes tomorrow's yesterday: after a
-  // real change of more than 2 %, the next day compares with it, and the change is confirmed (no manual gesture).
-  const veilleUtilisable = gardes.filter((g) => !g.nom.startsWith("disjoncteur")).every((g) => g.ok);
+  // A trustworthy measurement (every guard green but, maybe, those that compare with yesterday: the circuit breaker,
+  // the breakdowns' day-to-day rise) becomes tomorrow's yesterday: after a real change, the next day compares with it,
+  // and the change is confirmed (no manual gesture, never red for ever).
+  const veilleUtilisable = veilleUtilisableDe(gardes);
 
   const sommes = Object.fromEntries(
     [...fichiers]

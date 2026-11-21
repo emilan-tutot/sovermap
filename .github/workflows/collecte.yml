@@ -4,7 +4,8 @@ name: Collecte
 # nothing once the day is published. The measuring job has read-only rights; only the publishing job may write (the
 # « donnees » branch and the « donnees-courant » release), and only the alerting job may open or comment an issue.
 # A pull request that touches the collection runs the measuring job alone, on a sample (LIMITE_ESSAI), as a trial:
-# nothing is published, nothing is kept for tomorrow, no issue is opened.
+# nothing is published, nothing is kept for tomorrow, no issue is opened; it never measures during, or around the
+# start of, a day's collection.
 # Emergency gesture if GitHub disables this workflow after 60 days without activity: Actions › Collecte ›
 # « Enable workflow ».
 
@@ -59,12 +60,25 @@ jobs:
           REPO: ${{ github.repository }}
           DATE: ${{ steps.date.outputs.date }}
         run: |
-          publie=$( (gh api "repos/$REPO/contents/etat.json?ref=donnees" --jq .content | base64 -d | jq -r '.date // ""') 2>/dev/null || true)
+          # The published day. Not found (HTTP 404: no data branch yet, the first day) reads as none; any other error
+          # stops here: it is never read as « not done », which would measure the day twice and replace its journal.
+          set +e
+          reponse=$(gh api "repos/$REPO/contents/etat.json?ref=donnees" --jq .content 2>&1)
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            publie=$(printf '%s' "$reponse" | base64 -d | jq -r '.date // ""')
+          elif printf '%s' "$reponse" | grep -q "HTTP 404"; then
+            publie=""
+          else
+            echo "jour : l'état publié n'a pas pu être lu ; rien n'est mesuré." >&2
+            exit 1
+          fi
           echo "Dernier jour publié : ${publie:-aucun}"
           # A trustworthy measurement of today, kept for tomorrow but not published (stopped by the circuit breaker,
           # or a failed publication), also ends the day: a change of more than 2 % is confirmed by tomorrow's
           # measurement, never by the run of 09:47 (brief B.7). A failed publication is redone by « Re-run failed jobs ».
-          gardees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-veille-$DATE-" --json key --jq 'length' 2> /dev/null || echo 0)
+          gardees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-veille-$DATE-" --json key --jq 'length')
           echo "Mesures du jour gardées pour demain : ${gardees:-0}"
           if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
 
@@ -73,10 +87,15 @@ jobs:
     if: needs.jour.outputs.faite != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 240
-    # One measurement at a time, trials included: two would double the questions to the shared servers (brief B.3).
+    # One measurement at a time of each kind: a trial never takes the place of a day's waiting measurement (GitHub keeps
+    # one waiting job per group). A trial never measures during, or around the start of, a day's collection (its first
+    # step below): two measurements at once would double the questions to the shared servers (brief B.3).
     concurrency:
-      group: collecte-mesure
+      group: collecte-mesure-${{ github.event_name == 'pull_request' && 'essai' || 'jour' }}
       cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
     outputs:
       publiable: ${{ steps.collecte.outputs.publiable }}
     steps:
@@ -88,6 +107,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # A trial waits for its slot (pipeline/creneau.ts): stopped, in red with a sentence, while a day's collection runs
+      # or waits, or within 45 minutes of 03:17 and 09:47 UTC; it is then run again later.
+      - if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          en_cours=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --limit 50 --json event,status --jq '[.[] | select(.event != "pull_request" and .status != "completed")] | length')
+          npx tsx pipeline/cli/creneau-essai.ts "$en_cours"
 
       # The resolver: the official image, pinned by its digest, kept in the Actions cache (brief B.2).
       - id: image
@@ -143,8 +170,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release download sources-iptoasn --repo "$GITHUB_REPOSITORY" --pattern 'ip2asn-combined-*.tsv.gz' --dir releves || true
       - id: collecte
+        env:
+          # The day the « jour » job checked, never the clock's: a re-run after midnight measures the same day.
+          DATE: ${{ needs.jour.outputs.date }}
         run: |
-          args=(--travail travail --veille veille --conteneur knot)
+          args=(--travail travail --veille veille --conteneur knot --date "$DATE")
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
@@ -234,6 +264,16 @@ jobs:
             echo "publication : la branche donnees n'a pas pu être lue (code $code)" >&2
             exit 1
           fi
+          # A late re-run never publishes an older day over a newer one, nor the same day twice (that day's journal would
+          # be replaced): the day of the artifact must be newer than the published one.
+          if [ "$premier" = false ]; then
+            publie=$(jq -r '.date // ""' etat.json 2> /dev/null || true)
+            du_jour=$(jq -r '.date' ../collecte/sortie/etat.json)
+            if [ -n "$publie" ] && [[ ! "$du_jour" > "$publie" ]]; then
+              echo "publication : le jour $du_jour n'est pas plus récent que le jour publié ($publie) ; rien n'est publié." >&2
+              exit 1
+            fi
+          fi
           # Everything is replaced by the day's state, but the journal: it keeps every day (journal/AAAA/MM/…).
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name journal -exec rm -rf {} +
           cp -a ../collecte/sortie/. ./
@@ -261,7 +301,7 @@ jobs:
 
   alerter:
     needs: [jour, mesurer, publier]
-    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.mesurer.result == 'failure' || needs.mesurer.result == 'cancelled' || needs.mesurer.outputs.publiable == 'false' || needs.publier.result == 'failure' || needs.publier.result == 'cancelled')
+    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.jour.result == 'failure' || needs.mesurer.result == 'failure' || needs.mesurer.result == 'cancelled' || needs.mesurer.outputs.publiable == 'false' || needs.publier.result == 'failure' || needs.publier.result == 'cancelled')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -272,6 +312,7 @@ jobs:
       # The run's number, never its address (which names the account): Actions › Collecte › the run of that number.
       RUN: ${{ github.run_number }}
       PUBLICATION: ${{ needs.publier.result }}
+      JOUR: ${{ needs.jour.result }}
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         continue-on-error: true
@@ -284,8 +325,9 @@ jobs:
             if [ "$ESSAI" = "true" ]; then echo "**Essai** (déclenché exprès, rien n'a été publié, la série des jours n'est pas cassée)."; echo; fi
             publication_ratee=false
             if [ "$PUBLICATION" = "failure" ] || [ "$PUBLICATION" = "cancelled" ]; then publication_ratee=true; fi
-            if [ "$publication_ratee" = true ]; then echo "**La publication a échoué ou a été interrompue** (branche donnees ou Release) : la mesure s'est bien passée. Pour la publier : Actions › cette exécution › « Re-run failed jobs »."; echo; fi
-            if [ -f collecte/resume.md ]; then cat collecte/resume.md; else echo "La tâche de mesure a échoué avant de rendre son résumé."; fi
+            if [ "$JOUR" = "failure" ]; then echo "**La vérification du jour a échoué** (l'état publié n'a pas pu être lu) : rien n'a été mesuré. La collecte de 09:47 réessaie ; sinon, Actions › Collecte › « Run workflow »."; echo; fi
+            if [ "$publication_ratee" = true ]; then echo "**La publication a échoué ou a été interrompue** (branche donnees ou Release) : la mesure s'est bien passée. Pour la publier : Actions › cette exécution › « Re-run failed jobs », seulement si aucun jour plus récent n'a été publié depuis (la publication refuse un jour qui n'est pas plus récent que le jour publié)."; echo; fi
+            if [ -f collecte/resume.md ]; then cat collecte/resume.md; elif [ "$JOUR" != "failure" ]; then echo "La tâche de mesure a échoué avant de rendre son résumé."; fi
             echo
             if [ "$publication_ratee" = true ]; then echo "Voir dans l'exécution ce qui a été envoyé. Exécution n° $RUN (Actions › Collecte)."; else echo "L'état de la veille reste publié. Exécution n° $RUN (Actions › Collecte)."; fi
           } > corps.md

@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { gunzipSync, gzipSync } from "node:zlib";
+import { adressesExactes } from "../archive";
 import type { MesureNom } from "../mesure";
 import type { EnregistrementDomaine, EnregistrementNom } from "../publication";
 
@@ -61,10 +62,8 @@ function principal(): void {
   const domaines = lireFragments<EnregistrementDomaine>(donnees, "domaines").sort((a, b) =>
     a.domaine < b.domaine ? -1 : 1,
   );
-  const adresses = (n: string) => {
-    const m = exactes.get(n);
-    return m === undefined ? [] : [...m.a, ...m.aaaa];
-  };
+  // A record held back by the hysteresis (an earlier day's content) gets none either (pipeline/archive.ts).
+  const adresses = (n: EnregistrementNom) => adressesExactes(n, exactes.get(n.nom));
   const avertissement = "En préparation : le site n'est pas encore ouvert ; ne pas citer avant l'ouverture.";
   mkdirSync(sortie, { recursive: true });
   writeFileSync(
@@ -76,7 +75,7 @@ function principal(): void {
         mois,
         etatDu: etat.date,
         observationsDu: memeJour ? observations.date : null,
-        noms: noms.map((n) => ({ ...n, adressesExactes: adresses(n.nom) })),
+        noms: noms.map((n) => ({ ...n, adressesExactes: adresses(n) })),
         domaines,
       }),
     ),
@@ -85,7 +84,7 @@ function principal(): void {
     `# ${avertissement}`,
     "nom,domaine,etat,adresses,ttl_minimal,as,exploitants,categorie,hors_ue,niveau",
     ...noms.map((n) => {
-      const a = adresses(n.nom);
+      const a = adresses(n);
       return [
         n.nom,
         n.domaine,

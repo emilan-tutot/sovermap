@@ -7,7 +7,7 @@ import { coucheAdresses, type ContexteV1, coucheHotes, coucheSpf } from "./couch
 import type { MesureNom } from "./mesure";
 import type { ListeReference } from "./perimetre";
 import { type EnregistrementDomaine, type EnregistrementNom, type Etat, exploitantsDe, hoteDe } from "./publication";
-import { DOMAINE, NOM, valider } from "./schemas";
+import { DOMAINE, estNomDns, NOM, valider } from "./schemas";
 
 /** Records built in a reduced form: after an error, or because they failed their schema. */
 export type RapportConstruction = { erreurs: number; reduits: number };
@@ -175,7 +175,8 @@ export function construireEtat(
           etat: z.etat,
           echec: echecZone,
           ns: z.ns,
-          soa: z.soa?.mname ?? null,
+          // The SOA's primary, published only when it reads as a DNS name (it is read from the DNS: a datum, never markup).
+          soa: z.soa !== null && estNomDns(z.soa.mname) ? z.soa.mname : null,
           // DNSSEC: the zone's answers validated by the resolver (its DS at its parent, a sound chain).
           ds: z.etat === "ok" ? z.ad : z.etat === "echec" ? null : false,
           caa: z.echecs.includes("CAA") ? null : z.caa,

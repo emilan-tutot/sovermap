@@ -104,7 +104,7 @@ export const DOMAINE: Schema = objet(
       etat: etatNom,
       echec,
       ns: liste(nomDns, 50),
-      soa: { type: ["string", "null"], maxLength: 253 },
+      soa: { ...nomDns, type: ["string", "null"] },
       ds: { type: ["boolean", "null"] },
       caa: {
         ...liste(objet({ propriete: { enum: ["issue", "issuewild"] }, valeur: texte(255) }), 50),
