@@ -33,8 +33,8 @@ const HORODATAGE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/;
 export const LIMITE_PAR_SERVEUR = 10;
 /** How long a server is remembered as serving a zone (a shared server serves many: all wait when it is busy). */
 const MEMOIRE_SECONDES = 60;
-/** The brake engages at 8 questions within a second to one server: the questions that would go to it wait. */
-export const SEUIL_FREIN = 8;
+/** The brake engages at 7 questions within a second to one server (3 under the limit): the questions that would go to it wait. */
+export const SEUIL_FREIN = 7;
 /** At 9, one question more and the limit is near: every question waits, whatever its zone (a backstop). */
 export const SEUIL_ARRET = LIMITE_PAR_SERVEUR - 1;
 

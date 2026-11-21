@@ -305,12 +305,14 @@ describe("the scheduling of a collection", () => {
   it("stops asking a zone whose apex failed three times in a row, until the next attempt", async () => {
     const r = new ResolveurSimule(ZONE, zoneDe, new Set(["morte.example", "www.morte.example"]));
     const client = new ClientParZone(r, zoneDe, 2);
-    for (const type of ["NS", "SOA", "MX"] as const) {
+    // The opening (NS) fails and is asked once more, then the SOA fails: three failures of the apex in a row.
+    for (const type of ["NS", "SOA"] as const) {
       expect((await client.demander("morte.example", type)).code).toBe("SERVFAIL");
     }
-    // The zone is down for this attempt: its names fail at once, without a question, and say so.
+    // The zone is down for this attempt: its questions fail at once, without being sent, and say so.
+    expect((await client.demander("morte.example", "MX")).code).toBe("ZONE_MUETTE");
     expect((await client.demander("www.morte.example", "A")).code).toBe("ZONE_MUETTE");
-    expect(r.questions).toEqual(["morte.example NS", "morte.example SOA", "morte.example MX"]);
+    expect(r.questions).toEqual(["morte.example NS", "morte.example NS", "morte.example SOA"]);
     client.oublierZonesMortes();
     await client.demander("www.morte.example", "A");
     expect(r.questions).toContain("www.morte.example A");
@@ -356,6 +358,75 @@ describe("the scheduling of a collection", () => {
     for (const n of ["a", "b", "c"]) await client.demander(`${n}.sous.mairie.example`, "A");
     expect((await client.demander("www.mairie.example", "A")).code).toBe("NOERROR");
     expect(r.questions).toContain("www.mairie.example A");
+  });
+
+  it("keeps each zone's own pace, and asks each SPF lookup once in a run", async () => {
+    const horloge = fausseHorloge();
+    const debuts: number[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (nom.startsWith("www")) debuts.push(horloge.maintenant());
+        const reponses: Reponse["reponses"] =
+          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // Two questions per second to one zone's servers: half a second apart, after its opening.
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2);
+    for (const n of ["www1", "www2", "www3"]) await client.demander(`${n}.mairie.example`, "A");
+    expect(debuts.map((t) => t - (debuts[0] ?? 0))).toEqual([0, 500, 1000]);
+    // Two domains that include the same SPF record: one TXT question for it in the run.
+    const zone: ZoneSimulee = {
+      ...ZONE,
+      "a.example": {
+        NS: [{ type: "NS", cible: "ns1.hebergeur.example" }],
+        TXT: [{ type: "TXT", spf: "v=spf1 include:spf.hebergeur.example -all" }],
+      },
+      "b.example": {
+        NS: [{ type: "NS", cible: "ns1.hebergeur.example" }],
+        TXT: [{ type: "TXT", spf: "v=spf1 include:spf.hebergeur.example -all" }],
+      },
+    };
+    const r = new ResolveurSimule(zone, zoneDe);
+    await collecter(
+      new Map([
+        ["a.example", "a.example"],
+        ["b.example", "b.example"],
+      ]),
+      r,
+      { ...POLITESSE, zoneDe, horloge: fausseHorloge() },
+    );
+    expect(r.questions.filter((q) => q === "spf.hebergeur.example TXT")).toHaveLength(1);
+  });
+
+  it("takes a zone whose apex answered its SOA for delegated, and measures the largest domains first", async () => {
+    const horloge = fausseHorloge();
+    const parents: number[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        parents.push(horloge.maintenant());
+        const reponses: Reponse["reponses"] =
+          type === "SOA" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "SOA", mname: `ns.${nom}`, serial: 1 } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // NODATA to NS, but its SOA: a zone of its own; its later questions keep only the zone's pace (none here).
+    const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
+    await client.demander("soa.example", "NS");
+    await client.demander("soa.example", "SOA");
+    const avant = horloge.maintenant();
+    await client.demander("www.soa.example", "A");
+    expect(parents.at(-1)).toBe(avant);
+    // The domain with the most names opens first.
+    const r = new ResolveurSimule(ZONE, zoneDe);
+    const noms = new Map<string, string>([["www.sansmail.example", "sansmail.example"]]);
+    for (let i = 0; i < 60; i += 1) noms.set(`n${i}.mairie.example`, "mairie.example");
+    await collecter(noms, r, { ...POLITESSE, zoneDe, horloge: fausseHorloge(), enVol: 1 });
+    expect(r.questions[0]).toBe("mairie.example NS");
   });
 
   it("counts names, not questions: four names asked twice each never take a sub-zone for down", async () => {
@@ -455,8 +526,8 @@ describe("the scheduling of a collection", () => {
       zoneDe,
       horloge: fausseHorloge(),
     });
-    // The first pass and its two attempts each ask the apex again.
-    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(3);
+    // The first pass and its two attempts each open the zone again (its NS, asked once more when it fails).
+    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(6);
   });
 
   it("asks 13 name servers of a domain at most, however many it names", async () => {

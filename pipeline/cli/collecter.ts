@@ -387,9 +387,9 @@ async function principal(): Promise<number> {
   const debit = suivreDebit(o.conteneur, zoneDe);
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
-  // The controls after the measurement stop at 205 minutes: what is left keeps its level without control (« probable »),
+  // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),
   // and the job always has time to build and keep the day (it stops at 240 minutes).
-  const finControles = maintenant.getTime() + 205 * 60_000;
+  const finControles = maintenant.getTime() + 210 * 60_000;
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as the first pass has
   // measured them: during the attempts, which mostly wait.
   const hotesEtatDe = (m: ResultatCollecte) =>
@@ -417,7 +417,7 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: maintenant.getTime() + 150 * 60_000,
+      echeance: maintenant.getTime() + 165 * 60_000,
       zoneDe,
       suivi,
       apresPremierePasse: (m) => void lancerControleHotes(m),

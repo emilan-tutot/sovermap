@@ -20,6 +20,9 @@ export type OptionsCollecte = {
    * server under the limit of 10 questions per second, whatever the logs say (brief B.3).
    */
   parentParSeconde: number;
+  /** Questions per second to one zone's own servers (its turn of two at a time is not enough when a domain's names
+   * all come together): plan § 5, the politeness towards each zone. */
+  zoneParSeconde: number;
   /** Called once the first pass has ended (every domain measured), before the attempts: the controls may start. */
   apresPremierePasse?: (resultat: ResultatCollecte) => void;
   /** Names in flight at once (each one may wait for its domain to open, or for a slow server). */
@@ -52,6 +55,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   domainesParSeconde: 8,
   parZone: 2,
   parentParSeconde: 6,
+  zoneParSeconde: 5,
   enVol: 128,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
@@ -113,17 +117,16 @@ const CRENEAUX_MAX = 5;
 export class ClientParZone implements ClientDns {
   readonly id: string;
   readonly #zones: ParZone;
-  /**
-   * The zones already asked in this run, each with the end of its first question: that question also goes to the
-   * zone's parents (the delegation); the zone's other questions wait for its answer, after which the delegation is
-   * known (they never ask the parents in parallel).
-   */
+  /** The zones opened in this attempt, each with the end of its opening (its NS question, at its parent's pace). */
   readonly #premieres = new Map<string, Promise<void>>();
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
+  /** The pace of each zone's own servers. */
+  readonly #rythmes = new Map<string, Cadence>();
   /**
-   * The zones known as delegated: their apex answered NS records. Until then (a zone its parent serves itself, a name
-   * that does not exist), every question of the zone goes to the parent's servers, and takes a slot of their pace.
+   * The zones known as delegated: their apex answered its NS or its SOA records. Until then (a zone its parent serves
+   * itself, a name that does not exist, an opening that failed), every question of the zone goes to the parent's
+   * servers, and takes a slot of their pace.
    */
   readonly #deleguees = new Set<string>();
   /** The zones whose apex failed several times in a row: not asked again before the next attempt. */
@@ -139,6 +142,7 @@ export class ClientParZone implements ClientDns {
     private readonly frein: OptionsCollecte["frein"] = undefined,
     private readonly parentParSeconde = Number.POSITIVE_INFINITY,
     private readonly horloge: Horloge = HORLOGE_REELLE,
+    private readonly zoneParSeconde = Number.POSITIVE_INFINITY,
   ) {
     this.id = base.id;
     this.#zones = new ParZone(parZone);
@@ -200,40 +204,21 @@ export class ClientParZone implements ClientDns {
         }),
       );
       try {
-        // Every new zone opens with its own NS question, at its parent's pace: its other questions then know whether
-        // they go to the zone's own servers (delegated) or to its parent's (a zone the parent serves, a name that does
-        // not exist). A zone first reached by a host, an SPF lookup or a platform's name is opened the same way.
-        const ouverture = await this.#auParent(zone, zone, "NS");
+        // Every new zone opens with its own NS question, alone, at its parent's pace, asked once more if it fails: its
+        // other questions then know whether they go to the zone's own servers or to its parent's. A zone first reached
+        // by a host, an SPF lookup or a platform's name opens the same way.
+        let ouverture = await this.#poser(zone, zone, "NS");
+        if (CODES_EN_ECHEC.has(ouverture.code) && this.#muette(zone, zone) === null) {
+          ouverture = await this.#poser(zone, zone, "NS");
+        }
         if (nom === zone && type === "NS") return ouverture;
       } finally {
         finie();
       }
-      return this.#deleguees.has(zone) ? this.#poser(nom, zone, type, false, true) : this.#auParent(nom, zone, type);
+    } else {
+      await premiere;
     }
-    await premiere;
-    return this.#deleguees.has(zone) ? this.#poser(nom, zone, type, false, true) : this.#auParent(nom, zone, type);
-  }
-
-  /**
-   * A question that goes to the zone's parent (its first one, or any while the zone is not known as delegated): the
-   * brake, then the parent's pace, then the brake again; a question held after its slot takes a new one, so the
-   * questions held together never leave together.
-   */
-  async #auParent(nom: string, zone: string, type: TypeRr): Promise<Reponse> {
-    if (this.#muette(nom, zone) === null) {
-      if (this.frein) await this.frein(nom, zone, true);
-      const groupe = groupeDuParent(zone);
-      let cadence = this.#parents.get(groupe);
-      if (cadence === undefined) {
-        cadence = new Cadence(this.parentParSeconde, this.horloge);
-        this.#parents.set(groupe, cadence);
-      }
-      for (let creneau = 1; creneau <= CRENEAUX_MAX; creneau += 1) {
-        await cadence.attendre();
-        if (!this.frein || (await this.frein(nom, zone, true)) !== true) break;
-      }
-    }
-    return this.#poser(nom, zone, type, true, false);
+    return this.#poser(nom, zone, type);
   }
 
   /** The answer a zone, or a sub-zone of the name, that is down gives at once (no question sent), or null. */
@@ -245,18 +230,50 @@ export class ClientParZone implements ClientDns {
     return null;
   }
 
-  async #poser(nom: string, zone: string, type: TypeRr, ouverture: boolean, freiner: boolean): Promise<Reponse> {
+  #cadence(table: Map<string, Cadence>, cle: string, parSeconde: number): Cadence {
+    let cadence = table.get(cle);
+    if (cadence === undefined) {
+      cadence = new Cadence(parSeconde, this.horloge);
+      table.set(cle, cadence);
+    }
+    return cadence;
+  }
+
+  /**
+   * A slot of the parent's pace: the brake before and after it; a question held after its slot takes a new one (five
+   * at most), so the questions held together never leave together.
+   */
+  async #creneauParent(nom: string, zone: string): Promise<void> {
+    if (this.frein) await this.frein(nom, zone, true);
+    const cadence = this.#cadence(this.#parents, groupeDuParent(zone), this.parentParSeconde);
+    for (let creneau = 1; creneau <= CRENEAUX_MAX; creneau += 1) {
+      await cadence.attendre();
+      if (!this.frein || (await this.frein(nom, zone, true)) !== true) break;
+    }
+  }
+
+  /**
+   * One question: the zone's turn (two at a time), then the paces, then the answer, recorded. A question of a zone
+   * not known as delegated takes a slot of its parent's pace while holding the zone's turn: one zone never reserves
+   * more than two slots of its parent. Every question keeps the zone's own pace.
+   */
+  async #poser(nom: string, zone: string, type: TypeRr): Promise<Reponse> {
     const avant = this.#muette(nom, zone);
     if (avant !== null) return avant;
-    if (freiner && this.frein) await this.frein(nom, zone, ouverture);
     await this.#zones.prendre(zone);
     try {
-      // The zone may have gone down, and the load changed, while the question waited for its turn in the zone.
+      // The zone may have gone down while the question waited for its turn.
       const pendant = this.#muette(nom, zone);
       if (pendant !== null) return pendant;
-      if (freiner && this.frein) await this.frein(nom, zone, ouverture);
+      if (!this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
+      else if (this.frein) await this.frein(nom, zone, false);
+      await this.#cadence(this.#rythmes, zone, this.zoneParSeconde).attendre();
       const r = await this.base.demander(nom, type);
-      if (nom === zone && type === "NS" && r.reponses.some((e) => e.donnee.type === "NS" && e.proprietaire === zone)) {
+      // Its apex answered its own NS or SOA records: the zone is delegated, its servers answer its questions.
+      if (
+        nom === zone &&
+        r.reponses.some((e) => (e.donnee.type === "NS" || e.donnee.type === "SOA") && e.proprietaire === zone)
+      ) {
         this.#deleguees.add(zone);
       }
       if (nom === zone) {
@@ -284,7 +301,19 @@ const verifier = (r: Reponse, nom: string): Reponse => {
 
 /** The SPF expansion asks through the same polite client. */
 export function resolveurSpf(client: ClientDns): ResolveurSpf {
-  return {
+  // Each lookup is asked once in the run, whatever the number of domains that include it; a failure is asked again.
+  const memoriser = <T>(f: (cle: string) => Promise<T>): ((cle: string) => Promise<T>) => {
+    const deja = new Map<string, Promise<T>>();
+    return (cle) => {
+      const enCours = deja.get(cle);
+      if (enCours !== undefined) return enCours;
+      const promesse = f(cle);
+      deja.set(cle, promesse);
+      promesse.catch(() => deja.delete(cle));
+      return promesse;
+    };
+  };
+  const base: ResolveurSpf = {
     spf: async (domaine) => {
       const r = verifier(await client.demander(domaine, "TXT"), domaine);
       for (const e of r.reponses) if (e.donnee.type === "TXT") return e.donnee.spf;
@@ -303,6 +332,7 @@ export function resolveurSpf(client: ClientDns): ResolveurSpf {
       return r.reponses.flatMap((e) => (e.donnee.type === "MX" && e.donnee.hote !== "" ? [e.donnee.hote] : []));
     },
   };
+  return { spf: memoriser(base.spf), adresses: memoriser(base.adresses), mx: memoriser(base.mx) };
 }
 
 const enEchec = (m: MesureNom) => m.etat === "echec";
@@ -325,6 +355,7 @@ export async function collecter(
     options.frein,
     options.parentParSeconde,
     horloge,
+    options.zoneParSeconde,
   );
   const spfClient = resolveurSpf(client);
   const cadenceNoms = new Cadence(options.nomsParSeconde, horloge);
@@ -395,8 +426,17 @@ export async function collecter(
     if (liste === undefined) parUnite.set(unite, [nom]);
     else liste.push(nom);
   }
+  const taille = (u: string) => parUnite.get(u)?.length ?? 0;
+  const unites = [...parUnite.keys()];
+  const ordreUnites = [
+    ...unites.filter((u) => taille(u) >= 50).sort((a, b) => taille(b) - taille(a) || (a < b ? -1 : 1)),
+    ...melanger(
+      unites.filter((u) => taille(u) < 50),
+      options.aleatoire,
+    ),
+  ];
   await passe(
-    melanger([...parUnite.keys()], options.aleatoire).map((unite) => async () => {
+    ordreUnites.map((unite) => async () => {
       await cadenceDomaines.attendre();
       await options.frein?.(unite, options.zoneDe(unite), true);
       // The measurement is called first: its NS question is the zone's first (client per zone, above).
