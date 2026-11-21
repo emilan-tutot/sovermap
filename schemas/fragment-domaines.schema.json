@@ -1,0 +1,555 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fragment-domaines.schema.json",
+  "title": "Sovermap : un fragment de domaines enregistrés",
+  "type": "object",
+  "properties": {
+    "domaines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "domaine": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+          },
+          "nomWeb": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+          },
+          "perimetre": {
+            "enum": [
+              "État",
+              "hors État"
+            ]
+          },
+          "raisons": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "gouv.fr",
+                "dila"
+              ]
+            },
+            "maxItems": 5
+          },
+          "plateforme": {
+            "type": "boolean"
+          },
+          "organismes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ministeres": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "maxItems": 50
+          },
+          "noms": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "zone": {
+            "type": "object",
+            "properties": {
+              "etat": {
+                "enum": [
+                  "ok",
+                  "nxdomain",
+                  "nodata",
+                  "echec"
+                ]
+              },
+              "echec": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "confirmePar": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 20
+                  }
+                },
+                "required": [
+                  "code",
+                  "confirmePar"
+                ],
+                "additionalProperties": false
+              },
+              "ns": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 253,
+                  "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+                },
+                "maxItems": 50
+              },
+              "soa": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 253,
+                "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+              },
+              "ds": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "caa": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "propriete": {
+                      "enum": [
+                        "issue",
+                        "issuewild"
+                      ]
+                    },
+                    "valeur": {
+                      "type": "string",
+                      "maxLength": 255
+                    }
+                  },
+                  "required": [
+                    "propriete",
+                    "valeur"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 50
+              }
+            },
+            "required": [
+              "etat",
+              "echec",
+              "ns",
+              "soa",
+              "ds",
+              "caa"
+            ],
+            "additionalProperties": false
+          },
+          "serveursDeNoms": {
+            "type": "object",
+            "properties": {
+              "hotes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "hote": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+                    },
+                    "etat": {
+                      "enum": [
+                        "ok",
+                        "nxdomain",
+                        "nodata",
+                        "echec"
+                      ]
+                    },
+                    "as": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "maxItems": 100
+                    },
+                    "exploitants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "enum": [
+                              "hébergé par",
+                              "diffusé par"
+                            ]
+                          },
+                          "societe": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 100
+                          },
+                          "preuve": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "niveau": {
+                            "enum": [
+                              "confirmé",
+                              "probable",
+                              "non déterminé"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "societe",
+                          "preuve",
+                          "niveau"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 100
+                    },
+                    "categorie": {
+                      "enum": [
+                        "France",
+                        "UE hors France",
+                        "Europe hors UE",
+                        "hors d'Europe",
+                        "non déterminé"
+                      ]
+                    },
+                    "horsUE": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "niveau": {
+                      "enum": [
+                        "confirmé",
+                        "probable",
+                        "non déterminé"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "hote",
+                    "etat",
+                    "as",
+                    "exploitants",
+                    "categorie",
+                    "horsUE",
+                    "niveau"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 50
+              },
+              "categorie": {
+                "enum": [
+                  "France",
+                  "UE hors France",
+                  "Europe hors UE",
+                  "hors d'Europe",
+                  "non déterminé"
+                ]
+              },
+              "horsUE": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "niveau": {
+                "enum": [
+                  "confirmé",
+                  "probable",
+                  "non déterminé"
+                ]
+              }
+            },
+            "required": [
+              "hotes",
+              "categorie",
+              "horsUE",
+              "niveau"
+            ],
+            "additionalProperties": false
+          },
+          "messagerie": {
+            "type": "object",
+            "properties": {
+              "etat": {
+                "enum": [
+                  "ok",
+                  "aucun",
+                  "nul",
+                  "echec"
+                ]
+              },
+              "mx": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "preference": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "hote": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+                    }
+                  },
+                  "required": [
+                    "preference",
+                    "hote"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 50
+              },
+              "hotes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "hote": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+                    },
+                    "etat": {
+                      "enum": [
+                        "ok",
+                        "nxdomain",
+                        "nodata",
+                        "echec"
+                      ]
+                    },
+                    "as": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "maxItems": 100
+                    },
+                    "exploitants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "enum": [
+                              "hébergé par",
+                              "diffusé par"
+                            ]
+                          },
+                          "societe": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 100
+                          },
+                          "preuve": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "niveau": {
+                            "enum": [
+                              "confirmé",
+                              "probable",
+                              "non déterminé"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "societe",
+                          "preuve",
+                          "niveau"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 100
+                    },
+                    "categorie": {
+                      "enum": [
+                        "France",
+                        "UE hors France",
+                        "Europe hors UE",
+                        "hors d'Europe",
+                        "non déterminé"
+                      ]
+                    },
+                    "horsUE": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "niveau": {
+                      "enum": [
+                        "confirmé",
+                        "probable",
+                        "non déterminé"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "hote",
+                    "etat",
+                    "as",
+                    "exploitants",
+                    "categorie",
+                    "horsUE",
+                    "niveau"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 50
+              },
+              "categorie": {
+                "enum": [
+                  "France",
+                  "UE hors France",
+                  "Europe hors UE",
+                  "hors d'Europe",
+                  "non déterminé"
+                ]
+              },
+              "horsUE": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "niveau": {
+                "enum": [
+                  "confirmé",
+                  "probable",
+                  "non déterminé"
+                ]
+              },
+              "spf": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "statut": {
+                    "enum": [
+                      "absent",
+                      "lu",
+                      "limite dépassée",
+                      "boucle",
+                      "echec"
+                    ]
+                  },
+                  "inclus": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 253,
+                      "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+                    },
+                    "maxItems": 50
+                  },
+                  "reseaux": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "as": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "as"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 50
+                  },
+                  "reseauxTotal": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "nonEvalues": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "statut",
+                  "inclus",
+                  "reseaux",
+                  "reseauxTotal",
+                  "nonEvalues"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "etat",
+              "mx",
+              "hotes",
+              "categorie",
+              "horsUE",
+              "niveau",
+              "spf"
+            ],
+            "additionalProperties": false
+          },
+          "tronque": {
+            "enum": [
+              true
+            ]
+          },
+          "reduit": {
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "domaine",
+          "nomWeb",
+          "perimetre",
+          "raisons",
+          "plateforme",
+          "organismes",
+          "ministeres",
+          "noms",
+          "zone",
+          "serveursDeNoms",
+          "messagerie"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 500
+    },
+    "parties": {
+      "type": "integer",
+      "minimum": 2
+    }
+  },
+  "required": [
+    "domaines"
+  ],
+  "additionalProperties": false
+}

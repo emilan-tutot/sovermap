@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fragment-noms.schema.json",
+  "title": "Sovermap : un fragment de noms mesurés",
+  "type": "object",
+  "properties": {
+    "noms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+          },
+          "domaine": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+          },
+          "provenances": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "maxItems": 20
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "maxItems": 20
+          },
+          "etat": {
+            "enum": [
+              "ok",
+              "nxdomain",
+              "nodata",
+              "echec"
+            ]
+          },
+          "echec": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "confirmePar": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 20
+              }
+            },
+            "required": [
+              "code",
+              "confirmePar"
+            ],
+            "additionalProperties": false
+          },
+          "cname": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)*$"
+            },
+            "maxItems": 10
+          },
+          "dnssec": {
+            "type": "boolean"
+          },
+          "familleEnEchec": {
+            "enum": [
+              "A",
+              "AAAA",
+              null
+            ]
+          },
+          "reseaux": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "as": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "plage": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 100
+                }
+              },
+              "required": [
+                "as",
+                "plage"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 100
+          },
+          "cdn": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "methode": {
+                "enum": [
+                  "cname",
+                  "plage",
+                  "as"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "methode"
+            ],
+            "additionalProperties": false
+          },
+          "exploitants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "enum": [
+                    "hébergé par",
+                    "diffusé par"
+                  ]
+                },
+                "societe": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 100
+                },
+                "preuve": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "niveau": {
+                  "enum": [
+                    "confirmé",
+                    "probable",
+                    "non déterminé"
+                  ]
+                }
+              },
+              "required": [
+                "role",
+                "societe",
+                "preuve",
+                "niveau"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 100
+          },
+          "categorie": {
+            "enum": [
+              "France",
+              "UE hors France",
+              "Europe hors UE",
+              "hors d'Europe",
+              "non déterminé"
+            ]
+          },
+          "horsUE": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "niveau": {
+            "enum": [
+              "confirmé",
+              "probable",
+              "non déterminé"
+            ]
+          },
+          "controle": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "resolveur": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "accord": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "resolveur",
+              "accord"
+            ],
+            "additionalProperties": false
+          },
+          "tronque": {
+            "enum": [
+              true
+            ]
+          },
+          "reduit": {
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "nom",
+          "domaine",
+          "provenances",
+          "types",
+          "etat",
+          "echec",
+          "cname",
+          "dnssec",
+          "familleEnEchec",
+          "reseaux",
+          "cdn",
+          "exploitants",
+          "categorie",
+          "horsUE",
+          "niveau",
+          "controle"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 500
+    },
+    "parties": {
+      "type": "integer",
+      "minimum": 2
+    }
+  },
+  "required": [
+    "noms"
+  ],
+  "additionalProperties": false
+}
