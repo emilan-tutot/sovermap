@@ -99,4 +99,40 @@ describe("the reference list", () => {
     expect(uniteDe("www.mairie.example", suffixes, plateformes)).toBe("mairie.example");
     expect(liste.domaines.get("club.createur.example")?.nomWeb).toBe("club.createur.example");
   });
+
+  it("puts the SIG's sites and the MESR's public institutions in the « État » perimeter (C.5), never a platform", () => {
+    const avecPerimetre = construireListe(
+      [{ date: "2026-11-19", csv: "name,type\nwww.universite.example,\nmairie.example,Commune\n" }],
+      null,
+      suffixes,
+      plateformes,
+      ".gouv.example",
+      undefined,
+      [
+        {
+          source: "sig",
+          date: "2026-11-01",
+          sites: ["agence.example", "portail.ministere.gouv.example", "x.createur.example"],
+        },
+        { source: "mesr", date: "2026-11-21", sites: ["www.universite.example", "recette.ecole.example"] },
+      ],
+    );
+    // A site that is not in the list enters it, with its provenance; its unit is « État ».
+    expect(avecPerimetre.noms.get("agence.example")?.provenances).toEqual(["sig:2026-11-01"]);
+    expect(avecPerimetre.domaines.get("agence.example")).toMatchObject({ perimetre: "État", raisons: ["sig"] });
+    // A listed name keeps its provenances, and its unit gains the reason.
+    expect(avecPerimetre.noms.get("www.universite.example")?.provenances).toEqual([
+      "dinum:2026-11-19",
+      "mesr:2026-11-21",
+    ]);
+    expect(avecPerimetre.domaines.get("universite.example")).toMatchObject({ perimetre: "État", raisons: ["mesr"] });
+    expect(avecPerimetre.domaines.get("ministere.gouv.example")?.raisons).toEqual(["gouv.fr", "sig"]);
+    // A unit on a third-party platform never enters the perimeter; an internal name stays out, whatever its list.
+    expect(avecPerimetre.domaines.get("x.createur.example")).toMatchObject({
+      perimetre: "hors État",
+      plateforme: true,
+    });
+    expect(avecPerimetre.noms.has("recette.ecole.example")).toBe(false);
+    expect(avecPerimetre.domaines.get("mairie.example")?.perimetre).toBe("hors État");
+  });
 });

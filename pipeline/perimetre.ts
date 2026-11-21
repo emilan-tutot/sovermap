@@ -2,7 +2,8 @@
 // websites of the DILA Référentiel. Each name keeps its provenances and types; its unit is its registrable domain
 // (Public Suffix List; a name on a third-party platform is its own unit); internal and technical names are left out
 // (methode § 3). Each unit gets its web name (« www. » if listed, else the apex) and its perimeter: « État » for
-// .gouv.fr and the DILA's websites (decision D1, a2, before the perimeter of C.5), « hors État » otherwise.
+// .gouv.fr, the DILA's websites, the SIG's sites and the MESR's public institutions (decision D1, a2; brief C.5),
+// « hors État » otherwise.
 import type { ReferentielDila } from "./dila";
 import { lignesCsv, nomValide } from "./liste";
 import { REGLES_EXCLUSION, type RaisonExclusion, type ReglesExclusion, raisonExclusion } from "./noms";
@@ -26,7 +27,7 @@ export type EntreeDomaine = {
   nomWeb: string;
   perimetre: "État" | "hors État";
   /** Why it is in the « État » perimeter. */
-  raisons: ("gouv.fr" | "dila")[];
+  raisons: RaisonEtat[];
   plateforme: boolean;
   organismes: string[];
   ministeres: string[];
@@ -42,6 +43,15 @@ export type ListeReference = {
 };
 
 export type CopieListe = { date: string; csv: string };
+
+/** The reasons of the « État » perimeter (decision D1, a2; brief C.5). */
+export type RaisonEtat = "gouv.fr" | "dila" | "sig" | "mesr";
+
+/**
+ * A dated copy of an open list of the « État » perimeter (referentiels/perimetre/): the SIG's sites, the MESR's public
+ * institutions. Its sites enter the list with their provenance (« sig:AAAA-MM-JJ »), and their units the perimeter.
+ */
+export type CopiePerimetre = { source: "sig" | "mesr"; date: string; sites: readonly string[] };
 
 const trie = (valeurs: Iterable<string>) => [...new Set(valeurs)].sort();
 
@@ -61,6 +71,8 @@ export function construireListe(
   suffixeEtat = ".gouv.fr",
   /** The rules in force (the fourth one may be suspended). */
   regles: ReglesExclusion = REGLES_EXCLUSION,
+  /** The dated copies of the perimeter's open lists (brief C.5). */
+  perimetre: readonly CopiePerimetre[] = [],
 ): ListeReference {
   const noms = new Map<string, EntreeNom>();
   const ecartes = new Map<Exclusion, Set<string>>();
@@ -108,6 +120,9 @@ export function construireListe(
       if (service.ministere !== null) ministereDe.set(service.id, service.ministere);
     }
   }
+  for (const copie of perimetre) {
+    for (const site of copie.sites) ajouter(site, `${copie.source}:${copie.date}`, null, null);
+  }
 
   // Units, their web name (added to the measured names when it is not listed) and their perimeter.
   const parDomaine = new Map<string, EntreeNom[]>();
@@ -121,9 +136,12 @@ export function construireListe(
     if (!noms.has(nomWeb))
       noms.set(nomWeb, { nom: nomWeb, domaine, provenances: ["domaine"], types: [], organismes: [] });
     const organismes = trie(entrees.flatMap((e) => e.organismes));
-    const raisons: ("gouv.fr" | "dila")[] = [];
+    const raisons: RaisonEtat[] = [];
+    const sources = new Set(entrees.flatMap((e) => e.provenances.map((p) => p.split(":")[0])));
     if (!enPlateforme && domaine.endsWith(suffixeEtat)) raisons.push("gouv.fr");
     if (!enPlateforme && organismes.length > 0) raisons.push("dila");
+    if (!enPlateforme && sources.has("sig")) raisons.push("sig");
+    if (!enPlateforme && sources.has("mesr")) raisons.push("mesr");
     domaines.set(domaine, {
       domaine,
       noms: trie([...entrees.map((e) => e.nom), nomWeb]),
