@@ -37,6 +37,27 @@ describe("the logo (A.5, the owner's choice of 20/11/2026)", () => {
     expect(onglet).toContain(`@media (prefers-color-scheme:dark){.l{stroke:${ENCRE_CLAIRE}}.p{fill:${ENCRE_CLAIRE}}}`);
   });
 
+  it("gives the tab icon bigger dots and a gap visible under the ring at 16 pixels, the logo unchanged", () => {
+    const pixel = 16 / (2 * demiCote(LOGO_PETIT));
+    const sommet = LOGO_PETIT.sommet ?? SOMMET_DE_L_ARC;
+    // Between the ring's inner edge and the top of the arc's outer edge: two pixels at least (1.5 before).
+    expect((1 - LOGO_PETIT.trait / 2 - (sommet + LOGO_PETIT.trait / 2)) * pixel).toBeGreaterThanOrEqual(2);
+    // Each dot three pixels wide at least (2.6 before), and the arc lower than the logo's.
+    expect(2 * LOGO_PETIT.point * pixel).toBeGreaterThanOrEqual(3);
+    expect(sommet).toBeLessThan(SOMMET_DE_L_ARC);
+    expect(LOGO_FIDELE.sommet).toBeUndefined();
+    expect(svgLogo(LOGO_FIDELE)).toBe(svgLogo({ ...LOGO_FIDELE, sommet: SOMMET_DE_L_ARC }));
+  });
+
+  it("refuses an arc's top that no ellipse joins to the dots, or that would draw the lower arc", () => {
+    for (const sommet of [0.2, 0.9, Number.NaN]) {
+      expect(() => ellipseDeLArc(ELEVATION_DES_POINTS, sommet)).toThrow(RangeError);
+    }
+    for (const sommet of [LOGO_PETIT.sommet ?? SOMMET_DE_L_ARC, SOMMET_DE_L_ARC]) {
+      expect(Number.isFinite(ellipseDeLArc(ELEVATION_DES_POINTS, sommet).rx)).toBe(true);
+    }
+  });
+
   it("escapes its title, so that the SVG stays well formed", () => {
     expect(svgLogo({ ...LOGO_PETIT, titre: "A & B <c>" })).toContain("<title>A &amp; B &lt;c&gt;</title>");
   });

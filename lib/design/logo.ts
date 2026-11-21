@@ -12,13 +12,18 @@ export type Proportions = {
   trait: number;
   /** Radius of the two dots. */
   point: number;
+  /** Height of the arc's top, when it differs from the measured one (the tab icon: lower, to keep a gap visible). */
+  sommet?: number;
 };
 
 /** Measured on the PNG (ring of radius 408.3 pixels): strokes of 30 pixels, dots of radius 35.3 pixels. */
 export const LOGO_FIDELE: Proportions = { trait: 0.0735, point: 0.0865 };
 
-/** For the tab icon, drawn 16 to 32 pixels wide: thicker strokes and dots, the same shape. */
-export const LOGO_PETIT: Proportions = { trait: 0.16, point: 0.19 };
+/**
+ * For the tab icon, drawn 16 to 32 pixels wide: thicker strokes, much bigger dots, and the arc a little lower, so that
+ * the dots stay visible and a gap stays visible under the ring at 16 pixels (point 02 of chantier 2).
+ */
+export const LOGO_PETIT: Proportions = { trait: 0.16, point: 0.28, sommet: 0.52 };
 
 /** Height of the dots above the circle's horizontal diameter, in degrees (measured: 11.0° and 14.3°). */
 export const ELEVATION_DES_POINTS = 12.65;
@@ -42,6 +47,11 @@ export function ellipseDeLArc(elevation = ELEVATION_DES_POINTS, sommet = SOMMET_
   const a = (elevation * Math.PI) / 180;
   const px = Math.cos(a);
   const py = -Math.sin(a);
+  // The arc's top stays above the dots and below the ellipse's top over them (ry − py): below, no ellipse joins the
+  // three points; above, the arc drawn from dot to dot (svgLogo's flags) would be the lower one.
+  if (!(sommet > -py && sommet < ry - py)) {
+    throw new RangeError(`sommet de l'arc ${sommet} hors de ]${(-py).toFixed(3)} ; ${(ry - py).toFixed(3)}[`);
+  }
   const cy = ry - sommet;
   // The dot lies on the ellipse: (px / rx)² + ((py − cy) / ry)² = 1.
   const rx = px / Math.sqrt(1 - ((py - cy) / ry) ** 2);
@@ -64,7 +74,7 @@ export type OptionsSvg = Proportions & {
 
 /** The logo as an SVG document, centred in a square viewBox; one colour, two forms: circles and an arc. */
 export function svgLogo(options: OptionsSvg): string {
-  const { rx, ry, px, py } = ellipseDeLArc();
+  const { rx, ry, px, py } = ellipseDeLArc(ELEVATION_DES_POINTS, options.sommet ?? SOMMET_DE_L_ARC);
   const d = demiCote(options);
   const style =
     `.l{fill:none;stroke:${ENCRE};stroke-width:${nombre(options.trait)}}.p{fill:${ENCRE}}` +
