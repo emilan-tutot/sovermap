@@ -431,6 +431,14 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
 - **Conditions** : aucune licence écrite sur ces listes. On s'en sert pour calculer un indicateur (« CDN : oui, fournisseur, date de la liste ») ; **les listes elles-mêmes ne sont pas republiées**.
 - **Décision : retenue** (Cloudflare, CloudFront, Fastly, Azure Front Door).
 
+**Complément du 21/11/2026 (C.3)** : les relais de sécurité.
+
+| Fournisseur | Adresse | Contenu (21/11/2026) | Accès automatique |
+|---|---|---|---|
+| Imperva | article « Allowlisting Imperva IP addresses and Setting IP restriction rules [c85245b7] », https://docs-cybersec.thalesgroup.com/bundle/z-kb-articles-knowledgebase-support/page/290228110.html | 11 plages IPv4, 1 plage IPv6, mise à jour du 06/08/2026 : « The following IPs are used by Cloud WAF services. » | Page rendue en JavaScript ; texte lisible par l'API du portail (`docs-cybersec-be.thalesgroup.com/api/bundle/<livre>/page/<page>`, `robots.txt` : `Allow: /api/`), en JSON avec un tableau HTML : format non pris en charge par la collecte aujourd'hui. L'API `my.imperva.com/api/integration/v1/ips` reste fermée (`Disallow: /`, relu le 21/11/2026). |
+| Radware | aucune liste lisible | — | **Non** : support.radware.com fermé aux robots (`Disallow: /`, 21/11/2026) ; documentation derrière le portail client |
+| OGO Security | aucune liste publique trouvée | — | — |
+
 ### 28. CDN : suffixes CNAME documentés par les fournisseurs
 Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **Amazon CloudFront** : `.cloudfront.net` (« d111111abcdef8.cloudfront.net »).
@@ -441,10 +449,16 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **Gcore** : `.gcdn.co`.
 - **Bunny** : `.b-cdn.net`.
 
-Restent à lire dans une page officielle avant d'entrer dans la liste :
-- `akamaiedge.net`, pourtant vu dans les essais (`docs/methode.md`) ;
-- `incapdns.net` (Imperva) ;
-- `rsc.cdn77.org` (CDN77).
+**Complément du 21/11/2026 (C.3)** :
+- **Imperva** (documentation passée chez Thales : docs.imperva.com redirige vers docs-cybersec.thalesgroup.com) : `impervadns.net` (« The domain used for this purpose was recently changed from impervadns.net to ng.impervadns.net. », note de version du 21/01/2024) et `incapdns.net` (« the impervadns.net and incapdns.net domains. These domains support all websites onboarded », note du 10/10/2021). Lus le 21/11/2026 par l'API du portail. Réserve d'Imperva : « the structure of the domain used for CNAMEs is subject to change ».
+- **Akamai** : `akamaiedge.net` (« "map": "e;dscb.akamaiedge.net" », API Edge Hostnames, page « Get an edge hostname », mise à jour du 01/03/2026, lue le 21/11/2026). La page de terminologie ne le nomme pas.
+- **CDN77** : `rsc.cdn77.org` (article « Configuring CNAME », mis à jour le 10/09/2024 ; sa capture officielle montre « www.cdn77.com. 1058 IN CNAME 1669655317.rsc.cdn77.org. » ; lu le 21/11/2026).
+- **Restent sans page officielle lisible (21/11/2026)** :
+  - `radwarecloud.net` (Radware) : support fermé aux robots, documentation derrière le portail client ;
+  - `ogosecurity.com` (OGO Security) : aucune documentation technique publique.
+- **Ne sont pas des CDN** (plateformes d'hébergement) : `wixdns.net` (Wix : CNAME `pointing.wixdns.net` pour « connect an existing domain » à un site Wix) et `jimdo.com` (Jimdo : article « Comment fonctionne l'hébergement chez Jimdo », titre lu dans le plan du site).
+- CDN77 n'entre dans `referentiels/cdn.json` qu'avec sa société (`datacamp-limited`, deux sources, C.1).
+
 
 ### 29. CDN : numéros d'AS
 - **Ce qu'on en tire** : une piste, relevée dans IPtoASN et à confirmer au registre avant d'entrer dans la liste :
@@ -456,6 +470,21 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
   - CDN77 : 60068 ;
   - Bunny : 200325.
 - **Règle** : un AS partagé avec de l'hébergement ordinaire ne suffit jamais à conclure à un CDN. C'est le cas d'Amazon 16509, de Microsoft 8075, de Google 15169, d'OVH et de Scaleway, et de l'AS 63949 d'Akamai, ancien hébergeur Linode.
+
+**Complément du 21/11/2026 (C.3)** :
+- **AS confirmés au registre** par les sources retenues (fiches 18, 21 et 22 ; le RDAP, fiche 23, ne sert qu'au contrôle), relus le 21/11/2026 sur les copies du 19 et du 20/11/2026 :
+
+| Fournisseur | AS | Preuve | Suffit seul |
+|---|---|---|---|
+| Cloudflare | 13335 | IPtoASN « CLOUDFLARENET - Cloudflare, Inc. » ; ARIN : US | oui |
+| Fastly | 54113 | IPtoASN « FASTLY - Fastly, Inc. » ; ARIN : US | oui |
+| Akamai | 20940 | RIPE : « AKAMAI-ASN1 », Akamai International B.V. (NL) | oui |
+| Imperva | 19551 | IPtoASN « INCAPSULA - Incapsula Inc » ; ARIN : même titulaire que six plages de la liste officielle | oui |
+| Radware | 48851, 198949 | RIPE : Radware Ltd (IL), même titulaire | oui |
+| CDN77 | 60068 | RIPE : « CDN77 », Datacamp Limited (GB) | non : usage des 4 AS du titulaire non documenté ; le suffixe suffit |
+| OGO Security | aucun | ni la base du RIPE ni IPtoASN ; relais sur AS16276 (OVH SAS) et AS15826 (NFrance Conseil) | — (AS partagés : jamais seuls) |
+
+- **Vus, non retenus** : Radware 213232 (même titulaire, jamais observé), 15823 « RADWARE-AS » (autre fiche d'organisation), 25773 « RADWARE-CLOUD-SERVICES » (ARIN, Radware Inc., autre société) ; Imperva 62571 « IMPERVA-INC-US-SJ-COLO » (autre titulaire) et 14960 (même titulaire que 19551, rien d'annoncé). Gcore 199524 et Bunny 200325 : non vérifiés ici.
 
 ### 30. Listes libres agrégées (cdncheck de ProjectDiscovery)
 - **Licence** : code MIT ; données compilées depuis des sources tierces, au droit incertain.
