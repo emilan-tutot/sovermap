@@ -38,14 +38,20 @@ function github() {
 type GitHub = ReturnType<typeof github>;
 
 /** A published state: etat.json → noms/ab/sommes.json → noms/ab/cd.json, and an aggregate. */
-function publier(g: GitHub, date: string, contenu: unknown = { nom: "www.d0.example" }) {
+function publier(
+  g: GitHub,
+  date: string,
+  contenu: unknown = { nom: "www.d0.example" },
+  { jours = 1, sansFragment = false }: { jours?: number; sansFragment?: boolean } = {},
+) {
   const fragment = JSON.stringify([contenu]);
-  const table = JSON.stringify({ "cd.json": sha(fragment) });
+  const table = JSON.stringify(sansFragment ? {} : { "cd.json": sha(fragment) });
   const chiffres = JSON.stringify({ domaines: 1 });
   const sommes = { "noms/ab/sommes.json": sha(table), "agregats/chiffres.json": sha(chiffres) };
-  g.fichiers.set("etat.json", JSON.stringify({ statut: "preparation", date, sommes }));
+  g.fichiers.set("etat.json", JSON.stringify({ statut: "preparation", date, jours, sommes }));
   g.fichiers.set("noms/ab/sommes.json", table);
-  g.fichiers.set("noms/ab/cd.json", fragment);
+  if (sansFragment) g.fichiers.delete("noms/ab/cd.json");
+  else g.fichiers.set("noms/ab/cd.json", fragment);
   g.fichiers.set("agregats/chiffres.json", chiffres);
   return { fragment };
 }
@@ -143,12 +149,13 @@ describe("the site's reading of the data (B.9)", () => {
         memoriser: releve,
       });
     }
-    expect(cles).toHaveLength(4);
+    // Three shared entries per function (etat.json, the state of each day, the files), for each of the two accounts.
+    expect(cles).toHaveLength(6);
     for (const cle of cles) {
       expect(cle.join(" ")).not.toContain("compte");
       expect(cle.at(-1)).toMatch(/^[0-9a-f]{16}$/);
     }
-    expect(cles[0]?.at(-1)).not.toBe(cles[2]?.at(-1));
+    expect(cles[0]?.at(-1)).not.toBe(cles[3]?.at(-1));
   });
 
   it("reads etat.json at most once an hour, as Sovermap-bot", async () => {
@@ -319,8 +326,8 @@ describe("the site's reading of the data (B.9)", () => {
     publier(g, "2026-11-22", { nom: "a" });
     const chaud = lecteur(g, { memoriser: cache.memoriser, horloge });
     await chaud.l.fichier("noms/ab/cd.json");
-    // The 23rd is published; GitHub gives etat.json but refuses the files.
-    publier(g, "2026-11-23", { nom: "b" });
+    // The 23rd is published (the second day in a row); GitHub gives etat.json but refuses the files.
+    publier(g, "2026-11-23", { nom: "b" }, { jours: 2 });
     g.fichiers.set("noms/ab/sommes.json", 429);
     g.fichiers.set("noms/ab/cd.json", 429);
     horloge.t += HEURE;
@@ -329,7 +336,8 @@ describe("the site's reading of the data (B.9)", () => {
       donnees: [{ nom: "a" }],
       date: "2026-11-22",
     });
-    // A function that has just started gets the 23rd from the shared cache, with the 22nd behind it.
+    // A function that has just started, and never saw the 22nd: it gets the 23rd from the shared cache, and the 22nd
+    // from the shared cache too, under its date (the state of each day is kept there by the first function to see it).
     const froid = lecteur(g, { memoriser: cache.memoriser, horloge });
     expect(await froid.l.etat()).toMatchObject({ statut: "ok", date: "2026-11-23" });
     expect(await froid.l.fichier("noms/ab/cd.json")).toEqual({
@@ -337,6 +345,34 @@ describe("the site's reading of the data (B.9)", () => {
       donnees: [{ nom: "a" }],
       date: "2026-11-22",
     });
+  });
+
+  it("never serves from yesterday a file that is no longer published today", async () => {
+    const g = github();
+    publier(g, "2026-11-22", { nom: "a" });
+    const { l, journal, horloge } = lecteur(g);
+    await l.fichier("noms/ab/cd.json");
+    // On the 23rd, the name leaves the list: its folder no longer lists the fragment.
+    publier(g, "2026-11-23", { nom: "a" }, { jours: 2, sansFragment: true });
+    horloge.t += HEURE;
+    expect(await l.fichier("noms/ab/cd.json")).toEqual({ statut: "indisponible" });
+    expect(g.lus).toEqual(["etat.json", "noms/ab/sommes.json", "noms/ab/cd.json", "etat.json", "noms/ab/sommes.json"]);
+    expect(journal).toEqual([]);
+  });
+
+  it("falls back on yesterday from the caches only, never from GitHub", async () => {
+    const g = github();
+    publier(g, "2026-11-22", { nom: "a" });
+    const { l, journal, horloge } = lecteur(g);
+    await l.etat();
+    // The 23rd: the folder is read, the fragment is still yesterday's (a stale copy, which pauses that file only);
+    // yesterday's files were never read by anyone, and GitHub only has today's: the folder is not asked again.
+    publier(g, "2026-11-23", { nom: "b" }, { jours: 2 });
+    g.fichiers.set("noms/ab/cd.json", JSON.stringify([{ nom: "a" }]));
+    horloge.t += HEURE;
+    expect(await l.fichier("noms/ab/cd.json")).toEqual({ statut: "indisponible" });
+    expect(g.lus).toEqual(["etat.json", "etat.json", "noms/ab/sommes.json", "noms/ab/cd.json"]);
+    expect(journal).toEqual(["donnees : lecture en échec (noms/ab/cd.json : somme différente)"]);
   });
 
   it("never goes back to an older day served by a stale copy of GitHub's files", async () => {
@@ -373,6 +409,9 @@ describe("the site's reading of the data (B.9)", () => {
     expect(lireEtatPublie(null)).toBeNull();
     expect(lireEtatPublie([])).toBeNull();
     expect(lireEtatPublie({ statut: "ok", date: "22/11/2026", sommes: {} })).toBeNull();
+    expect(lireEtatPublie({ statut: "ok", date: "2026-13-45", sommes: {} })).toBeNull();
+    expect(lireEtatPublie({ statut: "ok", date: "2026-11-22", jours: 0, sommes: {} })?.jours).toBe(1);
+    expect(lireEtatPublie({ statut: "ok", date: "2026-11-22", jours: 3, sommes: {} })?.jours).toBe(3);
     expect(lireEtatPublie({ statut: 1, date: "2026-11-22", sommes: {} })).toBeNull();
     expect(lireEtatPublie({ statut: "ok", date: "2026-11-22", sommes: [] })).toBeNull();
     const etat = lireEtatPublie({
