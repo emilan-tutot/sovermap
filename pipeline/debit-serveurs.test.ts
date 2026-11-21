@@ -2,8 +2,15 @@
 import { describe, expect, it } from "vitest";
 import { CompteurServeurs } from "./debit-serveurs";
 
-const ligne = (seconde: string, adresse: string, coupe = "exemple.", qname = "www.exemple.", qtype = "A") =>
-  `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: 'ns1.exemple.'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: '${qtype}' proto: 'udp'`;
+const ligne = (
+  seconde: string,
+  adresse: string,
+  coupe = "exemple.",
+  qname = "www.exemple.",
+  qtype = "A",
+  serveur = "ns1.exemple.",
+) =>
+  `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: '${serveur}'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: '${qtype}' proto: 'udp'`;
 
 describe("the pace towards each authoritative server", () => {
   it("keeps the highest count of questions to one address within one second", () => {
@@ -78,8 +85,12 @@ describe("the pace towards each authoritative server", () => {
       c.lire(ligne("10", "192.0.2.53", i % 2 === 0 ? "a.exemple." : "sous.a.exemple.", `n${i}.sous.a.exemple.`));
     }
     // A question to its parent (the delegation) is not one to the zone's servers.
-    c.lire(ligne("10", "198.51.100.1", "exemple.", "a.exemple.", "NS"));
-    expect(c.adresses("NS1.exemple.")).toEqual(["192.0.2.53", "198.51.100.1"]);
+    c.lire(ligne("10", "198.51.100.1", "exemple.", "a.exemple.", "NS", "a.nic.exemple."));
+    expect(c.adresses("NS1.exemple.")).toEqual(["192.0.2.53"]);
+    expect(c.adresses("a.nic.exemple")).toEqual(["198.51.100.1"]);
+    // The addresses asked about a cut: the zone's, its sub-zone's, its parent's, apart.
+    expect(c.adressesDeCoupe("a.exemple.")).toEqual(["192.0.2.53"]);
+    expect(c.adressesDeCoupe("exemple")).toEqual(["198.51.100.1"]);
     expect(c.cout("a.exemple", Date.parse("2026-11-21T03:17:13.000Z"))).toBe(2.5);
     // Too few questions of ours tell nothing yet; a minute later, it is forgotten.
     expect(c.cout("b.exemple", t)).toBe(1);

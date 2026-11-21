@@ -102,8 +102,9 @@ export class CompteurServeurs {
   #parAdresseTotal = new Map<string, { questions: number; parType: Map<string, number>; tlds: Set<string> }>();
   #secondesVues = new Set<number>();
   #secondesAuDela = 0;
-  /** The addresses the resolver used for each name server (its name, without the final dot). */
+  /** The addresses the resolver used for each name server (its name, without the final dot), and for each cut. */
   #adressesParHote = new Map<string, Set<string>>();
+  #adressesParCoupe = new Map<string, Set<string>>();
   /** Per registered zone and per second: our questions (the client tells them) and the resolver's to its servers. */
   #envois = new Map<string, Map<number, number>>();
   #amont = new Map<string, Map<number, number>>();
@@ -142,6 +143,12 @@ export class CompteurServeurs {
       const adresses = this.#adressesParHote.get(hote) ?? new Set<string>();
       adresses.add(question[2]);
       this.#adressesParHote.set(hote, adresses);
+    }
+    if (question[3] !== undefined) {
+      const coupeVue = coupeNormale(question[3]);
+      const adresses = this.#adressesParCoupe.get(coupeVue) ?? new Set<string>();
+      adresses.add(question[2]);
+      this.#adressesParCoupe.set(coupeVue, adresses);
     }
     if (question[3] !== undefined && question[4] !== undefined) {
       // A question to the zone's own servers, or to a sub-zone's: what our pace weighs (never one to its parent).
@@ -248,6 +255,11 @@ export class CompteurServeurs {
   /** The addresses the resolver used for a name server, as its logs tell (none yet: an empty list). */
   adresses(hote: string): string[] {
     return [...(this.#adressesParHote.get(hote.toLowerCase().replace(/\.$/, "")) ?? [])].sort();
+  }
+
+  /** The addresses the resolver asked about a zone cut, as its logs tell (none yet: an empty list). */
+  adressesDeCoupe(coupe: string): string[] {
+    return [...(this.#adressesParCoupe.get(coupeNormale(coupe)) ?? [])].sort();
   }
 
   /** One of our questions to `zone` leaves now (`maintenant`: milliseconds since 1970). */

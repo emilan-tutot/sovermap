@@ -399,8 +399,9 @@ describe("the scheduling of a collection", () => {
     const debut = horloge.maintenant();
     for (const nom of ["www.a.example", "www.b.example", "mail.a.example"]) await client.demander(nom, "A");
     const apres = envois.filter((e) => e.question.endsWith(" A")).map((e) => e.t - debut);
-    // b waits for ns2's next instant; a's second question waits for ns2 too, although ns1 is free.
-    expect(apres).toEqual([0, 500, 1000]);
+    // Each opening took an instant of its own zone (its NS question goes to the zone's servers too); then b waits for
+    // ns2's next instant, and a's second question waits for ns2, although ns1 is free.
+    expect(apres).toEqual([500, 1000, 1500]);
   });
 
   it("opens a zone again at each attempt at its parent's pace, delegated or not", async () => {
@@ -411,17 +412,20 @@ describe("the scheduling of a collection", () => {
       demander: async (nom, type) => {
         if (type === "NS") ouvertures.push(horloge.maintenant());
         const reponses: Reponse["reponses"] =
-          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
+          type === "NS" && nom !== "servi.example"
+            ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }]
+            : [];
         return { code: "NOERROR", ad: false, reponses, duree: 1 };
       },
       fermer: () => {},
     };
     // Two new zones per second under one parent; an attempt asks the parent for the delegations again.
     const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
-    for (const zone of ["a.example", "b.example"]) await client.demander(zone, "NS");
+    for (const zone of ["a.example", "b.example", "servi.example"]) await client.demander(zone, "NS");
     client.oublierZonesMortes();
-    for (const zone of ["a.example", "b.example"]) await client.demander(zone, "NS");
-    expect(ouvertures).toEqual([0, 500, 1000, 1500]);
+    for (const zone of ["a.example", "b.example", "servi.example"]) await client.demander(zone, "NS");
+    // servi.example is served by its parent (no NS records): it reopens at the parent's pace too.
+    expect(ouvertures).toEqual([0, 500, 1000, 1500, 2000, 2500]);
   });
 
   it("gives two names of one server one pace, from the addresses the resolver's logs tell", async () => {
@@ -443,6 +447,7 @@ describe("the scheduling of a collection", () => {
       cout: () => 1,
       envoi: () => {},
       adresses: (hote: string) => (hote.endsWith(".hebergeur.example") ? ["192.0.2.34"] : []),
+      adressesDeCoupe: () => [],
     };
     const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2, journal);
     await client.demander("a.example", "NS");
@@ -450,7 +455,8 @@ describe("the scheduling of a collection", () => {
     const debut = horloge.maintenant();
     await client.demander("www.a.example", "A");
     await client.demander("www.b.example", "A");
-    expect(envois.map((t) => t - debut)).toEqual([0, 500]);
+    // After the openings' own instants: b's question waits for the shared address, half a second after a's.
+    expect(envois.map((t) => t - debut)).toEqual([500, 1000]);
   });
 
   it("weighs a question by what it costs the servers, and a zone that failed by two", async () => {
@@ -471,18 +477,85 @@ describe("the scheduling of a collection", () => {
       cout: (zone: string) => (zone === "lourd.example" ? 3.2 : 1),
       envoi: () => {},
       adresses: () => [],
+      adressesDeCoupe: () => [],
     };
     const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2, journal);
     await client.demander("lourd.example", "NS");
     await client.demander("panne.example", "NS");
     const debut = horloge.maintenant();
     for (const n of ["a", "b", "c"]) await client.demander(`${n}.lourd.example`, "A");
-    expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([0, 1000, 2000]);
+    // The opening took two instants of the zone already (0 and 500): then two each, a second apart.
+    expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([1000, 2000, 3000]);
     // After a failure, the resolver may try each of the zone's servers: two instants per question too.
     envois.length = 0;
     const apres = horloge.maintenant();
     for (const n of ["x", "y", "z"]) await client.demander(`${n}.panne.example`, "A");
     expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 1500]);
+  });
+
+  it("paces a zone whose NS do not answer by the servers the resolver used for it, and its CNAMEs' zones", async () => {
+    const horloge = fausseHorloge();
+    const envois: string[] = [];
+    const notes: string[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (type === "A") envois.push(`${nom} ${horloge.maintenant()}`);
+        const reponses: Reponse["reponses"] =
+          type === "NS" && nom === "partage.example"
+            ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: "ns1.hebergeur.example" } }]
+            : type === "A" && nom === "www.alias.example"
+              ? [{ proprietaire: nom, ttl: 1, donnee: { type: "CNAME", cible: "site.plateforme.example." } }]
+              : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // soa.example answers no NS, but the logs show the resolver asking its cut at the shared server's address.
+    const journal = {
+      cout: () => 1,
+      envoi: (zone: string) => void notes.push(zone),
+      adresses: (hote: string) => (hote === "ns1.hebergeur.example" ? ["192.0.2.9"] : []),
+      adressesDeCoupe: (coupe: string) => (coupe === "soa.example" ? ["192.0.2.9"] : []),
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2, journal);
+    for (const zone of ["partage.example", "soa.example", "alias.example", "plateforme.example"]) {
+      await client.demander(zone, "NS");
+    }
+    const debut = horloge.maintenant();
+    await client.demander("www.partage.example", "A");
+    await client.demander("www.soa.example", "A");
+    const temps = () => envois.map((e) => Number(e.split(" ")[1]) - debut);
+    expect(temps()).toEqual([500, 1000]);
+    // A CNAME to another zone: the question counts for that zone too, and the zone's next ones keep its pace.
+    envois.length = 0;
+    const apres = horloge.maintenant();
+    await client.demander("www.alias.example", "A");
+    await client.demander("mail.alias.example", "A");
+    await client.demander("x.plateforme.example", "A");
+    expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 1000]);
+    expect(notes.filter((z) => z === "plateforme.example")).toHaveLength(3);
+  });
+
+  it("weighs a name's first question by the names the resolver asks before it (QNAME minimisation)", async () => {
+    const horloge = fausseHorloge();
+    const envois: number[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (_nom, type) => {
+        if (type === "A") envois.push(horloge.maintenant());
+        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2);
+    await client.demander("profond.example", "NS");
+    const debut = horloge.maintenant();
+    // b.c.profond.example and c.profond.example are new: three instants; the second name shares them: one.
+    await client.demander("a.b.c.profond.example", "A");
+    await client.demander("d.b.c.profond.example", "A");
+    await client.demander("e.b.c.profond.example", "A");
+    expect(envois.map((t) => t - debut)).toEqual([500, 2000, 2500]);
   });
 
   it("keeps a zone's own pace when its name servers are not known (a delegation proved by its SOA)", async () => {

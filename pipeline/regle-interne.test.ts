@@ -71,8 +71,14 @@ describe("the safeguard of the fourth rule (internal sub-zones)", () => {
     expect(suspendue).toMatchObject({ etat: "suspendue", liste: "2026-11-19" });
     expect(controleDu(suspendue, "2026-12-01", "0.3")).toBe("garder");
     const neuve = await reposerNoms(muet, noms, generateur(1), "2026-12-02", "2026-12-01", "0.3");
-    expect(neuve).toMatchObject({ etat: "appliquée", liste: "", controle: { poses: 20, reponses: 0 } });
+    expect(neuve).toMatchObject({ etat: "appliquée", liste: "", methode: "", controle: { poses: 20, reponses: 0 } });
     expect(controleDu(neuve, "2026-12-01", "0.3")).toBe("reposer");
+    // After a review (a new method, the same list), a check that proves nothing keeps yesterday's method: the review's
+    // check happens the next day.
+    const revue = await reposerNoms(muet, noms, generateur(1), "2026-12-02", "2026-11-19", "0.4", etat());
+    expect(revue).toMatchObject({ liste: "2026-11-19", methode: "0.3" });
+    expect(controleDu(revue, "2026-11-19", "0.4")).toBe("reposer");
+    expect(lireEtatRegleInterne(neuve)?.methode).toBe("");
   });
 
   it("reads yesterday's state field by field, and nothing else", () => {

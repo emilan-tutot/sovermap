@@ -297,6 +297,7 @@ function suivreDebit(
       cout: (zone) => compteur.cout(zone, Date.now()),
       envoi: (zone) => compteur.noterEnvoi(zone, Date.now()),
       adresses: (hote) => compteur.adresses(hote),
+      adressesDeCoupe: (coupe) => compteur.adressesDeCoupe(coupe),
     },
     arreter: () => {
       enfant.kill();

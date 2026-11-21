@@ -37,6 +37,8 @@ export type OptionsCollecte = {
     cout: (zone: string) => number;
     envoi: (zone: string) => void;
     adresses: (hote: string) => readonly string[];
+    /** The addresses the resolver asked about a zone cut (a zone whose NS records do not answer still has servers). */
+    adressesDeCoupe: (coupe: string) => readonly string[];
   };
   /** Names of one domain in flight at once in the first pass: a large domain never holds the names' pace alone. */
   nomsParDomaine: number;
@@ -139,7 +141,9 @@ const CRENEAUX_MAX = 5;
  * whose questions cost more takes several instants per question (4 at most).
  */
 const AMPLIFICATION_PERMISE = 1.6;
-const POIDS_MAX = 4;
+const POIDS_MAX = 6;
+/** Zones a zone's CNAMEs may lead to, whose servers its questions also respect (the first ones seen). */
+const SUITES_MAX = 4;
 
 export class ClientParZone implements ClientDns {
   readonly id: string;
@@ -168,6 +172,10 @@ export class ClientParZone implements ClientDns {
   readonly #inexistantes = new Set<string>();
   /** The zones that failed once in this run: the resolver may try each of their servers for one question. */
   readonly #echouees = new Set<string>();
+  /** The zones each zone's CNAMEs lead to: the resolver's next question goes to their servers. */
+  readonly #suites = new Map<string, Set<string>>();
+  /** The names between a zone and the names asked, already asked by the resolver (QNAME minimisation). */
+  readonly #intermediairesVus = new Set<string>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
@@ -273,18 +281,23 @@ export class ClientParZone implements ClientDns {
     return this.#muette(nom, zone);
   }
 
-  /** The pace keys of a zone: the addresses of its name servers (the resolver's logs), else their names, else itself. */
+  /**
+   * The pace keys of a question of a zone: the zone itself; its name servers, by name (its NS records, else its SOA's
+   * primary) and by the addresses the resolver used for them (two names of one server share its pace); the addresses
+   * the resolver asked about the zone's cut; and the same for the zones its CNAMEs lead to. A question takes the same
+   * instant at every key: no server, known by any of these, gets more than its pace.
+   */
   #cles(zone: string): string[] {
-    const hotes = this.#serveurs.get(zone);
-    if (hotes === undefined) return [zone];
-    return [
-      ...new Set(
-        hotes.flatMap((hote) => {
-          const adresses = this.journal?.adresses(hote) ?? [];
-          return adresses.length > 0 ? adresses : [hote];
-        }),
-      ),
-    ];
+    const cles = new Set<string>();
+    for (const z of [zone, ...(this.#suites.get(zone) ?? [])]) {
+      cles.add(z);
+      for (const adresse of this.journal?.adressesDeCoupe(z) ?? []) cles.add(adresse);
+      for (const hote of this.#serveurs.get(z) ?? []) {
+        cles.add(hote);
+        for (const adresse of this.journal?.adresses(hote) ?? []) cles.add(adresse);
+      }
+    }
+    return [...cles];
   }
 
   #cadence(table: Map<string, Cadence>, cle: string, parSeconde: number): Cadence {
@@ -326,10 +339,22 @@ export class ClientParZone implements ClientDns {
       if (ouverture || !this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
       else if (this.frein) await this.frein(nom, zone, false);
       // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
-      // question that costs the servers more than one question (the resolver's logs, a zone that failed) takes more.
+      // question that costs the servers more than one question takes more: what the logs measured for the zone, two
+      // for a zone that failed (the resolver tries its other servers), and, before the logs can tell, one more for
+      // each new name between the zone and the asked name (the resolver asks those first: QNAME minimisation).
+      const intermediaires =
+        nom === zone
+          ? []
+          : ClientParZone.sousZones(nom, zone)
+              .slice(1)
+              .filter((n) => !this.#intermediairesVus.has(n));
       const poids = Math.min(
         POIDS_MAX,
-        Math.max(this.#echouees.has(zone) ? 2 : 1, Math.ceil((this.journal?.cout(zone) ?? 1) / AMPLIFICATION_PERMISE)),
+        Math.max(
+          this.#echouees.has(zone) ? 2 : 1,
+          Math.ceil((this.journal?.cout(zone) ?? 1) / AMPLIFICATION_PERMISE),
+          1 + intermediaires.length,
+        ),
       );
       await instantCommun(
         this.#cles(zone).map((cle) => this.#cadence(this.#rythmes, cle, this.serveurParSeconde)),
@@ -338,7 +363,21 @@ export class ClientParZone implements ClientDns {
       );
       this.journal?.envoi(zone);
       const r = await this.base.demander(nom, type);
+      for (const n of intermediaires) this.#intermediairesVus.add(n);
       if (CODES_EN_ECHEC.has(r.code)) this.#echouees.add(zone);
+      // The zones the answer's CNAMEs lead to: the resolver asked their servers too, for this question of ours.
+      const suites = new Set<string>();
+      for (const e of r.reponses) {
+        if (e.donnee.type !== "CNAME") continue;
+        const cible = this.zoneDe(e.donnee.cible.toLowerCase().replace(/\.$/, ""));
+        if (cible !== zone) suites.add(cible);
+      }
+      for (const cible of suites) {
+        this.journal?.envoi(cible);
+        const connues = this.#suites.get(zone) ?? new Set<string>();
+        if (connues.size < SUITES_MAX) connues.add(cible);
+        this.#suites.set(zone, connues);
+      }
       if (ouverture) {
         if (r.code === "NXDOMAIN" && r.reponses.length === 0) this.#inexistantes.add(zone);
         else this.#inexistantes.delete(zone);
@@ -352,7 +391,13 @@ export class ClientParZone implements ClientDns {
         const serveurs = r.reponses.flatMap((e) =>
           e.donnee.type === "NS" && e.proprietaire === zone ? [e.donnee.cible.toLowerCase().replace(/\.$/, "")] : [],
         );
-        if (serveurs.length > 0) this.#serveurs.set(zone, [...new Set(serveurs)].sort());
+        // No NS records (they did not answer): the SOA's primary names one of the zone's servers at least.
+        const primaire = r.reponses.flatMap((e) =>
+          e.donnee.type === "SOA" && e.proprietaire === zone ? [e.donnee.mname.toLowerCase().replace(/\.$/, "")] : [],
+        );
+        const connus = serveurs.length > 0 ? serveurs : primaire;
+        if (connus.length > 0)
+          this.#serveurs.set(zone, [...new Set([...(this.#serveurs.get(zone) ?? []), ...connus])].sort());
       }
       if (nom === zone) {
         // Three failures in a row of the apex's questions: the zone is down for this attempt.
