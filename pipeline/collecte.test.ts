@@ -55,6 +55,19 @@ function fausseHorloge(): Horloge & { attentes: number[] } {
 }
 
 describe("the measurement of one name and one domain", () => {
+  it("publishes a name whose AAAA failed as a failure, never as « ok » without its IPv6 addresses", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["www.mairie.example AAAA"]));
+    expect(await mesurerNom("www.mairie.example", r)).toMatchObject({
+      etat: "echec",
+      echec: "SERVFAIL",
+      a: [],
+      aaaa: [],
+      ad: false,
+    });
+    // A, then AAAA: one after the other.
+    expect(r.questions.slice(-2)).toEqual(["www.mairie.example A", "www.mairie.example AAAA"]);
+  });
+
   it("follows the CNAME chain to the addresses, and tells a loop from a failure", async () => {
     const r = new ResolveurSimule(ZONE, zoneDe);
     expect(await mesurerNom("www.mairie.example", r)).toMatchObject({
@@ -796,8 +809,10 @@ describe("the scheduling of a collection", () => {
       zoneDe,
       horloge: fausseHorloge(),
     });
-    // The first pass and its two attempts each open the zone again (its NS, asked once more when it fails).
-    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(6);
+    // The first pass and its two attempts each open the zone again (its NS, asked once more when it fails). The name
+    // answered its A, but its AAAA was not asked once the zone was down: a failure, asked again at each attempt, where
+    // it opens the zone before the domain's own NS question (2 + 3 + 3).
+    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(8);
   });
 
   it("asks 13 name servers of a domain at most, however many it names", async () => {

@@ -119,10 +119,23 @@ jobs:
           key: collecte-veille-${{ needs.jour.outputs.date }}
           restore-keys: collecte-veille-
       - run: |
-          if git ls-remote --exit-code --heads origin donnees > /dev/null; then
-            git fetch --depth=1 origin donnees
-            git worktree add --detach publie FETCH_HEAD
-          fi
+          # Exit code 2: the data branch does not exist yet (the first day). Any other error stops here: it is never read
+          # as « no data yet », which would publish a first state over the published one.
+          set +e
+          git ls-remote --exit-code --heads origin donnees > /dev/null
+          code=$?
+          set -e
+          case "$code" in
+            0)
+              git fetch --depth=1 origin donnees
+              git worktree add --detach publie FETCH_HEAD
+              ;;
+            2) ;;
+            *)
+              echo "collecte : la branche donnees n'a pas pu être lue (code $code)" >&2
+              exit 1
+              ;;
+          esac
 
       # IPtoASN is surveyed by hand (its files are closed to robots, docs/sources.md card 18): the latest copy comes
       # from the release « sources-iptoasn » of this repository, never from iptoasn.com.
@@ -204,14 +217,22 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin donnees > /dev/null; then
+          # Exit code 2 only: the branch does not exist yet; any other error stops the publication.
+          set +e
+          git ls-remote --exit-code --heads origin donnees > /dev/null
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
             git fetch --depth=1 origin donnees
             git checkout -q -B donnees FETCH_HEAD
             premier=false
-          else
+          elif [ "$code" -eq 2 ]; then
             git checkout -q --orphan donnees
             git rm -r -q --cached .
             premier=true
+          else
+            echo "publication : la branche donnees n'a pas pu être lue (code $code)" >&2
+            exit 1
           fi
           # Everything is replaced by the day's state, but the journal: it keeps every day (journal/AAAA/MM/…).
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name journal -exec rm -rf {} +
