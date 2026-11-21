@@ -96,6 +96,15 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
    - aucun redéploiement : le site découvre la nouvelle date dans `etat.json` au plus tard une heure après la publication ;
    - le nom du compte vient d'une variable de configuration, jamais écrite en dur dans le code.
 
+   **Ce que la partie B du chantier 2 a fixé** (21/11/2026, `lib/donnees/lecture.ts`) :
+   - deux caches, qui ne gardent que ce qui a été bien lu : le cache de données de Next (`unstable_cache` : sur Vercel, partagé par les fonctions et gardé d'un déploiement à l'autre), où `etat.json` est relu sur GitHub au plus une fois par heure, et chaque autre fichier une fois par somme de contrôle ; devant lui, une copie dans la mémoire de la fonction (2 000 fichiers au plus), pour qu'une page ne relise pas le cache partagé à chaque requête (quotas, § 11) ;
+   - quand une relecture échoue, Next garde l'entrée périmée : l'état servi est le dernier bien lu, avec sa date (le jour de la collecte, dans `etat.json`) ; un fichier qui ne peut pas être relu cède la place à la copie de sa somme précédente, avec son propre jour ; après un échec, GitHub n'est redemandé qu'une minute plus tard au plus, par fonction ;
+   - chaque fichier est vérifié contre sa somme (celles des dossiers et des fichiers de tête dans `etat.json`, celles des fragments dans le `sommes.json` de leur dossier) : un fichier qui ne correspond pas, comme une copie périmée juste après une publication, n'est jamais gardé ;
+   - chaque lecture en échec (429, 5xx, erreur du réseau, fichier illisible, somme différente) s'écrit dans les journaux du serveur, avec le chemin et le code, rien d'autre ;
+   - porte fermée, aucune lecture : le module le vérifie avant toute lecture ; l'agent utilisateur est celui de la collecte (`Sovermap-bot/<version>`) ;
+   - pour la partie D : une page sans données (« indisponible ») ne se met jamais en cache (sinon le CDN la garderait un jour entier) ; la page Qualité dit le jour de l'état servi ;
+   - à mesurer en T4, avec les 429 : le coût du cache de Next sur la page Usage de Vercel (`etat.json` pesait 56 Ko dans l'essai, soit 7 unités de 8 Ko par lecture du cache partagé, au plus une fois par heure et par fonction).
+
    **Risque de lecture**, ajouté le 19/11/2026 :
    - le journal des modifications de GitHub du 08/05/2025 annonce des limites pour les accès sans authentification, dont « downloading files from raw.githubusercontent.com » ; leur valeur n'est pas publiée ;
    - sans l'option payante « Static IPs », les fonctions de Vercel sortent par des adresses IP dynamiques, partagées avec d'autres clients. Une limite par adresse peut donc être atteinte par d'autres.
