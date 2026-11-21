@@ -25,7 +25,12 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 /** What a page gets: the data and the day of the collection it comes from (the Quality page says it), or nothing. */
 export type Lecture<T> =
-  { statut: "ok"; donnees: T; date: string } | { statut: "porte fermée" } | { statut: "indisponible" };
+  | { statut: "ok"; donnees: T; date: string }
+  | { statut: "porte fermée" }
+  /** Not published in the day's state (a page answers « not found »). */
+  | { statut: "absent" }
+  /** Published, but nothing could be read (a page is never cached with it). */
+  | { statut: "indisponible" };
 
 /** etat.json, checked at the border: its day, its status, and the checksums of the files it publishes. */
 export type EtatPublie = {
@@ -404,15 +409,16 @@ export class LecteurDonnees {
    */
   async fichier(chemin: string): Promise<Lecture<unknown>> {
     if (!MOTIF_CHEMIN.test(chemin)) {
-      return sitePublic(this.#deps.env) ? { statut: "indisponible" } : { statut: "porte fermée" };
+      return sitePublic(this.#deps.env) ? { statut: "absent" } : { statut: "porte fermée" };
     }
     const etat = await this.etat();
     if (etat.statut !== "ok") return etat;
-    let lu = await this.#version(chemin, etat.donnees);
-    if (lu === "illisible") {
-      const veille = await this.#veille(etat.donnees);
-      lu = veille === null ? "illisible" : await this.#version(chemin, veille);
-    }
+    const aujourdhui = await this.#version(chemin, etat.donnees);
+    if (aujourdhui === "absent") return { statut: "absent" };
+    if (typeof aujourdhui === "object") return { statut: "ok", donnees: aujourdhui.valeur, date: aujourdhui.date };
+    // Published today but unreadable: yesterday's version, if the caches have it.
+    const veille = await this.#veille(etat.donnees);
+    const lu = veille === null ? "illisible" : await this.#version(chemin, veille);
     return typeof lu === "object" ? { statut: "ok", donnees: lu.valeur, date: lu.date } : { statut: "indisponible" };
   }
 }
