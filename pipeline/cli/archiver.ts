@@ -82,7 +82,7 @@ function principal(): void {
   );
   const lignes = [
     `# ${avertissement}`,
-    "nom,domaine,etat,adresses,ttl_minimal,as,exploitants,categorie,hors_ue,niveau",
+    "nom,domaine,etat,adresses,ttl_minimal,as,exploitants,categorie,hors_ue,niveau,famille_en_echec",
     ...noms.map((n) => {
       const a = adresses(n);
       return [
@@ -96,6 +96,7 @@ function principal(): void {
         n.categorie,
         String(n.horsUE),
         n.niveau,
+        n.familleEnEchec ?? "",
       ]
         .map(champ)
         .join(",");

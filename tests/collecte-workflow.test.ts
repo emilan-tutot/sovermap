@@ -29,7 +29,7 @@ describe("the collection's workflow", () => {
     expect(mesurer).toContain('--date "$DATE"');
   });
 
-  it("publishes only a day newer than the published one, before replacing any file", () => {
+  it("never publishes an older day, nor another content for the published day", () => {
     const publier = tache("publier");
     const controle = publier.indexOf('[[ "$du_jour" < "$publie" ]]');
     expect(controle).toBeGreaterThan(-1);
@@ -37,6 +37,7 @@ describe("the collection's workflow", () => {
     // The same day: only an identical content passes (a re-run), after the comparison of the files.
     const memeJour = publier.indexOf('[ "$du_jour" = "$publie" ]');
     expect(memeJour).toBeGreaterThan(publier.indexOf("if git diff --cached --quiet; then"));
+    expect(memeJour).toBeLessThan(publier.indexOf("git commit -q"));
   });
 
   it("reads « no data branch yet » from exit code 2 only, in the measuring and the publishing jobs", () => {

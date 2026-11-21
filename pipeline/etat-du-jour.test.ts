@@ -6,7 +6,7 @@ import { contexteEssai } from "./essai-contexte";
 import { construireEtat } from "./etat-du-jour";
 import type { ListeReference } from "./perimetre";
 import { generateur } from "./politesse";
-import { fragments } from "./publication";
+import { fragments, signatures } from "./publication";
 import { ResolveurSimule } from "./resolveur-simule";
 import { NOM, schemaDe, valider } from "./schemas";
 
@@ -78,6 +78,27 @@ describe("the records of a day", () => {
       const schema = schemaDe(chemin);
       if (schema !== null) expect(valider(JSON.parse(texte), schema), chemin).toEqual([]);
     }
+  });
+
+  it("draws no conclusion on a name measured on one family, and never compares it", async () => {
+    let t = 0;
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe, new Set(["www.ministere.example AAAA"])),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const etat = construireEtat(liste, mesures, { noms: new Map(), mx: new Map() }, contexteEssai(), "t");
+    const web = etat.noms.get("www.ministere.example");
+    expect(web).toMatchObject({
+      etat: "ok",
+      familleEnEchec: "AAAA",
+      categorie: "non déterminé",
+      horsUE: null,
+      niveau: "non déterminé",
+    });
+    const d = etat.domaines.get("ministere.example");
+    if (d === undefined) throw new Error("domaine absent");
+    expect(signatures(d, web).adresses).toBe("nul");
   });
 
   it("publishes the SOA's primary only when it reads as a DNS name", async () => {

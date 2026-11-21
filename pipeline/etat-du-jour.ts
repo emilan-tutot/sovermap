@@ -116,8 +116,7 @@ export function construireEtat(
         exploitants: exploitantsDe(c),
         categorie: c.categorie,
         horsUE: c.horsUE,
-        // One family unknown: what the other shows is never « confirmé » for the whole name.
-        niveau: m.echecFamille !== undefined && c.niveau === "confirmé" ? "probable" : c.niveau,
+        niveau: c.niveau,
         controle: c.controle,
       });
     };

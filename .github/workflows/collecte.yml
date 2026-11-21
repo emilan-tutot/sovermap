@@ -116,19 +116,20 @@ jobs:
         run: |
           en_cours=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --limit 50 --json event,status --jq '[.[] | select(.event != "pull_request" and .status != "completed")] | length')
           npx tsx pipeline/cli/creneau-essai.ts "$en_cours"
-      # The day's collection waits for a trial that measures (45 minutes at most: a trial is capped), so that the two
-      # never ask the servers at once, whatever started them (a manual run, a late schedule).
+      # The day's collection waits, 15 minutes at most, for a trial that measures (a manual run, a late schedule), so
+      # that the two seldom ask the servers at once; it never waits longer, so that its own time limits still hold, and
+      # an error of GitHub's API never stops it.
       - if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for minute in $(seq 1 46); do
-            essais=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --event pull_request --limit 50 --json status --jq '[.[] | select(.status == "in_progress")] | length')
+          for minute in $(seq 1 15); do
+            essais=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --event pull_request --limit 50 --json status --jq '[.[] | select(.status == "in_progress")] | length' 2> /dev/null) || essais=0
             if [ "$essais" -eq 0 ]; then exit 0; fi
             echo "Un essai mesure : la collecte du jour attend (minute $minute)."
             sleep 60
           done
-          echo "Un essai mesure encore après 45 minutes : la collecte du jour part." >&2
+          echo "Un essai mesure encore après 15 minutes : la collecte du jour part." >&2
 
       # The resolver: the official image, pinned by its digest, kept in the Actions cache (brief B.2).
       - id: image
@@ -297,7 +298,7 @@ jobs:
             exit 0
           fi
           # The same day again, with another content (a second measurement of that day): refused, its journal would be
-          # replaced. A re-run of the same publication changes nothing, and goes on to the Release above.
+          # replaced. A re-run of the same publication changes nothing, and goes on to the Release step below.
           if [ "$premier" = false ] && [ -n "$publie" ] && [ "$du_jour" = "$publie" ]; then
             echo "publication : le jour $du_jour est déjà publié, avec un autre contenu ; rien n'est publié." >&2
             exit 1

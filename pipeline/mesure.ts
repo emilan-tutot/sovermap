@@ -72,11 +72,18 @@ export async function mesurerNom(nom: string, client: ClientDns): Promise<Mesure
     // with the day's quality), and never asked again: it repeats (a broken DNSSEC proof, a server that refuses AAAA),
     // and each new question cost the servers again, up to 18 DNSKEY questions for one at a zone whose proof is broken
     // (the trial of 21/11/2026). Its DNSSEC is read on the answers that came.
-    const repondues = [ra, raaaa].filter((r) => !ECHECS.has(r.code));
-    const resultat: MesureNom = { ...base, etat: "ok", echec: null, ad: repondues.every((r) => r.ad) };
-    return echec === null
-      ? resultat
-      : { ...resultat, echecFamille: { famille: ECHECS.has(ra.code) ? "A" : "AAAA", code: echec } };
+    if (echec === null) return { ...base, etat: "ok", echec: null, ad: ra.ad && raaaa.ad };
+    // Only a SERVFAIL repeats (a broken proof, a server that refuses that family); another failure (a timeout, a
+    // question not sent because its zone was down) is a failure, asked again at the next attempt.
+    if (echec !== "SERVFAIL") return { ...base, etat: "echec", echec, a: [], aaaa: [], ad: false };
+    const repondue = ECHECS.has(ra.code) ? raaaa : ra;
+    return {
+      ...base,
+      etat: "ok",
+      echec: null,
+      ad: repondue.ad,
+      echecFamille: { famille: ECHECS.has(ra.code) ? "A" : "AAAA", code: echec },
+    };
   }
   if (echec !== null) return { ...base, etat: "echec", echec, a: [], aaaa: [], ad: false };
   if (ra.code === "NXDOMAIN" && raaaa.code === "NXDOMAIN")

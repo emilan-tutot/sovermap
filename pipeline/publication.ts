@@ -143,11 +143,13 @@ const cles = (e: Exploitant[]) => [...new Set(e.map((x) => x.societe ?? x.preuve
 export function signatures(d: EnregistrementDomaine, web: EnregistrementNom | undefined): Record<Couche, string> {
   // A reduced record says nothing about its layers: undetermined, never compared.
   if (d.reduit) return { adresses: "nul", serveursDeNoms: "nul", messagerie: "nul" };
-  const adresses = web?.reduit
-    ? "nul"
-    : web === undefined || web.etat !== "ok"
-      ? (web?.etat ?? "absent")
-      : `${web.categorie}|${web.horsUE}|${cles(web.exploitants)}|${web.cdn?.id ?? ""}`;
+  // A web name measured on one family only says nothing whole about its hosting: never compared either.
+  const adresses =
+    web?.reduit || (web?.familleEnEchec ?? null) !== null
+      ? "nul"
+      : web === undefined || web.etat !== "ok"
+        ? (web?.etat ?? "absent")
+        : `${web.categorie}|${web.horsUE}|${cles(web.exploitants)}|${web.cdn?.id ?? ""}`;
   const ns = d.serveursDeNoms;
   const serveursDeNoms =
     d.zone.etat !== "ok"

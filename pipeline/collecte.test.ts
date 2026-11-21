@@ -811,8 +811,10 @@ describe("the scheduling of a collection", () => {
       zoneDe,
       horloge: fausseHorloge(),
     });
-    // The first pass and its two attempts each open the zone again (its NS, asked once more when it fails).
-    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(6);
+    // The first pass and its two attempts each open the zone again (its NS, asked once more when it fails). The name
+    // answered its A, but its AAAA was not asked once the zone was down: a failure (not a SERVFAIL), asked again at
+    // each attempt, where it opens the zone before the domain's own NS question (2 + 3 + 3).
+    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(8);
   });
 
   it("asks 13 name servers of a domain at most, however many it names", async () => {

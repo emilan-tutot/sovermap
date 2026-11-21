@@ -180,9 +180,11 @@ export function coucheAdresses(
     reseaux: [...reseaux.values()].sort((x, y) => x.as - y.as || parTexte(x.plage ?? "", y.plage ?? "")),
     cdn: c.cdn ? { id: c.cdn.id, methode: c.cdn.methode, niveau: c.cdn.niveau } : null,
     exploitants: exploitants(c),
-    categorie: c.categorie,
-    horsUE: c.horsUE,
-    niveau: c.niveau,
+    // One family of addresses unknown (its question failed while the other answered): the facts that came stay, but
+    // no conclusion is drawn on the name's hosting (methode § 7).
+    ...(m.echecFamille === undefined
+      ? { categorie: c.categorie, horsUE: c.horsUE, niveau: c.niveau }
+      : { categorie: "non déterminé" as const, horsUE: null, niveau: "non déterminé" as const }),
     controle: c.controle,
   };
 }
