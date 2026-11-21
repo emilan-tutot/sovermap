@@ -15,7 +15,8 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
   - le `robots.txt` est lu avant toute autre requête vers un hôte ;
   - l'agent utilisateur s'identifie sans adresse e-mail ;
   - les essais du cadrage (18/11/2026) ont utilisé `Sovermap-cadrage/0.1 (+https://sovermap.com)` ;
-  - **depuis le 19/11/2026** (décision du propriétaire), et tant que sovermap.com n'est pas branché, l'agent renvoie au dépôt : `Sovermap-bot/<version> (+https://github.com/<compte>/sovermap)`. Le nom du compte vient d'une variable de configuration. Une fois le domaine branché (T8) : `Sovermap-bot/<version> (+https://sovermap.com)`.
+  - du 19/11/2026 au 20/11/2026, l'agent renvoyait au dépôt (`Sovermap-bot/<version> (+https://github.com/<compte>/sovermap)`), donc au nom d'un compte personnel ;
+  - **depuis le 21/11/2026** (décision du propriétaire, point 03 du chantier 2) : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, sans nom de compte, jamais construit à partir de git ; une fois sovermap.com branché (chantier 3) : `Sovermap-bot/<version> (+https://sovermap.com)`.
 - **Données personnelles** : aucune n'entre dans les données de Sovermap. Plusieurs sources en contiennent ; elles sont signalées fiche par fiche.
 
 ## Tableau récapitulatif

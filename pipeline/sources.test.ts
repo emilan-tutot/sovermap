@@ -1,7 +1,7 @@
 // Tests of the polite downloader: robots.txt read first and obeyed (RFC 9309), one second between two requests to a
 // host, five redirects at most, https only. A fake fetch and a fake clock: no network. Hosts under `.example`.
 import { describe, expect, it } from "vitest";
-import { autorise, correspond, lireRobots, RefusRobots, Telechargeur } from "./sources";
+import { agentUtilisateur, autorise, correspond, lireRobots, RefusRobots, Telechargeur } from "./sources";
 
 describe("robots.txt (RFC 9309)", () => {
   it("matches prefixes, wildcards and the end anchor", () => {
@@ -58,7 +58,7 @@ function faux(reponses: Record<string, { status: number; corps?: string; locatio
     telechargeur: () => {
       Date.now = () => horloge;
       return new Telechargeur({
-        agent: "Sovermap-bot/1 (+https://github.com/compte/sovermap)",
+        agent: agentUtilisateur("1"),
         fetch: fetchFaux,
         dormir,
       });
@@ -140,5 +140,12 @@ describe("the polite downloader", () => {
     } finally {
       f.retablir();
     }
+  });
+});
+
+describe("the agent string", () => {
+  it("names the project and its address, never an account nor the repository (point 03 of chantier 2)", () => {
+    expect(agentUtilisateur("0.2.0")).toBe("Sovermap-bot/0.2.0 (+https://sovermap.vercel.app)");
+    expect(agentUtilisateur("0.2.0")).not.toMatch(/github|@/i);
   });
 });

@@ -31,7 +31,7 @@ Sovermap est un instrument de mesure public. Pour chaque site public français, 
 - Chaque jour à 03:17 UTC (et à 09:47 UTC si la première n’a pas abouti), GitHub Actions mesure par le DNS tous les noms de la liste de référence ([`collecte.yml`](.github/workflows/collecte.yml), [`pipeline/`](pipeline/)), puis publie l’état du jour dans la branche `donnees` si tous les garde-fous sont verts. Sinon, rien n’est publié et une issue « Collecte bloquée » s’ouvre.
 - Toutes les 6 h, [`fraicheur.yml`](.github/workflows/fraicheur.yml) ouvre une issue « Collecte en retard » si la dernière collecte a plus de 36 h ; le 1er de chaque mois, [`archives.yml`](.github/workflows/archives.yml) publie l’archive du mois écoulé.
 - **Geste de secours** : GitHub coupe un workflow planifié après 60 jours sans activité du dépôt. Pour le rallumer : onglet **Actions**, choisir le workflow (« Collecte », « Fraîcheur » ou « Archives ») dans la liste de gauche, puis le bouton **Enable workflow**.
-- Un essai depuis un poste de travail passe par Quad9 et porte sur 200 noms au plus : `npx tsx pipeline/cli/collecter.ts --travail <dossier> --resolveur 9.9.9.9:53 --limite 200 --essai` (avec `SOVERMAP_GITHUB_OWNER`, le nom du compte qui publie).
+- Un essai depuis un poste de travail passe par Quad9 et porte sur 200 noms au plus : `npx tsx pipeline/cli/collecter.ts --travail <dossier> --resolveur 9.9.9.9:53 --limite 200 --essai`.
 
 ## Signaler une erreur
 

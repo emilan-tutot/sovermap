@@ -189,9 +189,11 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
 - **Échecs** : plusieurs essais espacés. Un échec reste un échec, jamais un « pas de site ».
 - **Politesse** :
   - débit limité, et respect des conditions de chaque source ;
-  - un agent utilisateur qui s'identifie, sans adresse e-mail : `Sovermap-bot/<version> (+https://github.com/<compte>/sovermap)`, qui renvoie au dépôt tant que sovermap.com n'est pas branché (le nom du compte est lu dans la configuration, jamais écrit en dur) ;
+  - un agent utilisateur qui s'identifie, sans adresse e-mail ni nom de compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 ;
+  - au plus 10 questions par seconde vers un même serveur DNS faisant autorité, comptées chaque jour et publiées dans `etat.json` ;
   - aucune requête HTTP vers les sites mesurés en V1 : le DNS seulement.
 - **Données personnelles** : aucune. On ne garde ni contacts des registres ni noms de personnes.
+- **Lecture par le site** : le serveur du site lit les fichiers publiés de la branche `donnees` ; en cas d'échec, il sert l'état de la veille gardé en cache, avec sa date affichée. Il ne lit jamais les fichiers de Release, fermés aux robots par github.com : la Release `donnees-courant` est pour les personnes (décision du propriétaire, 21/11/2026).
 
 ## 8. Essai sur des domaines réels (18/11/2026)
 

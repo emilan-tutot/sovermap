@@ -101,7 +101,7 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
    **Parade, construite en T2 et mesurée au plus tard en T4** :
    - **un cache long côté serveur.** Les données ne changent qu'une fois par jour : on ne relit `etat.json` qu'une fois par heure, et les fragments seulement quand leur somme de contrôle a changé ;
    - **les données de la veille servies en cas d'échec**, avec leur date affichée. Un échec de lecture ne casse jamais une page ;
-   - **un canal de secours sans clé** : le même état publié en Release, sur `github.com/<compte>/sovermap/releases/download/…`, lu seulement si raw.githubusercontent.com répond 429 ou 5xx ;
+   - ~~un canal de secours sans clé : le même état publié en Release, lu seulement si raw.githubusercontent.com répond 429 ou 5xx~~. **Abandonné le 21/11/2026** (décision du propriétaire, point 03 du chantier 2) : le `robots.txt` de github.com ferme aux robots tout téléchargement de Release (`Disallow: /*/*/download/*`, pour tout agent, lu le 20/11/2026), et l'API de GitHub, sans jeton, ne permet que 60 requêtes par heure et par adresse IP, partagées avec les autres sites de Vercel. **Le site ne lit pas le canal de secours** ; la Release `donnees-courant` reste, remplacée chaque jour, pour les personnes (page Données, F.1). Le secours du site est l'état de la veille gardé en cache, avec sa date affichée ;
    - **la mesure en T4** : le nombre de réponses 429 ou 5xx sur 30 jours, à publier dans `journal-design.md`. Au-delà de 1 % de lectures en échec, une autre architecture de lecture est décidée.
 4. **Archives.** Le premier de chaque mois, une Release `donnees-AAAA-MM` reçoit l'état complet (CSV et JSON compressés).
    - Une Release accepte 1 000 fichiers de moins de 2 Gio chacun, sans limite de taille totale ni de bande passante (docs.github.com, « About releases », lu le 18/11/2026).
@@ -350,8 +350,7 @@ Sources :
   - GitHub annonce depuis le 08/05/2025 des limites pour les téléchargements sans authentification sur raw.githubusercontent.com. Les fonctions de Vercel sortent par des adresses dynamiques partagées, sauf avec l'option payante « Static IPs ».
   - Parades (§ 4), construites en T2 et mesurées au plus tard en T4 :
     - un cache long côté serveur ;
-    - les données de la veille servies en cas d'échec, avec leur date ;
-    - un canal de secours sans clé (les fichiers de Release).
+    - les données de la veille servies en cas d'échec, avec leur date (le seul secours depuis le 21/11/2026 : le site ne lit pas les fichiers de Release, fermés aux robots par github.com).
 - **H7. Conditions des offres gratuites.**
   - Vercel Hobby est réservé à un « personal or non-commercial use ».
   - Les Actions interdisent une « activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository » (lus le 18/11/2026).
@@ -413,6 +412,12 @@ Sources :
 - **Couleurs de la 3D** : la conversion des couleurs vers l'écran (sRGB) s'applique partout ; les jetons de Brume sont recalés pour garder l'aspect affiché (écart OKLab de 0,02 au plus, mesuré sur l'image).
 - **Autonomie** : une règle durable entre dans `CLAUDE.md` (les actions du projet qui se refont ou se rattrapent se décident seules et se notent au journal ; ce qui est irréversible ou hors du projet se regroupe en un seul message, à un arrêt).
 - **Pour la suite** (à noter seulement) : les notes de l'ARRÊT 2 bis restent valables. Retouche : aux points des grands chantiers, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement.
+
+### Décisions du propriétaire (chantier 2, point 03, 21/11/2026)
+
+- **Source IP → AS** : IPtoASN reste relevé à la main (tous les 80 jours environ), RIS en contrôle ; quand RIS le contredit le jour même, le niveau est « non déterminé ». Aucun logo de société sur le site (RIS publié l'aurait imposé).
+- **Canal de secours (B.9 bis)** : le site ne le lit pas (§ 4) ; la Release `donnees-courant` reste pour les personnes ; le secours du site est l'état de la veille gardé en cache, avec sa date affichée.
+- **Agent utilisateur** : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, sans nom de compte (§ 15, D6) ; au chantier 3, sovermap.com, et le dépôt passe dans une organisation GitHub gratuite « sovermap ».
 
 ### Décisions du propriétaire (chantier 2, 20/11/2026)
 
@@ -586,7 +591,9 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 
 **Toute autre apparition** du prénom, du nom ou du nom d'utilisateur Windows est refusée : dans un fichier, un message de commit, une page.
 
-**Dans le code**, le nom du compte vient d'une variable de configuration (par exemple `SOVERMAP_GITHUB_OWNER`), jamais écrite en dur. L'agent utilisateur de la collecte et les adresses de lecture des données se construisent à partir de cette variable.
+**Dans le code**, le nom du compte vient d'une variable de configuration (par exemple `SOVERMAP_GITHUB_OWNER`), jamais écrite en dur. Les adresses de lecture des données se construisent à partir de cette variable.
+
+**Modifié le 21/11/2026 (point 03 du chantier 2)** : l'agent utilisateur ne contient plus l'adresse du dépôt, donc plus le nom du compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 ; il ne se construit jamais à partir de git. Aucun fichier du dépôt, aucun workflow et aucune donnée publiée ne contient le nom du compte, pas même dans l'adresse du dépôt : `scan:prive` le refuse partout (seuls restent permis le compte et son adresse noreply comme auteur des commits). Au chantier 3, avant l'ouverture, le dépôt passe dans une organisation GitHub gratuite « sovermap » (`tasks.md`).
 
 **Si cette exposition est refusée : C + D.** Le propriétaire crée un compte GitHub neutre et relance `gh auth login`. Vercel n'est pas relié au dépôt. Cela demande environ 30 minutes de gestes au propriétaire, et la production attend un chantier ultérieur.
 

@@ -34,23 +34,16 @@ export function emailAllowed(email: string): boolean {
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Removes the two contexts where the account name is allowed (decision D6): the repository's addresses. */
-export function withoutAllowedContexts(text: string, ownerLogin: string | null): string {
-  if (ownerLogin === null || ownerLogin === "") return text;
-  const login = escapeRegExp(ownerLogin);
-  return text.replace(new RegExp(`(?:raw\\.githubusercontent\\.com|github\\.com)/${login}/sovermap`, "gi"), "<dépôt>");
-}
-
 /** The private items found in one text (a file, a commit message, the lines a commit adds). */
 export function scanText(text: string, where: string, context: ScanContext): Finding[] {
   const findings: Finding[] = [];
-  const cleaned = withoutAllowedContexts(text, context.ownerLogin);
-  const lines = cleaned.split(/\r?\n/);
+  const lines = text.split(/\r?\n/);
   const lower = lines.map((line) => line.toLowerCase());
   const at = (index: number) => `${where}:${index + 1}`;
 
   lines.forEach((line, index) => {
-    if (PERSONAL_PATH.test(line)) findings.push({ where: at(index), kind: "chemin vers un dossier d'utilisateur Windows" });
+    if (PERSONAL_PATH.test(line))
+      findings.push({ where: at(index), kind: "chemin vers un dossier d'utilisateur Windows" });
     for (const match of line.matchAll(EMAIL)) {
       const email = match[0];
       if (!emailAllowed(email)) {
@@ -59,11 +52,12 @@ export function scanText(text: string, where: string, context: ScanContext): Fin
     }
   });
 
-  // The account name is allowed only in the repository's addresses, removed above (decision D6, CLAUDE.md).
+  // The account name is never allowed in a file or a message, not even in the repository's address (point 03 of
+  // chantier 2): only as the author of a commit, with its no-reply address (checked apart).
   const login = context.ownerLogin?.toLowerCase() ?? "";
   if (login.length >= 3) {
     lower.forEach((line, index) => {
-      if (line.includes(login)) findings.push({ where: at(index), kind: "nom du compte hors de l'adresse du dépôt" });
+      if (line.includes(login)) findings.push({ where: at(index), kind: "nom du compte" });
     });
   }
 
@@ -120,7 +114,10 @@ export function scanIdentity(identity: CommitIdentity, where: string, context: S
     const isOwner = login !== null && n === login && ownNoReply !== null && ownNoReply.test(e);
     const isBot = BOT_NAMES.has(n) && BOT_EMAIL.test(e);
     if (!isOwner && !isBot) {
-      findings.push({ where: `${where} (${role})`, kind: "identité non autorisée (ni le compte avec son adresse noreply, ni un robot)" });
+      findings.push({
+        where: `${where} (${role})`,
+        kind: "identité non autorisée (ni le compte avec son adresse noreply, ni un robot)",
+      });
     }
   };
   check(identity.authorName, identity.authorEmail, "auteur");

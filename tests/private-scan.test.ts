@@ -8,12 +8,15 @@ import {
   scanCommitMessage,
   scanIdentity,
   scanText,
-  withoutAllowedContexts,
 } from "../scripts/lib/private-scan";
 
 // Fictitious values only (no real name, no real account). The personal-looking samples are assembled at run time, so
 // that this file itself never holds a full pattern and passes `npm run scan:prive`.
-const ctx: ScanContext = { ownerLogin: "jean-exemple", windowsUser: "jexem", motifs: ["Jean", "Exemple", "Autre Projet"] };
+const ctx: ScanContext = {
+  ownerLogin: "jean-exemple",
+  windowsUser: "jexem",
+  motifs: ["Jean", "Exemple", "Autre Projet"],
+};
 const at = "@";
 const mail = (local: string, domain: string) => `${local}${at}${domain}`;
 const winPath = ["C:", "Users", "jexem", "x"].join("\\");
@@ -39,14 +42,6 @@ describe("emailAllowed", () => {
   });
 });
 
-describe("withoutAllowedContexts", () => {
-  it("removes only the repository addresses (decision D6)", () => {
-    const text = "https://github.com/jean-exemple/sovermap et https://raw.githubusercontent.com/Jean-Exemple/sovermap/donnees/x";
-    expect(withoutAllowedContexts(text, "jean-exemple")).toBe("https://<dépôt> et https://<dépôt>/donnees/x");
-    expect(withoutAllowedContexts("https://github.com/jean-exemple/autre", "jean-exemple")).toContain("jean-exemple");
-  });
-});
-
 describe("scanText", () => {
   it("finds a personal path, the Windows user, a private pattern and a personal address, without printing them", () => {
     const text = [winPath, `voir ${bashPath}`, "signé Jean", `écrire à ${mail("jean", "gmail.com")}`].join("\n");
@@ -58,18 +53,21 @@ describe("scanText", () => {
     expect(kinds).toContain("adresse e-mail non autorisée (@gmail.com)");
     for (const finding of findings) expect(finding.kind.toLowerCase()).not.toContain(`jean${at}`);
   });
-  it("accepts the repository address and the account's no-reply address", () => {
-    const text = `https://github.com/jean-exemple/sovermap\nCo-Authored-By: Claude <${mail("noreply", "anthropic.com")}>`;
-    expect(scanText(text, "README.md", ctx)).toEqual([]);
-  });
-  it("refuses the account name outside the repository address", () => {
-    expect(scanText("auteur : jean-exemple", "x.md", ctx).length).toBeGreaterThan(0);
+  it("accepts a no-reply address, and refuses the account name, even in the repository's address (point 03)", () => {
+    expect(scanText(`Co-Authored-By: Claude <${mail("noreply", "anthropic.com")}>`, "README.md", ctx)).toEqual([]);
+    for (const texte of [
+      "https://github.com/jean-exemple/sovermap",
+      "https://raw.githubusercontent.com/Jean-Exemple/sovermap/donnees/etat.json",
+      "auteur : jean-exemple",
+    ]) {
+      expect(scanText(texte, "x.md", ctx).map((f) => f.kind)).toContain("nom du compte");
+    }
   });
   it("refuses the account name by itself, even without any private pattern or Windows user", () => {
     const seul: ScanContext = { ownerLogin: "jean-exemple", windowsUser: null, motifs: [] };
-    expect(scanText("merci jean-exemple", "x.md", seul).map((f) => f.kind)).toEqual(["nom du compte hors de l'adresse du dépôt"]);
+    expect(scanText("merci jean-exemple", "x.md", seul).map((f) => f.kind)).toEqual(["nom du compte"]);
     expect(scanText("https://jean-exemple.github.io", "x.md", seul)).toHaveLength(1);
-    expect(scanText("https://github.com/jean-exemple/sovermap", "x.md", seul)).toEqual([]);
+    expect(scanText("https://github.com/jean-exemple/sovermap", "x.md", seul)).toHaveLength(1);
   });
   it("finds a pattern of the other project whatever its case", () => {
     expect(scanText("vu dans AUTRE PROJET", "x.md", ctx)[0]?.kind).toBe("motif privé n° 3");
@@ -80,11 +78,20 @@ describe("scanIdentity", () => {
   const own = { name: "jean-exemple", email: mail("1234+jean-exemple", "users.noreply.github.com") };
   it("accepts the account with its no-reply address, and GitHub's robots", () => {
     expect(
-      scanIdentity({ authorName: own.name, authorEmail: own.email, committerName: own.name, committerEmail: own.email }, "c", ctx),
+      scanIdentity(
+        { authorName: own.name, authorEmail: own.email, committerName: own.name, committerEmail: own.email },
+        "c",
+        ctx,
+      ),
     ).toEqual([]);
     expect(
       scanIdentity(
-        { authorName: own.name, authorEmail: own.email, committerName: "GitHub", committerEmail: mail("noreply", "github.com") },
+        {
+          authorName: own.name,
+          authorEmail: own.email,
+          committerName: "GitHub",
+          committerEmail: mail("noreply", "github.com"),
+        },
         "c",
         ctx,
       ),
@@ -124,7 +131,9 @@ describe("Dependabot's sign-off line (brief of chantier 2, A.1)", () => {
   });
   it("passes in a commit message, alone or with Windows line ends", () => {
     expect(scanCommitMessage(message(DEPENDABOT_SIGNOFF), "commit a (message)", ctx)).toEqual([]);
-    expect(scanCommitMessage(message(DEPENDABOT_SIGNOFF).replace(/\n/g, "\r\n"), "commit a (message)", ctx)).toEqual([]);
+    expect(scanCommitMessage(message(DEPENDABOT_SIGNOFF).replace(/\n/g, "\r\n"), "commit a (message)", ctx)).toEqual(
+      [],
+    );
   });
   it("still refuses the same address anywhere else: another line of a message, a file, a changed line", () => {
     const kinds = (findings: { kind: string }[]) => findings.map((f) => f.kind);
@@ -142,11 +151,21 @@ describe("Dependabot's sign-off line (brief of chantier 2, A.1)", () => {
     expect(scanText(DEPENDABOT_SIGNOFF, "f.md", ctx)).toHaveLength(1);
   });
   it("keeps GitHub's committer address valid, and refuses the support address as an author", () => {
-    const robot = { authorName: "dependabot[bot]", authorEmail: mail("49699333+dependabot[bot]", "users.noreply.github.com") };
-    expect(scanIdentity({ ...robot, committerName: "GitHub", committerEmail: mail("noreply", "github.com") }, "c", ctx)).toEqual([]);
+    const robot = {
+      authorName: "dependabot[bot]",
+      authorEmail: mail("49699333+dependabot[bot]", "users.noreply.github.com"),
+    };
+    expect(
+      scanIdentity({ ...robot, committerName: "GitHub", committerEmail: mail("noreply", "github.com") }, "c", ctx),
+    ).toEqual([]);
     expect(
       scanIdentity(
-        { authorName: "dependabot[bot]", authorEmail: support, committerName: "GitHub", committerEmail: mail("noreply", "github.com") },
+        {
+          authorName: "dependabot[bot]",
+          authorEmail: support,
+          committerName: "GitHub",
+          committerEmail: mail("noreply", "github.com"),
+        },
         "c",
         ctx,
       ),

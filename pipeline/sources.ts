@@ -1,8 +1,17 @@
 // Polite downloads from the sources of docs/sources.md (rules of the brief, § 0.2, and of .claude/rules/data.md): the
 // robots.txt of a host is read first, in a request of its own, and obeyed; at least one second between two requests to
 // one host; five redirects at most, each one checked against the robots.txt of its host; an identified user agent
-// (Sovermap-bot/<version> (+https://github.com/<account>/sovermap)), without any e-mail address. A refusal is a refusal:
-// the caller keeps yesterday's copy of the source and says so in etat.json.
+// (agentUtilisateur below), without any e-mail address and without any account name. A refusal is a refusal: the
+// caller keeps yesterday's copy of the source and says so in etat.json.
+
+/**
+ * The project's address in the agent string (point 03 of chantier 2): the site, never the repository's address, which
+ * names a person's account. sovermap.com takes its place in chantier 3.
+ */
+export const ADRESSE_DU_PROJET = "https://sovermap.vercel.app";
+
+/** The agent string of every download: the project's name, its version and its address; never built from git. */
+export const agentUtilisateur = (version: string) => `Sovermap-bot/${version} (+${ADRESSE_DU_PROJET})`;
 
 export type Robots = { regles: { autorise: boolean; chemin: string }[]; delaiSecondes: number | null };
 

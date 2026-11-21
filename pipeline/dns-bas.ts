@@ -99,7 +99,20 @@ export function lireEnregistrement(rr: dnsPacket.Answer): Enregistrement | null 
       const morceaux = Array.isArray(rr.data) ? rr.data : [rr.data];
       const texte = morceaux.map((m) => (typeof m === "string" ? m : m.toString("latin1"))).join("");
       return /^v=spf1(\s|$)/i.test(texte)
-        ? { proprietaire, ttl, donnee: { type: "TXT", spf: texte.slice(0, 2048) } }
+        ? {
+            proprietaire,
+            ttl,
+            // An SPF term never holds an e-mail address: any word with « @ » (a contact written in the record) is
+            // dropped as soon as it is read.
+            donnee: {
+              type: "TXT",
+              spf: texte
+                .split(/\s+/)
+                .filter((mot) => mot !== "" && !mot.includes("@"))
+                .join(" ")
+                .slice(0, 2048),
+            },
+          }
         : null;
     }
     default:

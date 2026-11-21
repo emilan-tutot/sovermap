@@ -34,7 +34,6 @@ concurrency:
 
 env:
   RESOLVEUR: docker.io/cznic/knot-resolver@sha256:a72a60a9b64d4c050df0c0435ca5cb34171e5c458555b30b4c37c530e2189824 # v6.5.1-20261117
-  SOVERMAP_GITHUB_OWNER: ${{ github.repository_owner }}
   ESSAI: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.essai != 'aucun') }}
   ESSAI_DISJONCTEUR: ${{ github.event_name == 'workflow_dispatch' && inputs.essai == 'disjoncteur' }}
   # The size of a trial: a sample of the list, drawn at random (the limit of 200 names holds outside Actions only).

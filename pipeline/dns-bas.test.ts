@@ -55,7 +55,9 @@ describe("the low-level DNS client", () => {
     ]);
     const lu = JSON.stringify(lireReponse(Buffer.from(soa), 1, "site.example", "SOA", 1)?.reponse);
     expect(lu).toContain("ns1.site.example");
+    // The RNAME (the zone's contact address, « hostmaster.site.example » for hostmaster@site.example) is never kept.
     expect(lu).not.toContain("hostmaster");
+    expect(lu).not.toContain("rname");
     const caa = reponse(2, "site.example", "CAA", [
       { type: "CAA", name: "site.example", ttl: 1, data: { flags: 0, tag: "issue", value: "ac.example" } },
       {
@@ -85,6 +87,14 @@ describe("the low-level DNS client", () => {
     ]);
     const lusTxt = lireReponse(Buffer.from(txt), 3, "site.example", "TXT", 1)?.reponse?.reponses ?? [];
     expect(lusTxt.map((r) => r.donnee)).toEqual([{ type: "TXT", spf: "v=spf1 ip4:192.0.2.0/24 -all" }]);
+    // An e-mail address written inside an SPF record is dropped as soon as it is read.
+    const contact = ["securite", "site.example"].join("@");
+    const spfAvecContact = reponse(5, "site.example", "TXT", [
+      { type: "TXT", name: "site.example", ttl: 1, data: [`v=spf1 include:spf.site.example ${contact} -all`] },
+    ]);
+    const lusSpf = lireReponse(Buffer.from(spfAvecContact), 5, "site.example", "TXT", 1)?.reponse?.reponses ?? [];
+    expect(lusSpf.map((r) => r.donnee)).toEqual([{ type: "TXT", spf: "v=spf1 include:spf.site.example -all" }]);
+    expect(JSON.stringify(lusSpf)).not.toContain("@");
   });
 
   it("drops an answer from any address or port but the resolver's", async () => {

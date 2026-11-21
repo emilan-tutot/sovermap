@@ -45,7 +45,7 @@ import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
 import { fichiersSchemas, schemaDe, valider } from "../schemas";
 import { chaineDepuisSociete, type ReferentielAs, type ReferentielSocietes, validerReferentiels } from "../societes";
-import { Telechargeur } from "../sources";
+import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
 import { validerListeFastly } from "../valider";
@@ -284,17 +284,13 @@ function suivreDebit(
 async function principal(): Promise<number> {
   const travail = o.travail;
   if (travail === undefined) throw new Error("option manquante : --travail <dossier>");
-  const proprietaire = process.env.SOVERMAP_GITHUB_OWNER;
-  if (proprietaire === undefined || !/^[A-Za-z0-9-]{1,39}$/.test(proprietaire)) {
-    throw new Error("SOVERMAP_GITHUB_OWNER absent ou invalide (le nom du compte qui publie, pour l'agent utilisateur)");
-  }
   const maintenant = new Date();
   const date = o.date ?? maintenant.toISOString().slice(0, 10);
   const heure = maintenant.toISOString();
   rmSync(path.join(travail, "sortie"), { recursive: true, force: true });
   mkdirSync(path.join(travail, "sortie"), { recursive: true });
   const version = json<{ version: string }>(RACINE, "package.json").version;
-  const agent = `Sovermap-bot/${version} (+https://github.com/${proprietaire}/sovermap)`;
+  const agent = agentUtilisateur(version);
   const ref = referentiels();
 
   // Downloads, then the reference list.

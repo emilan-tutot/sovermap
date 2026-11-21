@@ -179,6 +179,9 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] Rapport final en trois blocs, copié dans `rapport-C2.md`.
 
 ### Pour le chantier 3
+- [ ] **En tête, avant l'ouverture** : créer une organisation GitHub gratuite « sovermap », y transférer le dépôt (Vercel, règles de branche, Releases, workflows à revérifier), et vérifier le nom d'auteur des commits de l'historique ; préparer à ce moment-là le clic par clic pour le propriétaire. Consigne du point 03, 21/11/2026.
 - [ ] IPtoASN, option C : demander à l'auteur d'IPtoASN si un téléchargement automatique quotidien est permis, depuis l'adresse sovermap.com (jamais depuis l'adresse personnelle du propriétaire). Consigne du point 02, 20/11/2026.
+- [ ] RouteViews : demander à RouteViews si un téléchargement automatique est permis, depuis l'adresse sovermap.com. Consigne du point 03, 21/11/2026.
+- [ ] L'agent utilisateur passe à `Sovermap-bot/<version> (+https://sovermap.com)` une fois sovermap.com branché (`ADRESSE_DU_PROJET`, `pipeline/sources.ts`).
 - [ ] IPtoASN : redemander au propriétaire une nouvelle copie au point qui suit les 80 jours de la précédente (relevé du 20/11/2026 : vers le 08/02/2027), avec le clic par clic ; la verser dans la Release `sources-iptoasn`.
 - [ ] Avant l'ouverture, vérifier que la protection de Vercel laisse passer les robots de Google et de Bing, et les téléchargements par script des données ouvertes (consigne du point 01, 20/11/2026 : le « Security Checkpoint » de Vercel a répondu 403 aux contrôles de `probe:prod`).
