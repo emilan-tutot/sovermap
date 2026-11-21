@@ -119,8 +119,13 @@ export class ClientParZone implements ClientDns {
    * known (they never ask the parents in parallel).
    */
   readonly #premieres = new Map<string, Promise<void>>();
-  /** The pace of each group of parent servers, for the first questions of its zones. */
+  /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
+  /**
+   * The zones known as delegated: their apex answered NS records. Until then (a zone its parent serves itself, a name
+   * that does not exist), every question of the zone goes to the parent's servers, and takes a slot of their pace.
+   */
+  readonly #deleguees = new Set<string>();
   /** The zones whose apex failed several times in a row: not asked again before the next attempt. */
   readonly #mortes = new Map<string, number>();
   /** Below the apexes: the names that failed per sub-zone, the sub-zones that ever answered, those down. */
@@ -191,26 +196,35 @@ export class ClientParZone implements ClientDns {
         }),
       );
       try {
-        // The brake, then the parent's pace, then the brake again: a question held after its slot takes a new one, so
-        // the questions held together never leave together.
-        if (this.frein) await this.frein(nom, zone, true);
-        const groupe = groupeDuParent(zone);
-        let cadence = this.#parents.get(groupe);
-        if (cadence === undefined) {
-          cadence = new Cadence(this.parentParSeconde, this.horloge);
-          this.#parents.set(groupe, cadence);
-        }
-        for (let creneau = 1; creneau <= CRENEAUX_MAX; creneau += 1) {
-          await cadence.attendre();
-          if (!this.frein || (await this.frein(nom, zone, true)) !== true) break;
-        }
-        return await this.#poser(nom, zone, type, true, false);
+        return await this.#auParent(nom, zone, type);
       } finally {
         finie();
       }
     }
     await premiere;
-    return this.#poser(nom, zone, type, false, true);
+    return this.#deleguees.has(zone) ? this.#poser(nom, zone, type, false, true) : this.#auParent(nom, zone, type);
+  }
+
+  /**
+   * A question that goes to the zone's parent (its first one, or any while the zone is not known as delegated): the
+   * brake, then the parent's pace, then the brake again; a question held after its slot takes a new one, so the
+   * questions held together never leave together.
+   */
+  async #auParent(nom: string, zone: string, type: TypeRr): Promise<Reponse> {
+    if (this.#muette(nom, zone) === null) {
+      if (this.frein) await this.frein(nom, zone, true);
+      const groupe = groupeDuParent(zone);
+      let cadence = this.#parents.get(groupe);
+      if (cadence === undefined) {
+        cadence = new Cadence(this.parentParSeconde, this.horloge);
+        this.#parents.set(groupe, cadence);
+      }
+      for (let creneau = 1; creneau <= CRENEAUX_MAX; creneau += 1) {
+        await cadence.attendre();
+        if (!this.frein || (await this.frein(nom, zone, true)) !== true) break;
+      }
+    }
+    return this.#poser(nom, zone, type, true, false);
   }
 
   /** The answer a zone, or a sub-zone of the name, that is down gives at once (no question sent), or null. */
@@ -233,6 +247,9 @@ export class ClientParZone implements ClientDns {
       if (pendant !== null) return pendant;
       if (freiner && this.frein) await this.frein(nom, zone, ouverture);
       const r = await this.base.demander(nom, type);
+      if (nom === zone && type === "NS" && r.reponses.some((e) => e.donnee.type === "NS" && e.proprietaire === zone)) {
+        this.#deleguees.add(zone);
+      }
       if (nom === zone) {
         // Three failures in a row of the apex's questions: the zone is down for this attempt.
         if (CODES_EN_ECHEC.has(r.code)) this.#mortes.set(zone, (this.#mortes.get(zone) ?? 0) + 1);
@@ -347,6 +364,8 @@ export async function collecter(
       await options.frein?.(domaine, options.zoneDe(domaine), true);
     });
     ouverts.set(domaine, ouverture);
+    // The measurement starts before the names of the domain (reactions run in their order): its NS question is the
+    // zone's first, so its names know at once whether the zone is delegated (client per zone, above).
     mesuresDomaines.push(ouverture.then(() => mesurerDomaine(domaine)));
     return ouverture;
   };

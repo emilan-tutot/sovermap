@@ -103,6 +103,10 @@ describe("the scheduling of a collection", () => {
     expect([...resultat.noms.keys()].sort()).toEqual([...noms.keys()].sort());
     expect([...resultat.domaines.keys()].sort()).toEqual(["mairie.example", "sansmail.example"]);
     expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(1);
+    // The zone's first question is its NS: its names then know whether it is delegated.
+    expect(r.questions.find((q) => / [^ ]*$/.test(q) && zoneDe(q.split(" ")[0] ?? "") === "mairie.example")).toBe(
+      "mairie.example NS",
+    );
     expect(r.questions.filter((q) => q === "ns1.hebergeur.example A")).toHaveLength(1);
     expect(resultat.hotes.get("mx.hebergeur.example")?.a).toEqual([{ adresse: "192.0.2.25", ttl: 300 }]);
     expect(resultat.spf.get("mairie.example")?.reseaux.map((x) => x.reseau)).toEqual([
@@ -208,11 +212,14 @@ describe("the scheduling of a collection", () => {
   it("opens the zones of one parent at its own pace, and those of another parent alongside", async () => {
     const horloge = fausseHorloge();
     const debuts = new Map<string, number>();
+    // Every zone is delegated: its apex answers its NS records.
     const base: ClientDns = {
       id: "base",
-      demander: async (nom) => {
+      demander: async (nom, type) => {
         if (!debuts.has(nom)) debuts.set(nom, horloge.maintenant());
-        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+        const reponses: Reponse["reponses"] =
+          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
       },
       fermer: () => {},
     };
@@ -225,10 +232,33 @@ describe("the scheduling of a collection", () => {
     const avant = horloge.maintenant();
     await client.demander("a.example", "NS");
     expect(t("a.example")).toBe(avant);
-    // A zone already open does not wait for its parent again.
+    // A delegated zone already open does not wait for its parent again.
     const ensuite = horloge.maintenant();
     await client.demander("www.c.fr", "A");
     expect(t("www.c.fr")).toBe(ensuite);
+  });
+
+  it("paces every question of a zone that is not delegated: its parent's servers answer them all", async () => {
+    const horloge = fausseHorloge();
+    const debuts: number[] = [];
+    // No NS at the apex: a zone the parent serves itself, or a name that does not exist.
+    const base: ClientDns = {
+      id: "base",
+      demander: async () => {
+        debuts.push(horloge.maintenant());
+        return { code: "NXDOMAIN", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
+    for (const [nom, type] of [
+      ["absent.fr", "NS"],
+      ["absent.fr", "SOA"],
+      ["www.absent.fr", "A"],
+    ] as const) {
+      await client.demander(nom, type);
+    }
+    expect(debuts).toEqual([0, 500, 1000]);
   });
 
   it("stops asking a zone whose apex failed three times in a row, until the next attempt", async () => {
@@ -352,9 +382,11 @@ describe("the scheduling of a collection", () => {
     const debuts: [string, number][] = [];
     const base: ClientDns = {
       id: "base",
-      demander: async (nom) => {
+      demander: async (nom, type) => {
         debuts.push([nom, horloge.maintenant()]);
-        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+        const reponses: Reponse["reponses"] =
+          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
       },
       fermer: () => {},
     };
