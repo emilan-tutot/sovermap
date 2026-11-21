@@ -1,0 +1,116 @@
+name: Annuaire local
+
+# The DILA's local administrations directory (brief C.6; docs/sources.md, card 50), through the DINUM's copy on Hugging
+# Face: once a week, a new copy is read (useful columns only, by byte ranges, pipeline/annuaire-local.ts) and published
+# in the « donnees » branch (territoires/annuaire/). The reading job has read-only rights; only the publishing job may
+# write « donnees », in the same concurrency group as the collection's publication, so that the two writers never
+# cross. A pull request that touches the reading runs it as a trial: nothing is written. No DNS question is asked here.
+
+on:
+  schedule:
+    # Mondays, far from the day's collection (03:17 UTC) and its second start (09:47 UTC).
+    - cron: "23 13 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "pipeline/annuaire-local.ts"
+      - "pipeline/cli/annuaire.ts"
+      - ".github/workflows/annuaire.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: annuaire-${{ github.event_name == 'pull_request' && github.ref || 'courant' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      nouvelle: ${{ steps.annuaire.outputs.nouvelle }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Only the published copy's description (territoires/annuaire/copie.json): is the current copy a new one?
+      - name: Lire la description de la copie publiée
+        run: |
+          mkdir -p donnees/territoires/annuaire
+          # Exit code 2 only: the branch does not exist yet; any other error stops the reading.
+          set +e
+          git ls-remote --exit-code --heads origin donnees > /dev/null
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            git fetch -q --depth=1 --no-tags origin donnees
+            git show FETCH_HEAD:territoires/annuaire/copie.json > donnees/territoires/annuaire/copie.json 2> /dev/null \
+              || rm -f donnees/territoires/annuaire/copie.json
+          elif [ "$code" -ne 2 ]; then
+            echo "annuaire : la branche donnees n'a pas pu être lue (code $code)" >&2
+            exit 1
+          fi
+      - id: annuaire
+        env:
+          ESSAI: ${{ github.event_name == 'pull_request' }}
+        run: |
+          args=(--sortie sortie --donnees donnees)
+          if [ "$ESSAI" = "true" ]; then args+=(--essai); fi
+          npx tsx pipeline/cli/annuaire.ts "${args[@]}"
+      - if: steps.annuaire.outputs.nouvelle == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: annuaire
+          path: sortie
+          retention-days: 3
+          if-no-files-found: error
+
+  publier:
+    needs: lire
+    if: needs.lire.outputs.nouvelle == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # The collection's publication is in the same group: one writer of « donnees » at a time.
+    concurrency:
+      group: donnees-ecriture
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: annuaire
+          path: annuaire
+      # The only job of this workflow that keeps a token in .git/config: it writes the « donnees » branch.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: depot
+          fetch-depth: 1
+      - name: Publier la copie dans la branche donnees
+        working-directory: depot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # The branch is the collection's: it must exist (its first publication creates it).
+          git fetch -q --depth=1 origin donnees
+          git checkout -q -B donnees FETCH_HEAD
+          rm -rf territoires/annuaire
+          mkdir -p territoires
+          cp -a ../annuaire/territoires/annuaire territoires/
+          git add --all -- territoires/annuaire
+          if git diff --cached --quiet; then
+            echo "Rien de nouveau à publier." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          date=$(jq -r '.fichiers | map(.date) | max | .[0:10]' territoires/annuaire/copie.json)
+          git commit -q -m "donnees : annuaire local, copie du $date"
+          git push -q origin donnees
+          echo "Annuaire local publié : copie du $date." >> "$GITHUB_STEP_SUMMARY"
