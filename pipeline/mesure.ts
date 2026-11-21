@@ -48,7 +48,10 @@ export function lireChaine(
 }
 
 export async function mesurerNom(nom: string, client: ClientDns): Promise<MesureNom> {
-  const [ra, raaaa] = await Promise.all([client.demander(nom, "A"), client.demander(nom, "AAAA")]);
+  // A, then AAAA: the resolver follows a CNAME chain once (the second question reads it from its cache), and a
+  // failure of the first already weighs on the second (collecte.ts: where a question failed, the next ones weigh more).
+  const ra = await client.demander(nom, "A");
+  const raaaa = await client.demander(nom, "AAAA");
   const a = lireChaine(nom, ra, "A");
   const aaaa = lireChaine(nom, raaaa, "AAAA");
   const base = {
