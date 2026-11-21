@@ -15,6 +15,8 @@ export type DebitServeurs = {
   seconde: string | null;
   /** The zone cuts whose servers were busy most often (seconds at the brake's threshold or above), for the summary. */
   coupesChaudes: { coupe: string; secondes: number }[];
+  /** The three addresses asked most, with their questions by type (NS, DS, A…), for the summary. */
+  adressesChargees: { adresse: string; questions: number; parType: Record<string, number> }[];
 };
 
 const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?(?: qtype: '([^']*)')?/;
@@ -59,6 +61,7 @@ export class CompteurServeurs {
   #coupesRecentes = new Map<string, Map<string, number>>();
   #zonesRecentes = new Map<string, Map<string, number>>();
   #oubli = 0;
+  #parAdresseTotal = new Map<string, { questions: number; parType: Map<string, number> }>();
 
   /** One line of `docker logs --timestamps` (its timestamp, then Knot's line). */
   lire(ligne: string): void {
@@ -84,6 +87,11 @@ export class CompteurServeurs {
       this.#coupesParAdresse.set(question[1], coupes);
       noter(this.#coupesRecentes, question[1], coupe, t);
     }
+    const total = this.#parAdresseTotal.get(question[1]) ?? { questions: 0, parType: new Map<string, number>() };
+    total.questions += 1;
+    const type = question[4] ?? "?";
+    total.parType.set(type, (total.parType.get(type) ?? 0) + 1);
+    this.#parAdresseTotal.set(question[1], total);
     if (question[3] !== undefined) {
       const zone = this.zoneDe(coupeNormale(question[3]));
       const coupe = question[2] === undefined ? null : coupeNormale(question[2]);
@@ -163,6 +171,14 @@ export class CompteurServeurs {
       .sort(([a, x], [b, y]) => y - x || (a < b ? -1 : 1))
       .slice(0, 5)
       .map(([coupe, secondes]) => ({ coupe: coupe === "" ? "." : coupe, secondes }));
+    const adressesChargees = [...this.#parAdresseTotal]
+      .sort(([a, x], [b, y]) => y.questions - x.questions || (a < b ? -1 : 1))
+      .slice(0, 3)
+      .map(([adresse, t]) => ({
+        adresse,
+        questions: t.questions,
+        parType: Object.fromEntries([...t.parType].sort(([, x], [, y]) => y - x)),
+      }));
     return {
       questions: this.#questions,
       depassements: this.#depassements,
@@ -170,6 +186,7 @@ export class CompteurServeurs {
       adresse: this.#adresse,
       seconde: this.#seconde,
       coupesChaudes,
+      adressesChargees,
     };
   }
 }

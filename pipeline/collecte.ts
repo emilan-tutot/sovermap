@@ -16,7 +16,7 @@ export type OptionsCollecte = {
   parZone: number;
   /**
    * New zones per second under one parent (a top-level domain, a public suffix): the first question of a zone asks
-   * its parent for the delegation, and the resolver sends most of them to one of the parent's servers. 6 keeps that
+   * its parent for the delegation, and the resolver sends most of them to one of the parent's servers. 5 keeps that
    * server under the limit of 10 questions per second, whatever the logs say (brief B.3).
    */
   parentParSeconde: number;
@@ -51,7 +51,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   nomsParSeconde: 25,
   domainesParSeconde: 8,
   parZone: 2,
-  parentParSeconde: 6,
+  parentParSeconde: 5,
   enVol: 128,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
@@ -78,6 +78,12 @@ const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
  * platform) never counts: only the zone itself can be down.
  */
 const ZONE_MORTE = 3;
+/**
+ * Failures in a row of the names below a sub-zone (a part of a zone delegated to servers that do not answer, such as
+ * internal names), with no name of it ever answered in the run, after which the sub-zone is down for the rest of an
+ * attempt: its other names fail at once, instead of waiting each for the time limit, two at a time.
+ */
+const SOUS_ZONE_MORTE = 8;
 /**
  * After this long, a zone's delegation may have left the resolver's cache: its next question goes to its parent again,
  * and waits for the parent's pace like a first question.
@@ -116,6 +122,10 @@ export class ClientParZone implements ClientDns {
   readonly #parents = new Map<string, Cadence>();
   /** The zones that failed several times in a row, and how: they are not asked again before the next attempt. */
   readonly #mortes = new Map<string, { suite: number; code: Reponse["code"] }>();
+  /** Below the apexes: failures in a row per sub-zone, the sub-zones that ever answered, those down for the attempt. */
+  readonly #sousEchecs = new Map<string, number>();
+  readonly #sousVivantes = new Set<string>();
+  readonly #sousMortes = new Map<string, Reponse["code"]>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
@@ -131,6 +141,30 @@ export class ClientParZone implements ClientDns {
   /** A new attempt: the zones that failed are asked again. */
   oublierZonesMortes(): void {
     this.#mortes.clear();
+    this.#sousEchecs.clear();
+    this.#sousMortes.clear();
+  }
+
+  /** The sub-zones between a name and its zone's apex, deepest first (the name itself included). */
+  static sousZones(nom: string, zone: string): string[] {
+    if (nom === zone || !nom.endsWith(`.${zone}`)) return [];
+    const etiquettes = nom.slice(0, -zone.length - 1).split(".");
+    return etiquettes.map((_, i) => `${etiquettes.slice(i).join(".")}.${zone}`);
+  }
+
+  #noterSousZones(nom: string, zone: string, code: Reponse["code"]): void {
+    const sous = ClientParZone.sousZones(nom, zone).slice(1);
+    if (!CODES_EN_ECHEC.has(code)) {
+      for (const s of sous) {
+        this.#sousEchecs.delete(s);
+        this.#sousVivantes.add(s);
+      }
+      return;
+    }
+    for (const s of sous) this.#sousEchecs.set(s, (this.#sousEchecs.get(s) ?? 0) + 1);
+    // The deepest sub-zone that failed enough, and never answered, is down; never a shallower one for the same names.
+    const morte = sous.find((s) => !this.#sousVivantes.has(s) && (this.#sousEchecs.get(s) ?? 0) >= SOUS_ZONE_MORTE);
+    if (morte !== undefined) this.#sousMortes.set(morte, code);
   }
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
@@ -163,22 +197,26 @@ export class ClientParZone implements ClientDns {
     return this.#poser(nom, zone, type, false, true);
   }
 
-  /** The answer a zone that is down gives at once, or null. */
-  #morte(zone: string): Reponse | null {
+  /** The answer a zone, or a sub-zone of the name, that is down gives at once, or null. */
+  #morte(nom: string, zone: string): Reponse | null {
     const morte = this.#mortes.get(zone);
-    return morte !== undefined && morte.suite >= ZONE_MORTE
-      ? { code: morte.code, ad: false, reponses: [], duree: 0 }
-      : null;
+    if (morte !== undefined && morte.suite >= ZONE_MORTE)
+      return { code: morte.code, ad: false, reponses: [], duree: 0 };
+    for (const s of ClientParZone.sousZones(nom, zone)) {
+      const code = this.#sousMortes.get(s);
+      if (code !== undefined) return { code, ad: false, reponses: [], duree: 0 };
+    }
+    return null;
   }
 
   async #poser(nom: string, zone: string, type: TypeRr, ouverture: boolean, freiner: boolean): Promise<Reponse> {
-    const avant = this.#morte(zone);
+    const avant = this.#morte(nom, zone);
     if (avant !== null) return avant;
     if (freiner && this.frein) await this.frein(nom, zone, ouverture);
     await this.#zones.prendre(zone);
     try {
       // The zone may have gone down, and the load changed, while the question waited for its turn in the zone.
-      const pendant = this.#morte(zone);
+      const pendant = this.#morte(nom, zone);
       if (pendant !== null) return pendant;
       if (freiner && this.frein) await this.frein(nom, zone, ouverture);
       const r = await this.base.demander(nom, type);
@@ -190,6 +228,8 @@ export class ClientParZone implements ClientDns {
         } else {
           this.#mortes.delete(zone);
         }
+      } else {
+        this.#noterSousZones(nom, zone, r.code);
       }
       return r;
     } finally {

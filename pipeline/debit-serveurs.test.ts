@@ -28,6 +28,10 @@ describe("the pace towards each authoritative server", () => {
       adresse: "198.51.100.53",
       seconde: "2026-11-21T03:17:06",
       coupesChaudes: [],
+      adressesChargees: [
+        { adresse: "198.51.100.53", questions: 4, parType: { A: 4 } },
+        { adresse: "192.0.2.53", questions: 3, parType: { A: 3 } },
+      ],
     });
   });
 

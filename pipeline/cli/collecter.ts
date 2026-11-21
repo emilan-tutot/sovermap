@@ -783,6 +783,16 @@ async function principal(): Promise<number> {
           .map((c) => `une autre zone (${c.secondes} s)`),
       ].join(", ") || "aucune"
     }.`,
+    `- Serveurs les plus demandés : ${
+      (debitServeurs?.adressesChargees ?? [])
+        .map(
+          (a) =>
+            `${a.adresse} (${a.questions} questions : ${Object.entries(a.parType)
+              .map(([type, n]) => `${type} ${n}`)
+              .join(", ")})`,
+        )
+        .join(" ; ") || "non mesuré"
+    }.`,
     `- Sources lues de la veille ou en échec : ${etatJson.lecturesEnEchec}.`,
     `- Enregistrements réduits (schéma) : ${rapportJour.reduits} ; en erreur : ${rapportJour.erreurs}.`,
     `- IPtoASN (relevé manuel) : ${(() => {

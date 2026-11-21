@@ -245,6 +245,33 @@ describe("the scheduling of a collection", () => {
     expect(r.questions).toContain("www.morte.example A");
   });
 
+  it("takes a sub-zone for down after eight failures of its names, never one that ever answered", async () => {
+    const morts = Array.from({ length: 10 }, (_, i) => `n${i}.x.in.phm.mairie.example`);
+    const r = new ResolveurSimule(
+      { ...ZONE, "a.phm.mairie.example": { A: [{ type: "A", adresse: "192.0.2.80" }] } },
+      zoneDe,
+      new Set([...morts, "y.in.phm.mairie.example"]),
+    );
+    const client = new ClientParZone(r, zoneDe, 2);
+    expect((await client.demander("a.phm.mairie.example", "A")).code).toBe("NOERROR");
+    for (const n of morts.slice(0, 8)) await client.demander(n, "A");
+    // The deepest sub-zone that failed enough (x.in.phm…) is down: its next name fails at once, without a question.
+    expect((await client.demander(morts[8] ?? "", "A")).code).toBe("SERVFAIL");
+    expect(r.questions).not.toContain(`${morts[8]} A`);
+    // Another part of the same zone is still asked; phm.mairie.example, which answered, is never down.
+    await client.demander("y.in.phm.mairie.example", "A");
+    expect(r.questions).toContain("y.in.phm.mairie.example A");
+    expect((await client.demander("a.phm.mairie.example", "A")).code).toBe("NOERROR");
+    // The next attempt asks the sub-zone again.
+    client.oublierZonesMortes();
+    await client.demander(morts[9] ?? "", "A");
+    expect(r.questions).toContain(`${morts[9]} A`);
+    expect(ClientParZone.sousZones("a.b.mairie.example", "mairie.example")).toEqual([
+      "a.b.mairie.example",
+      "b.mairie.example",
+    ]);
+  });
+
   it("never takes a zone for down when only names below its apex fail (a lame sub-zone)", async () => {
     const r = new ResolveurSimule(
       ZONE,
