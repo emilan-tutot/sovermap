@@ -49,7 +49,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 24 | Team Cymru | IP → AS (troisième avis) | Rien d'écrit | Oui (DNS) | Contrôle seulement |
 | 25 | DB-IP « IP to ASN Lite » | Noms d'AS | CC BY 4.0 | Case « I agree » | Écartée (choix du propriétaire, 19/11/2026) |
 | 26 | RouteViews, CAIDA, PeeringDB, IPinfo, bgp.tools, bgp.he.net, BGPKIT, IHR | — | Voir la fiche | — | Écartées ou en attente |
-| 27 | Listes officielles des CDN (Cloudflare, CloudFront, Fastly, Azure) | Indicateur « CDN » | Pas de licence : listes non republiées | Oui | **Retenue** |
+| 27 | Listes officielles des CDN (Cloudflare, CloudFront, Fastly, Azure ; Imperva) | Indicateur « CDN » ; preuve du titulaire d'un AS | Pas de licence : listes non republiées | Oui (Imperva : par l'API de son portail de documentation) | **Retenue** |
 | 28–29 | Suffixes CNAME et AS des CDN | Reconnaissance des CDN | Faits documentés par les fournisseurs | — | **Retenue** (liste tenue à la main) |
 | 30 | cdncheck | — | Données d'origine mixte | — | Écartée |
 | 31 | GLEIF | LEI, maison mère ultime | CC0 | Oui (60 requêtes par minute) | **Retenue** |
@@ -429,7 +429,7 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
 | Imperva | my.imperva.com | — | **Non** : robots.txt `Disallow: /` |
 
 - **Conditions** : aucune licence écrite sur ces listes. On s'en sert pour calculer un indicateur (« CDN : oui, fournisseur, date de la liste ») ; **les listes elles-mêmes ne sont pas republiées**.
-- **Décision : retenue** (Cloudflare, CloudFront, Fastly, Azure Front Door).
+- **Décision : retenue** (Cloudflare, CloudFront, Fastly, Azure Front Door). **Imperva** (21/11/2026, C.3) : sa liste officielle est retenue comme preuve du titulaire de l'AS 19551 (même titulaire au fichier de délégation de l'ARIN, fiche 21), pas encore lue par la collecte (format non pris en charge). De même, les listes de Cloudflare et de Fastly prouvent le titulaire des AS 13335 et 54113.
 
 **Complément du 21/11/2026 (C.3)** : les relais de sécurité.
 
@@ -485,6 +485,8 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 | OGO Security | aucun | ni la base du RIPE ni IPtoASN ; relais sur AS16276 (OVH SAS) et AS15826 (NFrance Conseil) | — (AS partagés : jamais seuls) |
 
 - **Vus, non retenus** : Radware 213232 (même titulaire, jamais observé), 15823 « RADWARE-AS » (autre fiche d'organisation), 25773 « RADWARE-CLOUD-SERVICES » (ARIN, Radware Inc., autre société) ; Imperva 62571 « IMPERVA-INC-US-SJ-COLO » (autre titulaire) et 14960 (même titulaire que 19551, rien d'annoncé). Gcore 199524 et Bunny 200325 : non vérifiés ici.
+
+- **Radware, relais de sécurité sans documentation officielle lisible** (21/11/2026) : ses deux AS « suffisent seuls », au niveau « probable », par la règle du brief (C.2) : un relais placé devant un site se traite comme un CDN, prouvé par une documentation officielle, sinon « probable ». CDN77, lui, est un CDN dont le suffixe est prouvé : son AS n'a pas besoin de suffire seul.
 
 ### 30. Listes libres agrégées (cdncheck de ProjectDiscovery)
 - **Licence** : code MIT ; données compilées depuis des sources tierces, au droit incertain.
@@ -582,7 +584,7 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **Téléchargement automatique testé** : **non**, et il ne se fera pas.
   - Le `robots.txt` et la page de cyber.gouv.fr répondent par une protection anti-robots (Imperva Incapsula). Rien n'a été contourné.
   - Aucune version ouverte n'existe sur data.gouv.fr (recherches « SecNumCloud », « ANSSI » : 0 résultat, au chantier T1).
-- **Relevé manuel daté** : le propriétaire a téléchargé le catalogue (PDF) et la page « Prestataires de services d'informatique en nuage (SecNumCloud) » dans un navigateur ordinaire, et les a déposés le 20/11/2026 ; le tableau a été relevé le 21/11/2026, ligne par ligne, dans `referentiels/secnumcloud.json` (30 services de 15 fournisseurs).
+- **Relevé manuel daté** : le propriétaire a téléchargé le catalogue (PDF) et la page « Prestataires de services d'informatique en nuage (SecNumCloud) » dans un navigateur ordinaire, et les a déposés le 20/11/2026 ; le tableau a été relevé le 21/11/2026, ligne par ligne, dans `referentiels/secnumcloud.json` (30 services de 13 fournisseurs).
   - La page de l'ANSSI ne liste que des prestataires **en cours de qualification** (ceux qui ont accepté de le rendre public) : ils ne sont jamais repris. Seuls comptent les services qualifiés du catalogue.
   - Le rapprochement des fournisseurs avec les sociétés du référentiel (par exemple « Cegedim » : le groupe, ou sa filiale Cegedim.cloud ?) demande deux sources : il se fait avec C.1.
 - **Ce qu'on en tire** : la couche 8 (`docs/methode.md`), avec sa phrase obligatoire : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise. »

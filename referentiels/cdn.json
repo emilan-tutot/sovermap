@@ -1,7 +1,7 @@
 {
   "version": "0.2",
   "date": "2026-11-21",
-  "statut": "C.3 (21/11/2026) : cinq fournisseurs, dont deux relais de sécurité (Imperva, Radware), chaque suffixe lu dans une page officielle et chaque AS confirmé par des sources retenues (fiches 18, 21, 22), jamais par le RDAP (contrôle seulement). CDN77 attend sa société (C.1).",
+  "statut": "Provisoire (C.3, 21/11/2026) : cinq fournisseurs, dont deux relais de sécurité (Imperva, Radware), chaque suffixe lu dans une page officielle et chaque AS confirmé par des sources retenues (fiches 18, 21, 22), jamais par le RDAP (contrôle seulement). Restent : CDN77 (sa société, C.1), et CloudFront, Azure, Gcore et Bunny (fiche 28), à ajouter quand la collecte les verra.",
   "regle": "confirmé : suffixe CNAME documenté par le fournisseur, ou adresse dans sa liste officielle de plages ; probable : AS réservé au seul CDN, confirmé au registre ; sinon, pas de CDN.",
   "fournisseurs": [
     {

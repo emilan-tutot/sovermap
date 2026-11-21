@@ -13,7 +13,8 @@ describe("the SecNumCloud survey (referentiels/secnumcloud.json)", () => {
   it("comes from card 40 of the registry, retained as a dated manual survey", () => {
     expect(secnumcloud.source.fiche).toBe(40);
     expect(registre).toMatch(/^### 40\. Catalogue des services qualifiés SecNumCloud de l'ANSSI$/m);
-    expect(registre).toContain("- **Décision : retenue (relevé manuel daté).**");
+    const fiche40 = registre.slice(registre.indexOf("### 40. "), registre.indexOf("\n### 41. "));
+    expect(fiche40).toContain("- **Décision : retenue (relevé manuel daté).**");
     expect(secnumcloud.source.miseAJour).toBe(secnumcloud.version);
     expect(Number.isNaN(jour(secnumcloud.version))).toBe(false);
   });

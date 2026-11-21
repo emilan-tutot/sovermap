@@ -67,9 +67,9 @@
       "mere": "non-determinee",
       "sources": [
         {
-          "titre": "RDAP du RIPE NCC : organisation Akamai International B.V. (forme juridique néerlandaise B.V.) ; aucun LEI trouvé dans GLEIF",
-          "url": "https://rdap.db.ripe.net/autnum/20940",
-          "lu_le": "2026-11-19"
+          "titre": "Base du RIPE, fichier « organisation » du 19/11/2026 (fiche 22) : ORG-AT1-RIPE, Akamai International B.V., NL ; aucun LEI trouvé dans GLEIF",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-21"
         }
       ],
       "sources_mere": [],
@@ -101,9 +101,9 @@
       "mere": "imperva-inc",
       "sources": [
         {
-          "titre": "RDAP de l'ARIN : organisation Incapsula Inc (États-Unis) ; aucun LEI trouvé dans GLEIF",
-          "url": "https://rdap.arin.net/registry/autnum/19551",
-          "lu_le": "2026-11-19"
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS19551 « INCAPSULA - Incapsula Inc » ; aucun LEI trouvé dans GLEIF",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
         }
       ],
       "sources_mere": [
@@ -574,15 +574,10 @@
           "titre": "Sirene : EUROFIBER FRANCE, SAS, SIREN 530018639, siège à Issy-les-Moulineaux ; aucun LEI trouvé dans GLEIF",
           "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/530018639",
           "lu_le": "2026-11-19"
-        },
-        {
-          "titre": "Eurofiber, « Résultats annuels du groupe Eurofiber en 2025 » (10/06/2026) : pied de page Eurofiber France, TVA FR16530018639",
-          "url": "https://www.eurofiber.com/fr-fr/actualites/resultats-annuels-du-groupe-eurofiber-en-2025",
-          "lu_le": "2026-11-19"
         }
       ],
       "sources_mere": [],
-      "note": "Maison mère non établie par une source permise (21/11/2026). GLEIF : aucune entité française parmi les six résultats « Eurofiber » ; Eurofiber Nederland B.V. a pour parent ultime ANTIN ELEPHANT BIDCO B.V. (Pays-Bas, LEI 213800G9QN7P1DCM3137), mais aucune source ne relie Eurofiber France à ces sociétés. Le robots.txt d'eurofiber.com ferme le site aux agents d'IA : aucun document du groupe n'y a été lu."
+      "note": "Maison mère non établie par une source permise (21/11/2026). GLEIF : aucune entité française parmi les six résultats « Eurofiber » ; Eurofiber Nederland B.V. a pour parent ultime ANTIN ELEPHANT BIDCO B.V. (Pays-Bas, LEI 213800G9QN7P1DCM3137), mais aucune source ne relie Eurofiber France à ces sociétés. Le robots.txt d'eurofiber.com ferme le site aux agents d'IA : aucun document du groupe n'y a été lu. La page du groupe lue le 19/11/2026 (partie B) n'est plus citée : le site eurofiber.com ferme son robots.txt aux agents d'IA (écart corrigé le 21/11/2026)."
     },
     "cegedim-cloud": {
       "nom": "Cegedim.cloud",
@@ -636,14 +631,9 @@
           "titre": "GLEIF : parent direct et parent ultime FCB (LEI 9695008A28UP3TB2XW95)",
           "url": "https://search.gleif.org/#/record/9695002XQWX9TKCOZT86",
           "lu_le": "2026-11-19"
-        },
-        {
-          "titre": "Cegedim, rapport financier semestriel 2026 (08/10/2026) : FCB, « principal actionnaire » de Cegedim",
-          "url": "https://www.cegedim.fr/Docs_Communiques/CEGEDIM_RFS_2026_FR_OPTI.pdf",
-          "lu_le": "2026-11-21"
         }
       ],
-      "note": "Le rapport semestriel dit « principal actionnaire », sans la part du capital ni des droits de vote. Le document d'enregistrement universel 2025, qui la donne, pèse 6 841 774 octets et n'a pas été lu (limite de 5 Mo) : https://www.cegedim.fr/Docs_Communiques/CEGEDIM_URD_2025_ASSEMBLAGE_FR_202604171735.pdf"
+      "note": "Le rapport semestriel dit « principal actionnaire », sans la part du capital ni des droits de vote. Le document d'enregistrement universel 2025, qui la donne, pèse 6 841 774 octets et n'a pas été lu (limite de 5 Mo) : https://www.cegedim.fr/Docs_Communiques/CEGEDIM_URD_2025_ASSEMBLAGE_FR_202604171735.pdf Le rapport financier semestriel 2026 dit FCB « principal actionnaire » de Cegedim : ce n'est pas une preuve de contrôle ; le lien repose sur GLEIF seul (probable)."
     },
     "fcb": {
       "nom": "FCB",
