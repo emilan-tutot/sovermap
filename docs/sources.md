@@ -64,6 +64,13 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 40 | Liste SecNumCloud de l'ANSSI | Offres qualifiées, par société | Non vérifiée | **Non** : anti-robots | En attente (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
 | 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
+| 43 | Table « Countries and territories » (EU Vocabularies) | Codes ISO, noms fr et en, UE, EEE, continent | Notice de réutilisation de la Commission (décision 2011/833/UE) | Oui, par SPARQL | **Retenue** |
+| 44 | Code de rédaction interinstitutionnel, annexes A5 et A6 | Noms officiels de l'UE (7 lignes), contrôle | Réutilisation libre, source mentionnée ; modifications signalées | Oui | **Retenue** (noms) et contrôle |
+| 45 | Liste des pays de l'UE (european-union.europa.eu) | Les 27 États membres | CC BY 4.0 | Oui | Contrôle seulement |
+| 46 | Décisions d'adéquation (Commission européenne) | 16 pays et territoires, portée | CC BY 4.0 | Oui (429 sur `/document/download/`) | **Retenue** |
+| 47 | Cellar (Office des publications) | Numéros, dates et titres des décisions | Aucune licence propre écrite ; faits seulement | Oui, par SPARQL | **Retenue** (faits) |
+| 48 | COG de l'INSEE, pays et territoires étrangers 2026 | Contrôle des codes ISO | Licence Ouverte | Oui, par l'API tabulaire | Contrôle seulement |
+| 49 | EUR-Lex, AELE, ISO | — | — | **Non** (anti-robots ; robots.txt fermé aux agents d'IA ; non consultée) | Écartées ou non lues |
 
 ## Constats qui valent pour tout le projet
 
@@ -554,6 +561,22 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 - **Attribution à afficher** : aucune exigée. Par courtoisie : « Fond de carte : Natural Earth (domaine public) ».
 - **Décision : retenue.** Le fichier est copié dans le dépôt, pas téléchargé à chaque build.
 
+- **Complément du 21/11/2026 (partie C.7)** :
+  - **robots.txt** de naciscdn.org : HTTP 403 (`AccessDenied`, serveur S3). Un `robots.txt` inaccessible (4xx) n'interdit rien (RFC 9309 ; c'est la règle de `pipeline/sources.ts`).
+  - **Fichier relu** : `ne_50m_admin_0_countries.zip`, HTTP 200, 799 734 octets, `Last-Modified: Fri, 13 May 2022 05:21:46 GMT`, version 5.1.1, 242 unités (le même fichier qu'à la fiche 41).
+  - **Piège confirmé** : `ISO_A3` vaut -99 pour 8 unités, dont la France et la Norvège (`ISO_A3_EH` donne FRA et NOR).
+  - **Jointure** : `ISO_A2_EH` = code alpha-2. Quand plusieurs unités ont le même code (AU : AUS, IOA, ATC), on garde celle dont `ADM0_A3` = code alpha-3.
+    - 236 lignes ont une unité. Quatre ont un `ADM0_A3` différent du code ISO : AX → ALD, EH → SAH, PS → PSX, SS → SDS.
+    - 13 lignes n'ont pas d'unité propre au 1:50m :
+      - les départements d'outre-mer (GF, GP, MQ, RE, YT) sont dans l'unité FRA : sa boîte englobante va de -61,8° à 55,8° de longitude et descend à -21,4° de latitude ;
+      - SJ est dans NOR (jusqu'à 80,5° N), BQ dans NLD, TK dans NZL, CC et CX dans IOA ;
+      - BV, GI et UM : absents, ou compris dans une autre unité (non vérifié).
+  - **6 unités sans ligne ISO propre** :
+    - SOL (Somaliland), CYN (Chypre du Nord), KAS (glacier de Siachen) ;
+    - KOS (Kosovo ; `ISO_A2_EH` = XK, code qui n'est pas attribué par la norme) ;
+    - IOA (Territoires australiens de l'océan Indien : îles Christmas et Cocos, codées AU) ;
+    - ATC (îles Ashmore-et-Cartier, codées AU).
+
 ## F. Règles de calcul
 
 ### 42. Public Suffix List (Mozilla et contributeurs)
@@ -569,6 +592,213 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 - **Attribution à afficher** : par courtoisie : « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
 - **Décision : retenue** (outil de calcul ; rien de la liste n'est republié dans les données, sinon la copie épinglée dans le code source).
 
+## G. Pays, appartenances et décisions d'adéquation
+
+Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026**, avec l'agent `Sovermap-bot/0.1.0 (+https://sovermap.vercel.app)`, le `robots.txt` de chaque hôte lu d'abord, dans une requête à part. Le référentiel qui en sort est `referentiels/pays.json` (249 lignes).
+
+
+### 43. Table « Countries and territories » (EU Vocabularies, Office des publications de l'UE)
+- **Producteur** : Office des publications de l'Union européenne (éditeur) ; auteur : Eurostat (d'après la fiche de la table).
+- **Adresse** : https://op.europa.eu/en/web/eu-vocabularies/dataset/-/resource?uri=http://publications.europa.eu/resource/dataset/country
+  - Données lues par le point d'accès SPARQL de l'Office : https://publications.europa.eu/webapi/rdf/sparql, graphe `http://publications.europa.eu/resource/authority/country`.
+  - C'est la voie que l'Office propose lui-même : sa page https://op.europa.eu/en/web/eu-vocabularies/samples donne des requêtes toutes faites vers ce point d'accès (CSV, JSON, HTML).
+- **Ce qu'on en tire** (version `20260923-0`, la dernière au 21/11/2026) :
+  - 283 fiches portent un code de type `ISO_3166_1_ALPHA_2` : 253 courantes, 30 dépréciées (URSS, Yougoslavie, Zaïre…).
+  - Parmi les 253 courantes, 4 codes ne désignent pas un pays d'après les définitions de la table elle-même ; ils sont écartés :
+    - `EU` : l'Union européenne ;
+    - `IC` : « Spanish autonomous community and archipelago in the Atlantic Ocean » (îles Canaries), sans code alpha-3 ;
+    - `CP` : « public land belonging to France » (Clipperton) ;
+    - `CQ` : « part of the Channel Islands […] which forms part of the Bailiwick of Guernsey » (Sercq).
+  - Restent **249 lignes**, autant que les codes officiellement attribués par la norme ISO 3166-1. Ce compte n'a pas été relu auprès de l'ISO (fiche 49).
+  - Pour chaque ligne :
+    - les codes alpha-2, alpha-3 et numérique ;
+    - le code du Code de rédaction (`EL` pour la Grèce, `UK` pour le Royaume-Uni) ;
+    - les noms courts en français et en anglais (`skos:prefLabel`) ;
+    - les appartenances (`dct:type` → `membership-classification/…`) : `EU` sur 35 fiches (dont l'Union elle-même), `EEA` sur 37, `EFTA` sur 5 ;
+    - le continent (`geosparql:sfWithin` → `continent/…`) : `EUROPE` (52 fiches), `ASIA EUROPE` (AZ, GE, KZ, RU, TR)…
+  - La table dit suivre le Code de rédaction pour les noms : « For the names of countries and territories, the corporate list synchronises with the Interinstitutional Style Guide (ISG, Section 7.1 and Annexes A5 and A6) ».
+- **Pièges relevés** :
+  - le nom anglais de Nauru est « Naoero » ;
+  - le nom de la Corée (« Corée du Sud ») précède le changement du Code du 14/10/2026 (fiche 44) ;
+  - le nom préféré de la Palestine porte un astérisque, « Palestine* », qui renvoie à la note de l'UE citée dans la table : « This designation shall not be construed as recognition of a State of Palestine and is without prejudice to the individual positions of the Member States on this issue. » L'autre nom de la même fiche (`skos:altLabel`) est « Palestine » ; l'INSEE (fiche 48) et Natural Earth disent aussi « Palestine » ;
+  - le code numérique manque pour le Népal et Sainte-Hélène (Sovermap ne s'en sert pas).
+- **Licence ou conditions, mot pour mot** :
+  - fiche de la table : « License: European Commission reuse notice » ;
+  - définition de cette licence dans la table des licences de l'UE (`http://publications.europa.eu/resource/authority/licence/COM_REUSE`, lue par SPARQL) : « According to the European Commission reuse notice, reuse is authorised, provided the source is acknowledged. The reuse policy of the European Commission is implemented by the Decision of 12 December 2011. The general principle of reuse can be subject to conditions which may be specified in individual copyright notices. Therefore users are advised to refer to the copyright notices of the individual websites maintained under Europa and of the individual documents. Reuse is not applicable to documents subject to intellectual property rights of third parties. » ; la décision visée est la décision 2011/833/UE (http://data.europa.eu/eli/dec/2011/833/oj) ;
+  - avis de droits d'auteur de l'Office (https://op.europa.eu/en/web/about-us/legal-notices/publications-office-of-the-european-union-copyright) : « The editorial content of this website, which is owned by the EU, is licensed under the Creative Commons Attribution 4.0 International licence. » et « If you need further information regarding copyright issues, including the conditions under which the content of the CELLAR, and of the EU Vocabularies may be re-used, please contact us » (adresse omise ici).
+  - **Réserve** : la norme ISO 3166 appartient à l'ISO. La table ne reprend que les codes, « correlated with the ISO 3166 international standard ». Sovermap ne publie que ces codes courts, déjà employés dans ses données (`"pays": "US"`). Les conditions de l'ISO n'ont pas été lues.
+- **Limites de débit** : aucune annoncée. Quatre requêtes SPARQL sur la table le 21/11/2026 (et deux pour la fiche 47), espacées d'au moins 2 s.
+- **robots.txt** : le `robots.txt` de publications.europa.eu renvoie (HTTP 301) vers https://op.europa.eu/robots.txt (HTTP 200, 1 989 octets).
+  - Règles : `Allow: /` pour tous ; fermés notamment `/*p_p_id=`, `/*p_p_lifecycle=`, `/*/web/eu-vocabularies/dataset?*` et `/*/web/style-guide/*`.
+  - Les liens de téléchargement de la page de la table passent par un portlet (`p_p_id=`) : ils n'ont pas été utilisés.
+  - `/webapi/rdf/sparql` reste ouvert.
+- **Attribution à afficher** : « Codes et noms des pays : Office des publications de l'Union européenne, EU Vocabularies, table « Countries and territories », version 20260923-0, © Union européenne, réutilisation autorisée (décision 2011/833/UE) ».
+- **Téléchargement automatique testé** : **oui**. Requête GET sur le point d'accès, `format=text/csv` : HTTP 200, 64 528 octets, 283 lignes.
+  - Requête (résumé) : pour chaque `skos:Concept` du graphe qui a un `euvoc:xlNotation` de type `notation-type/ISO_3166_1_ALPHA_2`, lire les notations `ISO_3166_1_ALPHA_3`, `ISO_3166_1_NUM` et `ISG_COU` sans `euvoc:endDate`, les `skos:prefLabel` `fr` et `en`, `euvoc:status`, `authority:deprecated`, `owl:versionInfo`, les `dct:type` en `membership-classification/` et les `geosparql:sfWithin` en `continent/`.
+  - Garder `concept-status/CURRENT`, puis retirer `EU`, `IC`, `CP` et `CQ`.
+- **Données personnelles** : aucune.
+- **Décision : retenue**, comme source principale : codes ISO, noms, appartenance à l'UE et à l'EEE, continent. La table paraît environ quatre fois par an (versions 20260105, 20260318, 20260617 et 20260923 en 2026) ; on relit la dernière à chaque mise à jour du référentiel.
+
+### 44. Code de rédaction interinstitutionnel, annexes A5 et A6 (Office des publications de l'UE)
+- **Producteur** : Office des publications de l'Union européenne, pour les institutions de l'UE.
+- **Adresse** :
+  - https://style-guide.europa.eu/fr/content/-/isg/topic?identifier=annex-a6-country-and-territory-codes (et `…=annex-a5-list-countries-territories-currencies`) ;
+  - le tableau est servi à part, dans une iframe : https://style-guide.europa.eu/o/opportal-service/isg?resource=fr/annex-a6-country-and-territory-codes.html (`en/…` pour l'anglais).
+- **Ce qu'on en tire** :
+  - **Annexe A6** (« Codes des États et territoires », dernière modification du 14/10/2026) : 248 codes à deux lettres et les noms courts, sans article, en français et en anglais. Les codes suivent l'usage de l'UE : `EL` (Grèce), `UK` (Royaume-Uni) et `CP` (Clipperton). La Palestine (`PS`) et les îles BES (`BQ`) n'y figurent pas.
+  - **Annexe A5** (« Liste des États, territoires et monnaies », dernière modification du 15/10/2026) : noms courts avec article, noms longs, capitales, monnaies. On y lit le changement du 14/10/2026 : « République de Corée, nom court: «République de Corée (la)» au lieu de «Corée du Sud (la)» ».
+  - Comparaison avec la table de l'UE (fiche 43) : l'annexe A6 couvre 247 des 249 lignes. Les deux noms concordent sur 240 d'entre elles et diffèrent sur 7, où `pays.json` garde le nom du Code (en gras, le nom qui change) :
+
+    | Code | Table de l'UE (fr / en) | Code de rédaction (fr / en) |
+    |---|---|---|
+    | BF | Burkina Faso / Burkina Faso | **Burkina** / Burkina Faso |
+    | CC | Îles des Cocos / Cocos (Keeling) Islands | **Îles Cocos** / Cocos (Keeling) Islands |
+    | FO | Îles Féroé / Faroes | **Féroé** / Faroes |
+    | GF | Guyane / French Guiana | **Guyane (française)** / French Guiana |
+    | KR | Corée du Sud / South Korea | **République de Corée** / **Republic of Korea** |
+    | NR | Nauru / Naoero | Nauru / **Nauru** |
+    | VA | Saint-Siège / Holy See | **Saint-Siège/État de la Cité du Vatican** / **Holy See/Vatican City** |
+- **Licence ou conditions, mot pour mot** (https://style-guide.europa.eu/fr/legal-notice, texte servi par `…/isg?resource=fr/legal-notice.html`) :
+  - « © Union européenne, 2000-2026 » ;
+  - « Le Code de rédaction interinstitutionnel peut être réutilisé à des fins commerciales et non commerciales, gratuitement et sans autorisation écrite, moyennant la mention de la source et le respect des conditions suivantes: lorsque la réutilisation implique la traduction de la totalité ou d'une partie du Code dans une langue autre que celles des éditions publiées officiellement par l'Office des publications, ou des modifications des données ou du texte du Code, l'utilisateur final de l'information doit en être clairement informé. Une clause sur la non-responsabilité de l'Office des publications doit être ajoutée; les logos et les marques ne sont pas couverts par l'autorisation générale susmentionnée. » ;
+  - « La politique de réutilisation des documents de la Commission européenne est mise en œuvre sur la base de la décision 2011/833/UE de la Commission du 12 décembre 2011 relative à la réutilisation des documents de la Commission ».
+  - Conséquence : les noms sont repris tels quels. S'il fallait en modifier un, la page Données le dirait, avec une clause de non-responsabilité de l'Office des publications.
+- **robots.txt** (https://style-guide.europa.eu/robots.txt, HTTP 200, 491 octets) :
+  - fermés : `/*/search-results*`, `/*/advanced-search*`, `/*/dashboard*`, `/*/my-profile*`, `/*/my-cards-lists*`, `/c/portal/`, `/*/content/-/isg/side-by-side*`, `/*/web/*` ;
+  - ouverts : les pages `/fr/content/-/isg/topic?…` et le contenu `/o/opportal-service/isg?…`.
+  - L'ancienne adresse du Code sur op.europa.eu (`/*/web/style-guide/*`) est fermée aux robots.
+- **Attribution à afficher** : « Noms des pays : Code de rédaction interinstitutionnel, annexe A6, Office des publications de l'Union européenne, © Union européenne, 2000-2026 ».
+- **Téléchargement automatique testé** : **oui** (HTTP 200) :
+  - annexe A6 : 82 099 octets en français, 80 058 en anglais ;
+  - annexe A5 : 1 174 219 octets en français, 886 669 en anglais.
+  - Le plan du site (`sitemap-isg_0-xml`) pèse 14,8 Mo : inutile de le relire, les adresses sont stables.
+- **Données personnelles** : aucune (les adresses de contact de l'Office ne sont pas reprises).
+- **Décision : retenue** pour les noms des 7 lignes ci-dessus, et en contrôle pour les 240 autres lignes qu'elle couvre.
+
+### 45. Liste des pays de l'Union européenne (european-union.europa.eu)
+- **Producteur** : Commission européenne ; gestionnaire du site : direction générale de la communication.
+- **Adresse** : https://european-union.europa.eu/principles-countries-history/eu-countries_fr (deux pages : 20 pays, puis 7 avec `?page=1`).
+- **Ce qu'on en tire** : les **27 États membres**, avec l'année d'adhésion (et, selon le cas, l'année d'entrée dans la zone euro et dans l'espace Schengen) : Allemagne, Autriche, Belgique, Bulgarie, Chypre, Croatie, Danemark, Espagne, Estonie, Finlande, France, Grèce, Hongrie, Irlande, Italie, Lettonie, Lituanie, Luxembourg, Malte, Pays-Bas, Pologne, Portugal, Roumanie, Slovaquie, Slovénie, Suède, Tchéquie.
+  - La liste concorde avec les 27 États marqués `EU` dans la table de l'UE (fiche 43).
+  - La table marque aussi `EU` 7 territoires qui ont leur propre code ISO : AX, GF, GP, MF, MQ, RE, YT.
+- **Licence ou conditions, mot pour mot** (https://european-union.europa.eu/legal-notice_fr) :
+  - « © Union européenne, 1995-2026 » ;
+  - « Sauf indication contraire (par exemple, dans des déclarations spécifiques concernant les droits d'auteur), les contenus détenus par l'UE sur ce site web font l'objet d'une licence sous Creative Commons Attribution 4.0 International (CC BY 4.0). Cela signifie que la réutilisation est autorisée moyennant citation appropriée et indication de toute modification. »
+- **robots.txt** (https://european-union.europa.eu/robots.txt, HTTP 200, 1 647 octets) : il ferme `/core/`, `/profiles/`, `/admin/`, `/search/` et `/user/…` ; les pages de contenu sont ouvertes.
+- **Attribution à afficher** : « Liste des États membres : Union européenne, european-union.europa.eu, CC BY 4.0 ».
+- **Téléchargement automatique testé** : **oui**. HTTP 200 : 119 098 et 104 450 octets ; avis juridique : 92 361 octets.
+- **Données personnelles** : aucune.
+- **Décision : retenue en contrôle seulement** : elle confirme les 27 États de la fiche 43.
+
+### 46. Décisions d'adéquation de l'UE (Commission européenne)
+- **Producteur** : Commission européenne.
+- **Adresse** : https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en
+  - Il n'y a pas de version française : `…_fr` renvoie à la page anglaise (`?prefLang=fr`).
+- **Ce qu'on en tire** :
+  - la liste officielle, mot pour mot : « The European Commission has so far recognised: Andorra, Argentina, Brazil, Canada (commercial organisations), Faroe Islands, Guernsey, Israel, Isle of Man, Japan, Jersey, New Zealand, Republic of Korea, Switzerland, the United Kingdom under the GDPR and the LED, as amended in December 2025 through one renewal decision under the GDPR and one renewal decision under the LED, the United States (commercial organisations participating in the EU-US Data Privacy Framework), Uruguay, and the European Patent Organisation as providing adequate protection. »
+    - Cela fait 16 pays ou territoires, plus l'Organisation européenne des brevets, organisation internationale sans ligne ISO.
+    - Chaque nom renvoie à sa décision (numéros CELEX), ce qui donne la référence ; la date vient de la fiche 47.
+  - l'effet : « personal data can flow from the EU (and Norway, Liechtenstein and Iceland) to that third country without any further safeguard being necessary » ;
+  - la limite : « With the exception of the United Kingdom, these adequacy decisions do not cover data exchanges in the law enforcement sector which are governed by the Law Enforcement Directive (Article 36 of Directive (EU) 2016/680). »
+  - Royaume-Uni : la décision de renouvellement au titre du RGPD (C(2025) 8771 final du 19.12.2025, PDF lu sur le même site) prévoit : « This Decision shall expire on 27 December 2031 ».
+  - Corée : premier réexamen conclu le 23/07/2026 (rapport COM(2026) 384 final, PDF lu sur le même site).
+  - Kenya : seulement une déclaration du 16/11/2026, « The EU and Kenya advance towards a landmark mutual data adequacy arrangement » ; aucune décision au 21/11/2026.
+- **Portée** : `pays.json` dit « partielle » dans deux cas :
+  - quand la liste restreint la portée : Canada (« commercial organisations ») et États-Unis (« commercial organisations participating in the EU-US Data Privacy Framework ») ;
+  - quand le titre officiel de la décision la restreint (fiche 47) : Israël et Uruguay (« concernant le traitement automatisé des données à caractère personnel »).
+  - Sinon « totale ». Pour le Japon et la Corée, le titre nomme la loi nationale (« en vertu de la loi sur la protection des informations à caractère personnel ») ; c'est dit dans `precision`, sans changer la portée.
+- **Licence ou conditions, mot pour mot** (https://commission.europa.eu/legal-notice_en) :
+  - « © European Union, 1995-2026 » ;
+  - « Unless otherwise indicated (e.g. in individual copyright notices), content owned by the EU on this website is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence. This means that reuse is allowed, provided appropriate credit is given and changes are indicated. »
+- **Limites de débit** :
+  - les pages ordinaires ont répondu 200 ;
+  - `/document/download/…` a répondu 429 (« Too Many Requests », « Please try again later ») à 2 requêtes sur 5, espacées de 2 s, puis à une nouvelle tentative une dizaine de minutes plus tard. Plus aucune requête n'a été faite à ce chemin ce jour-là : les références et les dates viennent de la fiche 47.
+  - Un document de ce chemin (rapport de 2024 sur les onze décisions de la directive 95/46/CE) redirige vers EUR-Lex, fermé aux robots (fiche 49).
+- **robots.txt** (https://commission.europa.eu/robots.txt, HTTP 200, 1 643 octets) : il ferme `/core/`, `/profiles/`, `/admin/`, `/search/` et `/user/…` ; `/law/…`, `/legal-notice_en` et `/document/download/…` sont ouverts.
+- **Attribution à afficher** : « Décisions d'adéquation : Commission européenne, commission.europa.eu, CC BY 4.0 ».
+- **Téléchargement automatique testé** : **oui** :
+  - page : HTTP 200, 204 566 octets ;
+  - rapport sur la Corée : 162 060 octets ; renouvellement britannique : 404 648 octets.
+- **Données personnelles** : aucune.
+- **Décision : retenue** : la liste des pays et la portée des décisions. À relire à chaque mise à jour du référentiel : un accord avec le Kenya est en préparation (déclaration du 16/11/2026).
+
+### 47. Cellar de l'Office des publications : métadonnées des actes de l'UE
+- **Producteur** : Office des publications de l'Union européenne. Le Cellar est son dépôt commun de publications et de métadonnées ; EUR-Lex en est l'un des principaux utilisateurs, d'après la page du Cellar.
+- **Adresse** : point d'accès SPARQL https://publications.europa.eu/webapi/rdf/sparql (ontologie CDM) ; présentation : https://op.europa.eu/en/web/cellar/home
+- **Ce qu'on en tire** : pour chaque décision de la fiche 46, des faits : le numéro, la date (`cdm:work_date_document`), le type d'acte et le titre officiel, en français et en anglais.
+  - 16 actes retrouvés par leur numéro CELEX : les décisions des 15 pays de la liste hors Brésil, et la décision britannique (UE) 2021/1773 au titre de la directive (UE) 2016/680. S'y ajoutent les 6 décisions d'exécution adoptées depuis le 01/06/2025 dont le titre anglais contient « adequate » :
+    - (UE) 2025/1225 et 2025/1226 : prolongations techniques pour le Royaume-Uni ;
+    - (UE) 2025/1382 : Organisation européenne des brevets ;
+    - (UE) 2025/2571 et 2025/2574 : renouvellements pour le Royaume-Uni ;
+    - (UE) 2026/179 : Brésil.
+  - Les titres précisent la portée :
+    - Israël et Uruguay : « concernant le traitement automatisé des données à caractère personnel » ;
+    - Canada : « assuré par la loi canadienne sur la protection des renseignements personnels et les documents électroniques » ;
+    - États-Unis : « assuré par le cadre de protection des données UE - États-Unis ».
+  - Le titre officiel de la décision féroïenne écrit son numéro « 2010/146/ », sans suffixe : `pays.json` écrit « Décision 2010/146 ».
+  - C'est la voie machine que propose l'éditeur du Journal officiel ; EUR-Lex est fermé aux robots (fiche 49).
+- **Licence ou conditions, mot pour mot** :
+  - la page du Cellar annonce : « Dissemination of the metadata as Linked Open Data » et « it is open to all EU citizens and provides machine-readable data » ;
+  - l'avis de l'Office renvoie, pour les conditions de réutilisation du Cellar, à une demande par e-mail (citation à la fiche 43). **Aucune licence propre au Cellar n'est écrite.**
+  - Les actes de la Commission relèvent de sa politique de réutilisation, la décision 2011/833/UE, citée par la notice `COM_REUSE` (fiche 43) et par l'avis du Code de rédaction (fiche 44).
+- **robots.txt** : celui de publications.europa.eu (fiche 43) ; `/webapi/rdf/sparql` est ouvert.
+- **Attribution à afficher** : « Références des décisions : Office des publications de l'Union européenne, Cellar ».
+- **Téléchargement automatique testé** : **oui**. Deux requêtes SPARQL (HTTP 200 ; 11 424 et 4 110 octets).
+  - La première filtre par `cdm:resource_legal_id_celex` (16 valeurs, `xsd:string`) ; la seconde, par `cdm:work_date_document` ≥ 2025-06-01, type `resource-type/DEC_IMPL` et « adequate » dans le titre anglais.
+- **Données personnelles** : aucune.
+- **Décision : retenue pour des faits seulement** (numéro, date, courtes citations des titres officiels), comme la fiche 39 ; aucun texte n'est reproduit. Doute : pas de licence écrite propre au Cellar. Si Sovermap publiait davantage que ces références, il faudrait d'abord la demander à l'Office.
+
+### 48. Code officiel géographique : pays et territoires étrangers au 01/01/2026 (INSEE)
+- **Producteur** : Institut national de la statistique et des études économiques (INSEE).
+- **Adresse** : https://www.data.gouv.fr/datasets/code-officiel-geographique-1
+  - Ressource `2ada949d-c383-4bbc-95f0-c01a3391d822`, « Millésime 2026 : Pays et territoires étrangers au 01/01/2026 », du 24/02/2026.
+  - Le fichier est sur insee.fr : https://www.insee.fr/fr/statistiques/fichier/8740222/v_pays_territoire_2026.csv
+- **Ce qu'on en tire** :
+  - 229 lignes : 196 États (`ACTUAL` = 1) et 33 territoires (`ACTUAL` = 4) ;
+  - pour chacune : code INSEE (99xxx), nom court et nom long en français, codes ISO alpha-2, alpha-3 et numérique ;
+  - 215 lignes ont un code alpha-2 (213 distincts), une fois la Namibie rétablie (voir le piège ci-dessous). Beaucoup de territoires sont regroupés, sans code ISO : par exemple « Dépendances de la Couronne britannique », qui réunit Guernesey, Jersey et l'île de Man. Le Kosovo n'a pas de code ISO.
+  - Contrôle : sur les 249 lignes de `pays.json`, 213 paires alpha-2 / alpha-3 sont confirmées, **aucun désaccord**. Les 36 autres lignes sont absentes du fichier (outre-mer français, territoires regroupés).
+  - **Piège** : l'API tabulaire lit le code « NA » de la Namibie comme une valeur vide (`CODEISO2: null`) ; il est rétabli d'après `CODEISO3` = NAM.
+  - Avertissement du producteur : « La mention d'une entité géographique dans la présente base de données n'emporte pas de reconnaissance diplomatique par la République française. »
+- **Licence ou conditions, mot pour mot** : « Licence Ouverte / Open Licence » (`fr-lo`, https://www.data.gouv.fr/api/1/datasets/58c984b088ee386cdb1261f3/ ; texte : https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Licence_Ouverte.pdf). Comme pour la fiche 8 : citer la source et la date.
+- **robots.txt** :
+  - www.insee.fr ferme `*.csv`, `*.zip`, `*.xls` et `*.xlsx` : le fichier n'a pas été téléchargé ;
+  - www.data.gouv.fr ouvre `/api/1/datasets/<id>/` ;
+  - tabular-api.data.gouv.fr n'a pas de robots.txt (404).
+- **Attribution à afficher** : « Source : Insee, Code officiel géographique, pays et territoires étrangers au 01/01/2026, Licence Ouverte ».
+- **Téléchargement automatique testé** : **oui**, par l'API tabulaire : 5 pages de 50 lignes, `meta.total` = 229.
+- **Données personnelles** : aucune.
+- **Décision : retenue en contrôle seulement** (codes ISO), avec un second producteur, français.
+
+### 49. Sources écartées ou non lues pour les pays (21/11/2026)
+- **EUR-Lex** (eur-lex.europa.eu) : même son `robots.txt` répond par un défi anti-robots (HTTP 202, `x-amzn-waf-action: challenge`, corps vide). Le site est **fermé aux robots**, et rien n'y a été lu. Les références des décisions viennent du Cellar (fiche 47).
+- **AELE** (www.efta.int) : le `robots.txt` (HTTP 200) met `Disallow: /` pour `ClaudeBot`, `anthropic-ai`, `Claude-Web`, `ChatGPT-User`, `GPTBot`, `CCBot`, entre autres.
+  - Le groupe `*` reste ouvert, avec `Crawl-delay: 5`.
+  - Ce relevé est fait par un agent d'IA : le site n'a pas été lu, par respect de cette intention.
+  - L'EEE vient de la seule fiche 43. Pour une seconde source, une lecture par une personne, ou par la collecte (qui n'est pas un agent d'IA), reste possible.
+- **ISO** (iso.org, plateforme de consultation en ligne) : non consultée.
+  - La norme ISO 3166 appartient à l'ISO. Les codes viennent de la table de l'UE (fiche 43) et de l'INSEE (fiche 48).
+  - Le statut exact de `EU`, `IC`, `CP` et `CQ` dans la norme (« exceptionnellement réservés ») n'a pas été vérifié à la source.
+- **Liens de téléchargement d'EU Vocabularies** (portlet `p_p_id=`) : fermés par le `robots.txt` d'op.europa.eu ; remplacés par le point d'accès SPARQL.
+- **Anciennes pages du Code de rédaction sur op.europa.eu** (`/*/web/style-guide/*`) : fermées par `robots.txt` ; le site style-guide.europa.eu est ouvert (fiche 44).
+- **Fichiers de l'INSEE sur insee.fr** (`*.csv`) : fermés aux robots ; lus par l'API tabulaire de data.gouv.fr (fiche 48).
+
+### Règles de `referentiels/pays.json`
+- **Lignes** : les fiches courantes de la table de l'UE (fiche 43) qui ont un code ISO 3166-1 alpha-2, moins `EU`, `IC`, `CP` et `CQ` : **249**.
+- **`a2`, `a3`** : la table (fiche 43). L'INSEE (fiche 48) en confirme 213, sans aucun désaccord.
+- **`adm0_a3`** : Natural Earth au 1:50m (fiche 41), joint par `ISO_A2_EH`, jamais par `ISO_A3`. Il vaut `null` pour 13 lignes.
+- **`fr`, `en`** : la table, sauf quand l'annexe A6 du Code de rédaction (fiche 44) diffère : c'est alors le nom du Code (7 lignes). L'astérisque de « Palestine* » est retiré (nom sans astérisque de la même table).
+- **`ue`** : appartenance `EU` de la table, soit 34 lignes : les 27 États (confirmés par la fiche 45) et 7 territoires qui ont leur propre code (AX, GF, GP, MF, MQ, RE, YT).
+- **`eee`** : appartenance `EEA` de la table, soit 37 lignes : 30 États (les 27, l'Islande, le Liechtenstein et la Norvège) et les mêmes 7 territoires. D'après la table, le Svalbard et Jan Mayen (SJ) n'en fait pas partie.
+- **`europeHorsUe`** : continent `EUROPE` dans la table (seul ou avec `ASIA`) et `ue` faux. Cela donne 28 lignes : AD, AL, AZ, BA, BY, CH, FO, GB, GE, GG, GI, IM, IS, JE, KZ, LI, MC, MD, ME, MK, NO, RS, RU, SJ, SM, TR, UA, VA. Cinq sont classées à la fois en Asie et en Europe : AZ, GE, KZ, RU, TR.
+- **`adequation`** : les 16 lignes de la liste de la Commission (fiche 46), avec la référence et la date tirées du Cellar (fiche 47). La portée suit la règle de la fiche 46 : partielle pour CA, IL, US et UY. Aucune autre ligne n'en reçoit, pas même les territoires d'un pays adéquat.
+- **`sources`** : les fiches qui donnent ou confirment la ligne ; **`lu`** : 2026-11-21.
+
+### Écarts du 21/11/2026, consignés par honnêteté
+- Un document de commission.europa.eu (`/document/download/f62d70a4…`) a redirigé vers eur-lex.europa.eu, dont le `robots.txt` répond par un défi anti-robots. L'outil a suivi la redirection automatiquement : **une requête GET a atteint EUR-Lex** (HTTP 200, 237 857 octets). Le fichier a été supprimé sans être ouvert, et aucun chiffre n'en vient.
+  - **Parade** : ensuite, aucune redirection n'a plus été suivie automatiquement ; chaque saut a été lu, puis vérifié contre le `robots.txt` de son hôte.
+- Les réponses 429 de commission.europa.eu ont été respectées : une seule nouvelle tentative, une dizaine de minutes plus tard, puis plus rien sur ce chemin.
+
 ## Attributions à afficher sur la page Données
 
 Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers utilisés. Aucune ne suggère un aval du producteur.
@@ -580,10 +810,14 @@ Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers ut
 - **Ministère de l'Enseignement supérieur** : « Principaux établissements d'enseignement supérieur, mis à jour le <date>, Licence Ouverte ».
 - **Insee** : « base Sirene (www.insee.fr), données du <date> ».
 - **RIPE NCC** : « RIPE Database (RIPE NCC), soumise aux RIPE Database Terms and Conditions » (noms des organisations de la région du RIPE).
+- **Office des publications de l'Union européenne** (fiches 43 et 44) : « Source : Office des publications de l'Union européenne, EU Vocabularies (table « Countries and territories ») et Code de rédaction interinstitutionnel, lus le <date> ».
+- **Union européenne, CC BY 4.0** (fiches 45 et 46) : « © Union européenne, <date>, CC BY 4.0 » (liste des États membres, décisions d'adéquation de la Commission).
+- **Insee, Licence Ouverte** (fiche 48), si le contrôle des codes est cité : « Insee, Code officiel géographique, pays et territoires étrangers au 01/01/2026 ».
 
 **De courtoisie :**
 - registres Internet régionaux : « fichiers statistiques des registres Internet régionaux (RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC) » ;
 - « IP → AS : IPtoASN (iptoasn.com), PDDL 1.0 » ;
 - « Données LEI : GLEIF, copie du <date> », sans la marque GLEIF ;
 - « Fond de carte : Natural Earth (domaine public) » ;
-- « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
+- « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> » ;
+- « Références des décisions de l'UE : Cellar, Office des publications de l'Union européenne » (fiche 47).

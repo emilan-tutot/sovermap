@@ -138,7 +138,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] C.4 Qualifications : SecNumCloud (relevé daté), HDS.
 - [ ] C.5 Le périmètre : liste à jour versée par PR, périmètre « État ».
 - [ ] C.6 Les territoires : annuaire local, codes officiels, rattachements, fond de carte.
-- [ ] C.7 Pays et libellés (`referentiels/pays.yaml`, noms anglais).
+- [x] C.7 Pays et libellés : `referentiels/pays.json` (249 lignes : codes ISO, `ADM0_A3` de Natural Earth, noms français et anglais, UE, EEE, Europe hors UE, 16 décisions d'adéquation avec leur référence et leur date), fiches 43 à 49 au registre ; `referentiels/libelles.json` (couches, catégories, niveaux, rôles, natures, en anglais). Preuve : `tests/referentiels-pays.test.ts` (deux sources du registre et une date par ligne, appartenances cohérentes, écarts avec les listes de la collecte chiffrés). Écart : JSON, comme les autres référentiels, et non YAML. La table entrera dans le classement avec la méthode 0.3 (C.2), comme changement de règles.
 - [ ] C.8 Encore plus de données, légalement (registre d'abord).
 - [ ] C.9 Contre-vérification de 30 domaines (`docs/contre-verification.md`).
 - [ ] C.10 Preuves : deux sources datées par ligne (test), 95 % « confirmé », part « non déterminé », contre-vérification.
