@@ -117,6 +117,8 @@ export class ControleEnContinu {
     this.#echeance = echeance;
     this.#resultat = { resolveur: client.id, noms: new Map(), mx: new Map() };
     this.#fin = Promise.all(Array.from({ length: enVol }, () => this.#ouvrier())).then(() => this.#resultat);
+    // Handled here at once (awaited by fermer() much later): a failure is never an unhandled rejection in between.
+    this.#fin.catch(() => {});
   }
 
   /** Names to ask, each one once (a name added twice is asked once). */

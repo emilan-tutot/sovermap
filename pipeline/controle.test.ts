@@ -60,6 +60,24 @@ describe("the controls", () => {
     expect(t).toBeGreaterThanOrEqual(1500);
   });
 
+  it("never leaves a failure unhandled while the measurement runs: fermer() gives it", async () => {
+    const enPanne = {
+      id: "en-panne",
+      demander: async () => {
+        throw new Error("panne du client");
+      },
+    } as unknown as ConstructorParameters<typeof ControleEnContinu>[0];
+    const rejets: unknown[] = [];
+    const surveiller = (raison: unknown) => rejets.push(raison);
+    process.on("unhandledRejection", surveiller);
+    const controle = new ControleEnContinu(enPanne, 2);
+    controle.ajouter(["a.example"]);
+    await new Promise((fin) => setTimeout(fin, 20));
+    process.off("unhandledRejection", surveiller);
+    expect(rejets).toEqual([]);
+    await expect(controle.fermer()).rejects.toThrow("panne du client");
+  });
+
   it("stops controlling at its deadline: what is left is not asked", async () => {
     const simule = new ResolveurSimule({}, zoneDe);
     const controle = new ControleEnContinu(simule, 2, Date.now() - 1);
