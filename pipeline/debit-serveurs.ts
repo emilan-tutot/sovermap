@@ -15,8 +15,11 @@ export type DebitServeurs = {
   seconde: string | null;
   /** The zone cuts whose servers were busy most often (seconds at the brake's threshold or above), for the summary. */
   coupesChaudes: { coupe: string; secondes: number }[];
-  /** The three addresses asked most, with their questions by type (NS, DS, A…), for the summary. */
-  adressesChargees: { adresse: string; questions: number; parType: Record<string, number> }[];
+  /**
+   * The three addresses asked most, with their questions by type (NS, DS, A…) and the top-level zones they served
+   * (the summary names those zones, never the address).
+   */
+  adressesChargees: { adresse: string; questions: number; parType: Record<string, number>; tlds: string[] }[];
 };
 
 const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?(?: qtype: '([^']*)')?/;
@@ -61,7 +64,7 @@ export class CompteurServeurs {
   #coupesRecentes = new Map<string, Map<string, number>>();
   #zonesRecentes = new Map<string, Map<string, number>>();
   #oubli = 0;
-  #parAdresseTotal = new Map<string, { questions: number; parType: Map<string, number> }>();
+  #parAdresseTotal = new Map<string, { questions: number; parType: Map<string, number>; tlds: Set<string> }>();
 
   /** One line of `docker logs --timestamps` (its timestamp, then Knot's line). */
   lire(ligne: string): void {
@@ -87,7 +90,15 @@ export class CompteurServeurs {
       this.#coupesParAdresse.set(question[1], coupes);
       noter(this.#coupesRecentes, question[1], coupe, t);
     }
-    const total = this.#parAdresseTotal.get(question[1]) ?? { questions: 0, parType: new Map<string, number>() };
+    const total = this.#parAdresseTotal.get(question[1]) ?? {
+      questions: 0,
+      parType: new Map<string, number>(),
+      tlds: new Set<string>(),
+    };
+    if (question[2] !== undefined) {
+      const coupe = coupeNormale(question[2]);
+      if (coupe !== "" && !coupe.includes(".")) total.tlds.add(coupe);
+    }
     total.questions += 1;
     const type = question[4] ?? "?";
     total.parType.set(type, (total.parType.get(type) ?? 0) + 1);
@@ -178,6 +189,7 @@ export class CompteurServeurs {
         adresse,
         questions: t.questions,
         parType: Object.fromEntries([...t.parType].sort(([, x], [, y]) => y - x)),
+        tlds: [...t.tlds].sort(),
       }));
     return {
       questions: this.#questions,

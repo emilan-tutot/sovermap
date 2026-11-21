@@ -271,7 +271,7 @@ function suivreDebit(
     // the current second waits, and every question waits at SEUIL_ARRET (debit-serveurs.ts); 10 seconds at most, so
     // a stalled log never stops the collection.
     frein: async (nom, zone, ouverture) => {
-      if (!compteur.freine(nom, zone, ouverture, Date.now())) return;
+      if (!compteur.freine(nom, zone, ouverture, Date.now())) return false;
       const debut = Date.now();
       if (ouverture) attentes.ouvertures += 1;
       else attentes.questions += 1;
@@ -280,6 +280,7 @@ function suivreDebit(
         await new Promise((resolve) => setTimeout(resolve, 100 + Math.floor(Math.random() * 200)));
       }
       attentes.secondes += (Date.now() - debut) / 1000;
+      return true;
     },
     arreter: () => {
       enfant.kill();
@@ -783,11 +784,14 @@ async function principal(): Promise<number> {
           .map((c) => `une autre zone (${c.secondes} s)`),
       ].join(", ") || "aucune"
     }.`,
+    // The busiest servers named by the top-level zones they serve, never by their address (a ministry's, a host's).
     `- Serveurs les plus demandés : ${
       (debitServeurs?.adressesChargees ?? [])
         .map(
           (a) =>
-            `${a.adresse} (${a.questions} questions : ${Object.entries(a.parType)
+            `${a.tlds.length > 0 ? `un serveur de « ${a.tlds.join(", ")} »` : "un serveur d'une autre zone"} (${a.questions} questions : ${Object.entries(
+              a.parType,
+            )
               .map(([type, n]) => `${type} ${n}`)
               .join(", ")})`,
         )

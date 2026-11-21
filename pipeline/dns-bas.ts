@@ -9,7 +9,12 @@ import * as dnsPacket from "dns-packet";
 import { estNomDns } from "./schemas";
 
 export type TypeRr = "A" | "AAAA" | "CNAME" | "NS" | "SOA" | "DS" | "CAA" | "MX" | "TXT";
-export type Code = "NOERROR" | "NXDOMAIN" | "SERVFAIL" | "REFUSED" | "TIMEOUT" | "ERREUR";
+/**
+ * « ZONE_MUETTE » and « SOUS_ZONE_MUETTE »: no question sent, because the zone's apex, or a sub-zone of the name, failed
+ * several times in a row in this attempt (collecte.ts); asked again at the next attempt.
+ */
+export type Code =
+  "NOERROR" | "NXDOMAIN" | "SERVFAIL" | "REFUSED" | "TIMEOUT" | "ERREUR" | "ZONE_MUETTE" | "SOUS_ZONE_MUETTE";
 
 export type Donnee =
   | { type: "A"; adresse: string }

@@ -36,7 +36,7 @@ jobs:
       REPO: ${{ github.repository }}
       ESSAI: ${{ github.event_name == 'workflow_dispatch' && inputs.essai }}
       # The run's number, never its address (which names the account).
-      RUN: ${{ github.run_id }}
+      RUN: ${{ github.run_number }}
     steps:
       - run: |
           fin=$( (gh api "repos/$REPO/contents/etat.json?ref=donnees" --jq .content | base64 -d | jq -r '.collecte.fin // ""') 2>/dev/null || true)

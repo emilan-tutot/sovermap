@@ -28,10 +28,10 @@ export type OptionsCollecte = {
   montee: Montee | null;
   /**
    * The brake (brief B.3, debit-serveurs.ts), waited before every question and every opening of a domain: it resolves
-   * when a question about `nom`, in the registered zone `zone`, may go; `ouverture`: a question that also goes to the
-   * zone's parents (the opening of a domain, the first question of a zone).
+   * when a question about `nom`, in the registered zone `zone`, may go, with true when it held it; `ouverture`: a
+   * question that also goes to the zone's parents (the opening of a domain, the first question of a zone).
    */
-  frein?: (nom: string, zone: string, ouverture: boolean) => Promise<void>;
+  frein?: (nom: string, zone: string, ouverture: boolean) => Promise<boolean | void>;
   /**
    * No new attempt starts after this moment (milliseconds since 1970), so that the controls and the building of the
    * day still fit in the job's time limit (collecter.ts).
@@ -71,28 +71,23 @@ export type ResultatCollecte = {
 };
 
 /** The client, with the per-zone limit on every question. */
-const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
+const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR", "ZONE_MUETTE", "SOUS_ZONE_MUETTE"]);
 /**
  * Failures in a row of the questions about a zone's apex (NS, SOA, MX…), with no answer between them, after which the
- * zone is down for the rest of an attempt. A name below the apex that fails (a lame sub-zone, a CNAME into a failing
- * platform) never counts: only the zone itself can be down.
+ * zone is down for the rest of an attempt: its other questions are not sent, and end « ZONE_MUETTE ». A name below the
+ * apex that fails (a lame sub-zone, a CNAME into a failing platform) never counts: only the zone itself can be down.
  */
 const ZONE_MORTE = 3;
 /**
- * Failures in a row of the names below a sub-zone (a part of a zone delegated to servers that do not answer, such as
- * internal names), with no name of it ever answered in the run, after which the sub-zone is down for the rest of an
- * attempt: its other names fail at once, instead of waiting each for the time limit, two at a time.
+ * Distinct names below a sub-zone (a part of a zone delegated to servers that never answer, such as internal names)
+ * that failed in this attempt, no name of it ever having answered in the run, after which the sub-zone is down for the
+ * rest of the attempt: its other names are not asked, and end « SOUS_ZONE_MUETTE » (asked again at the next attempt).
  */
 const SOUS_ZONE_MORTE = 8;
 /**
- * After this long, a zone's delegation may have left the resolver's cache: its next question goes to its parent again,
- * and waits for the parent's pace like a first question.
- */
-const REOUVERTURE_MS = 30 * 60_000;
-/**
  * One pace per group of servers: the top-level domains of one registry share its servers (AFNIC: fr, re, pm, yt, tf,
- * wf; Verisign: com, net), and every parent under a top-level domain (gouv.fr, asso.fr…) is counted with it, at the
- * most cautious.
+ * wf, and bzh, alsace, corsica, paris; Verisign: com, net), and every parent under a top-level domain (gouv.fr,
+ * asso.fr…) is counted with it, at the most cautious.
  */
 const REGISTRES: Readonly<Record<string, string>> = {
   fr: "afnic",
@@ -101,6 +96,10 @@ const REGISTRES: Readonly<Record<string, string>> = {
   yt: "afnic",
   tf: "afnic",
   wf: "afnic",
+  bzh: "afnic",
+  alsace: "afnic",
+  corsica: "afnic",
+  paris: "afnic",
   com: "verisign",
   net: "verisign",
 };
@@ -108,6 +107,8 @@ const groupeDuParent = (zone: string) => {
   const tld = zone.slice(zone.lastIndexOf(".") + 1);
   return REGISTRES[tld] ?? tld;
 };
+/** Slots a first question may take while the brake holds it, before it goes on its last one. */
+const CRENEAUX_MAX = 5;
 
 export class ClientParZone implements ClientDns {
   readonly id: string;
@@ -117,15 +118,15 @@ export class ClientParZone implements ClientDns {
    * zone's parents (the delegation); the zone's other questions wait for its answer, after which the delegation is
    * known (they never ask the parents in parallel).
    */
-  readonly #premieres = new Map<string, { fin: Promise<void>; depuis: number }>();
+  readonly #premieres = new Map<string, Promise<void>>();
   /** The pace of each group of parent servers, for the first questions of its zones. */
   readonly #parents = new Map<string, Cadence>();
-  /** The zones that failed several times in a row, and how: they are not asked again before the next attempt. */
-  readonly #mortes = new Map<string, { suite: number; code: Reponse["code"] }>();
-  /** Below the apexes: failures in a row per sub-zone, the sub-zones that ever answered, those down for the attempt. */
-  readonly #sousEchecs = new Map<string, number>();
+  /** The zones whose apex failed several times in a row: not asked again before the next attempt. */
+  readonly #mortes = new Map<string, number>();
+  /** Below the apexes: the names that failed per sub-zone, the sub-zones that ever answered, those down. */
+  readonly #sousEchecs = new Map<string, Set<string>>();
   readonly #sousVivantes = new Set<string>();
-  readonly #sousMortes = new Map<string, Reponse["code"]>();
+  readonly #sousMortes = new Set<string>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
@@ -138,7 +139,7 @@ export class ClientParZone implements ClientDns {
     this.#zones = new ParZone(parZone);
   }
 
-  /** A new attempt: the zones that failed are asked again. */
+  /** A new attempt: the zones and sub-zones that were down are asked again (those that ever answered stay known). */
   oublierZonesMortes(): void {
     this.#mortes.clear();
     this.#sousEchecs.clear();
@@ -153,32 +154,44 @@ export class ClientParZone implements ClientDns {
   }
 
   #noterSousZones(nom: string, zone: string, code: Reponse["code"]): void {
-    const sous = ClientParZone.sousZones(nom, zone).slice(1);
+    const sous = ClientParZone.sousZones(nom, zone);
     if (!CODES_EN_ECHEC.has(code)) {
+      // An answer: the name and every sub-zone above it are alive, even one that was down.
       for (const s of sous) {
-        this.#sousEchecs.delete(s);
         this.#sousVivantes.add(s);
+        this.#sousEchecs.delete(s);
+        this.#sousMortes.delete(s);
       }
       return;
     }
-    for (const s of sous) this.#sousEchecs.set(s, (this.#sousEchecs.get(s) ?? 0) + 1);
-    // The deepest sub-zone that failed enough, and never answered, is down; never a shallower one for the same names.
-    const morte = sous.find((s) => !this.#sousVivantes.has(s) && (this.#sousEchecs.get(s) ?? 0) >= SOUS_ZONE_MORTE);
-    if (morte !== undefined) this.#sousMortes.set(morte, code);
+    for (const s of sous) this.#sousEchecs.set(s, (this.#sousEchecs.get(s) ?? new Set<string>()).add(nom));
+    // The deepest sub-zone with enough failed names, and never an answer, is down; its names then explain no failure of
+    // the sub-zones above it (they never add up to kill a shallower one).
+    const morte = sous.find(
+      (s) => !this.#sousVivantes.has(s) && (this.#sousEchecs.get(s)?.size ?? 0) >= SOUS_ZONE_MORTE,
+    );
+    if (morte === undefined) return;
+    this.#sousMortes.add(morte);
+    const expliques = this.#sousEchecs.get(morte) ?? new Set<string>();
+    for (const s of sous.slice(sous.indexOf(morte) + 1)) {
+      const echecs = this.#sousEchecs.get(s);
+      if (echecs !== undefined) for (const n of expliques) echecs.delete(n);
+    }
   }
+
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
-    const maintenant = this.horloge.maintenant();
     const premiere = this.#premieres.get(zone);
-    if (premiere === undefined || maintenant - premiere.depuis > REOUVERTURE_MS) {
+    if (premiere === undefined) {
       let finie: () => void = () => {};
-      const fin = new Promise<void>((resolve) => {
-        finie = resolve;
-      });
-      this.#premieres.set(zone, { fin, depuis: maintenant });
+      this.#premieres.set(
+        zone,
+        new Promise<void>((resolve) => {
+          finie = resolve;
+        }),
+      );
       try {
-        if (premiere !== undefined) await premiere.fin;
-        // The brake first, then the parent's pace: a question held by the brake takes its slot only once released, so
+        // The brake, then the parent's pace, then the brake again: a question held after its slot takes a new one, so
         // the questions held together never leave together.
         if (this.frein) await this.frein(nom, zone, true);
         const groupe = groupeDuParent(zone);
@@ -187,47 +200,43 @@ export class ClientParZone implements ClientDns {
           cadence = new Cadence(this.parentParSeconde, this.horloge);
           this.#parents.set(groupe, cadence);
         }
-        await cadence.attendre();
+        for (let creneau = 1; creneau <= CRENEAUX_MAX; creneau += 1) {
+          await cadence.attendre();
+          if (!this.frein || (await this.frein(nom, zone, true)) !== true) break;
+        }
         return await this.#poser(nom, zone, type, true, false);
       } finally {
         finie();
       }
     }
-    await premiere.fin;
+    await premiere;
     return this.#poser(nom, zone, type, false, true);
   }
 
-  /** The answer a zone, or a sub-zone of the name, that is down gives at once, or null. */
-  #morte(nom: string, zone: string): Reponse | null {
-    const morte = this.#mortes.get(zone);
-    if (morte !== undefined && morte.suite >= ZONE_MORTE)
-      return { code: morte.code, ad: false, reponses: [], duree: 0 };
-    for (const s of ClientParZone.sousZones(nom, zone)) {
-      const code = this.#sousMortes.get(s);
-      if (code !== undefined) return { code, ad: false, reponses: [], duree: 0 };
+  /** The answer a zone, or a sub-zone of the name, that is down gives at once (no question sent), or null. */
+  #muette(nom: string, zone: string): Reponse | null {
+    if ((this.#mortes.get(zone) ?? 0) >= ZONE_MORTE) return { code: "ZONE_MUETTE", ad: false, reponses: [], duree: 0 };
+    if (ClientParZone.sousZones(nom, zone).some((s) => this.#sousMortes.has(s))) {
+      return { code: "SOUS_ZONE_MUETTE", ad: false, reponses: [], duree: 0 };
     }
     return null;
   }
 
   async #poser(nom: string, zone: string, type: TypeRr, ouverture: boolean, freiner: boolean): Promise<Reponse> {
-    const avant = this.#morte(nom, zone);
+    const avant = this.#muette(nom, zone);
     if (avant !== null) return avant;
     if (freiner && this.frein) await this.frein(nom, zone, ouverture);
     await this.#zones.prendre(zone);
     try {
       // The zone may have gone down, and the load changed, while the question waited for its turn in the zone.
-      const pendant = this.#morte(nom, zone);
+      const pendant = this.#muette(nom, zone);
       if (pendant !== null) return pendant;
       if (freiner && this.frein) await this.frein(nom, zone, ouverture);
       const r = await this.base.demander(nom, type);
-      // Three failures in a row of the apex's questions: the zone is down for this attempt; its other names fail at
-      // once and are asked again at the next attempt (its servers are not asked in vain, and no worker waits behind).
       if (nom === zone) {
-        if (CODES_EN_ECHEC.has(r.code)) {
-          this.#mortes.set(zone, { suite: (this.#mortes.get(zone)?.suite ?? 0) + 1, code: r.code });
-        } else {
-          this.#mortes.delete(zone);
-        }
+        // Three failures in a row of the apex's questions: the zone is down for this attempt.
+        if (CODES_EN_ECHEC.has(r.code)) this.#mortes.set(zone, (this.#mortes.get(zone) ?? 0) + 1);
+        else this.#mortes.delete(zone);
       } else {
         this.#noterSousZones(nom, zone, r.code);
       }

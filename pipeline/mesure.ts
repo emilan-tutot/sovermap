@@ -20,7 +20,7 @@ export type MesureNom = {
   ad: boolean;
 };
 
-const ECHECS = new Set<Code>(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
+const ECHECS = new Set<Code>(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR", "ZONE_MUETTE", "SOUS_ZONE_MUETTE"]);
 
 /** The chain from the asked name, through the CNAME records of the answer, and the addresses of its end. */
 export function lireChaine(

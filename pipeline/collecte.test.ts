@@ -2,7 +2,7 @@
 // addresses only (RFC 2606, RFC 5737, RFC 3849).
 import { describe, expect, it } from "vitest";
 import { ClientParZone, collecter, POLITESSE } from "./collecte";
-import type { ClientDns } from "./dns-bas";
+import type { ClientDns, Reponse } from "./dns-bas";
 import type { Horloge } from "./politesse";
 import { Cadence, generateur } from "./politesse";
 import { mesurerNom, mesurerZone } from "./mesure";
@@ -146,8 +146,8 @@ describe("the scheduling of a collection", () => {
     for (const q of r.questions) expect(freines).toContain(q.split(" ")[0]);
     expect(questions).toContain("www.mairie.example mairie.example");
     for (const d of domaines) expect(ouvertures).toContain(`${d} ${zoneDe(d)}`);
-    // The opening and the zone's first question go to the parents: they wait like an opening; no DS question.
-    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(2);
+    // The opening, and the zone's first question (before and after its slot), go to the parents; no DS question.
+    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(3);
     expect(r.questions).not.toContain("mairie.example DS");
   });
 
@@ -237,8 +237,8 @@ describe("the scheduling of a collection", () => {
     for (const type of ["NS", "SOA", "MX"] as const) {
       expect((await client.demander("morte.example", type)).code).toBe("SERVFAIL");
     }
-    // The zone is down for this attempt: its names fail at once, without a question.
-    expect((await client.demander("www.morte.example", "A")).code).toBe("SERVFAIL");
+    // The zone is down for this attempt: its names fail at once, without a question, and say so.
+    expect((await client.demander("www.morte.example", "A")).code).toBe("ZONE_MUETTE");
     expect(r.questions).toEqual(["morte.example NS", "morte.example SOA", "morte.example MX"]);
     client.oublierZonesMortes();
     await client.demander("www.morte.example", "A");
@@ -256,11 +256,14 @@ describe("the scheduling of a collection", () => {
     expect((await client.demander("a.phm.mairie.example", "A")).code).toBe("NOERROR");
     for (const n of morts.slice(0, 8)) await client.demander(n, "A");
     // The deepest sub-zone that failed enough (x.in.phm…) is down: its next name fails at once, without a question.
-    expect((await client.demander(morts[8] ?? "", "A")).code).toBe("SERVFAIL");
+    expect((await client.demander(morts[8] ?? "", "A")).code).toBe("SOUS_ZONE_MUETTE");
     expect(r.questions).not.toContain(`${morts[8]} A`);
-    // Another part of the same zone is still asked; phm.mairie.example, which answered, is never down.
+    // Another part of the same zone is still asked, and one more failure there never takes in.phm… for down (the names
+    // of x.in.phm… no longer count above it); phm.mairie.example, which answered, is never down.
     await client.demander("y.in.phm.mairie.example", "A");
     expect(r.questions).toContain("y.in.phm.mairie.example A");
+    await client.demander("z.in.phm.mairie.example", "A");
+    expect(r.questions).toContain("z.in.phm.mairie.example A");
     expect((await client.demander("a.phm.mairie.example", "A")).code).toBe("NOERROR");
     // The next attempt asks the sub-zone again.
     client.oublierZonesMortes();
@@ -284,7 +287,67 @@ describe("the scheduling of a collection", () => {
     expect(r.questions).toContain("www.mairie.example A");
   });
 
-  it("paces the parents by registry (fr and re share their servers), and opens a zone again after half an hour", async () => {
+  it("counts names, not questions: four names asked twice each never take a sub-zone for down", async () => {
+    const morts = Array.from({ length: 4 }, (_, i) => `n${i}.services.mairie.example`);
+    const r = new ResolveurSimule(ZONE, zoneDe, new Set(morts));
+    const client = new ClientParZone(r, zoneDe, 2);
+    for (const n of morts) for (const type of ["A", "AAAA"] as const) await client.demander(n, type);
+    await client.demander("www.services.mairie.example", "A");
+    expect(r.questions).toContain("www.services.mairie.example A");
+  });
+
+  it("never takes for down a sub-zone that answered itself, and brings back one that answers late", async () => {
+    // A name that is itself a sub-zone answered: names below it that fail never take it for down.
+    const r = new ResolveurSimule(
+      { ...ZONE, "ent.mairie.example": { A: [{ type: "A", adresse: "192.0.2.81" }] } },
+      zoneDe,
+      new Set(Array.from({ length: 9 }, (_, i) => `n${i}.ent.mairie.example`)),
+    );
+    const client = new ClientParZone(r, zoneDe, 2);
+    await client.demander("ent.mairie.example", "A");
+    for (let i = 0; i < 9; i += 1) await client.demander(`n${i}.ent.mairie.example`, "A");
+    expect(r.questions).toContain("n8.ent.mairie.example A");
+    // A sub-zone down for the attempt, then an answer that was already on its way: it is alive again.
+    let repondre: (r: Reponse) => void = () => {};
+    const lent: ClientDns = {
+      id: "lent",
+      demander: (nom) =>
+        nom === "tard.x.mairie.example"
+          ? new Promise<Reponse>((resolve) => (repondre = resolve))
+          : Promise.resolve({ code: "SERVFAIL", ad: false, reponses: [], duree: 1 }),
+      fermer: () => {},
+    };
+    const c2 = new ClientParZone(lent, zoneDe, 20);
+    await c2.demander("mairie.example", "NS");
+    const tard = c2.demander("tard.x.mairie.example", "A");
+    for (let i = 0; i < 8; i += 1) await c2.demander(`m${i}.x.mairie.example`, "A");
+    expect((await c2.demander("m8.x.mairie.example", "A")).code).toBe("SOUS_ZONE_MUETTE");
+    repondre({ code: "NOERROR", ad: false, reponses: [], duree: 1 });
+    await tard;
+    expect((await c2.demander("m9.x.mairie.example", "A")).code).toBe("SERVFAIL");
+  });
+
+  it("reads the brake again after the parent's slot, and takes a new slot when held", async () => {
+    const horloge = fausseHorloge();
+    let lectures = 0;
+    const base: ClientDns = {
+      id: "base",
+      demander: async () => ({ code: "NOERROR", ad: false, reponses: [], duree: 1 }),
+      fermer: () => {},
+    };
+    // The brake lets the question through before its slot, holds it right after its first slot, then lets it go.
+    const frein = async () => {
+      lectures += 1;
+      return lectures === 2;
+    };
+    const client = new ClientParZone(base, zoneDe, 2, frein, 2, horloge);
+    await client.demander("a.fr", "NS");
+    await client.demander("b.fr", "NS");
+    // a.fr took two slots (0 and 500 ms): b.fr waits for the third one, at one second.
+    expect(horloge.maintenant()).toBe(1000);
+  });
+
+  it("paces the parents by registry (fr and re share their servers)", async () => {
     const horloge = fausseHorloge();
     const debuts: [string, number][] = [];
     const base: ClientDns = {
@@ -296,14 +359,12 @@ describe("the scheduling of a collection", () => {
       fermer: () => {},
     };
     const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
-    for (const z of ["a.fr", "b.re", "c.fr"]) await client.demander(z, "NS");
-    expect(debuts.map(([, t]) => t)).toEqual([0, 500, 1000]);
-    // Thirty-one minutes later, the zone's delegation may have left the cache: it waits for the pace again.
-    await horloge.dormir(31 * 60_000);
+    for (const z of ["a.fr", "b.re", "c.fr", "d.bzh"]) await client.demander(z, "NS");
+    expect(debuts.map(([, t]) => t)).toEqual([0, 500, 1000, 1500]);
+    // A zone already open never waits for its parent again.
     const avant = horloge.maintenant();
     await client.demander("www.a.fr", "A");
-    await client.demander("www.c.fr", "A");
-    expect((debuts.at(-1)?.[1] ?? 0) - avant).toBe(500);
+    expect(debuts.at(-1)?.[1]).toBe(avant);
   });
 
   it("gives the collection the parents' pace and its clock", async () => {
