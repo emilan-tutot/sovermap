@@ -71,6 +71,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 47 | Cellar (Office des publications) | Numéros, dates et titres des décisions | Aucune licence propre écrite ; faits seulement | Oui, par SPARQL | **Retenue** (faits) |
 | 48 | COG de l'INSEE, pays et territoires étrangers 2026 | Contrôle des codes ISO | Licence Ouverte | Oui, par l'API tabulaire | Contrôle seulement |
 | 49 | EUR-Lex, AELE, ISO | — | — | **Non** (anti-robots ; robots.txt fermé aux agents d'IA ; non consultée) | Écartées ou non lues |
+| 55 | Observatoire de la qualité des démarches en ligne (DINUM) | Démarches, ministère, volumes, adresses | Licence Ouverte 2.0 | **Non** : `robots.txt` (`/resources`) | **Retenue** (relevé manuel daté, par édition) |
 
 ## Constats qui valent pour tout le projet
 
@@ -801,6 +802,25 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
   - **Parade** : ensuite, aucune redirection n'a plus été suivie automatiquement ; chaque saut a été lu, puis vérifié contre le `robots.txt` de son hôte.
 - Les réponses 429 de commission.europa.eu ont été respectées : une seule nouvelle tentative, une dizaine de minutes plus tard, puis plus rien sur ce chemin.
 
+## H. Démarches en ligne
+
+### 55. Observatoire de la qualité des démarches en ligne (DINUM)
+- **Producteur** : Direction interministérielle du numérique (DINUM), observatoire « Vos Démarches Essentielles » (VDE).
+- **Jeu** : « Observatoire de la qualité des démarches en ligne » sur data.gouv.fr (identifiant `5d0a5c09634f412301dba116`), lu par l'API de data.gouv.fr le 21/11/2026.
+- **Licence** : Licence Ouverte 2.0 (champ `license` du jeu : « lov2 »).
+- **Fichiers** : une édition par trimestre, en ODS, une seule feuille (`T_VDE`).
+  - Dernière édition : « Observatoire 2 - édition 15 (octobre-2026) », publiée le 20/10/2026, 43 521 octets.
+  - Précédente : édition 14 (juillet-2026), publiée le 28/09/2026, 43 045 octets ; 245 démarches.
+- **Téléchargement automatique testé** : **non**, et il ne se fera pas.
+  - Le `robots.txt` de static.data.gouv.fr (le même que celui de www.data.gouv.fr, lu le 21/11/2026) ferme `/resources` à tous les robots.
+  - L'API (`/api/1/datasets/`) reste ouverte, sauf `/api/1/datasets/r/` (les redirections vers les fichiers) : elle sert seulement à connaître la dernière édition et sa date.
+- **Relevé manuel daté** : le propriétaire dépose le fichier de chaque édition. Le 20/11/2026, il a déposé l'édition 14, alors que l'édition 15 existait : celle-ci reste à déposer.
+- **Ce qu'on en tire** : pour chaque démarche, son nom, son identifiant, son périmètre ministériel, son administration, sa volumétrie (totale et en ligne) et son adresse (« URL Démarche »), pour relier la démarche au nom mesuré qui la sert.
+  - Les colonnes de notes (satisfaction, accessibilité, clarté du langage, autonomie, DLNUF) ne sont pas reprises : Sovermap décrit des dépendances, pas la qualité d'une démarche.
+- **Pièges** : des volumétries vides ou « À venir » ; des adresses sur des noms absents de la liste de la DINUM (les mesurer est un changement de liste, B.7 bis, jamais un déménagement).
+- **Attribution à afficher** : « Source : DINUM, Observatoire de la qualité des démarches en ligne, édition <n> (<mois année>), Licence Ouverte 2.0 ».
+- **Décision : retenue (relevé manuel daté, par édition)** ; en attente de l'édition 15.
+
 ## Attributions à afficher sur la page Données
 
 Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers utilisés. Aucune ne suggère un aval du producteur.
@@ -815,6 +835,7 @@ Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers ut
 - **Office des publications de l'Union européenne** (fiches 43 et 44) : « Source : Office des publications de l'Union européenne, EU Vocabularies (table « Countries and territories ») et Code de rédaction interinstitutionnel, lus le <date> ».
 - **Union européenne, CC BY 4.0** (fiches 45 et 46) : « © Union européenne, <date>, CC BY 4.0 » (liste des États membres, décisions d'adéquation de la Commission).
 - **Insee, Licence Ouverte** (fiche 48), si le contrôle des codes est cité : « Insee, Code officiel géographique, pays et territoires étrangers au 01/01/2026 ».
+- **DINUM** (fiche 55), si les démarches sont montrées : « Source : DINUM, Observatoire de la qualité des démarches en ligne, édition <n> (<mois année>), Licence Ouverte 2.0 ».
 
 **De courtoisie :**
 - registres Internet régionaux : « fichiers statistiques des registres Internet régionaux (RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC) » ;
