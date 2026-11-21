@@ -459,7 +459,7 @@ describe("the scheduling of a collection", () => {
     expect(envois.map((t) => t - debut)).toEqual([500, 1000]);
   });
 
-  it("weighs a question by what it costs the servers, and a zone that failed by two", async () => {
+  it("weighs a question by what it costs the servers, and a zone that failed by four", async () => {
     const horloge = fausseHorloge();
     const envois: string[] = [];
     const base: ClientDns = {
@@ -486,11 +486,11 @@ describe("the scheduling of a collection", () => {
     for (const n of ["a", "b", "c"]) await client.demander(`${n}.lourd.example`, "A");
     // The opening took two instants of the zone already (0 and 500): then two each, a second apart.
     expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([1000, 2000, 3000]);
-    // After a failure, the resolver may try each of the zone's servers: two instants per question too.
+    // After a failure, the resolver tries the zone's other servers, and again: four instants per question.
     envois.length = 0;
     const apres = horloge.maintenant();
     for (const n of ["x", "y", "z"]) await client.demander(`${n}.panne.example`, "A");
-    expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 1500]);
+    expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 2500]);
   });
 
   it("paces a zone whose NS do not answer by the servers the resolver used for it, and its CNAMEs' zones", async () => {

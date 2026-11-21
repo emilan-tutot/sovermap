@@ -339,9 +339,10 @@ export class ClientParZone implements ClientDns {
       if (ouverture || !this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
       else if (this.frein) await this.frein(nom, zone, false);
       // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
-      // question that costs the servers more than one question takes more: what the logs measured for the zone, two
-      // for a zone that failed (the resolver tries its other servers), and, before the logs can tell, one more for
-      // each new name between the zone and the asked name (the resolver asks those first: QNAME minimisation).
+      // question that costs the servers more than one question takes more: what the logs measured for the zone; four
+      // for a zone that failed (the resolver tries its other servers, and again: up to 5 questions for one of ours);
+      // and, before the logs can tell, one more for each new name between the zone and the asked name (the resolver
+      // asks those first: QNAME minimisation).
       const intermediaires =
         nom === zone
           ? []
@@ -351,7 +352,7 @@ export class ClientParZone implements ClientDns {
       const poids = Math.min(
         POIDS_MAX,
         Math.max(
-          this.#echouees.has(zone) ? 2 : 1,
+          this.#echouees.has(zone) ? 4 : 1,
           Math.ceil((this.journal?.cout(zone) ?? 1) / AMPLIFICATION_PERMISE),
           1 + intermediaires.length,
         ),
