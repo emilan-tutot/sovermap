@@ -83,7 +83,14 @@ export const sous = (nom: string, coupe: string) => coupe === "" || nom === coup
 
 export class CompteurServeurs {
   /** `zoneDe`: the registered zone of a name, the same as the collection's (its questions are held by zone). */
-  constructor(private readonly zoneDe: (nom: string) => string = (nom) => nom) {}
+  /**
+   * `estSuffixe` tells a public suffix of several labels (the Public Suffix List's, such as gouv.fr): a server is named
+   * by the public suffixes it answers for, top-level domains and those (public infrastructure, never a company).
+   */
+  constructor(
+    private readonly zoneDe: (nom: string) => string = (nom) => nom,
+    private readonly estSuffixe: (zone: string) => boolean = () => false,
+  ) {}
 
   #questions = 0;
   #depassements = 0;
@@ -185,7 +192,7 @@ export class CompteurServeurs {
     };
     if (question[3] !== undefined) {
       const coupe = coupeNormale(question[3]);
-      if (coupe !== "" && !coupe.includes(".")) total.tlds.add(coupe);
+      if (coupe !== "" && (!coupe.includes(".") || this.estSuffixe(coupe))) total.tlds.add(coupe);
     }
     total.questions += 1;
     const type = question[5] ?? "?";

@@ -260,6 +260,7 @@ type Attentes = { ouvertures: number; questions: number; secondes: number };
 function suivreDebit(
   conteneur: string | undefined,
   zoneDe: (nom: string) => string,
+  estSuffixe: (zone: string) => boolean,
 ): {
   frein: OptionsCollecte["frein"];
   journal: OptionsCollecte["journal"];
@@ -269,7 +270,7 @@ function suivreDebit(
   if (conteneur === undefined) {
     return { frein: undefined, journal: undefined, arreter: () => ({ debit: null, attentes }) };
   }
-  const compteur = new CompteurServeurs(zoneDe);
+  const compteur = new CompteurServeurs(zoneDe, estSuffixe);
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -430,7 +431,7 @@ async function principal(): Promise<number> {
   const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
   const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
-  const debit = suivreDebit(o.conteneur, zoneDe);
+  const debit = suivreDebit(o.conteneur, zoneDe, (zone) => domaineEnregistrable(zone, ref.psl) === null);
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
   // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),

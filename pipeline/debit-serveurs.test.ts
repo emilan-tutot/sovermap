@@ -13,6 +13,22 @@ const ligne = (
   `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: '${serveur}'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: '${qtype}' proto: 'udp'`;
 
 describe("the pace towards each authoritative server", () => {
+  it("names a server by the public suffixes it answers for, those of several labels included", () => {
+    const c = new CompteurServeurs(
+      (nom) => nom.split(".").slice(-2).join("."),
+      (zone) => zone === "gouv.exemple",
+    );
+    for (const l of [
+      ligne("05", "192.0.2.53", "gouv.exemple.", "www.site.gouv.exemple.", "DS"),
+      ligne("05", "192.0.2.53", "exemple.", "gouv.exemple.", "NS"),
+      ligne("05", "192.0.2.53", "site.exemple.", "www.site.exemple.", "A"),
+    ]) {
+      c.lire(l);
+    }
+    // gouv.exemple is a public suffix, exemple a top-level domain; site.exemple is neither, and is never named.
+    expect(c.resultat().adressesChargees[0]?.tlds).toEqual(["exemple", "gouv.exemple"]);
+  });
+
   it("keeps the highest count of questions to one address within one second", () => {
     const c = new CompteurServeurs();
     for (const l of [
