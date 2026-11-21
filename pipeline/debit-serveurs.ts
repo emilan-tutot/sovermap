@@ -84,8 +84,9 @@ export const sous = (nom: string, coupe: string) => coupe === "" || nom === coup
 export class CompteurServeurs {
   /** `zoneDe`: the registered zone of a name, the same as the collection's (its questions are held by zone). */
   /**
-   * `estSuffixe` tells a public suffix of several labels (the Public Suffix List's, such as gouv.fr): a server is named
-   * by the public suffixes it answers for, top-level domains and those (public infrastructure, never a company).
+   * `estSuffixe` tells a public suffix of several labels of the ICANN section of the Public Suffix List (such as
+   * gouv.fr), never of its private section (companies' platforms): a server is named by the public suffixes it answers
+   * for, top-level domains and those (public infrastructure, never a company).
    */
   constructor(
     private readonly zoneDe: (nom: string) => string = (nom) => nom,

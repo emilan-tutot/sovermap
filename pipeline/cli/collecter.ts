@@ -431,7 +431,9 @@ async function principal(): Promise<number> {
   const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
   const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
-  const debit = suivreDebit(o.conteneur, zoneDe, (zone) => domaineEnregistrable(zone, ref.psl) === null);
+  // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
+  // companies' platforms.
+  const debit = suivreDebit(o.conteneur, zoneDe, (zone) => ref.psl.icann?.has(zone) === true);
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
   // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),

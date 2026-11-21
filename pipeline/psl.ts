@@ -12,6 +12,8 @@ export type ListeSuffixes = {
   jokers: ReadonlySet<string>;
   /** « !www.ck » is kept as « www.ck ». */
   exceptions: ReadonlySet<string>;
+  /** The plain rules of the ICANN section only (such as gouv.fr): public suffixes, never a company's platform. */
+  icann?: ReadonlySet<string>;
 };
 
 /** A rule's labels in ASCII (punycode), as the measured names are written; null when it cannot be converted. */
@@ -25,11 +27,15 @@ export function lireListeSuffixes(contenu: string): ListeSuffixes {
   const regles = new Set<string>();
   const jokers = new Set<string>();
   const exceptions = new Set<string>();
+  const icann = new Set<string>();
+  let dansIcann = false;
   let version = "";
   for (const brute of contenu.split(/\r?\n/)) {
     const ligne = brute.trim();
     const v = /^\/\/ VERSION: (\S+)$/.exec(ligne);
     if (v?.[1] !== undefined) version = v[1];
+    if (ligne === "// ===BEGIN ICANN DOMAINS===") dansIcann = true;
+    if (ligne === "// ===END ICANN DOMAINS===") dansIcann = false;
     if (ligne === "" || ligne.startsWith("//")) continue;
     const regle = ligne.split(/\s/)[0] ?? "";
     if (regle.startsWith("!")) {
@@ -40,12 +46,15 @@ export function lireListeSuffixes(contenu: string): ListeSuffixes {
       if (a !== null) jokers.add(a);
     } else {
       const a = enAscii(regle);
-      if (a !== null) regles.add(a);
+      if (a !== null) {
+        regles.add(a);
+        if (dansIcann) icann.add(a);
+      }
     }
   }
   if (version === "") throw new Error("Public Suffix List sans ligne VERSION");
   if (regles.size < 1000) throw new Error("Public Suffix List trop courte");
-  return { version, regles, jokers, exceptions };
+  return { version, regles, jokers, exceptions, icann };
 }
 
 /**

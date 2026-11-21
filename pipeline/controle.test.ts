@@ -51,6 +51,9 @@ describe("the controls", () => {
     // Later, while the workers wait for more: they wake up and ask the new name.
     await new Promise((fin) => setTimeout(fin, 5));
     controle.ajouter(["b.example", "a.example"]);
+    // Asked while the measurement runs, before the control is closed.
+    await new Promise((fin) => setTimeout(fin, 20));
+    expect(simule.questions).toContain("b.example A");
     const r = await controle.fermer();
     expect([...r.noms.keys()].sort()).toEqual(["a.example", "b.example"]);
     expect(r.noms.get("b.example")?.etat).toBe("ok");

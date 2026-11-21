@@ -18,6 +18,9 @@ const LISTE_ESSAI = [
   "*.joker.example",
   "!sauf.joker.example",
   "// ===END ICANN DOMAINS===",
+  "// ===BEGIN PRIVATE DOMAINS===",
+  "plateforme.example",
+  "// ===END PRIVATE DOMAINS===",
   ...Array.from({ length: 1000 }, (_, i) => `rempli${i}.example`),
 ].join("\n");
 
@@ -31,6 +34,14 @@ describe("the Public Suffix List", () => {
     expect(domaineEnregistrable("www.sauf.joker.example", liste)).toBe("sauf.joker.example");
     expect(domaineEnregistrable("gouv.example", liste)).toBeNull();
     expect(domaineEnregistrable("www.inconnu.test", liste)).toBe("inconnu.test");
+  });
+  it("tells the suffixes of the ICANN section from those of the private section", () => {
+    // gouv.example names a busy server in the collection's summary; plateforme.example, a company's platform, never.
+    expect(liste.icann?.has("gouv.example")).toBe(true);
+    expect(liste.icann?.has("example")).toBe(true);
+    expect(liste.icann?.has("plateforme.example")).toBe(false);
+    expect(liste.regles.has("plateforme.example")).toBe(true);
+    expect(liste.icann?.has("rempli1.example")).toBe(false);
   });
   it("keeps only the licence notice, the version and the rules in the pinned copy", () => {
     const reduite = reduireListeSuffixes(LISTE_ESSAI);
