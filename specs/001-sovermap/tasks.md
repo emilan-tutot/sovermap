@@ -132,7 +132,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] B.12 `plan.md`, `pieges-connus.md` et README à jour.
 
 ### Partie C — T3, référentiels, périmètre et données en plus (`feat/c2-referentiels`)
-- [ ] C.1 AS → exploitant → maison mère ultime → pays, deux sources datées par ligne, 95 % des adresses « État » en « confirmé ».
+- [ ] C.1 AS → exploitant → maison mère ultime → pays, deux sources datées par ligne, 95 % des adresses « État » en « confirmé ». En cours (21/11/2026) : référentiels en 0.2, 5 AS ajoutés (Amazon, Scaleway, Outscale, Hetzner, Gandi) et 12 sociétés, maillons renforcés (SFR → Altice France, DINUM, RENATER, Cegedim.cloud → Cegedim) ; restent « probable » faute de source permise : l'AS d'Imperva, la maison mère d'Eurofiber France, FCB ; la part « confirmé » se mesure sur la collecte du jour 1.
 - [ ] C.2 Méthode 0.3 (C2-4 et son effet chiffré, relais de sécurité, couche 10, qualifications, territoires, leçons des collectes).
 - [ ] C.3 `referentiels/cdn.yaml` complet.
 - [ ] C.4 Qualifications : SecNumCloud (relevé daté), HDS. Fait : SecNumCloud, `referentiels/secnumcloud.json` (30 services qualifiés de 15 fournisseurs, catalogue de l'ANSSI du 19/11/2026 déposé par le propriétaire ; fiche 40 retenue en relevé manuel daté), preuve : `tests/referentiels-secnumcloud.test.ts`. Reste : le rapprochement des fournisseurs avec les sociétés (avec C.1), HDS.

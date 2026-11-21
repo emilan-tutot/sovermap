@@ -1,6 +1,6 @@
 {
-  "version": "0.1",
-  "date": "2026-11-19",
+  "version": "0.2",
+  "date": "2026-11-21",
   "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents). La table complète est établie en T3.",
   "regle": "Une ligne relie un AS à la société qui l'exploite. Première source : le titulaire inscrit au registre régional (lu dans IPtoASN, vérifiable par le RDAP du registre). Seconde source : l'identité de la société dans un registre d'entreprises (Sirene, GLEIF) ou une liste officielle. Les deux concordent : « confirmé ». Une seule : « probable ».",
   "as": {
@@ -52,9 +52,9 @@
       "titulaire_registre": "Incapsula Inc",
       "sources": [
         {
-          "titre": "RDAP de l'ARIN : AS19551 INCAPSULA, titulaire Incapsula Inc (États-Unis)",
-          "url": "https://rdap.arin.net/registry/autnum/19551",
-          "lu_le": "2026-11-19"
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS19551 INCAPSULA, titulaire Incapsula Inc, pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
         }
       ]
     },
@@ -498,6 +498,86 @@
           "titre": "Sirene : NAMESHIELD, SAS, SIREN 399140961, siège à Paris",
           "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/399140961",
           "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "29169": {
+      "societe": "gandi",
+      "titulaire_registre": "GANDI SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS29169 GANDI-AS, titulaire GANDI SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Sirene : GANDI, SAS, SIREN 423093459, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/423093459",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "50624": {
+      "societe": "outscale",
+      "titulaire_registre": "Outscale SASU",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS50624 OUTSCALE, titulaire Outscale SASU, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Sirene : OUTSCALE (3DS OUTSCALE), SAS, SIREN 527594493, siège à Saint-Cloud, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/527594493",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "16509": {
+      "societe": "amazon-com-inc",
+      "titulaire_registre": "Amazon.com, Inc.",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS16509 AMAZON-02, titulaire Amazon.com, Inc., pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "GLEIF : AMAZON.COM, INC., LEI ZXTILKJKG63JELOEG630, société du Delaware, bureaux à Seattle (États-Unis)",
+          "url": "https://search.gleif.org/#/record/ZXTILKJKG63JELOEG630",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "12876": {
+      "societe": "scaleway",
+      "titulaire_registre": "Scaleway SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS12876, titulaire Scaleway SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Sirene : SCALEWAY, SAS, SIREN 433115904, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/433115904",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "24940": {
+      "societe": "hetzner-online",
+      "titulaire_registre": "Hetzner Online GmbH",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS24940 HETZNER-AS, titulaire Hetzner Online GmbH, pays d'enregistrement DE",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "GLEIF : Hetzner Online GmbH, LEI 391200XMWUW8G8MXV439, siège à Gunzenhausen (Allemagne), HRB 6089",
+          "url": "https://search.gleif.org/#/record/391200XMWUW8G8MXV439",
+          "lu_le": "2026-11-21"
         }
       ]
     }

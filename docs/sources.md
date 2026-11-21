@@ -61,6 +61,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 37 | Companies House | Sociétés britanniques | Aucune règle d'usage écrite | Clé exigée pour l'API | Écartée pour l'instant |
 | 38 | Wikidata | Pays du siège, maison mère (indices) | CC0 | **Non** : robots.txt (SPARQL, API) | Contrôle seulement (lecture manuelle) |
 | 39 | Rapports annuels des groupes | Confirmation des maisons mères | Faits seulement, aucune reproduction | Au cas par cas | **Retenue** (méthode) |
+| 56 | Légifrance (DILA) | — | — | **Non** : défi anti-robots sur le `robots.txt` | Écartée |
 | 40 | Catalogue des services qualifiés SecNumCloud de l'ANSSI | Services qualifiés, fournisseur, dates, décision | Licence etalab-2.0 (mention du site de l'ANSSI) | **Non** : anti-robots | **Retenue** (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
 | 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
@@ -535,6 +536,13 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 - **Ce qu'on en tire** : des **faits** qui confirment une chaîne de détention (« la société X détient 100 % de Y »), avec le document, la page, la date du document et la date de lecture. Le texte n'est pas recopié.
 - **Exemple** : le document d'enregistrement universel 2025 d'OVH Groupe, § 1.7.2, déposé à l'AMF le 07/11/2025. Il indique que la société détient directement 100 % d'OVH SAS. Cela confirme GLEIF (fiche 31).
 - **Décision : retenue**, comme seconde source de la maison mère.
+
+### 56. Légifrance (DILA) : textes juridiques
+- **Producteur** : Direction de l'information légale et administrative (DILA).
+- **Adresse** : https://www.legifrance.gouv.fr
+- **`robots.txt`** (lu le 21/11/2026) : HTTP 403, une page de défi anti-robots (« Just a moment... ») à la place du fichier : le site est **fermé aux robots**. Rien d'autre n'y a été demandé.
+- **Écart corrigé** : `referentiels/societes.json` citait, pour le rattachement de la DINUM à l'État, le décret n° 2019-1088 du 25 octobre 2019 (lu le 19/11/2026, pendant la partie B), sans fiche au registre. La citation est retirée le 21/11/2026 (C.1) : ce rattachement repose sur le Référentiel de l'organisation administrative de l'État (fiche 4) et sur Sirene (fiche 32).
+- **Décision : écartée** (fermée aux robots). Si un texte devenait nécessaire, une personne le lirait dans un navigateur ordinaire, pour un relevé manuel daté.
 
 ## E. Qualification et fond de carte
 
