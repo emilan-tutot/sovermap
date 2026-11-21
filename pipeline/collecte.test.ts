@@ -140,15 +140,15 @@ describe("the scheduling of a collection", () => {
         (ouverture ? ouvertures : questions).push(`${nom} ${zone}`);
       },
     });
-    // Each question twice (before and after its turn in the zone), and each domain's opening once more.
+    // Every name asked was first held by the brake, and every domain's opening too.
     const domaines = [...new Set(noms.values())];
-    expect(questions.length + ouvertures.length).toBe(2 * r.questions.length + domaines.length);
+    const freines = new Set([...questions, ...ouvertures].map((q) => q.split(" ")[0]));
+    for (const q of r.questions) expect(freines).toContain(q.split(" ")[0]);
     expect(questions).toContain("www.mairie.example mairie.example");
     for (const d of domaines) expect(ouvertures).toContain(`${d} ${zoneDe(d)}`);
-    // The opening and the zone's first question (read twice) go to the parents: they wait like an opening.
-    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(3);
+    // The opening and the zone's first question go to the parents: they wait like an opening; no DS question.
+    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(2);
     expect(r.questions).not.toContain("mairie.example DS");
-    expect(questions).not.toContain("mairie.example.example mairie.example");
   });
 
   it("opens the domains slowly at first: one per second, then faster", async () => {
@@ -231,20 +231,71 @@ describe("the scheduling of a collection", () => {
     expect(t("www.c.fr")).toBe(ensuite);
   });
 
-  it("stops asking a zone after three failures in a row, until the next attempt", async () => {
+  it("stops asking a zone whose apex failed three times in a row, until the next attempt", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["morte.example", "www.morte.example"]));
+    const client = new ClientParZone(r, zoneDe, 2);
+    for (const type of ["NS", "SOA", "MX"] as const) {
+      expect((await client.demander("morte.example", type)).code).toBe("SERVFAIL");
+    }
+    // The zone is down for this attempt: its names fail at once, without a question.
+    expect((await client.demander("www.morte.example", "A")).code).toBe("SERVFAIL");
+    expect(r.questions).toEqual(["morte.example NS", "morte.example SOA", "morte.example MX"]);
+    client.oublierZonesMortes();
+    await client.demander("www.morte.example", "A");
+    expect(r.questions).toContain("www.morte.example A");
+  });
+
+  it("never takes a zone for down when only names below its apex fail (a lame sub-zone)", async () => {
     const r = new ResolveurSimule(
       ZONE,
       zoneDe,
-      new Set(["a.morte.example", "b.morte.example", "c.morte.example", "d.morte.example"]),
+      new Set(["a.sous.mairie.example", "b.sous.mairie.example", "c.sous.mairie.example"]),
     );
     const client = new ClientParZone(r, zoneDe, 2);
-    for (const n of ["a", "b", "c", "d"])
-      expect((await client.demander(`${n}.morte.example`, "A")).code).toBe("SERVFAIL");
-    // The fourth question was not sent: the zone is down for this attempt.
-    expect(r.questions).toEqual(["a.morte.example A", "b.morte.example A", "c.morte.example A"]);
-    client.oublierZonesMortes();
-    await client.demander("d.morte.example", "A");
-    expect(r.questions).toContain("d.morte.example A");
+    for (const n of ["a", "b", "c"]) await client.demander(`${n}.sous.mairie.example`, "A");
+    expect((await client.demander("www.mairie.example", "A")).code).toBe("NOERROR");
+    expect(r.questions).toContain("www.mairie.example A");
+  });
+
+  it("paces the parents by registry (fr and re share their servers), and opens a zone again after half an hour", async () => {
+    const horloge = fausseHorloge();
+    const debuts: [string, number][] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom) => {
+        debuts.push([nom, horloge.maintenant()]);
+        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
+    for (const z of ["a.fr", "b.re", "c.fr"]) await client.demander(z, "NS");
+    expect(debuts.map(([, t]) => t)).toEqual([0, 500, 1000]);
+    // Thirty-one minutes later, the zone's delegation may have left the cache: it waits for the pace again.
+    await horloge.dormir(31 * 60_000);
+    const avant = horloge.maintenant();
+    await client.demander("www.a.fr", "A");
+    await client.demander("www.c.fr", "A");
+    expect((debuts.at(-1)?.[1] ?? 0) - avant).toBe(500);
+  });
+
+  it("gives the collection the parents' pace and its clock", async () => {
+    const horloge = fausseHorloge();
+    const r = new ResolveurSimule(ZONE, zoneDe);
+    await collecter(noms, r, { ...POLITESSE, zoneDe, horloge, parentParSeconde: 0.25 });
+    // Four seconds between two new zones under « example »: the collection's own pace.
+    expect(horloge.attentes).toContain(4000);
+  });
+
+  it("asks again, at the next attempt, a zone that was down", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["mairie.example"]));
+    await collecter(new Map([["www.mairie.example", "mairie.example"]]), r, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+    });
+    // The first pass and its two attempts each ask the apex again.
+    expect(r.questions.filter((q) => q === "mairie.example NS")).toHaveLength(3);
   });
 
   it("asks 13 name servers of a domain at most, however many it names", async () => {

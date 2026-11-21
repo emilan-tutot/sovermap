@@ -388,7 +388,7 @@ Sources :
 2. **Noms internes ou techniques** : ni mesurés, ni affichés. Il reste 90 803 noms publics, en 34 068 domaines (§ 5 ; `docs/methode.md` § 3 ; spec, EX-01).
 3. **`scan:prive` et D6** : voir l'option A de D6, ci-dessous.
 4. **Lecture des données** : risque de limite de débit, et parades (§ 4 ; H8 au § 14).
-5. **IPtoASN** : son accord avec la table RIS du jour suffit pour « confirmé » (§ 13). L'agent utilisateur renvoie au dépôt tant que sovermap.com n'est pas branché (`docs/sources.md`, Règles).
+5. **IPtoASN** : son accord avec la table RIS du jour suffit pour « confirmé » (§ 13). L'agent utilisateur renvoie à https://sovermap.vercel.app, puis à sovermap.com, jamais au dépôt (`docs/sources.md`, Règles ; point 03 du chantier 2).
 6. **Sources** : on se passe de DB-IP. Le propriétaire peut télécharger lui-même la liste officielle à jour dans son navigateur, une fois par trimestre au plus (T3, § 17).
 
 ### Décisions du propriétaire (ARRÊT 2, 19/11/2026)

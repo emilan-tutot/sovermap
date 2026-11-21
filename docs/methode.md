@@ -79,10 +79,11 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
   - Windows : `Resolve-DnsName -Name impots.gouv.fr -Type NS -Server 9.9.9.9`
   - macOS et Linux : `dig NS impots.gouv.fr @9.9.9.9`
   - puis l'adresse de chaque serveur : `Resolve-DnsName -Name dns1.impots.gouv.fr -Type A -Server 9.9.9.9`
-- **DNSSEC** : la zone est signée si son parent publie un enregistrement DS.
+- **DNSSEC** : la zone est signée si son parent publie un enregistrement DS, et ses réponses sont alors validées.
   - Windows : `Resolve-DnsName -Name impots.gouv.fr -Type DS -Server 9.9.9.9`
   - macOS et Linux : `dig DS impots.gouv.fr @9.9.9.9`
-  - La validation se lit dans le drapeau AD d'un résolveur qui valide. Avec `dig`, c'est le champ `flags`.
+  - La validation se lit dans le drapeau AD d'un résolveur qui valide. Avec `dig`, c'est le champ `flags` : `dig SOA impots.gouv.fr @9.9.9.9`.
+  - **La collecte lit le drapeau AD** des réponses NS et SOA de la zone, données par son résolveur qui valide ; elle ne pose plus la question DS, qui irait chaque fois au serveur du domaine de premier niveau (21/11/2026). Le résultat est le même pour une zone dont la chaîne de confiance est saine ; une zone dont la signature est cassée répond en échec (SERVFAIL), publié comme tel.
 
 ### Couche 3 — Les adresses
 - **Valeur** : la chaîne CNAME complète, puis les adresses IPv4 et IPv6, avec le résolveur, l'heure et la durée de vie (TTL).

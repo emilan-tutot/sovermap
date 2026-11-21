@@ -108,6 +108,28 @@ describe("the records of a day", () => {
     const z = mesures.domaines.get("ministere.example");
     const etat = construireEtat(liste, mesures, { noms: new Map(), mx: new Map() }, contexteEssai(), "t");
     expect(etat.domaines.get("ministere.example")?.zone.ds).toBe(z?.ad);
+    // A zone that does not exist has no DNSSEC; a zone whose questions failed: unknown.
+    const autres = new Map(mesures.domaines);
+    const base = mesures.domaines.get("ministere.example");
+    if (base === undefined) throw new Error("mesure manquante");
+    autres.set("ministere.example", { ...base, etat: "nxdomain", ad: true });
+    const inexistant = construireEtat(
+      liste,
+      { ...mesures, domaines: autres },
+      { noms: new Map(), mx: new Map() },
+      contexteEssai(),
+      "t",
+    );
+    expect(inexistant.domaines.get("ministere.example")?.zone.ds).toBe(false);
+    autres.set("ministere.example", { ...base, etat: "echec", echec: "SERVFAIL", ad: null });
+    const enEchec = construireEtat(
+      liste,
+      { ...mesures, domaines: autres },
+      { noms: new Map(), mx: new Map() },
+      contexteEssai(),
+      "t",
+    );
+    expect(enEchec.domaines.get("ministere.example")?.zone.ds).toBeNull();
   });
 
   it("reduces a record that fails its schema, counts it, and goes on", async () => {

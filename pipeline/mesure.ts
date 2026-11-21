@@ -1,6 +1,6 @@
 // The DNS measurement of the collection (brief B.2, docs/methode.md § 4): per name, A and AAAA with the CNAME chain
-// (10 links at most); per zone (the registrable domain), NS, SOA without its RNAME, DS, CAA (issue, issuewild), MX and
-// the SPF record; per host (name servers, mail exchangers), its addresses. A failure stays a failure (SERVFAIL,
+// (10 links at most); per zone (the registrable domain), NS, SOA without its RNAME, CAA (issue, issuewild), MX and the
+// SPF record (DNSSEC: the AD flag of the NS and SOA answers); per host (name servers, mail exchangers), its addresses. A failure stays a failure (SERVFAIL,
 // TIMEOUT, REFUSED), never « no site ». The client is the low-level one (dns-bas.ts); the tests use a simulated one.
 import type { ClientDns, Code, Enregistrement, Reponse } from "./dns-bas";
 

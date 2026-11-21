@@ -35,7 +35,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       ESSAI: ${{ github.event_name == 'workflow_dispatch' && inputs.essai }}
-      RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # The run's number, never its address (which names the account).
+      RUN: ${{ github.run_id }}
     steps:
       - run: |
           fin=$( (gh api "repos/$REPO/contents/etat.json?ref=donnees" --jq .content | base64 -d | jq -r '.collecte.fin // ""') 2>/dev/null || true)
@@ -52,7 +53,7 @@ jobs:
               if [ "$ESSAI" = "true" ]; then echo "**Essai** (déclenché exprès) : la collecte n'est pas en retard."; echo; fi
               echo "La dernière collecte publiée date de $fin, il y a $heures heures (le seuil est de 36 heures)."
               echo
-              echo "Le site sert l'état publié le plus récent, avec sa date. Exécution : $RUN"
+              echo "Le site sert l'état publié le plus récent, avec sa date. Exécution n° $RUN (Actions › Fraîcheur)."
             } > corps.md
             if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
           elif [ -n "$n" ]; then

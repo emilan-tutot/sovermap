@@ -407,6 +407,8 @@ async function principal(): Promise<number> {
     hotes.liste = hotesEtatDe(m);
     suivi(`première passe finie à ${minutes()} min ; contrôle de ${hotes.liste.length} hôtes de l'État lancé`);
     hotes.controle = controler(quad9, hotes.liste, [], 8, finControles);
+    // Handled here at once (awaited much later): a failure is never an unhandled rejection in between.
+    hotes.controle.catch(() => {});
     return hotes.controle;
   };
   const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
@@ -425,6 +427,14 @@ async function principal(): Promise<number> {
   ]);
   suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
   const controleHotes = await (hotes.controle ?? lancerControleHotes(mesures));
+  // The hosts of the « État » domains measured only by an attempt are controlled too.
+  const deja = new Set(hotes.liste);
+  const enPlus = hotesEtatDe(mesures).filter((h) => !deja.has(h));
+  if (enPlus.length > 0) {
+    const complement = await controler(quad9, enPlus, [], 8, finControles);
+    for (const [nom, m] of complement.noms) controleHotes.noms.set(nom, m);
+    hotes.liste = [...hotes.liste, ...enPlus];
+  }
   suivi(`contrôle de ${hotes.liste.length} hôtes de l'État fini à ${minutes()} min`);
   const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
   // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
@@ -763,7 +773,7 @@ async function principal(): Promise<number> {
         : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
     }.`,
     // Only the top-level zones are named in this public summary; the others (a host's customers, a CDN…) are counted.
-    `- Frein : ${attentesFrein.ouvertures} questions vers une zone parente (ouverture, première question d’une zone, DS) et ${attentesFrein.questions} autres questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${
+    `- Frein : ${attentesFrein.ouvertures} questions vers une zone parente (ouverture d’un domaine, première question d’une zone) et ${attentesFrein.questions} autres questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${
       [
         ...(debitServeurs?.coupesChaudes ?? [])
           .filter((c) => !c.coupe.includes(".") || c.coupe === ".")
