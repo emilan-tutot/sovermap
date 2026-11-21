@@ -61,7 +61,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 37 | Companies House | Sociétés britanniques | Aucune règle d'usage écrite | Clé exigée pour l'API | Écartée pour l'instant |
 | 38 | Wikidata | Pays du siège, maison mère (indices) | CC0 | **Non** : robots.txt (SPARQL, API) | Contrôle seulement (lecture manuelle) |
 | 39 | Rapports annuels des groupes | Confirmation des maisons mères | Faits seulement, aucune reproduction | Au cas par cas | **Retenue** (méthode) |
-| 40 | Liste SecNumCloud de l'ANSSI | Offres qualifiées, par société | Non vérifiée | **Non** : anti-robots | En attente (relevé manuel daté) |
+| 40 | Catalogue des services qualifiés SecNumCloud de l'ANSSI | Services qualifiés, fournisseur, dates, décision | Licence etalab-2.0 (mention du site de l'ANSSI) | **Non** : anti-robots | **Retenue** (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
 | 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
 | 43 | Table « Countries and territories » (EU Vocabularies) | Codes ISO, noms fr et en, UE, EEE, continent | Notice de réutilisation de la Commission (décision 2011/833/UE) | Oui, par SPARQL | **Retenue** |
@@ -537,18 +537,20 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 
 ## E. Qualification et fond de carte
 
-### 40. Liste SecNumCloud de l'ANSSI
+### 40. Catalogue des services qualifiés SecNumCloud de l'ANSSI
 - **Producteur** : Agence nationale de la sécurité des systèmes d'information (ANSSI).
-- **Adresse** : non confirmée en lecture directe. La page des prestataires qualifiés est sur cyber.gouv.fr.
-- **Licence ou conditions** : **non vérifiées**. Le cahier note « etalab-2.0, sauf mention contraire ».
-- **Téléchargement automatique testé** : **non**.
-  - Le robots.txt et la page répondent par une protection anti-robots (Imperva Incapsula).
-  - Rien n'a été contourné.
-  - Aucune version ouverte n'existe sur data.gouv.fr (recherches « SecNumCloud », « ANSSI » : 0 résultat).
-- **Décision : en attente.**
-  - La couche SecNumCloud sera alimentée par un **relevé manuel daté**, fait par une personne dans un navigateur ordinaire.
-  - La détection automatique des changements prévue par le cahier n'est pas possible en l'état.
-  - Plus tard, et sur décision du propriétaire : demander à l'ANSSI une version ouverte de la liste.
+- **Document** : « Catalogue des produits et services certifiés, qualifiés ou agréés », édition de novembre 2026, mis à jour le 19/11/2026 à 18:34:21, 136 pages ; § 3.3.1 « Les services qualifiés » (pages 78 et 79). Le catalogue dit lui-même être mis à jour au moins une fois par mois, et se télécharger sur cyber.gouv.fr (« Découvrir les solutions certifiées qualifiées »).
+- **Licence, mot pour mot** (pied de la page de l'ANSSI, déposée par le propriétaire) : « Sauf mention explicite de propriété intellectuelle détenue par des tiers, les contenus de ce site sont proposés sous licence etalab-2.0 ». On n'en reprend que des faits : fournisseur, service, type, dates, numéro de décision.
+- **Téléchargement automatique testé** : **non**, et il ne se fera pas.
+  - Le `robots.txt` et la page de cyber.gouv.fr répondent par une protection anti-robots (Imperva Incapsula). Rien n'a été contourné.
+  - Aucune version ouverte n'existe sur data.gouv.fr (recherches « SecNumCloud », « ANSSI » : 0 résultat, au chantier T1).
+- **Relevé manuel daté** : le propriétaire a téléchargé le catalogue (PDF) et la page « Prestataires de services d'informatique en nuage (SecNumCloud) » dans un navigateur ordinaire, et les a déposés le 20/11/2026 ; le tableau a été relevé le 21/11/2026, ligne par ligne, dans `referentiels/secnumcloud.json` (30 services de 15 fournisseurs).
+  - La page de l'ANSSI ne liste que des prestataires **en cours de qualification** (ceux qui ont accepté de le rendre public) : ils ne sont jamais repris. Seuls comptent les services qualifiés du catalogue.
+  - Le rapprochement des fournisseurs avec les sociétés du référentiel (par exemple « Cegedim » : le groupe, ou sa filiale Cegedim.cloud ?) demande deux sources : il se fait avec C.1.
+- **Ce qu'on en tire** : la couche 8 (`docs/methode.md`), avec sa phrase obligatoire : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise. »
+- **Pièges** : une qualification a une date de fin (Outscale : 30/11/2026 ; OVH, Hosted Private Cloud : 29/12/2026) ; un service peut changer de nom d'une édition à l'autre ; l'extraction du PDF en texte mélange les cellules sur plusieurs lignes (relire le tableau en mode « table »).
+- **Mise à jour** : un nouveau relevé manuel à chaque nouvelle édition mensuelle, déposé par le propriétaire ; la date de l'édition est publiée avec la couche. Plus tard, et sur décision du propriétaire : demander à l'ANSSI une version ouverte de la liste.
+- **Décision : retenue (relevé manuel daté).**
 
 ### 41. Natural Earth
 - **Producteur** : projet Natural Earth (domaine public).
