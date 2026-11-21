@@ -2,11 +2,16 @@
 import type { FileMetaData } from "hyparquet";
 import { describe, expect, it } from "vitest";
 import {
+  type CopieAnnuaire,
   copieCourante,
+  ecartVolume,
   fichierParPlages,
+  type Guichet,
   guichetDe,
   hotesDe,
   lieuDe,
+  lignesGuichets,
+  memeCopie,
   type Obtenir,
   plagesPermises,
   sansStatistiques,
@@ -171,5 +176,56 @@ describe("the local directory, read by ranges (C.6)", () => {
       hotes: [],
       commune: null,
     });
+  });
+});
+
+describe("the publication of a copy of the local directory (C.6)", () => {
+  const fichier = (chemin: string, sha256: string) => ({
+    chemin,
+    taille: 1000,
+    sha256,
+    commit: COMMIT,
+    date: "2026-11-12",
+  });
+  const publiee: CopieAnnuaire = {
+    fichiers: [fichier("data/a.parquet", SHA), fichier("data/b.parquet", "c".repeat(64))],
+    guichets: 1000,
+    lue: "2026-11-15T13:23:00.000Z",
+  };
+
+  it("knows the copy already published, file by file", () => {
+    expect(memeCopie([...publiee.fichiers].reverse(), publiee)).toBe(true);
+    expect(memeCopie([fichier("data/a.parquet", SHA), fichier("data/b.parquet", "d".repeat(64))], publiee)).toBe(false);
+    expect(memeCopie([fichier("data/a.parquet", SHA)], publiee)).toBe(false);
+    expect(memeCopie(publiee.fichiers, null)).toBe(false);
+  });
+
+  it("never lets a broken copy replace a good one: 10 % of the published offices at most, and never none", () => {
+    expect(ecartVolume(1100, publiee)).toBeNull();
+    expect(ecartVolume(900, publiee)).toBeNull();
+    expect(ecartVolume(1101, publiee)).toMatch(/écart de 10 %/);
+    expect(ecartVolume(500, publiee)).toMatch(/500 guichets contre 1000/);
+    expect(ecartVolume(0, null)).toBe("aucun guichet lu");
+    expect(ecartVolume(85865, null)).toBeNull();
+  });
+
+  it("writes one office per line, sorted, so that a new copy changes only its changed lines", () => {
+    const g = (nom: string, siret: string | null): Guichet => ({
+      nom,
+      type: "mairie",
+      hotes: [],
+      siren: null,
+      siret,
+      commune: null,
+      codePostal: null,
+      modification: null,
+    });
+    const texte = lignesGuichets([g("Mairie de B", null), g("Mairie de A", "2"), g("Mairie de A", "1")]);
+    const lignes = texte
+      .trimEnd()
+      .split("\n")
+      .map((l) => JSON.parse(l) as Guichet);
+    expect(lignes.map((l) => `${l.nom} ${l.siret}`)).toEqual(["Mairie de A 1", "Mairie de A 2", "Mairie de B null"]);
+    expect(texte.endsWith("\n")).toBe(true);
   });
 });

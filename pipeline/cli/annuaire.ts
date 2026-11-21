@@ -1,0 +1,73 @@
+// The local administrations directory (brief C.6; docs/sources.md, card 50). At each new copy of the DINUM's
+// publication, reads its useful columns by byte ranges (pipeline/annuaire-local.ts) and writes, for the « donnees »
+// branch, territoires/annuaire/guichets.jsonl (one office per line, sorted) and territoires/annuaire/copie.json (the
+// copy's files with their SHA-256, commits and dates, its number of offices, when it was read). Nothing is written when
+// the copy is the one already published; a copy whose number of offices moves by more than 10 % is refused. A trial
+// (--essai) reads the copy and writes nothing.
+//   npx tsx pipeline/cli/annuaire.ts --sortie <dossier> [--donnees <dossier de la branche donnees>] [--essai]
+// In GitHub Actions, it tells the next job whether a new copy is ready (output « nouvelle »).
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { parseArgs } from "node:util";
+import {
+  type CopieAnnuaire,
+  copieCourante,
+  ecartVolume,
+  type Guichet,
+  lignesGuichets,
+  lireFichier,
+  memeCopie,
+} from "../annuaire-local";
+import { agentUtilisateur, Telechargeur } from "../sources";
+
+// Run from the repository's root, as the collection is.
+const RACINE = process.cwd();
+const { values: o } = parseArgs({
+  options: {
+    sortie: { type: "string" },
+    donnees: { type: "string" },
+    essai: { type: "boolean", default: false },
+  },
+});
+if (o.sortie === undefined) throw new Error("option manquante : --sortie <dossier>");
+
+const dire = (cle: string, valeur: string) => {
+  const sortie = process.env["GITHUB_OUTPUT"];
+  if (sortie) appendFileSync(sortie, `${cle}=${valeur}\n`);
+};
+const version = (JSON.parse(readFileSync(path.join(RACINE, "package.json"), "utf8")) as { version: string }).version;
+// One range of a useful column is a few megabytes at most: 64 MiB bounds any answer.
+const telechargeur = new Telechargeur({ agent: agentUtilisateur(version), tailleMax: 64 * 1024 * 1024 });
+const obtenir = (adresse: string, entetes?: Record<string, string>) => telechargeur.obtenir(adresse, entetes);
+
+const fichiers = await copieCourante(obtenir);
+const cheminPubliee = o.donnees === undefined ? null : path.join(o.donnees, "territoires", "annuaire", "copie.json");
+const publiee =
+  cheminPubliee !== null && existsSync(cheminPubliee)
+    ? (JSON.parse(readFileSync(cheminPubliee, "utf8")) as CopieAnnuaire)
+    : null;
+if (!o.essai && memeCopie(fichiers, publiee)) {
+  console.log("annuaire : la copie publiée est la copie courante ; rien à écrire.");
+  dire("nouvelle", "false");
+} else {
+  const guichets: Guichet[] = [];
+  for (const fichier of fichiers) {
+    const lus = await lireFichier(obtenir, fichier);
+    guichets.push(...lus);
+    console.log(`annuaire : ${fichier.chemin} (copie du ${fichier.date.slice(0, 10)}) : ${lus.length} guichets`);
+  }
+  const ecart = ecartVolume(guichets.length, publiee);
+  if (ecart !== null) throw new Error(`annuaire : copie refusée : ${ecart}`);
+  if (o.essai) {
+    console.log(`annuaire (essai) : ${guichets.length} guichets lus ; rien n'est écrit.`);
+    dire("nouvelle", "false");
+  } else {
+    const dossier = path.join(o.sortie, "territoires", "annuaire");
+    mkdirSync(dossier, { recursive: true });
+    writeFileSync(path.join(dossier, "guichets.jsonl"), lignesGuichets(guichets));
+    const copie: CopieAnnuaire = { fichiers, guichets: guichets.length, lue: new Date().toISOString() };
+    writeFileSync(path.join(dossier, "copie.json"), `${JSON.stringify(copie, null, 2)}\n`);
+    console.log(`annuaire : ${guichets.length} guichets écrits.`);
+    dire("nouvelle", "true");
+  }
+}

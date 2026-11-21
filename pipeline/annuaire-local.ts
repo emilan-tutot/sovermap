@@ -221,3 +221,36 @@ export async function lireFichier(obtenir: Obtenir, fichier: FichierCopie): Prom
   }
   return guichets;
 }
+
+/** What the « donnees » branch keeps of a copy: its files, its number of offices, and when it was read. */
+export type CopieAnnuaire = { fichiers: FichierCopie[]; guichets: number; lue: string };
+
+/** Is it the copy already published: the same files, with the same SHA-256? */
+export function memeCopie(fichiers: readonly FichierCopie[], publiee: CopieAnnuaire | null): boolean {
+  if (publiee === null || publiee.fichiers.length !== fichiers.length) return false;
+  const connues = new Map(publiee.fichiers.map((f) => [f.chemin, f.sha256]));
+  return fichiers.every((f) => connues.get(f.chemin) === f.sha256);
+}
+
+/** A new copy's number of offices may differ from the published one's by this share at most. */
+export const ECART_MAX = 0.1;
+
+/** The guard of a new copy: a broken or truncated file never replaces a good copy (null: within the limit). */
+export function ecartVolume(guichets: number, publiee: CopieAnnuaire | null): string | null {
+  if (guichets === 0) return "aucun guichet lu";
+  if (publiee === null || publiee.guichets === 0) return null;
+  const ecart = Math.abs(guichets - publiee.guichets) / publiee.guichets;
+  return ecart > ECART_MAX
+    ? `${guichets} guichets contre ${publiee.guichets} dans la copie publiée (écart de ${Math.round(ecart * 100)} %, plus de ${ECART_MAX * 100} %)`
+    : null;
+}
+
+/**
+ * The offices, one JSON object per line, sorted (by name, then by SIRET and hosts): a new copy changes only the lines
+ * that changed, so the « donnees » branch grows by small deltas.
+ */
+export function lignesGuichets(guichets: readonly Guichet[]): string {
+  const cle = (g: Guichet) => `${g.nom}\u0000${g.siret ?? ""}\u0000${g.hotes.join(" ")}\u0000${g.type}`;
+  const tries = [...guichets].sort((a, b) => (cle(a) < cle(b) ? -1 : cle(a) > cle(b) ? 1 : 0));
+  return tries.map((g) => `${JSON.stringify(g)}\n`).join("");
+}
