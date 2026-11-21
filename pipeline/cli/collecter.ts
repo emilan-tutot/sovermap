@@ -830,7 +830,7 @@ async function principal(): Promise<number> {
       regleInterne.etat === "appliquée"
         ? `${liste.exclus.get("sous-zone interne") ?? 0} noms écartés`
         : `suspendue, ses ${nomsRegle.length} noms sont mesurés (à revoir au point suivant)`
-    } ; noms reposés à Quad9 le ${regleInterne.controle.date} (liste du ${regleInterne.liste}) : ${regleInterne.controle.reponses} réponse(s) sur ${regleInterne.controle.poses}.`,
+    } ; noms reposés à Quad9 le ${regleInterne.controle.date} (liste du ${regleInterne.liste || "?"}) : ${regleInterne.controle.poses} noms, dont avec adresse ${regleInterne.controle.codes.avecAdresse}, NXDOMAIN ${regleInterne.controle.codes.nxdomain}, NOERROR sans adresse ${regleInterne.controle.codes.sansAdresse}, SERVFAIL ${regleInterne.controle.codes.servfail}, délais ${regleInterne.controle.codes.delai}, autres ${regleInterne.controle.codes.autre}.`,
     `- Changements confirmés : ${b.changements.length}${b.etatInitial ? " (état initial)" : ""}${b.reglesChangees ? " (règles nouvelles : rien au journal)" : ""}.`,
     `- Débit maximal vers un même serveur faisant autorité : ${
       debitServeurs === null
@@ -842,8 +842,9 @@ async function principal(): Promise<number> {
                   ".",
                   ",",
                 )
-          } %) ; tolérance (au plus 0,1 % et jamais plus de 15) : ${
-            debitServeurs.max <= 15 && debitServeurs.secondesAuDela * 1000 <= debitServeurs.secondes
+          } %) ; tolérance d'une collecte (jamais plus de 15, et au plus une seconde au-delà de 10, ou 0,1 % des secondes si c'est plus) : ${
+            debitServeurs.max <= 15 &&
+            debitServeurs.secondesAuDela <= Math.max(1, Math.floor(debitServeurs.secondes / 1000))
               ? "tenue"
               : "dépassée"
           }`
