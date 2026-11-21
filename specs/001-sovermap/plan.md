@@ -263,6 +263,7 @@ Principe :
   - l'état courant (environ 110 000 fiches de 300 octets, soit environ 33 Mo non compressés), fragmenté en fichiers de 8 Ko au plus ;
   - le journal des changements.
   Git ne stocke que ce qui change. **Hypothèse** : 1 % des fiches change chaque jour, soit environ 330 Ko de lignes par jour avant compression, et 20 à 40 Mo par an dans l'historique.
+- **Mesuré au jour 1 (21/11/2026)** : l'état initial pèse 117 Mo bruts et **25,1 Mo compressés** dans Git (82 876 fichiers : environ 52 000 fragments de noms et 31 000 de domaines, 31 index ; le plus gros fichier, `index/organismes.json`, fait 1,5 Mo), soit plus que l'hypothèse ci-dessus (des fiches plus riches que 300 octets, et l'index des organismes). La croissance par jour (cible : moins de 1 Mo compressé) se mesure à partir du jour 2. La Release `donnees-courant` (14,3 Mo compressés) est remplacée chaque jour.
 - **Releases mensuelles** : 12 par an, d'environ 5 à 10 Mo compressés chacune. Elles ne comptent pas dans la taille du dépôt Git.
 - **Code** : moins de 50 Mo, polices comprises.
 - **Taille du dépôt dans un an** : moins de 200 Mo. La documentation recommande « ideally less than 1 GB, and less than 5 GB is strongly recommended » (docs.github.com, lu le 18/11/2026).
@@ -270,7 +271,7 @@ Principe :
   - aucun fichier au-dessus de 50 Mio (seuil d'avertissement ; blocage à 100 Mio) ;
   - au plus 3 000 entrées par dossier (limite recommandée de « Directory width ») ;
   - au plus 6 envois par minute (recommandation de GitHub).
-- **Règles respectées** : aucun commit sur `main`. La branche `donnees` n'est pas protégée par l'ensemble de règles de `main`. Elle n'accepte que le robot de la collecte, par une règle de branche ajoutée en T2.
+- **Règles respectées** : aucun commit sur `main`. La branche `donnees` n'est pas protégée par l'ensemble de règles de `main`. Depuis le 21/11/2026, un ensemble de règles à elle interdit sa suppression et tout push forcé, sans exception (n° 27811110). La règle « seul le robot des Actions y écrit » se pose sous surveillance d'une publication (une erreur ferait manquer un jour) ; si une règle fait lancer CodeQL sur `donnees`, elle est retirée et l'écart noté ici (B.6).
 
 ## 11. Quotas de Vercel Hobby
 
