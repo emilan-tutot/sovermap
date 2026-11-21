@@ -1,0 +1,16 @@
+# Knot Resolver 6, the collection's local validating resolver (plan § 9, brief B.2), in the official image pinned by its
+# digest in .github/workflows/collecte.yml, mounted read-only at /etc/knot-resolver/config.yaml.
+# The container shares the runner's network (--network host) and listens on its loopback only, on port 5300 (the
+# runner's own resolver may hold port 53). DNSSEC validation is on by default; the answers carry the AD flag.
+network:
+  listen:
+    - interface: 127.0.0.1@5300
+cache:
+  # One day's run asks about half a million questions: the default size would evict the zones' delegations.
+  size-max: 1G
+logging:
+  level: notice
+  # Debug lines of the resolver group: one « querying: '<server>'@'<address>' » line per question sent upstream,
+  # counted per second and per address by the collection (brief B.3: 10 per second at most to one server).
+  groups:
+    - resolv

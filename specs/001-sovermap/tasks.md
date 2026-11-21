@@ -112,8 +112,8 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [x] A.2 Le crochet d'arrêt lit le nouveau nom d'un fichier renommé (essai avec un fichier renommé, diff au rapport). Preuve : `.claude/hooks/stop-check.mjs` ; essai du 20/11/2026 (`journal-C2.md`, 03:10 UTC) : un fichier suivi renommé par `git mv`, avec une faute ESLint (`no-explicit-any`) : sortie 0 avant la correction, sortie 2 après, la faute signalée sur le nouveau nom ; essai annulé.
 - [x] A.3 Cases de T1 (E.7, E.8, rapport) cochées avec leurs preuves ; cette section recopiée. Preuve : ce fichier.
 - [x] A.4 `CLAUDE.md` et mémoire : les points ; le DNS seulement ; le registre d'abord ; jamais « société » pour un organisme public ; la règle de la porte. Preuve : `CLAUDE.md` (70 lignes) ; cinq fiches de mémoire du projet (points, porte de la production, DNS seulement, registre d'abord, organisme public).
-- [ ] A.5 Le logo, s'il est déposé : lisible à 16 px, icônes tirées (onglet, écran d'accueil, image de partage) ; sinon rien.
-- [ ] A.6 La porte de la production : fermée sauf `SITE_PUBLIC=open` ; liste blanche à un seul endroit ; `probe:prod` et des tests e2e sur une liste d'adresses, une adresse réelle par famille.
+- [x] A.5 Le logo, s'il est déposé : lisible à 16 px, icônes tirées (onglet, écran d'accueil, image de partage) ; sinon rien. Preuve : PR n° 5 fusionnée le 20/11/2026 (`main` = b7ff250) : `lib/design/logo.ts` (dessin relevé sur le PNG du propriétaire : demi-ellipse, écart moyen 1 px), `public/icon.svg` (traits épaissis pour 16 px, variante claire pour les onglets sombres), `apple-touch-icon.png`, `partage.png` ; planche du point 02 (dossier du propriétaire) ; `probe:prod` vert sur les trois adresses.
+- [x] A.6 La porte de la production : fermée sauf `SITE_PUBLIC=open` ; liste blanche à un seul endroit ; `probe:prod` et des tests e2e sur une liste d'adresses, une adresse réelle par famille. Preuve : PR n° 4 (0db6d95) puis PR n° 5 (b7ff250, correction du point 01 : 404 pour toute sorte de requête) ; préversion vérifiée dans Edge avant la fusion (22 adresses, 0 écart) ; `probe:prod` vert le 20/11/2026 à 15:47 UTC (22 adresses, aucun Checkpoint) ; CI de `main` verte (44766569962) ; `journal-C2.md` (dossier du propriétaire).
 
 ### Partie B — T2, la collecte quotidienne (`feat/c2-collecte`)
 - [ ] B.1 Pipeline v1 : la liste de référence (copie du 11/12/2024, liste à jour, compléments), provenance et dates par nom, exclusions, domaine enregistré par la Public Suffix List datée et épinglée.
@@ -146,6 +146,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 ### Partie D — T4, le vrai site (`feat/c2-site-…`)
 - [ ] D.1 Le site complet dans les préversions protégées et en local ; la production derrière la porte.
 - [ ] D.2 Les pages : Atlas, pays, Radiographie, ministères, exploitants, territoires, démarches (si C.8), journal, recherche, qualité et fraîcheur.
+  - La page Qualité montre au moins, d'après `etat.json` : les échecs DNS non confirmés et les pannes confirmées par Quad9, séparément (point 02) ; l'âge de la copie d'IPtoASN (point 02) ; chaque règle d'exclusion avec le nombre de noms qu'elle écarte, dont « sous-zone interne », son texte, son état et son dernier contrôle à Quad9 avec ses comptes (noms avec adresse, NXDOMAIN, NOERROR sans adresse, SERVFAIL, délais) (points 04 et 05) ; la part des secondes au-delà de 10 questions vers un même serveur, et le plus grand nombre de questions reçues par un serveur en une seconde (point 04).
 - [ ] D.3 Le design (`DESIGN.md`) et les cinq corrections des vidéos de Brume douce.
 - [ ] D.4 Vitesse et coûts (budgets, poids, cache, projection des quotas).
 - [ ] D.5 Sécurité (aucun tiers, CS-09 ; essai de `experimental.sri`).
@@ -175,8 +176,14 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] H.1 Documents et mémoire à jour.
 - [ ] H.2 Propreté (branches, processus, dossiers, code mort, Vercel, issues d'essai, dossier du chantier).
 - [ ] H.3 Les deux fichiers du brief supprimés de Téléchargements, après `rapport-C2.md`.
-- [ ] Les points avec le propriétaire (`points\point-NN`, réponses recopiées dans `consignes-point-NN.md`). Avancement : point 01 (20/11/2026, arrêt du § 0.3, point 6 : `probe:prod` rouge après la fusion de la PR n° 4) ; réponse « A » recopiée dans `consignes-point-01.md` (dossier du propriétaire), appliquée par `feat/c2-porte`.
+- [ ] Les points avec le propriétaire (`points\point-NN`, réponses recopiées dans `consignes-point-NN.md`). Avancement : point 01 (20/11/2026, arrêt du § 0.3, point 6 : `probe:prod` rouge après la fusion de la PR n° 4) ; réponse « A » recopiée dans `consignes-point-01.md` (dossier du propriétaire), appliquée par `feat/c2-porte` ; point 02 (20/11/2026, 17:55 UTC : planche du logo, Q1 sur IPtoASN fermé aux robots, Q2 sur le garde-fou des échecs DNS).
 - [ ] Rapport final en trois blocs, copié dans `rapport-C2.md`.
 
 ### Pour le chantier 3
+- [ ] **En tête, avant l'ouverture** : créer une organisation GitHub gratuite « sovermap », y transférer le dépôt (Vercel, règles de branche, Releases, workflows à revérifier), et vérifier le nom d'auteur des commits de l'historique ; préparer à ce moment-là le clic par clic pour le propriétaire. Consigne du point 03, 21/11/2026.
+- [ ] IPtoASN, option C : demander à l'auteur d'IPtoASN si un téléchargement automatique quotidien est permis, depuis l'adresse sovermap.com (jamais depuis l'adresse personnelle du propriétaire). Consigne du point 02, 20/11/2026.
+- [ ] RouteViews : demander à RouteViews si un téléchargement automatique est permis, depuis l'adresse sovermap.com. Consigne du point 03, 21/11/2026.
+- [ ] Après le transfert à l'organisation « sovermap » : `scan:prive` lit aujourd'hui le nom du compte dans l'adresse du dépôt ; il devra le lire ailleurs (sinon « sovermap » serait refusé partout, et l'identité des commits aussi).
+- [ ] L'agent utilisateur passe à `Sovermap-bot/<version> (+https://sovermap.com)` une fois sovermap.com branché (`ADRESSE_DU_PROJET`, `pipeline/sources.ts`).
+- [ ] IPtoASN : redemander au propriétaire une nouvelle copie au point qui suit les 80 jours de la précédente (relevé du 20/11/2026 : vers le 08/02/2027), avec le clic par clic ; la verser dans la Release `sources-iptoasn`.
 - [ ] Avant l'ouverture, vérifier que la protection de Vercel laisse passer les robots de Google et de Bing, et les téléchargements par script des données ouvertes (consigne du point 01, 20/11/2026 : le « Security Checkpoint » de Vercel a répondu 403 aux contrôles de `probe:prod`).

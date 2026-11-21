@@ -147,3 +147,28 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : ne formater que ce que l'on change, ou formater le fichier seul dans un commit à part ; relire `git diff` avant d'indexer.
 34. **Une étape de tournage qui porte deux mots-clés est lue selon le premier trouvé** (20/11/2026) : un glissement avec `"images": 54` était filmé comme une pause ; seul le contrôle image par image l'a montré (aucun mouvement « glisser » dans sa liste).
     - Parade : `filmer.ts` cherche les actions avant les pauses ; après tout changement d'un parcours, lire la liste des mouvements que donne `verifier-film.ts`.
+
+## Collecte (chantier 2, partie B)
+
+35. **Le Référentiel de la DILA ne met pas les ministères à la racine** (20/11/2026) : l'arbre lit « Administration centrale » › « Gouvernement (Premier ministre et ministères) » › les 20 ministères, avec « Autorités indépendantes » et « Institutions et juridictions » à côté. La racine d'un service n'est donc jamais son ministère.
+    - Parade : le ministère d'un service est son plus haut ancêtre (ou lui-même) du type « Administration centrale (ou Ministère) » (`pipeline/dila.ts`) ; ce sont les identifiants du SIG (`id_ministere`).
+36. **Les listes officielles hébergent des sites de communes chez des créateurs de sites** (20/11/2026) : e-monsite.com (252 noms), jimdo.com (221), wordpress.com (123)… Leur domaine enregistré est celui de la plateforme : sans précaution, des centaines de communes se fondraient en un seul « domaine ».
+    - Parade : `referentiels/plateformes-tierces.json` ; un nom qui en dépend est sa propre unité, hors du périmètre « État ».
+37. **Un motif privé du propriétaire peut se trouver dans une donnée publique** (20/11/2026) : le domaine d'une commune en contenait un ; `scan:prive` refuse la ligne.
+    - Parade : la ligne est écartée de la copie versée (2 noms, notés au `LISEZMOI`), jamais le garde-fou affaibli. La même question se posera en C.6 pour le fichier des communes.
+38. **La Public Suffix List nomme des contributeurs dans ses commentaires** (adresses e-mail comprises).
+    - Parade : la copie épinglée garde l'en-tête de licence, la version et les règles seulement (`reduireListeSuffixes`) ; un test vérifie qu'elle donne les mêmes règles et aucune adresse.
+39. **Une adresse `mailto:` passe pour un site si on lui ajoute `https://`** : `new URL("https://mailto:x@y.example")` lit « mailto » comme identifiant et `y.example` comme hôte.
+    - Parade : `hoteDuSite` refuse tout autre schéma, et toute adresse qui porte un identifiant ou un mot de passe.
+40. **Une seule mesure à la fois, et la place en attente se perd** (20/11/2026) : le groupe de concurrence `collecte-mesure` (`collecte.yml`) garde une mesure en cours et une seule en attente ; une nouvelle venue annule celle qui attendait. Un essai de PR lancé pendant qu'un autre tourne peut donc prendre la place de la mesure du jour qui attendait. **Réglé le 21/11/2026** : les essais ont leur propre file (`collecte-mesure-essai`), et un essai ne mesure jamais pendant une collecte du jour, ni à moins de 45 minutes de 03:17 ou de 09:47 UTC (`pipeline/creneau.ts`) : il s'arrête en rouge, avec une phrase, et se relance plus tard.
+    - Parade : jamais d'envoi sur une PR qui touche la collecte entre 03:00 et 07:30 UTC ni entre 09:30 et 11:30 UTC ; les essais de PR restent courts (`LIMITE_ESSAI`) ; une mesure annulée ouvre l'issue « Collecte bloquée », et celle de 09:47 refait le jour.
+41. **Une date dans une preuve casse l'hystérésis** (20/11/2026) : la date de la liste officielle d'un CDN changeait chaque jour dans la preuve ; deux mesures de suite ne donnaient donc jamais la même fiche, et la fiche publiée ne changeait plus.
+    - Parade : une fiche ne porte que des valeurs stables (plan § 4) ; les dates des sources sont dans `etat.json`.
+42. **Le dossier `node_modules` suit la dernière branche installée** : après un `npm install` sur une autre branche, `npm run check` ne juge plus la branche courante comme la CI.
+    - Parade : `npm ci` après chaque changement de branche dont le fichier de verrouillage diffère.
+
+43. **Une branche `fix/c2-*` publie une préversion à chaque envoi** (21/11/2026) : `vercel.json` ne dispense que `feat/c2-*` (le MEGA ne nomme que celles-là) ; chaque envoi d'une branche `fix/c2-*` qui touche un fichier non inerte (`scripts/vercel-ignore.ts`) coûte donc un déploiement. Toutes les branches du chantier se nomment `feat/c2-…`, même pour une correction.
+
+44. **Un serveur de noms partagé reçoit la somme des rythmes de ses zones** (21/11/2026) : une cadence par zone ne borne pas la charge d'un serveur qui sert des centaines de domaines (hébergeurs, ministères) ; avec 128 domaines en vol, plusieurs de ses zones avançaient ensemble (19 questions en une seconde à l'essai 44861921566). Le rythme se règle par serveur de noms, et une question prend le même instant chez tous les serveurs de sa zone (`instantCommun`).
+
+45. **Un nom qui a des noms en dessous existe** (21/11/2026) : le résolveur simulé des tests répondait NXDOMAIN pour `hebergeur.example` alors que `ns1.hebergeur.example` existait ; dans le vrai DNS, un tel nom répond NOERROR sans données (RFC 8020). Depuis que la collecte ne pose plus de question sous un domaine qui n'existe pas, cette erreur du simulateur cachait des questions : il répond maintenant comme le vrai DNS.

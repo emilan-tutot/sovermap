@@ -96,8 +96,7 @@ Ce qui distingue Sovermap :
 - **EX-10** Un panel fixe de domaines témoins est contrôlé à chaque collecte. Un écart bloque la publication.
 - **EX-11** Un échec (délai dépassé, SERVFAIL) n'est jamais confondu avec « pas de site » : on fait plusieurs essais espacés, et l'échec est noté.
 - **EX-12** Le débit est limité selon les conditions de chaque source.
-  - L'agent utilisateur s'identifie sans adresse e-mail, et renvoie au dépôt tant que sovermap.com n'est pas branché : `Sovermap-bot/<version> (+https://github.com/<compte>/sovermap)`.
-  - Le nom du compte vient d'une variable de configuration.
+  - L'agent utilisateur s'identifie sans adresse e-mail et sans nom de compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 (décision du propriétaire, point 03 du chantier 2).
 - **EX-13** La collecte ne garde aucune donnée personnelle.
 
 ### Publication

@@ -75,6 +75,21 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
    - un index par organisme, par ministère et par société ;
    - le journal des changements ;
    - `etat.json`, qui porte la date, la version de la méthode et les sommes de contrôle.
+
+   **Ce que la partie B du chantier 2 a fixé** (20/11/2026, `pipeline/publication.ts`) :
+   - `noms/<aa>/<bb>.json` et `domaines/<aa>/<bb>.json` : le seau d'un enregistrement est fait des quatre premiers chiffres hexadécimaux du SHA-256 de son nom, si bien qu'il ne change jamais de fichier ; 256 seaux au plus par dossier, avec les sommes de contrôle de chaque dossier (`sommes.json`) ; un seau de plus de 8 Ko est découpé en parties numérotées (`<bb>.json`, `<bb>.1.json`…), de 8 Ko au plus chacune, la première disant combien il y en a (`parties`) ; un enregistrement pèse 3 Ko au plus (`borner.ts`), et un enregistrement qui ne passe pas son schéma est publié réduit (`reduit`), compté dans `etat.json`, sans bloquer les autres ;
+   - des valeurs stables et triées, écrites en JSON déterministe : ni heure ni TTL par nom (**écart à EX-02** : l'heure est dans `etat.json`, les TTL et les adresses exactes dans l'archive mensuelle), et, pour une adresse, son AS et sa plage d'IPtoASN, jamais l'adresse exacte (celles des CDN tournent chaque jour) ni le préfixe de RIS (source « en contrôle seulement ») ;
+   - les index : par AS, par exploitant (avec la liste des domaines de chacun), par pays, par organisme et par ministère (Référentiel de la DILA) ; les territoires viendront en C.6 ;
+   - les clés en français, comme le code (`"statut": "preparation"`, B.6) ; les noms anglais de D5 et F.1 viendront avec les fichiers ouverts de la partie F ;
+   - l'hystérésis porte sur tout le contenu d'un enregistrement : il ne change que si deux collectes de suite donnent le même nouveau contenu ; le journal ne garde que les changements d'hébergement (adresses, serveurs de noms, messagerie), jamais un passage par un échec ;
+   - les observations brutes de la veille (et ses fichiers sources) restent dans le cache des Actions, jamais publiées : elles servent au reclassement de la veille avec les règles du jour (B.7 bis) et au disjoncteur.
+   - les règles (`etat.json`, `versions.regles`) comptent les listes, les référentiels, la méthode, la version des schémas et du classement, et la date de la copie d'IPtoASN : la veille est classée avec la copie du jour, si bien qu'une nouvelle copie est un changement de règles, jamais un déménagement ;
+   - une mesure fiable arrêtée par le seul disjoncteur, ou par la seule hausse des pannes confirmées (plus de 2 points sur la veille), devient la veille du lendemain, avec sa part de pannes : un vrai changement est publié s'il est revu le lendemain (sinon ces garde-fous resteraient rouges pour toujours) ; la collecte de 09:47 ne refait pas un jour dont la mesure est ainsi gardée ;
+   - la publication refuse un jour qui n'est pas plus récent que le jour publié (une relance tardive ne republie jamais un jour ancien, ni deux fois le même jour) ; la tâche « jour » s'arrête en rouge, avec une issue, quand l'API de GitHub ne répond pas, au lieu de croire le jour à faire ; la collecte prend la date de cette tâche, jamais celle de l'horloge ;
+   - l'archive mensuelle ne donne les adresses exactes du jour qu'aux fiches qu'elles confirment (même état, même chaîne de CNAME, chaque adresse dans une plage de la fiche) : une fiche retenue par l'hystérésis n'en reçoit pas (`pipeline/archive.ts`) ;
+   - une fiche qui ne peut pas être construite (une erreur, ou une valeur que son schéma refuse) est publiée réduite à son identité (`reduit`), jamais comparée, et ne remplace jamais une fiche déjà publiée ; au-delà de 0,1 % de fiches réduites, rien n'est publié ;
+   - un fichier téléchargé mal formé (une page d'erreur servie avec le code 200, un fichier coupé) compte comme un téléchargement manqué : la copie de la veille sert ;
+   - quand rien n'est publié, l'exécution finit en rouge, à côté de l'issue « Collecte bloquée ».
 3. **Lecture.** Le serveur du site lit ces fichiers publics, par `https://raw.githubusercontent.com/<compte>/sovermap/donnees/…`, sans clé :
    - mise en cache côté serveur (§ 11) ;
    - pages servies par le CDN de Vercel ;
@@ -88,12 +103,21 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
    **Parade, construite en T2 et mesurée au plus tard en T4** :
    - **un cache long côté serveur.** Les données ne changent qu'une fois par jour : on ne relit `etat.json` qu'une fois par heure, et les fragments seulement quand leur somme de contrôle a changé ;
    - **les données de la veille servies en cas d'échec**, avec leur date affichée. Un échec de lecture ne casse jamais une page ;
-   - **un canal de secours sans clé** : le même état publié en Release, sur `github.com/<compte>/sovermap/releases/download/…`, lu seulement si raw.githubusercontent.com répond 429 ou 5xx ;
+   - ~~un canal de secours sans clé : le même état publié en Release, lu seulement si raw.githubusercontent.com répond 429 ou 5xx~~. **Abandonné le 21/11/2026** (décision du propriétaire, point 03 du chantier 2) : le `robots.txt` de github.com ferme aux robots tout téléchargement de Release (`Disallow: /*/*/download/*`, pour tout agent, lu le 20/11/2026), et l'API de GitHub, sans jeton, ne permet que 60 requêtes par heure et par adresse IP, partagées avec les autres sites de Vercel. **Le site ne lit pas le canal de secours** ; la Release `donnees-courant` reste, remplacée chaque jour, pour les personnes (page Données, F.1). Le secours du site est l'état de la veille gardé en cache, avec sa date affichée ;
    - **la mesure en T4** : le nombre de réponses 429 ou 5xx sur 30 jours, à publier dans `journal-design.md`. Au-delà de 1 % de lectures en échec, une autre architecture de lecture est décidée.
 4. **Archives.** Le premier de chaque mois, une Release `donnees-AAAA-MM` reçoit l'état complet (CSV et JSON compressés).
    - Une Release accepte 1 000 fichiers de moins de 2 Gio chacun, sans limite de taille totale ni de bande passante (docs.github.com, « About releases », lu le 18/11/2026).
 
 ## 5. Durée d'une collecte complète
+
+**Recalculé le 20/11/2026 (chantier 2, partie B), avec la messagerie (C2-1)** :
+- **Noms mesurés** : 105 728 (les deux listes réunies, 122 209 noms distincts, moins 30 157 noms internes ou techniques, plus les sites du Référentiel de la DILA et 507 noms web ajoutés), dans **41 720 unités** (domaines enregistrés, ou noms d'une plateforme tierce), dont 1 903 dans le périmètre « État ».
+- **Requêtes au résolveur** : A et AAAA par nom (≈ 212 000) ; NS, SOA, DS, CAA, MX et TXT par domaine (≈ 250 000) ; A et AAAA de chaque serveur de noms et de messagerie, une fois par hôte (**hypothèse** : 15 000 hôtes, ≈ 30 000) ; les recherches SPF, 10 au plus par domaine (**hypothèse** : ≈ 20 000). Total : **≈ 510 000 requêtes**.
+- **Contrôle à Quad9** (2 par seconde, en parallèle) : nom web et MX des 1 903 domaines « État », nom web de 3 % des autres, témoins, puis adresses des serveurs de noms et de messagerie de l'État : **≈ 10 000 requêtes**, soit environ 1 h 20 de temps propre, dont 15 à 20 min après la mesure.
+- **Débit** : 25 noms par seconde, et 8 domaines ouverts par seconde au plus (une seule demande de délégation par domaine nouveau aux serveurs d'un domaine de premier niveau) ; 2 questions simultanées par zone. Les ouvertures de domaines fixent le rythme : 41 720 ÷ 8 ≈ 1 h 27.
+- **Durée attendue** : environ 1 h 30 pour la première passe, 2 h avec les deux reprises (10 min d'attente chacune) et le contrôle des hôtes de l'État : **sous les 3 h** (CS-05). La première collecte complète le mesurera (B.11).
+
+Calcul d'origine (19/11/2026, sans la messagerie) :
 
 - **Noms à mesurer** : environ 96 000.
   - Ce sont les 90 803 noms publics de la liste, une fois écartés les noms internes ou techniques (`docs/methode.md` § 3).
@@ -140,14 +164,14 @@ Principe :
 
 | Source | Usage | Requêtes | Volume | Limite documentée (lue le 18/11/2026) |
 |---|---|---|---|---|
-| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5) | ≈ 322 000 par jour au résolveur, réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, mélange aléatoire des noms |
-| Quad9 | Contrôle : tous les domaines du périmètre « État », 3 % des autres, et les témoins | ≈ 6 000 par jour | — | Pas de plafond chiffré ; contact demandé avant un « large-scale DNS traffic » |
+| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5), messagerie comprise | ≈ 510 000 par jour au résolveur (recalcul du 20/11/2026), réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, réglé à la source (6 zones nouvelles par seconde au plus vers les serveurs d'un même registre ; 5 questions par seconde au plus vers chaque serveur de noms, toutes zones comprises) et mesuré chaque jour sur les journaux du résolveur (`etat.json`, `qualite.debitMaxParServeur` : part des secondes au-delà de 10 et maximum) ; tolérance de départ : 0,1 % des secondes, jamais plus de 15 (point 04) ; mesure domaine par domaine, les plus grands d'abord ; 8 domaines nouveaux par seconde au plus |
+| Quad9 | Contrôle : nom web et MX de tous les domaines du périmètre « État », 3 % des autres, les témoins, et les hôtes des serveurs de noms et de messagerie de l'État | ≈ 10 000 par jour, à 2 par seconde | — | Pas de plafond chiffré ; contact demandé avant un « large-scale DNS traffic » |
 | Cloudflare 1.1.1.1 | Contrôle (témoins) | ≈ 100 par jour | — | Aucune limite publiée |
 | IPtoASN | IP → AS | 1 fichier par jour | 10,9 Mo | Aucune ; fichiers faits pour cet usage |
 | RIS (riswhoisdump IPv4 et IPv6) | Confirmation de l'AS | 2 fichiers par jour | 7 Mo | Aucune écrite |
 | Fichiers de délégation des 5 registres | Pays d'enregistrement | 5 fichiers par jour | 46 Mo | Aucune écrite |
 | Fichiers « split » du RIPE | AS → organisation | 2 fichiers par semaine | 14,4 Mo | « insubstantial part » seulement (art. 4.5) |
-| Listes des CDN (Cloudflare, CloudFront, Fastly ; Azure chaque semaine) | Indicateur CDN | 4 par jour, plus 2 par semaine | 2,8 Mo par jour | Aucune écrite |
+| Listes des CDN (Cloudflare, CloudFront, Fastly ; Azure chaque semaine) | Indicateur CDN | 4 par jour, plus 2 par semaine | 2,8 Mo par jour | Aucune écrite. Partie B : Cloudflare (2 fichiers) et Fastly ; CloudFront et Azure avec C.3 |
 | Team Cymru (DNS) | Troisième avis sur l'AS | ≤ 100 par jour | — | Interface DNS conseillée pour un usage régulier |
 | RIPEstat | Contrôles | ≤ 140 par jour | — | Inscription au-delà de 1 000 par jour ; 8 requêtes simultanées par IP |
 | RDAP des registres | Titulaire d'un nouvel AS | ≤ 50 par jour | — | Usage raisonnable ; 3 connexions simultanées (RIPE) |
@@ -328,8 +352,7 @@ Sources :
   - GitHub annonce depuis le 08/05/2025 des limites pour les téléchargements sans authentification sur raw.githubusercontent.com. Les fonctions de Vercel sortent par des adresses dynamiques partagées, sauf avec l'option payante « Static IPs ».
   - Parades (§ 4), construites en T2 et mesurées au plus tard en T4 :
     - un cache long côté serveur ;
-    - les données de la veille servies en cas d'échec, avec leur date ;
-    - un canal de secours sans clé (les fichiers de Release).
+    - les données de la veille servies en cas d'échec, avec leur date (le seul secours depuis le 21/11/2026 : le site ne lit pas les fichiers de Release, fermés aux robots par github.com).
 - **H7. Conditions des offres gratuites.**
   - Vercel Hobby est réservé à un « personal or non-commercial use ».
   - Les Actions interdisent une « activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository » (lus le 18/11/2026).
@@ -367,7 +390,7 @@ Sources :
 2. **Noms internes ou techniques** : ni mesurés, ni affichés. Il reste 90 803 noms publics, en 34 068 domaines (§ 5 ; `docs/methode.md` § 3 ; spec, EX-01).
 3. **`scan:prive` et D6** : voir l'option A de D6, ci-dessous.
 4. **Lecture des données** : risque de limite de débit, et parades (§ 4 ; H8 au § 14).
-5. **IPtoASN** : son accord avec la table RIS du jour suffit pour « confirmé » (§ 13). L'agent utilisateur renvoie au dépôt tant que sovermap.com n'est pas branché (`docs/sources.md`, Règles).
+5. **IPtoASN** : son accord avec la table RIS du jour suffit pour « confirmé » (§ 13). L'agent utilisateur renvoie à https://sovermap.vercel.app, puis à sovermap.com, jamais au dépôt (`docs/sources.md`, Règles ; point 03 du chantier 2).
 6. **Sources** : on se passe de DB-IP. Le propriétaire peut télécharger lui-même la liste officielle à jour dans son navigateur, une fois par trimestre au plus (T3, § 17).
 
 ### Décisions du propriétaire (ARRÊT 2, 19/11/2026)
@@ -391,6 +414,27 @@ Sources :
 - **Couleurs de la 3D** : la conversion des couleurs vers l'écran (sRGB) s'applique partout ; les jetons de Brume sont recalés pour garder l'aspect affiché (écart OKLab de 0,02 au plus, mesuré sur l'image).
 - **Autonomie** : une règle durable entre dans `CLAUDE.md` (les actions du projet qui se refont ou se rattrapent se décident seules et se notent au journal ; ce qui est irréversible ou hors du projet se regroupe en un seul message, à un arrêt).
 - **Pour la suite** (à noter seulement) : les notes de l'ARRÊT 2 bis restent valables. Retouche : aux points des grands chantiers, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement.
+
+### Décisions du propriétaire (chantier 2, point 05, 21/11/2026)
+
+- **Le garde-fou de la quatrième règle (Q1 : A)** : un nom « répond » s'il reçoit NOERROR avec au moins un enregistrement A ou AAAA ; NXDOMAIN, NOERROR sans adresse, SERVFAIL et délai dépassé ne suspendent pas la règle ; un contrôle sans aucune réponse de Quad9 ne compte pas. La règle est rétablie (changement de règles, B.7 bis). Le contrôle est publié chaque jour avec ses comptes (noms avec adresse, NXDOMAIN, NOERROR sans adresse, SERVFAIL, délais).
+- **La tolérance du débit, corrigée** : sur la projection de la collecte complète (rejouée sur toute la liste, avec les questions du résolveur), au plus 0,1 % des secondes au-dessus de 10 ; sur l'essai, jamais plus de 15 questions par seconde vers un même serveur, et au plus une seconde au-dessus de 10, ou 0,1 % des secondes actives si c'est plus. Zéro seconde reste l'objectif, après le jour 1.
+- **La page Qualité (partie D)** montrera, avec leur texte : la quatrième règle, le nombre de noms qu'elle écarte, le dernier contrôle de Quad9 avec ses comptes, et les deux chiffres du débit (part des secondes au-delà de 10, maximum). D'ici là, ils sont publiés dans `etat.json` (`qualite.regleSousZoneInterne`, `qualite.debitMaxParServeur`).
+- **Le rythme du travail** : un point n'arrête plus le travail ; les options recommandées s'appliquent tout de suite quand elles se défont ; les seuls arrêts sont un choix qui ne se défait pas, la vie privée du propriétaire ou ce que le site dit de lui (E.4), ce qui coûte de l'argent, l'ouverture de la porte, un interdit, une commande refusée sans laquelle rien n'avance ; jamais d'attente à vide (les parties C, D et E avancent en parallèle) ; une seule relecture neuve par PR, juste avant sa fusion (`CLAUDE.md`).
+- Les décisions prises seul au point 05 sont validées : toutes les branches en `feat/c2-…` ; méthode 0.2.1 (0.3 reste pour la partie C) ; rythme par serveur ; A puis AAAA ; poids des sous-zones en panne. Dans le doute sur la règle de la préversion, toujours une préversion.
+
+### Décisions du propriétaire (chantier 2, point 04, 21/11/2026)
+
+- **Noms internes (Q1 : A)** : quatrième règle de la méthode § 3, « sous-zone interne : une étiquette du sous-domaine, autre que la première, vaut in » (3 901 noms de la liste mesurée au 21/11/2026, sous education.gouv.fr et education.fr). Deux garde-fous : le nombre de noms écartés par cette règle est publié sur la page Qualité, avec la règle ; à chaque nouvelle liste officielle, 20 de ces noms tirés au hasard sont reposés à Quad9 : si l'un répond, la règle se revoit au point suivant et ces noms reviennent dans la mesure. C'est un changement de règles (B.7 bis), jamais un déménagement.
+- **Tolérance du débit (B.3)** : zéro seconde au-dessus de 10 reste l'objectif. Pour lancer le jour 1 : sur l'essai, et en projection sur la collecte complète, au plus 0,1 % des secondes au-dessus de 10 questions vers un même serveur, et jamais plus de 15. Ces deux chiffres sont publiés chaque jour sur la page Qualité, et on continue de les faire baisser. Au-delà : corriger et relancer. La durée garde sa cible de B.11 (moins de 3 h pour la mesure) ; au-delà, la collecte se découpe selon B.8, aux mêmes règles.
+- **Sécurité** : après chaque fusion, lire les alertes ouvertes de code scanning, puis les traiter, ou les noter au point suivant (`CLAUDE.md`).
+- Les décisions prises seul au point 04 sont validées : DNSSEC lu sur la validation du résolveur ; un domaine qui n'existe pas n'est pas interrogé sur CAA, MX et TXT ; la mesure domaine par domaine ; les codes `ZONE_MUETTE` et `SOUS_ZONE_MUETTE` ; plus de reprise après 165 minutes.
+
+### Décisions du propriétaire (chantier 2, point 03, 21/11/2026)
+
+- **Source IP → AS** : IPtoASN reste relevé à la main (tous les 80 jours environ), RIS en contrôle ; quand RIS le contredit le jour même, le niveau est « non déterminé ». Aucun logo de société sur le site (RIS publié l'aurait imposé).
+- **Canal de secours (B.9 bis)** : le site ne le lit pas (§ 4) ; la Release `donnees-courant` reste pour les personnes ; le secours du site est l'état de la veille gardé en cache, avec sa date affichée.
+- **Agent utilisateur** : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, sans nom de compte (§ 15, D6) ; au chantier 3, sovermap.com, et le dépôt passe dans une organisation GitHub gratuite « sovermap ».
 
 ### Décisions du propriétaire (chantier 2, 20/11/2026)
 
@@ -564,7 +608,9 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 
 **Toute autre apparition** du prénom, du nom ou du nom d'utilisateur Windows est refusée : dans un fichier, un message de commit, une page.
 
-**Dans le code**, le nom du compte vient d'une variable de configuration (par exemple `SOVERMAP_GITHUB_OWNER`), jamais écrite en dur. L'agent utilisateur de la collecte et les adresses de lecture des données se construisent à partir de cette variable.
+**Dans le code**, le nom du compte vient d'une variable de configuration (par exemple `SOVERMAP_GITHUB_OWNER`), jamais écrite en dur. Les adresses de lecture des données se construisent à partir de cette variable.
+
+**Modifié le 21/11/2026 (point 03 du chantier 2)** : l'agent utilisateur ne contient plus l'adresse du dépôt, donc plus le nom du compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 ; il ne se construit jamais à partir de git. Aucun fichier du dépôt, aucun workflow et aucune donnée publiée ne contient le nom du compte, pas même dans l'adresse du dépôt : `scan:prive` le refuse partout (seuls restent permis le compte et son adresse noreply comme auteur des commits). Au chantier 3, avant l'ouverture, le dépôt passe dans une organisation GitHub gratuite « sovermap » (`tasks.md`).
 
 **Si cette exposition est refusée : C + D.** Le propriétaire crée un compte GitHub neutre et relance `gh auth login`. Vercel n'est pas relié au dépôt. Cela demande environ 30 minutes de gestes au propriétaire, et la production attend un chantier ultérieur.
 

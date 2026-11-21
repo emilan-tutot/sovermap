@@ -15,14 +15,15 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
   - le `robots.txt` est lu avant toute autre requête vers un hôte ;
   - l'agent utilisateur s'identifie sans adresse e-mail ;
   - les essais du cadrage (18/11/2026) ont utilisé `Sovermap-cadrage/0.1 (+https://sovermap.com)` ;
-  - **depuis le 19/11/2026** (décision du propriétaire), et tant que sovermap.com n'est pas branché, l'agent renvoie au dépôt : `Sovermap-bot/<version> (+https://github.com/<compte>/sovermap)`. Le nom du compte vient d'une variable de configuration. Une fois le domaine branché (T8) : `Sovermap-bot/<version> (+https://sovermap.com)`.
+  - du 19/11/2026 au 20/11/2026, l'agent renvoyait au dépôt (`Sovermap-bot/<version> (+https://github.com/<compte>/sovermap)`), donc au nom d'un compte personnel ;
+  - **depuis le 21/11/2026** (décision du propriétaire, point 03 du chantier 2) : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, sans nom de compte, jamais construit à partir de git ; une fois sovermap.com branché (chantier 3) : `Sovermap-bot/<version> (+https://sovermap.com)`.
 - **Données personnelles** : aucune n'entre dans les données de Sovermap. Plusieurs sources en contiennent ; elles sont signalées fiche par fiche.
 
 ## Tableau récapitulatif
 
 | # | Source | Ce qu'on en tire | Licence ou conditions | Accès automatique | Décision |
 |---|---|---|---|---|---|
-| 1 | Liste des noms de domaine des organismes publics (DINUM, forge de l'ADULLACT) | La liste de référence à jour | etalab-2.0 (affichée sur la forge, relevé humain) | **Non** : robots.txt et anti-robots | En attente |
+| 1 | Liste des noms de domaine des organismes publics (DINUM, forge de l'ADULLACT) | La liste de référence à jour | etalab-2.0 (affichée sur la forge, relevé humain) | **Non** : robots.txt et anti-robots | **Retenue en relevé manuel** (le propriétaire, au plus une fois par trimestre) ; accès automatique en attente |
 | 2 | Copie archivée de cette liste (GitHub, Etalab) | 103 398 noms et leur type, au 11/12/2024 | Licence Ouverte 2.0 | Oui | **Retenue** (base datée) |
 | 3 | API Annuaire de l'administration (DILA) | `site_internet` des services | Licence Ouverte ; service API : licence non renseignée | **Non** : `Disallow: /api/` | Écartée comme canal |
 | 4 | Référentiel de l'organisation administrative de l'État (DILA) | 7 915 services, 1 135 noms d'hôtes, hiérarchie | Licence Ouverte 2.0 | Oui (fichier quotidien) | **Retenue** |
@@ -62,6 +63,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 39 | Rapports annuels des groupes | Confirmation des maisons mères | Faits seulement, aucune reproduction | Au cas par cas | **Retenue** (méthode) |
 | 40 | Liste SecNumCloud de l'ANSSI | Offres qualifiées, par société | Non vérifiée | **Non** : anti-robots | En attente (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
+| 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
 
 ## Constats qui valent pour tout le projet
 
@@ -116,8 +118,9 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
   - Le robots.txt (https://gitlab.adullact.net/robots.txt, HTTP 200, 3 230 octets) ferme aux robots : `/api/v*`, `/*/raw`, `/*/archive/`, `/*/repository/archive*`, `/*/*.git$` et `/*/*.git/*`.
   - Une page « Making sure you're not a bot! » (Anubis, preuve de travail) répond aux clients automatiques.
   - Date du dernier changement et nombre de domaines de la version actuelle : **non vérifiés**. Le propriétaire a lu « dernière synchronisation il y a environ un mois » le 18/11/2026.
-- **Décision : en attente.**
-  - Il faut une copie ouverte aux robots, par exemple une ressource lisible par l'API tabulaire de data.gouv.fr, ou l'accord de la DINUM.
+- **Décision : retenue en relevé manuel** (20/11/2026) ; **accès automatique : en attente.**
+  - Relevé du 20/11/2026 : fichier `domains.csv` de la branche `master` (commit `aeeec2e9cd70b5dbfe86620321e6958d807cb1d0`, fichiers du 19/11/2026), téléchargé dans son navigateur par le propriétaire ; colonnes lues d'abord (`name`, `http_status`, `https_status`, `SIREN`, `type`, `sources`, `script`) ; seules `name` et `type` sont gardées, la colonne `sources` (noms de contributeurs) n'est écrite nulle part. Copie nettoyée : `referentiels/listes/liste-dinum-2026-11-19.csv` (121 927 lignes lues, 121 867 noms ; 2 noms écartés parce qu'ils contiennent un motif refusé par le contrôle de vie privée du dépôt).
+  - Pour un accès automatique, il faut une copie ouverte aux robots, par exemple une ressource lisible par l'API tabulaire de data.gouv.fr, ou l'accord de la DINUM.
   - Cette demande passera par une adresse de contact sur sovermap.com (plus tard).
   - D'ici là, la fiche 2 sert de base.
   - **Relevé manuel** (décision du propriétaire, 19/11/2026) : le propriétaire peut télécharger lui-même la liste à jour dans son navigateur, sous licence etalab-2.0, une fois par trimestre au plus. Chaque fichier est daté et versé dans les données (T3).
@@ -292,7 +295,8 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
 - **Adresse** : https://iptoasn.com/data/ip2asn-combined.tsv.gz
 - **Ce qu'on en tire** : pour chaque plage d'adresses IPv4 et IPv6, l'AS d'origine, le pays d'enregistrement de l'AS (jamais un lieu) et sa description.
   - 719 149 lignes ; environ 86 900 AS.
-- **Licence, mot pour mot** : « Licensed under Public Domain (PDDL v1.0) » (pied de page de https://iptoasn.com/). robots.txt : `Allow: /`.
+- **Licence, mot pour mot** : « Licensed under Public Domain (PDDL v1.0) » (pied de page de https://iptoasn.com/). robots.txt (lecture du 18/11/2026) : `Allow: /`.
+- **robots.txt relu le 20/11/2026** (https://iptoasn.com/robots.txt, en entier) : un premier groupe `User-agent: *` permet tout (`Allow: /`, `Crawl-delay: 1`), mais le dernier groupe `User-agent: *`, commenté « Disallow heavy downloads for bots (they should use direct links) », ferme `Disallow: /data/*.gz$`. Les deux groupes se combinent (RFC 9309) : la règle la plus longue, celle qui ferme les fichiers `.gz`, l'emporte. **Le téléchargement automatique du fichier est donc interdit aux robots** ; le téléchargeur de la collecte l'a refusé (essai du 20/11/2026).
 - **Limites de débit** : aucune pour les fichiers. L'API publique est arrêtée depuis le 31/12/2020.
 - **Attribution à afficher** : aucune exigée. Par courtoisie : « IP → AS : IPtoASN (iptoasn.com), PDDL 1.0 ».
 - **Téléchargement automatique testé** : **oui**. HTTP 200, 10 955 454 octets, `last-modified` du 01/11/2026.
@@ -301,7 +305,11 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
   - le même AS pour 4 485 adresses ;
   - un AS différent pour 2 ;
   - et 513 adresses sont « non routées » pour IPtoASN.
-- **Décision : retenue**, comme source principale quotidienne.
+- **Décision : retenue en relevé manuel par le propriétaire** (réponse au point 02 du chantier 2, 20/11/2026). La collecte ne télécharge jamais ce fichier depuis iptoasn.com.
+  - Le propriétaire le télécharge lui-même dans son navigateur, environ une fois par trimestre (à redemander au point qui suit ses 80 jours) ; la copie, datée du jour du relevé, est versée dans la Release `sources-iptoasn` du dépôt, d'où la collecte la prend, sans geste de sa part.
+  - Premier relevé : 20/11/2026, `ip2asn-combined-2026-11-20.tsv.gz`, 10 955 454 octets, SHA-256 `1634a0e449f3ee11088bba85493447a51007b44dff3ac18328f1f2d9127c0a9e`, 719 149 lignes (la version servie portait la date du 01/11/2026).
+  - L'âge de la copie est publié chaque jour (`etat.json`, `sources`, `ageJours`) et le sera sur la page Qualité ; quand RIS la contredit le jour même, le niveau est « non déterminé ».
+  - Pour le chantier 3 : demander à l'auteur, depuis une adresse sovermap.com, si un téléchargement automatique quotidien est permis (option C).
   - Son accord avec la table RIS **du jour** suffit pour le niveau « confirmé », quel que soit l'âge du fichier IPtoASN (décision du 19/11/2026).
   - La dernière copie datée est gardée, au cas où le projet s'arrêterait.
 
@@ -334,7 +342,13 @@ Principe : les fichiers en masse font le travail quotidien, par une recherche lo
 
 ### 21. Fichiers de délégation des cinq registres régionaux (RIR)
 - **Producteurs** : RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC.
-- **Adresses** : par exemple https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest (et les équivalents des quatre autres registres).
+- **Adresses** (vérifiées le 20/11/2026 : HTTP 200) :
+  - https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest
+  - https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest (12 929 688 octets)
+  - https://ftp.apnic.net/stats/apnic/delegated-apnic-extended-latest (9 314 823 octets)
+  - https://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-extended-latest (4 587 589 octets)
+  - https://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-extended-latest (1 009 177 octets)
+- **robots.txt** (lus le 20/11/2026) : ARIN, APNIC et LACNIC n'en ont pas (404) ; AFRINIC ferme seulement `/rfc`, `/db` et `/OVA` ; le RIPE NCC, seulement des documents et des mesures Atlas. `/pub/stats/` et `/stats/` restent ouverts partout.
 - **Ce qu'on en tire** : le pays d'**enregistrement** de chaque AS et de chaque bloc, et un identifiant opaque commun aux ressources d'un même titulaire. Ces fichiers ne contiennent aucun nom ni contact.
 - **Conditions, mot pour mot** :
   - APNIC : « The files are freely available for download and use on the condition that APNIC will not be held responsible for any loss or damage arising from the use of the information contained in these reports. » AFRINIC dit la même chose.
@@ -540,12 +554,27 @@ Restent à lire dans une page officielle avant d'entrer dans la liste :
 - **Attribution à afficher** : aucune exigée. Par courtoisie : « Fond de carte : Natural Earth (domaine public) ».
 - **Décision : retenue.** Le fichier est copié dans le dépôt, pas téléchargé à chaque build.
 
+## F. Règles de calcul
+
+### 42. Public Suffix List (Mozilla et contributeurs)
+- **Producteur** : projet Public Suffix List, tenu par des bénévoles sous l'égide de la Mozilla Foundation.
+- **Adresse** : https://publicsuffix.org/list/public_suffix_list.dat (le fichier demande d'être pris là, et seulement là : « Please pull this list from, and only from https://publicsuffix.org/list/public_suffix_list.dat »).
+- **Ce qu'on en tire** : la règle qui donne le domaine enregistré d'un nom (`www.service.gouv.fr` → `service.gouv.fr`), l'unité que compte le chiffre (décision D1). Elle remplace la courte liste de suffixes de l'outil v0.
+- **Licence, mot pour mot** (en tête du fichier) : « This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. » (lu le 20/11/2026).
+  - La MPL 2.0 permet de modifier et de redistribuer le fichier, sous la même licence, en gardant ses mentions de licence (§ 3.4). La copie du dépôt garde l'en-tête de licence, la version, le commit d'origine, les marqueurs de sections et toutes les règles, sans les autres commentaires : ceux-ci nomment des contributeurs et donnent leurs adresses e-mail (aucune donnée personnelle gardée, brief du chantier 2, § 0.2). Les règles sont inchangées (test : même nombre de règles que l'original). L'original complet se retrouve par sa version et son commit.
+- **Limites de débit** : aucune chiffrée. Sovermap ne la télécharge pas à chaque collecte : une copie datée est épinglée dans `referentiels/psl/` et se met à jour par une PR (`pipeline/cli/epingler-psl.ts`).
+- **robots.txt** (https://publicsuffix.org/robots.txt, lu le 20/11/2026) : `Disallow: /images/` seulement.
+- **Téléchargement testé** : oui, le 20/11/2026 : HTTP 200, 342 725 octets, `Last-Modified: Thu, 19 Nov 2026 08:30:26 GMT` ; version `2026-11-19_08-30-20_UTC`, commit `f7796455091118a5617cc7588523b083a8223301`. Copie réduite : 149 382 octets.
+- **Données personnelles** : des noms et des adresses e-mail de contributeurs dans les commentaires ; écartés de la copie, jamais lus par la collecte.
+- **Attribution à afficher** : par courtoisie : « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
+- **Décision : retenue** (outil de calcul ; rien de la liste n'est republié dans les données, sinon la copie épinglée dans le code source).
+
 ## Attributions à afficher sur la page Données
 
 Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers utilisés. Aucune ne suggère un aval du producteur.
 
 **Exigées par la licence ou les conditions :**
-- **DINUM / Etalab** : « liste des noms de domaine des organismes publics, copie du 11/12/2024, Licence Ouverte 2.0 ».
+- **DINUM / Etalab** : « liste des noms de domaine des organismes publics, copie du 11/12/2024, Licence Ouverte 2.0 » ; et, pour la liste à jour (fiche 1) : « Source : DINUM, liste des noms de domaine des organismes publics, version du <date>, Licence Ouverte 2.0 ».
 - **DILA** : « Source : Service-Public.gouv.fr / DILA — Référentiel de l'organisation administrative de l'État, fichier <nom> du <date>, <adresse longue>, Licence Ouverte ».
 - **SIG** : « Observatoire de l'écosystème numérique de l'État – Sites internet, mise à jour du <date>, Licence Ouverte 2.0 ».
 - **Ministère de l'Enseignement supérieur** : « Principaux établissements d'enseignement supérieur, mis à jour le <date>, Licence Ouverte ».
@@ -556,4 +585,5 @@ Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers ut
 - registres Internet régionaux : « fichiers statistiques des registres Internet régionaux (RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC) » ;
 - « IP → AS : IPtoASN (iptoasn.com), PDDL 1.0 » ;
 - « Données LEI : GLEIF, copie du <date> », sans la marque GLEIF ;
-- « Fond de carte : Natural Earth (domaine public) ».
+- « Fond de carte : Natural Earth (domaine public) » ;
+- « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».

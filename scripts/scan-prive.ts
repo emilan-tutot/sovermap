@@ -39,7 +39,9 @@ function context(): ScanContext {
 const isBinary = (buffer: Buffer) => buffer.subarray(0, 8000).includes(0);
 
 function scanTrackedFiles(ctx: ScanContext): Finding[] {
-  const files = git("ls-files", "-z").split("\0").filter((file) => file !== "");
+  const files = git("ls-files", "-z")
+    .split("\0")
+    .filter((file) => file !== "");
   const findings: Finding[] = [];
   for (const file of files) {
     if (!existsSync(file)) continue;
@@ -81,7 +83,9 @@ const findings = [...fileFindings, ...commits.findings];
 
 const checks = [
   "chemins personnels",
-  ctx.ownerLogin === null ? "nom du compte : sauté (compte inconnu)" : "nom du compte hors de l'adresse du dépôt",
+  ctx.ownerLogin === null
+    ? "nom du compte : sauté (compte inconnu)"
+    : "nom du compte, partout (adresse du dépôt comprise)",
   ctx.windowsUser === null ? "nom d'utilisateur Windows : sauté (hors Windows)" : "nom d'utilisateur Windows",
   ctx.motifs.length === 0 ? "motifs privés : sautés (fichier local absent)" : `${ctx.motifs.length} motif(s) privé(s)`,
   "adresses e-mail",
@@ -93,6 +97,4 @@ if (findings.length > 0) {
   console.error(`\nscan:prive : ÉCHEC, ${findings.length} élément(s) à retirer avant tout envoi.`);
   process.exit(1);
 }
-console.log(
-  `scan:prive : OK (${commits.count} commit(s) non publié(s) relu(s) ; contrôles : ${checks.join(", ")}).`,
-);
+console.log(`scan:prive : OK (${commits.count} commit(s) non publié(s) relu(s) ; contrôles : ${checks.join(", ")}).`);

@@ -1,0 +1,81 @@
+// Tests of the controls: the plan of the day, the control resolver's pace, the witnesses. Simulated resolver, fake
+// clock, documentation names, addresses and AS numbers only (RFC 2606, RFC 5737, RFC 5398).
+import { describe, expect, it } from "vitest";
+import { ClientCadence, conforme, controler, planDeControle, verifierTemoins } from "./controle";
+import type { MesureNom } from "./mesure";
+import { generateur, type Horloge } from "./politesse";
+import { ResolveurSimule } from "./resolveur-simule";
+
+const zoneDe = (nom: string) => nom.split(".").slice(-2).join(".");
+
+describe("the controls", () => {
+  it("asks every « État » domain, 3 % of the others and the witnesses", () => {
+    const domaines = [
+      { domaine: "ministere.example", nomWeb: "www.ministere.example", perimetre: "État" as const },
+      ...Array.from({ length: 100 }, (_, i) => ({
+        domaine: `c${i}.example`,
+        nomWeb: `c${i}.example`,
+        perimetre: "hors État" as const,
+      })),
+    ];
+    const plan = planDeControle(domaines, ["temoin.example"], generateur(7));
+    expect(plan.mx).toEqual(["ministere.example"]);
+    expect(plan.noms).toContain("www.ministere.example");
+    expect(plan.noms).toContain("temoin.example");
+    expect(plan.noms).toHaveLength(1 + 3 + 1);
+  });
+
+  it("asks the control resolver at 2 questions per second at most", async () => {
+    let t = 0;
+    const horloge: Horloge = { maintenant: () => t, dormir: async (ms) => void (t += ms) };
+    const zone = { "a.example": { A: [{ type: "A" as const, adresse: "192.0.2.1" }] } };
+    const client = new ClientCadence(new ResolveurSimule(zone, zoneDe), 2, horloge);
+    const r = await controler(client, ["a.example", "b.example"], ["a.example"]);
+    expect(r.noms.get("a.example")?.etat).toBe("ok");
+    expect(r.mx.get("a.example")).toEqual([]);
+    // 5 questions (A and AAAA for two names, one MX): the last one starts 2 s after the first, at least.
+    expect(t).toBeGreaterThanOrEqual(2000);
+  });
+
+  it("agrees only when every resolver finds every witness as it is known", () => {
+    const temoins = [
+      {
+        nom: "temoin.example",
+        attendu: { etat: "ok" as const, cdn: null, as: [64496] },
+        releve: { le: "x", preuve: "y" },
+      },
+      { nom: "absent.invalid", attendu: { etat: "nxdomain" as const }, releve: { le: "x", preuve: "y" } },
+    ];
+    const vu = (nom: string, etat: MesureNom["etat"], adresse: string | null): MesureNom => ({
+      nom,
+      etat,
+      echec: null,
+      cname: [],
+      a: adresse ? [{ adresse, ttl: 1 }] : [],
+      aaaa: [],
+      ad: false,
+    });
+    const profil = (m: MesureNom) => ({
+      etat: m.etat,
+      cdn: null,
+      as: m.a.map((x) => (x.adresse === "192.0.2.1" ? 64496 : 64500)),
+    });
+    const bons = new Map([
+      ["temoin.example", vu("temoin.example", "ok", "192.0.2.1")],
+      ["absent.invalid", vu("absent.invalid", "nxdomain", null)],
+    ]);
+    const mauvais = new Map([...bons, ["temoin.example", vu("temoin.example", "ok", "198.51.100.1")]]);
+    expect(verifierTemoins(temoins, [{ resolveur: "knot", noms: bons }], profil).concordants).toBe(true);
+    const r = verifierTemoins(
+      temoins,
+      [
+        { resolveur: "knot", noms: bons },
+        { resolveur: "quad9", noms: mauvais },
+      ],
+      profil,
+    );
+    expect(r.concordants).toBe(false);
+    expect(r.verdicts.filter((v) => !v.ok).map((v) => `${v.nom} ${v.resolveur}`)).toEqual(["temoin.example quad9"]);
+    expect(conforme({ etat: "ok", cdn: "fournisseur" }, { etat: "ok", cdn: null, as: [] })).toBe(false);
+  });
+});

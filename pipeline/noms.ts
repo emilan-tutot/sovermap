@@ -95,18 +95,34 @@ const OUTILS = new Set([
   "vpn",
 ]);
 
-export type RaisonExclusion = "zone interne" | "environnement" | "outil technique";
+export type RaisonExclusion = "zone interne" | "environnement" | "outil technique" | "sous-zone interne";
 
-/** Why a name is internal or technical (never measured, never shown), or null for a public name. */
-export function raisonExclusion(name: string): RaisonExclusion | null {
+/**
+ * The rules that can be set aside: the fourth (the owner's decision of 21/11/2026, point 04) is suspended when one of
+ * its names answers from outside (pipeline/regle-interne.ts): its names then come back into the measurement.
+ */
+export type ReglesExclusion = { sousZoneInterne: boolean };
+export const REGLES_EXCLUSION: ReglesExclusion = { sousZoneInterne: true };
+
+/**
+ * Why a name is internal or technical (never measured, never shown), or null for a public name. `registrable` is its
+ * registrable domain (the Public Suffix List's, in the collection; the short list of this file by default).
+ */
+export function raisonExclusion(
+  name: string,
+  registrable = domaineEnregistre(name),
+  regles: ReglesExclusion = REGLES_EXCLUSION,
+): RaisonExclusion | null {
   const n = normaliser(name);
   if (ZONES_INTERNES.some((zone) => n === zone || n.endsWith(`.${zone}`))) return "zone interne";
-  const registrable = domaineEnregistre(n);
   const sousDomaine = n === registrable ? [] : n.slice(0, -(registrable.length + 1)).split(".");
   const morceaux = sousDomaine.flatMap((label) => label.split(/[-_]/));
   if (morceaux.some((m) => ENVIRONNEMENTS.has(m))) return "environnement";
   const premier = sousDomaine[0]?.split(/[-_0-9]/)[0] ?? "";
   if (premier !== "" && OUTILS.has(premier)) return "outil technique";
+  // An inner label « in » (never the first one) marks an internal sub-zone (`x.in.phm.education.gouv.fr`); a first
+  // label « in » may be a country's code (`in.ambafrance.org`), and stays.
+  if (regles.sousZoneInterne && sousDomaine.slice(1).includes("in")) return "sous-zone interne";
   return null;
 }
 
