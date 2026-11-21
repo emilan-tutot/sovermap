@@ -74,9 +74,11 @@ export type MesureZone = {
   ns: string[];
   /** The SOA's primary name server and serial; the RNAME (a contact) is never read. */
   soa: { mname: string; serial: number } | null;
-  /** The delegation is signed (DS records at the parent) and the answers are validated (AD). */
-  ds: { keyTag: number; algorithme: number; typeEmpreinte: number }[];
-  ad: boolean;
+  /**
+   * DNSSEC: the zone's NS and SOA answers are validated by the resolver (AD), which needs the zone's DS at its parent
+   * and a sound chain; null when one of them failed.
+   */
+  ad: boolean | null;
   /** CAA « issue » and « issuewild » only. */
   caa: { propriete: "issue" | "issuewild"; valeur: string }[];
   /** Mail exchangers, by preference; « nul » for the null MX of RFC 7505 (« 0 . »: no mail). */
@@ -84,8 +86,8 @@ export type MesureZone = {
   mxEtat: "ok" | "aucun" | "nul" | "echec";
   /** The SPF record, the only TXT record ever kept. */
   spf: string | null;
-  /** The questions that failed (DS, CAA, TXT): their answer is unknown, never « none ». */
-  echecs: ("DS" | "CAA" | "TXT")[];
+  /** The questions that failed (CAA, TXT): their answer is unknown, never « none ». */
+  echecs: ("CAA" | "TXT")[];
 };
 
 const deType = <T extends Enregistrement["donnee"]["type"]>(reponse: Reponse, proprietaire: string, type: T) =>
@@ -97,8 +99,13 @@ const deType = <T extends Enregistrement["donnee"]["type"]>(reponse: Reponse, pr
 /** One zone: six questions, at most two at a time (the scheduler holds the per-zone limit). */
 export async function mesurerZone(domaine: string, client: ClientDns): Promise<MesureZone> {
   const [rns, rsoa] = await Promise.all([client.demander(domaine, "NS"), client.demander(domaine, "SOA")]);
-  const [rds, rcaa] = await Promise.all([client.demander(domaine, "DS"), client.demander(domaine, "CAA")]);
-  const [rmx, rtxt] = await Promise.all([client.demander(domaine, "MX"), client.demander(domaine, "TXT")]);
+  // No DS question: it would go to the parent (a top-level domain) for every domain, twice its load. The resolver
+  // validates the zone's answers (the AD flag) only when the parent holds the zone's DS and the chain holds.
+  const [rcaa, rmx, rtxt] = await Promise.all([
+    client.demander(domaine, "CAA"),
+    client.demander(domaine, "MX"),
+    client.demander(domaine, "TXT"),
+  ]);
   const ns = deType(rns, domaine, "NS")
     .map((r) => r.donnee.cible)
     .sort();
@@ -122,10 +129,7 @@ export async function mesurerZone(domaine: string, client: ClientDns): Promise<M
     echec: etat === "echec" ? echec : null,
     ns,
     soa: soaRr === undefined ? null : { mname: soaRr.donnee.mname, serial: soaRr.donnee.serial },
-    ds: deType(rds, domaine, "DS")
-      .map((r) => ({ keyTag: r.donnee.keyTag, algorithme: r.donnee.algorithme, typeEmpreinte: r.donnee.typeEmpreinte }))
-      .sort((x, y) => x.keyTag - y.keyTag),
-    ad: rns.ad && rsoa.ad,
+    ad: ECHECS.has(rns.code) || ECHECS.has(rsoa.code) ? null : rns.ad && rsoa.ad,
     caa: deType(rcaa, domaine, "CAA")
       .map((r) => ({ propriete: r.donnee.propriete, valeur: r.donnee.valeur }))
       .sort((x, y) => (x.propriete + x.valeur < y.propriete + y.valeur ? -1 : 1)),
@@ -134,7 +138,6 @@ export async function mesurerZone(domaine: string, client: ClientDns): Promise<M
     spf: deType(rtxt, domaine, "TXT")[0]?.donnee.spf ?? null,
     echecs: (
       [
-        ["DS", rds],
         ["CAA", rcaa],
         ["TXT", rtxt],
       ] as const

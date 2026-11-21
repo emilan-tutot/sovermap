@@ -68,7 +68,10 @@ export type EnregistrementDomaine = {
     echec: Echec | null;
     ns: string[];
     soa: string | null;
-    /** null: the DS question failed. */
+    /**
+     * DNSSEC: the zone's answers are validated by the resolver (the AD flag), which needs its DS at its parent and a
+     * sound chain; null: unknown (the zone's question failed).
+     */
     ds: boolean | null;
     /** null: the CAA question failed. */
     caa: { propriete: string; valeur: string }[] | null;

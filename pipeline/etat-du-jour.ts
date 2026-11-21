@@ -176,7 +176,8 @@ export function construireEtat(
           echec: echecZone,
           ns: z.ns,
           soa: z.soa?.mname ?? null,
-          ds: z.echecs.includes("DS") ? null : z.ds.length > 0,
+          // DNSSEC: the zone's answers validated by the resolver (its DS at its parent, a sound chain).
+          ds: z.etat === "ok" ? z.ad : z.etat === "echec" ? null : false,
           caa: z.echecs.includes("CAA") ? null : z.caa,
         },
         serveursDeNoms: { hotes: ns.hotes.map(hoteDe), categorie: ns.categorie, horsUE: ns.horsUE, niveau: ns.niveau },

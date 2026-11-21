@@ -145,8 +145,9 @@ describe("the scheduling of a collection", () => {
     expect(questions.length + ouvertures.length).toBe(2 * r.questions.length + domaines.length);
     expect(questions).toContain("www.mairie.example mairie.example");
     for (const d of domaines) expect(ouvertures).toContain(`${d} ${zoneDe(d)}`);
-    // The opening, the zone's first question and its DS question go to the parents: they wait like an opening.
-    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(5);
+    // The opening and the zone's first question (read twice) go to the parents: they wait like an opening.
+    expect(ouvertures.filter((o) => o === "mairie.example mairie.example")).toHaveLength(3);
+    expect(r.questions).not.toContain("mairie.example DS");
     expect(questions).not.toContain("mairie.example.example mairie.example");
   });
 
@@ -192,16 +193,58 @@ describe("the scheduling of a collection", () => {
     ]);
   });
 
-  it("asks again a domain whose DS question failed, and keeps the DS unknown, never « no DNSSEC »", async () => {
-    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["mairie.example DS"]));
+  it("asks again a domain whose CAA question failed, and keeps the CAA unknown, never « no CAA »", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["mairie.example CAA"]));
     const resultat = await collecter(new Map([["www.mairie.example", "mairie.example"]]), r, {
       ...POLITESSE,
       zoneDe,
       horloge: fausseHorloge(),
     });
     // The first pass and its two attempts.
-    expect(r.questions.filter((q) => q === "mairie.example DS")).toHaveLength(3);
-    expect(resultat.domaines.get("mairie.example")).toMatchObject({ etat: "ok", echecs: ["DS"] });
+    expect(r.questions.filter((q) => q === "mairie.example CAA")).toHaveLength(3);
+    expect(resultat.domaines.get("mairie.example")).toMatchObject({ etat: "ok", echecs: ["CAA"] });
+  });
+
+  it("opens the zones of one parent at its own pace, and those of another parent alongside", async () => {
+    const horloge = fausseHorloge();
+    const debuts = new Map<string, number>();
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom) => {
+        if (!debuts.has(nom)) debuts.set(nom, horloge.maintenant());
+        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
+    for (const z of ["a.fr", "b.fr", "c.fr"]) await client.demander(z, "NS");
+    // Two new zones per second under « fr »: half a second apart.
+    const t = (z: string) => debuts.get(z) ?? -1;
+    expect([t("a.fr"), t("b.fr"), t("c.fr")]).toEqual([0, 500, 1000]);
+    // Another parent keeps its own pace: its first zone goes at once.
+    const avant = horloge.maintenant();
+    await client.demander("a.example", "NS");
+    expect(t("a.example")).toBe(avant);
+    // A zone already open does not wait for its parent again.
+    const ensuite = horloge.maintenant();
+    await client.demander("www.c.fr", "A");
+    expect(t("www.c.fr")).toBe(ensuite);
+  });
+
+  it("stops asking a zone after three failures in a row, until the next attempt", async () => {
+    const r = new ResolveurSimule(
+      ZONE,
+      zoneDe,
+      new Set(["a.morte.example", "b.morte.example", "c.morte.example", "d.morte.example"]),
+    );
+    const client = new ClientParZone(r, zoneDe, 2);
+    for (const n of ["a", "b", "c", "d"])
+      expect((await client.demander(`${n}.morte.example`, "A")).code).toBe("SERVFAIL");
+    // The fourth question was not sent: the zone is down for this attempt.
+    expect(r.questions).toEqual(["a.morte.example A", "b.morte.example A", "c.morte.example A"]);
+    client.oublierZonesMortes();
+    await client.demander("d.morte.example", "A");
+    expect(r.questions).toContain("d.morte.example A");
   });
 
   it("asks 13 name servers of a domain at most, however many it names", async () => {

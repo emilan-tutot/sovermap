@@ -98,6 +98,18 @@ describe("the records of a day", () => {
     }
   });
 
+  it("says DNSSEC from the resolver's validation of the zone, never from a DS question", async () => {
+    let t = 0;
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const z = mesures.domaines.get("ministere.example");
+    const etat = construireEtat(liste, mesures, { noms: new Map(), mx: new Map() }, contexteEssai(), "t");
+    expect(etat.domaines.get("ministere.example")?.zone.ds).toBe(z?.ad);
+  });
+
   it("reduces a record that fails its schema, counts it, and goes on", async () => {
     let t = 0;
     const mesures = await collecter(

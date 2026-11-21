@@ -14,6 +14,14 @@ export type OptionsCollecte = {
   nomsParSeconde: number;
   domainesParSeconde: number;
   parZone: number;
+  /**
+   * New zones per second under one parent (a top-level domain, a public suffix): the first question of a zone asks
+   * its parent for the delegation, and the resolver sends most of them to one of the parent's servers. 6 keeps that
+   * server under the limit of 10 questions per second, whatever the logs say (brief B.3).
+   */
+  parentParSeconde: number;
+  /** Called once the first pass has ended (every domain measured), before the attempts: the controls may start. */
+  apresPremierePasse?: (resultat: ResultatCollecte) => void;
   /** Names in flight at once (each one may wait for its domain to open, or for a slow server). */
   enVol: number;
   /** The domains' rate climbs from `depart` per second to `domainesParSeconde` (a cold cache never bursts). */
@@ -43,6 +51,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   nomsParSeconde: 25,
   domainesParSeconde: 8,
   parZone: 2,
+  parentParSeconde: 6,
   enVol: 128,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
@@ -62,6 +71,10 @@ export type ResultatCollecte = {
 };
 
 /** The client, with the per-zone limit on every question. */
+const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
+/** Failures in a row, with no answer between them, after which a zone is down for the rest of an attempt. */
+const ZONE_MORTE = 3;
+
 export class ClientParZone implements ClientDns {
   readonly id: string;
   readonly #zones: ParZone;
@@ -71,14 +84,25 @@ export class ClientParZone implements ClientDns {
    * known (they never ask the parents in parallel).
    */
   readonly #premieres = new Map<string, Promise<void>>();
+  /** The pace of each parent zone, for the first questions of its zones. */
+  readonly #parents = new Map<string, Cadence>();
+  /** The zones that failed several times in a row, and how: they are not asked again before the next attempt. */
+  readonly #mortes = new Map<string, { suite: number; code: Reponse["code"] }>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
     parZone: number,
     private readonly frein: OptionsCollecte["frein"] = undefined,
+    private readonly parentParSeconde = Number.POSITIVE_INFINITY,
+    private readonly horloge: Horloge = HORLOGE_REELLE,
   ) {
     this.id = base.id;
     this.#zones = new ParZone(parZone);
+  }
+
+  /** A new attempt: the zones that failed are asked again. */
+  oublierZonesMortes(): void {
+    this.#mortes.clear();
   }
   async demander(nom: string, type: TypeRr): Promise<Reponse> {
     const zone = this.zoneDe(nom);
@@ -92,6 +116,14 @@ export class ClientParZone implements ClientDns {
         }),
       );
       try {
+        // The parent of a zone: the zone without its first label (« fr » for mairie.fr, « gouv.fr » for x.gouv.fr).
+        const parent = zone.includes(".") ? zone.slice(zone.indexOf(".") + 1) : "";
+        let cadence = this.#parents.get(parent);
+        if (cadence === undefined) {
+          cadence = new Cadence(this.parentParSeconde, this.horloge);
+          this.#parents.set(parent, cadence);
+        }
+        await cadence.attendre();
         return await this.#poser(nom, zone, type, true);
       } finally {
         finie();
@@ -103,12 +135,23 @@ export class ClientParZone implements ClientDns {
   }
 
   async #poser(nom: string, zone: string, type: TypeRr, ouverture: boolean): Promise<Reponse> {
+    const morte = this.#mortes.get(zone);
+    if (morte !== undefined && morte.suite >= ZONE_MORTE)
+      return { code: morte.code, ad: false, reponses: [], duree: 0 };
     if (this.frein) await this.frein(nom, zone, ouverture);
     await this.#zones.prendre(zone);
     try {
       // The load may have changed while the question waited for its turn in the zone.
       if (this.frein) await this.frein(nom, zone, ouverture);
-      return await this.base.demander(nom, type);
+      const r = await this.base.demander(nom, type);
+      // Three failures in a row and no answer: the zone is down for this attempt; its other names fail at once and
+      // are asked again at the next attempt (its servers are not asked in vain, and no worker waits behind it).
+      if (CODES_EN_ECHEC.has(r.code)) {
+        this.#mortes.set(zone, { suite: (this.#mortes.get(zone)?.suite ?? 0) + 1, code: r.code });
+      } else {
+        this.#mortes.delete(zone);
+      }
+      return r;
     } finally {
       this.#zones.rendre(zone);
     }
@@ -118,7 +161,6 @@ export class ClientParZone implements ClientDns {
   }
 }
 
-const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
 /** A failed lookup makes the SPF expansion « echec » (its list would be incomplete), never « none ». */
 const verifier = (r: Reponse, nom: string): Reponse => {
   if (CODES_EN_ECHEC.has(r.code)) throw new EchecRecherche(`${nom} : ${r.code}`);
@@ -161,7 +203,14 @@ export async function collecter(
   options: OptionsCollecte,
 ): Promise<ResultatCollecte> {
   const horloge = options.horloge ?? HORLOGE_REELLE;
-  const client = new ClientParZone(clientBrut, options.zoneDe, options.parZone, options.frein);
+  const client = new ClientParZone(
+    clientBrut,
+    options.zoneDe,
+    options.parZone,
+    options.frein,
+    options.parentParSeconde,
+    horloge,
+  );
   const spfClient = resolveurSpf(client);
   const cadenceNoms = new Cadence(options.nomsParSeconde, horloge);
   const cadenceDomaines = new Cadence(options.domainesParSeconde, horloge, options.montee);
@@ -220,12 +269,16 @@ export async function collecter(
 
   const passe = async (taches: readonly (() => Promise<void>)[]) => {
     const file = [...taches];
+    const debut = horloge.maintenant();
     let faites = 0;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
         await tache();
         faites += 1;
-        if (faites % 2_000 === 0) options.suivi?.(`${faites} / ${taches.length}`);
+        if (faites % 2_000 === 0) {
+          const parSeconde = faites / Math.max(1, (horloge.maintenant() - debut) / 1000);
+          options.suivi?.(`${faites} / ${taches.length} (${parSeconde.toFixed(1)} par seconde)`);
+        }
       }
     };
     await Promise.all(Array.from({ length: Math.min(options.enVol, file.length) }, ouvrier));
@@ -241,6 +294,7 @@ export async function collecter(
     }),
   );
   await Promise.all(mesuresDomaines);
+  options.apresPremierePasse?.(resultat);
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).
   for (let reprise = 1; reprise <= options.reprises; reprise += 1) {
@@ -257,6 +311,7 @@ export async function collecter(
         `${domainesEchoues.length} domaines, ${hotesEchoues.length} hôtes`,
     );
     await horloge.dormir(options.delaiRepriseMs);
+    client.oublierZonesMortes();
     for (const hote of hotesEchoues) hotesEnCours.delete(hote);
     await passe([
       ...melanger(domainesEchoues, options.aleatoire).map((d) => async () => {

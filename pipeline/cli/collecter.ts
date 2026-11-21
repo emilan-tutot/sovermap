@@ -13,8 +13,15 @@ import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { estPlage, type PlagesOfficielles, type ReferentielCdn } from "../cdn";
-import { collecter, type OptionsCollecte, POLITESSE } from "../collecte";
-import { ClientCadence, controler, planDeControle, type ReferentielTemoins, verifierTemoins } from "../controle";
+import { collecter, type OptionsCollecte, POLITESSE, type ResultatCollecte } from "../collecte";
+import {
+  ClientCadence,
+  controler,
+  planDeControle,
+  type ReferentielTemoins,
+  type ResultatControle,
+  verifierTemoins,
+} from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
 import { lireDila, type ReferentielDila } from "../dila";
@@ -378,6 +385,30 @@ async function principal(): Promise<number> {
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
   const debit = suivreDebit(o.conteneur, zoneDe);
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
+  const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
+  // The controls after the measurement stop at 205 minutes: what is left keeps its level without control (« probable »),
+  // and the job always has time to build and keep the day (it stops at 240 minutes).
+  const finControles = maintenant.getTime() + 205 * 60_000;
+  // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as the first pass has
+  // measured them: during the attempts, which mostly wait.
+  const hotesEtatDe = (m: ResultatCollecte) =>
+    [
+      ...new Set(
+        domainesMesures
+          .filter((d) => d.perimetre === "État")
+          .flatMap((d) => {
+            const z = m.domaines.get(d.domaine);
+            return z === undefined ? [] : [...z.ns.slice(0, 13), ...z.mx.slice(0, 10).map((x) => x.hote)];
+          }),
+      ),
+    ].sort();
+  const hotes: { liste: string[]; controle: Promise<ResultatControle> | null } = { liste: [], controle: null };
+  const lancerControleHotes = (m: ResultatCollecte): Promise<ResultatControle> => {
+    hotes.liste = hotesEtatDe(m);
+    suivi(`première passe finie à ${minutes()} min ; contrôle de ${hotes.liste.length} hôtes de l'État lancé`);
+    hotes.controle = controler(quad9, hotes.liste, [], 8, finControles);
+    return hotes.controle;
+  };
   const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
     collecter(noms, knot, {
       ...POLITESSE,
@@ -386,29 +417,15 @@ async function principal(): Promise<number> {
       echeance: maintenant.getTime() + 150 * 60_000,
       zoneDe,
       suivi,
+      apresPremierePasse: (m) => void lancerControleHotes(m),
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
     }),
     controler(quad9, plan.noms, plan.mx),
     controler(cloudflare, nomsTemoins, []),
   ]);
-  const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
-  suivi(`mesure et contrôles parallèles finis à ${minutes()} min`);
-  // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 once they are known.
-  const hotesEtat = [
-    ...new Set(
-      domainesMesures
-        .filter((d) => d.perimetre === "État")
-        .flatMap((d) => {
-          const z = mesures.domaines.get(d.domaine);
-          return z === undefined ? [] : [...z.ns.slice(0, 13), ...z.mx.slice(0, 10).map((m) => m.hote)];
-        }),
-    ),
-  ].sort();
-  // The controls after the measurement stop at 205 minutes: what is left keeps its level without control (« probable »),
-  // and the job always has time to build and keep the day (it stops at 240 minutes).
-  const finControles = maintenant.getTime() + 205 * 60_000;
-  const controleHotes = await controler(quad9, hotesEtat, [], 8, finControles);
-  suivi(`contrôle de ${hotesEtat.length} hôtes de l'État fini à ${minutes()} min`);
+  suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
+  const controleHotes = await (hotes.controle ?? lancerControleHotes(mesures));
+  suivi(`contrôle de ${hotes.liste.length} hôtes de l'État fini à ${minutes()} min`);
   const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
   // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
   // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
@@ -704,7 +721,7 @@ async function principal(): Promise<number> {
         concordants: temoins.concordants,
         ecarts: temoins.verdicts.filter((v) => !v.ok).map((v) => `${v.nom} (${v.resolveur})`),
       },
-      controle: { resolveur: "quad9", noms: plan.noms.length + hotesEtat.length, mx: plan.mx.length },
+      controle: { resolveur: "quad9", noms: plan.noms.length + hotes.liste.length, mx: plan.mx.length },
       debitMaxParServeur:
         debitServeurs === null
           ? null
