@@ -64,7 +64,8 @@ describe("the logo (A.5, the owner's choice of 20/11/2026)", () => {
     const svg = svgLogo({ ...LOGO_PETIT, titre: piege });
     expect(svg).toContain("<title>&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;x a=&#39;</title>");
     // Nothing of the title can close a tag or an attribute: no raw quote, angle bracket or script tag is left in it.
-    const titre = /<title>(.*)<\/title>/.exec(svg)?.[1] ?? "";
+    const titre = /<title>([\s\S]*?)<\/title>/.exec(svg)?.[1];
+    if (titre === undefined) throw new Error("le titre manque au dessin");
     expect(titre).not.toMatch(/["'<>]/);
     expect(svg).not.toContain("<script>");
   });

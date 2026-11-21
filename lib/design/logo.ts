@@ -81,8 +81,8 @@ export function svgLogo(options: OptionsSvg): string {
     (options.claire === undefined
       ? ""
       : `@media (prefers-color-scheme:dark){.l{stroke:${options.claire}}.p{fill:${options.claire}}}`);
-  // Every character that means something in HTML or XML is escaped, quotes included: the drawing is also placed in
-  // HTML attributes (data URIs of scripts/design/icones.ts), and must stay inert wherever it goes.
+  // Every character that means something in HTML or XML is escaped, quotes included, so that the escaping is complete
+  // wherever the drawing goes (CodeQL follows it into the attributes of scripts/design/icones.ts, where it is base64).
   const echappe = (texte: string) =>
     texte
       .replace(/&/g, "&amp;")
