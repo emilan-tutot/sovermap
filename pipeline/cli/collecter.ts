@@ -830,6 +830,12 @@ async function principal(): Promise<number> {
     mkdirSync(path.dirname(cible), { recursive: true });
     writeFileSync(cible, texte);
   }
+  // The registered zones of a busy second that are units of the list (public bodies' domains, published anyway): named;
+  // never a third party's.
+  const dontListe = (zones: readonly string[]) => {
+    const nommees = zones.filter((z) => liste.domaines.has(z));
+    return nommees.length === 0 ? "" : `, dont ${nommees.map((z) => `« ${z} »`).join(", ")}`;
+  };
   const resume = [
     `## Collecte du ${date}${o.essai ? " (essai)" : ""}`,
     "",
@@ -858,12 +864,14 @@ async function principal(): Promise<number> {
           }`
     }.`,
     // The servers above 10, by the top-level zones they serve, never by their address: in their worst second, how many
-    // zone cuts and registered zones they were asked about, and which questions (what tells a shared server apart).
+    // zone cuts and registered zones they were asked about (the units of the list named), how many distinct names, how
+    // many questions to a parent of their zone (a DS asked again and again), and which questions: what tells a shared
+    // server, a zone's retries and a burst of sub-zones apart.
     `- Au-delà de 10, par serveur : ${
       (debitServeurs?.auDela ?? [])
         .map(
           (s) =>
-            `${s.tlds.length > 0 ? `un serveur de « ${s.tlds.join(", ")} »` : "un serveur d'une autre zone"} : ${s.secondes} s, au plus ${s.max} (pire seconde : ${s.coupes} coupures de zone, ${s.zones} zones, ${Object.entries(
+            `${s.tlds.length > 0 ? `un serveur de « ${s.tlds.join(", ")} »` : "un serveur d'une autre zone"} : ${s.secondes} s, au plus ${s.max} (pire seconde : ${s.coupes} coupures de zone, ${s.zones} zones${dontListe(s.zonesVues)}, ${s.noms} noms distincts, ${s.auParent} au parent de leur zone, ${Object.entries(
               s.parType,
             )
               .map(([type, n]) => `${type} ${n}`)

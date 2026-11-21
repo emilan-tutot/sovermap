@@ -88,8 +88,45 @@ describe("the pace towards each authoritative server", () => {
     const r = c.resultat();
     // Two seconds with questions (10 and 19): the waits between them are not seconds of the measurement.
     expect(r).toMatchObject({ depassements: 2, secondesAuDela: 1, secondes: 2 });
-    // The shared server: eleven zone cuts and eleven registered zones in its worst second.
-    expect(r.auDela).toContainEqual({ tlds: [], secondes: 1, max: 11, coupes: 11, zones: 11, parType: { A: 11 } });
+    // The shared server: eleven zone cuts, eleven registered zones and eleven names in its worst second.
+    expect(r.auDela).toContainEqual({
+      tlds: [],
+      secondes: 1,
+      max: 11,
+      coupes: 11,
+      zones: 11,
+      noms: 11,
+      auParent: 0,
+      zonesVues: ["z0.exemple", "z1.exemple", "z10.exemple", "z2.exemple", "z3.exemple"],
+      parType: { A: 11 },
+    });
+  });
+
+  it("tells a zone's DS asked again and again at its parent from a burst of its sub-zones", () => {
+    const zoneDe = (nom: string) =>
+      nom
+        .split(".")
+        .slice(nom.endsWith("gouv.exemple") ? -3 : -2)
+        .join(".");
+    const c = new CompteurServeurs(zoneDe, (zone) => zone === "gouv.exemple");
+    // One zone's DS, twelve times in one second, at a server of its parent gouv.exemple.
+    for (let i = 0; i < 12; i += 1) c.lire(ligne("30", "192.0.2.53", "gouv.exemple.", "site.gouv.exemple.", "DS"));
+    // Eleven sub-zones of one zone, each with its DS at that zone's server.
+    for (let i = 0; i < 11; i += 1) c.lire(ligne("30", "198.51.100.53", "site.exemple.", `s${i}.site.exemple.`, "DS"));
+    const r = c.resultat();
+    expect(r.auDela).toContainEqual(
+      expect.objectContaining({
+        max: 12,
+        coupes: 1,
+        zones: 1,
+        noms: 1,
+        auParent: 12,
+        zonesVues: ["site.gouv.exemple"],
+      }),
+    );
+    expect(r.auDela).toContainEqual(
+      expect.objectContaining({ max: 11, coupes: 1, zones: 1, noms: 11, auParent: 0, zonesVues: ["site.exemple"] }),
+    );
   });
 
   it("tells the addresses of a name server, and what our questions to a zone cost its servers", () => {
