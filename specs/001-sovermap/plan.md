@@ -413,6 +413,13 @@ Sources :
 - **Autonomie** : une règle durable entre dans `CLAUDE.md` (les actions du projet qui se refont ou se rattrapent se décident seules et se notent au journal ; ce qui est irréversible ou hors du projet se regroupe en un seul message, à un arrêt).
 - **Pour la suite** (à noter seulement) : les notes de l'ARRÊT 2 bis restent valables. Retouche : aux points des grands chantiers, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement.
 
+### Décisions du propriétaire (chantier 2, point 04, 21/11/2026)
+
+- **Noms internes (Q1 : A)** : quatrième règle de la méthode § 3, « sous-zone interne : une étiquette du sous-domaine, autre que la première, vaut in » (3 901 noms de la liste mesurée au 21/11/2026, sous education.gouv.fr et education.fr). Deux garde-fous : le nombre de noms écartés par cette règle est publié sur la page Qualité, avec la règle ; à chaque nouvelle liste officielle, 20 de ces noms tirés au hasard sont reposés à Quad9 : si l'un répond, la règle se revoit au point suivant et ces noms reviennent dans la mesure. C'est un changement de règles (B.7 bis), jamais un déménagement.
+- **Tolérance du débit (B.3)** : zéro seconde au-dessus de 10 reste l'objectif. Pour lancer le jour 1 : sur l'essai, et en projection sur la collecte complète, au plus 0,1 % des secondes au-dessus de 10 questions vers un même serveur, et jamais plus de 15. Ces deux chiffres sont publiés chaque jour sur la page Qualité, et on continue de les faire baisser. Au-delà : corriger et relancer. La durée garde sa cible de B.11 (moins de 3 h pour la mesure) ; au-delà, la collecte se découpe selon B.8, aux mêmes règles.
+- **Sécurité** : après chaque fusion, lire les alertes ouvertes de code scanning, puis les traiter, ou les noter au point suivant (`CLAUDE.md`).
+- Les décisions prises seul au point 04 sont validées : DNSSEC lu sur la validation du résolveur ; un domaine qui n'existe pas n'est pas interrogé sur CAA, MX et TXT ; la mesure domaine par domaine ; les codes `ZONE_MUETTE` et `SOUS_ZONE_MUETTE` ; plus de reprise après 165 minutes.
+
 ### Décisions du propriétaire (chantier 2, point 03, 21/11/2026)
 
 - **Source IP → AS** : IPtoASN reste relevé à la main (tous les 80 jours environ), RIS en contrôle ; quand RIS le contredit le jour même, le niveau est « non déterminé ». Aucun logo de société sur le site (RIS publié l'aurait imposé).

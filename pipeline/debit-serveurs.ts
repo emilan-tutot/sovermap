@@ -7,8 +7,27 @@
 export type DebitServeurs = {
   /** Upstream questions seen in the logs. */
   questions: number;
-  /** Seconds in which one address got more than 10 questions (each one noted; the collection slows down). */
+  /** Seconds in which one address got more than 10 questions (each address and second noted once). */
   depassements: number;
+  /**
+   * Seconds from the first question seen to the last, and those in which at least one address got more than 10: the
+   * two figures of the tolerance (docs/methode.md, B.3), published every day with the highest count.
+   */
+  secondes: number;
+  secondesAuDela: number;
+  /**
+   * The addresses that got more than 10 questions within a second (at most 5, the most such seconds first), as the
+   * summary tells them, never by their address: the top-level zones they served, and in their worst second, the zone
+   * cuts, the registered zones of the names and the question types.
+   */
+  auDela: {
+    tlds: string[];
+    secondes: number;
+    max: number;
+    coupes: number;
+    zones: number;
+    parType: Record<string, number>;
+  }[];
   /**
    * The highest number of questions sent to one address within one second, and when; `tldsMax`: the top-level zones
    * that address served (what is published: never the address itself).
@@ -69,6 +88,16 @@ export class CompteurServeurs {
   #zonesRecentes = new Map<string, Map<string, number>>();
   #oubli = 0;
   #parAdresseTotal = new Map<string, { questions: number; parType: Map<string, number>; tlds: Set<string> }>();
+  #premiere: number | null = null;
+  #derniere: number | null = null;
+  #secondesAuDela = 0;
+  /** Within the current second, per address: the registered zones of the names asked, and the question types. */
+  #zonesParAdresse = new Map<string, Set<string>>();
+  #typesParAdresse = new Map<string, Map<string, number>>();
+  #auDela = new Map<
+    string,
+    { secondes: number; max: number; coupes: number; zones: number; parType: Map<string, number> }
+  >();
 
   /** One line of `docker logs --timestamps` (its timestamp, then Knot's line). */
   lire(ligne: string): void {
@@ -80,6 +109,8 @@ export class CompteurServeurs {
       this.#clore();
       this.#parAdresse = new Map();
       this.#coupesParAdresse = new Map();
+      this.#zonesParAdresse = new Map();
+      this.#typesParAdresse = new Map();
       this.#courante = seconde;
       this.#chargeCourante = 0;
     }
@@ -87,6 +118,17 @@ export class CompteurServeurs {
     const n = (this.#parAdresse.get(question[1]) ?? 0) + 1;
     this.#parAdresse.set(question[1], n);
     const t = Date.parse(`${seconde}Z`) / 1000;
+    this.#premiere ??= t;
+    this.#derniere = t;
+    const typeDeLaSeconde = question[4] ?? "?";
+    const types = this.#typesParAdresse.get(question[1]) ?? new Map<string, number>();
+    types.set(typeDeLaSeconde, (types.get(typeDeLaSeconde) ?? 0) + 1);
+    this.#typesParAdresse.set(question[1], types);
+    if (question[3] !== undefined) {
+      const zones = this.#zonesParAdresse.get(question[1]) ?? new Set<string>();
+      zones.add(this.zoneDe(coupeNormale(question[3])));
+      this.#zonesParAdresse.set(question[1], zones);
+    }
     if (question[2] !== undefined) {
       const coupe = coupeNormale(question[2]);
       const coupes = this.#coupesParAdresse.get(question[1]) ?? new Set<string>();
@@ -169,19 +211,41 @@ export class CompteurServeurs {
 
   /** The second that ends: its counts above the limit, and its busy zone cuts (for the summary). */
   #clore(): void {
+    let auDela = false;
     for (const [adresse, n] of this.#parAdresse) {
-      if (n > LIMITE_PAR_SERVEUR) this.#depassements += 1;
+      if (n > LIMITE_PAR_SERVEUR) {
+        this.#depassements += 1;
+        auDela = true;
+        const s = this.#auDela.get(adresse) ?? {
+          secondes: 0,
+          max: 0,
+          coupes: 0,
+          zones: 0,
+          parType: new Map<string, number>(),
+        };
+        s.secondes += 1;
+        if (n > s.max) {
+          s.max = n;
+          s.coupes = this.#coupesParAdresse.get(adresse)?.size ?? 0;
+          s.zones = this.#zonesParAdresse.get(adresse)?.size ?? 0;
+          s.parType = new Map(this.#typesParAdresse.get(adresse) ?? []);
+        }
+        this.#auDela.set(adresse, s);
+      }
       if (n < SEUIL_FREIN) continue;
       for (const coupe of this.#coupesParAdresse.get(adresse) ?? []) {
         this.#secondesChaudes.set(coupe, (this.#secondesChaudes.get(coupe) ?? 0) + 1);
       }
     }
+    if (auDela) this.#secondesAuDela += 1;
   }
 
   resultat(): DebitServeurs {
     this.#clore();
     this.#parAdresse = new Map();
     this.#coupesParAdresse = new Map();
+    this.#zonesParAdresse = new Map();
+    this.#typesParAdresse = new Map();
     const coupesChaudes = [...this.#secondesChaudes]
       .sort(([a, x], [b, y]) => y - x || (a < b ? -1 : 1))
       .slice(0, 5)
@@ -198,6 +262,19 @@ export class CompteurServeurs {
     return {
       questions: this.#questions,
       depassements: this.#depassements,
+      secondes: this.#premiere === null || this.#derniere === null ? 0 : this.#derniere - this.#premiere + 1,
+      secondesAuDela: this.#secondesAuDela,
+      auDela: [...this.#auDela]
+        .sort(([a, x], [b, y]) => y.secondes - x.secondes || y.max - x.max || (a < b ? -1 : 1))
+        .slice(0, 5)
+        .map(([adresse, s]) => ({
+          tlds: [...(this.#parAdresseTotal.get(adresse)?.tlds ?? [])].sort(),
+          secondes: s.secondes,
+          max: s.max,
+          coupes: s.coupes,
+          zones: s.zones,
+          parType: Object.fromEntries([...s.parType].sort(([, x], [, y]) => y - x)),
+        })),
       max: this.#max,
       adresse: this.#adresse,
       seconde: this.#seconde,

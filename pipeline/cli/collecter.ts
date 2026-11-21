@@ -30,6 +30,13 @@ import { construireEtat, type Controles, type Mesures, type Pannes } from "../et
 import { verifierLimite } from "../garde";
 import { type MesureNom, mesurerNom } from "../mesure";
 import { construireListe, type CopieListe } from "../perimetre";
+import {
+  controleDu,
+  type EtatRegleInterne,
+  lireEtatRegleInterne,
+  reposerNoms,
+  TEXTE_REGLE_INTERNE,
+} from "../regle-interne";
 import { generateur, melanger } from "../politesse";
 import { domaineEnregistrable, lireListeSuffixes } from "../psl";
 import {
@@ -68,7 +75,7 @@ const SEUIL_REDUITES = 0.001;
 const VERSION_CLASSEMENT = 1;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.2";
+const METHODE = "0.2.1";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({
@@ -216,7 +223,7 @@ type EtatJson = {
   date: string;
   jours: number;
   versions: { regles: Record<string, unknown> };
-  qualite?: { pannesConfirmeesPourcent?: number };
+  qualite?: { pannesConfirmeesPourcent?: number; regleSousZoneInterne?: unknown };
 };
 
 function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson } | null {
@@ -348,9 +355,27 @@ async function principal(): Promise<number> {
     const [nom, contenu] = [...entrees.entries()].find(([n]) => n.endsWith(".json")) ?? [];
     if (nom !== undefined && contenu !== undefined) dila = lireDila(contenu.toString("utf8"), nom);
   }
-  const liste = construireListe(ref.copies, dila, ref.psl, ref.plateformes);
-  const zoneDe = (nom: string) => domaineEnregistrable(nom, ref.psl) ?? nom;
   const graine = Number(date.replaceAll("-", ""));
+  const quad9 = new ClientCadence(new ClientUdp("quad9", o.controle, 53, 8_000), 2);
+  // The fourth rule of the method (§ 3, point 04): at each new list, 20 of its names are asked again to Quad9; if one
+  // answers, the rule is suspended and its names are measured, until it is reviewed at the next point.
+  const listeAvecRegle = construireListe(ref.copies, dila, ref.psl, ref.plateformes);
+  const nomsRegle = [...(listeAvecRegle.ecartes.get("sous-zone interne") ?? [])];
+  const derniereListe = ref.copies.at(-1)?.date ?? "";
+  const etatVeille =
+    o.donnees !== undefined && existsSync(path.join(o.donnees, "etat.json"))
+      ? json<EtatJson>(o.donnees, "etat.json")
+      : null;
+  const regleVeille = lireEtatRegleInterne(etatVeille?.qualite?.regleSousZoneInterne);
+  const regleInterne: EtatRegleInterne =
+    regleVeille !== null && controleDu(regleVeille, derniereListe, METHODE) === "garder"
+      ? regleVeille
+      : await reposerNoms(quad9, nomsRegle, generateur(graine + 2), date, derniereListe, METHODE);
+  const liste =
+    regleInterne.etat === "suspendue"
+      ? construireListe(ref.copies, dila, ref.psl, ref.plateformes, ".gouv.fr", { sousZoneInterne: false })
+      : listeAvecRegle;
+  const zoneDe = (nom: string) => domaineEnregistrable(nom, ref.psl) ?? nom;
   // Each unit's web name is measured too (it carries the domain's addresses layer); a trial draws a sample whose
   // names, web names included, never exceed its limit.
   const echantillon = (nombre: number) => {
@@ -380,7 +405,6 @@ async function principal(): Promise<number> {
   // The measurement, with Quad9 and Cloudflare alongside, at their own pace.
   const [hote, port] = adresseEtPort(o.resolveur);
   const knot = new ClientUdp("knot", hote, port, 12_000);
-  const quad9 = new ClientCadence(new ClientUdp("quad9", o.controle, 53, 8_000), 2);
   const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
   const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
@@ -552,7 +576,8 @@ async function principal(): Promise<number> {
         );
   const publie = lirePublie(o.donnees);
   // The rules: the lists and referentials of the repository, and the date of the IPtoASN copy.
-  const regles = { ...ref.regles, iptoasn: source("iptoasn")?.date ?? null };
+  // A suspended fourth rule changes the rules of the day (B.7 bis): its names coming back are never moves.
+  const regles = { ...ref.regles, iptoasn: source("iptoasn")?.date ?? null, sousZoneInterne: regleInterne.etat };
   const reglesChangees = publie !== null && jsonStable(publie.meta.versions.regles) !== jsonStable(regles);
   // New rules without yesterday (the cache was lost): the records keep the published classification, so etat.json keeps
   // the published rules too, and the rebase happens on the next day that has a yesterday (brief B.7 bis).
@@ -728,6 +753,13 @@ async function principal(): Promise<number> {
       domaines: b.etat.domaines.size,
       domainesEtat: [...b.etat.domaines.values()].filter((d) => d.perimetre === "État").length,
       exclus: Object.fromEntries(liste.exclus),
+      // The fourth rule, its text and the names it sets aside (0 while suspended), with its last check at Quad9.
+      regleSousZoneInterne: {
+        texte: TEXTE_REGLE_INTERNE,
+        noms: liste.exclus.get("sous-zone interne") ?? 0,
+        nomsConcernes: nomsRegle.length,
+        ...regleInterne,
+      },
       temoins: {
         concordants: temoins.concordants,
         ecarts: temoins.verdicts.filter((v) => !v.ok).map((v) => `${v.nom} (${v.resolveur})`),
@@ -738,7 +770,13 @@ async function principal(): Promise<number> {
           ? null
           : {
               questions: debitServeurs.questions,
-              depassements: debitServeurs.depassements,
+              // The two figures of the tolerance (methode B.3): the share of seconds above 10, and the highest count.
+              secondes: debitServeurs.secondes,
+              secondesAuDela: debitServeurs.secondesAuDela,
+              partAuDelaPourcent:
+                debitServeurs.secondes === 0
+                  ? 0
+                  : Math.round((100_000 * debitServeurs.secondesAuDela) / debitServeurs.secondes) / 1000,
               max: debitServeurs.max,
               // The server's top-level zones, never its address.
               serveur: debitServeurs.tldsMax,
@@ -768,11 +806,41 @@ async function principal(): Promise<number> {
     `## Collecte du ${date}${o.essai ? " (essai)" : ""}`,
     "",
     `- Noms mesurés : ${mesuresNoms.length} sur ${liste.noms.size} ; domaines : ${b.etat.domaines.size} ; durée : ${etatJson.collecte.dureeMinutes} min.`,
+    `- Règle « sous-zone interne » (méthode § 3) : ${
+      regleInterne.etat === "appliquée"
+        ? `${liste.exclus.get("sous-zone interne") ?? 0} noms écartés`
+        : `suspendue, ses ${nomsRegle.length} noms sont mesurés (à revoir au point suivant)`
+    } ; noms reposés à Quad9 le ${regleInterne.controle.date} (liste du ${regleInterne.liste}) : ${regleInterne.controle.reponses} réponse(s) sur ${regleInterne.controle.poses}.`,
     `- Changements confirmés : ${b.changements.length}${b.etatInitial ? " (état initial)" : ""}${b.reglesChangees ? " (règles nouvelles : rien au journal)" : ""}.`,
     `- Débit maximal vers un même serveur faisant autorité : ${
       debitServeurs === null
         ? "non mesuré"
-        : `${debitServeurs.max} questions en une seconde (${debitServeurs.tldsMax.length > 0 ? `un serveur de « ${debitServeurs.tldsMax.join(", ")} »` : "un serveur d'une autre zone"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
+        : `${debitServeurs.max} questions en une seconde (${debitServeurs.tldsMax.length > 0 ? `un serveur de « ${debitServeurs.tldsMax.join(", ")} »` : "un serveur d'une autre zone"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.secondesAuDela} sur ${debitServeurs.secondes} (${
+            debitServeurs.secondes === 0
+              ? "0"
+              : String(Math.round((100_000 * debitServeurs.secondesAuDela) / debitServeurs.secondes) / 1000).replace(
+                  ".",
+                  ",",
+                )
+          } %) ; tolérance (au plus 0,1 % et jamais plus de 15) : ${
+            debitServeurs.max <= 15 && debitServeurs.secondesAuDela * 1000 <= debitServeurs.secondes
+              ? "tenue"
+              : "dépassée"
+          }`
+    }.`,
+    // The servers above 10, by the top-level zones they serve, never by their address: in their worst second, how many
+    // zone cuts and registered zones they were asked about, and which questions (what tells a shared server apart).
+    `- Au-delà de 10, par serveur : ${
+      (debitServeurs?.auDela ?? [])
+        .map(
+          (s) =>
+            `${s.tlds.length > 0 ? `un serveur de « ${s.tlds.join(", ")} »` : "un serveur d'une autre zone"} : ${s.secondes} s, au plus ${s.max} (pire seconde : ${s.coupes} coupures de zone, ${s.zones} zones, ${Object.entries(
+              s.parType,
+            )
+              .map(([type, n]) => `${type} ${n}`)
+              .join(", ")})`,
+        )
+        .join(" ; ") || "aucun"
     }.`,
     // Only the top-level zones are named in this public summary; the others (a host's customers, a CDN…) are counted.
     `- Frein : ${attentesFrein.ouvertures} questions vers une zone parente (ouverture d’un domaine, première question d’une zone) et ${attentesFrein.questions} autres questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${

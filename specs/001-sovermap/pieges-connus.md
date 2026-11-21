@@ -166,3 +166,7 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
     - Parade : une fiche ne porte que des valeurs stables (plan § 4) ; les dates des sources sont dans `etat.json`.
 42. **Le dossier `node_modules` suit la dernière branche installée** : après un `npm install` sur une autre branche, `npm run check` ne juge plus la branche courante comme la CI.
     - Parade : `npm ci` après chaque changement de branche dont le fichier de verrouillage diffère.
+
+43. **Une branche `fix/c2-*` publie une préversion à chaque envoi** (21/11/2026) : `vercel.json` ne dispense que `feat/c2-*` (le MEGA ne nomme que celles-là) ; chaque envoi d'une branche `fix/c2-*` qui touche un fichier non inerte (`scripts/vercel-ignore.ts`) coûte donc un déploiement. Toutes les branches du chantier se nomment `feat/c2-…`, même pour une correction.
+
+44. **Un serveur de noms partagé reçoit la somme des rythmes de ses zones** (21/11/2026) : une cadence par zone ne borne pas la charge d'un serveur qui sert des centaines de domaines (hébergeurs, ministères) ; avec 128 domaines en vol, plusieurs de ses zones avançaient ensemble (19 questions en une seconde à l'essai 44861921566). Le rythme se règle par serveur de noms, et une question prend le même instant chez tous les serveurs de sa zone (`instantCommun`).

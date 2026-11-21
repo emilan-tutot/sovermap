@@ -360,6 +360,38 @@ describe("the scheduling of a collection", () => {
     expect(r.questions).toContain("www.mairie.example A");
   });
 
+  it("takes one instant at every name server of a zone, a pace shared by every zone they serve", async () => {
+    const horloge = fausseHorloge();
+    const envois: { question: string; t: number }[] = [];
+    const ns = (zone: string, cibles: string[]): Reponse["reponses"] =>
+      cibles.map((cible) => ({ proprietaire: zone, ttl: 1, donnee: { type: "NS", cible } }));
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        envois.push({ question: `${nom} ${type}`, t: horloge.maintenant() });
+        const reponses =
+          type !== "NS"
+            ? []
+            : nom === "a.example"
+              ? ns("a.example", ["ns1.hebergeur.example", "ns2.hebergeur.example"])
+              : nom === "b.example"
+                ? ns("b.example", ["NS2.hebergeur.example."])
+                : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // Two questions per second to one name server: a and b share ns2 (written in capitals, with its dot, by b).
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2);
+    await client.demander("a.example", "NS");
+    await client.demander("b.example", "NS");
+    const debut = horloge.maintenant();
+    for (const nom of ["www.a.example", "www.b.example", "mail.a.example"]) await client.demander(nom, "A");
+    const apres = envois.filter((e) => e.question.endsWith(" A")).map((e) => e.t - debut);
+    // b waits for ns2's next instant; a's second question waits for ns2 too, although ns1 is free.
+    expect(apres).toEqual([0, 500, 1000]);
+  });
+
   it("keeps each zone's own pace, and asks each SPF lookup once in a run", async () => {
     const horloge = fausseHorloge();
     const debuts: number[] = [];

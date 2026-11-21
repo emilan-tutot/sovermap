@@ -106,6 +106,16 @@ describe("noms", () => {
     expect(raisonExclusion("labonnealternance.apprentissage.beta.gouv.fr")).toBeNull();
     expect(raisonExclusion("developpement-durable.gouv.fr")).toBeNull();
   });
+  it("sets aside the names of an internal sub-zone (an inner label « in »), never a first label « in »", () => {
+    expect(raisonExclusion("grh.in.phm.ministere.gouv.fr")).toBe("sous-zone interne");
+    expect(raisonExclusion("a.b.in.cloe.ministere.gouv.fr")).toBe("sous-zone interne");
+    expect(raisonExclusion("in.ministere.gouv.fr")).toBeNull();
+    expect(raisonExclusion("in.ambassade.example")).toBeNull();
+    expect(raisonExclusion("www.main.ministere.gouv.fr")).toBeNull();
+    // An earlier rule keeps its names; a suspended rule lets its names come back.
+    expect(raisonExclusion("recette.in.phm.ministere.gouv.fr")).toBe("environnement");
+    expect(raisonExclusion("grh.in.phm.ministere.gouv.fr", undefined, { sousZoneInterne: false })).toBeNull();
+  });
   it("finds the registrable domain and the web name", () => {
     expect(domaineEnregistre("www.impots.gouv.fr")).toBe("impots.gouv.fr");
     expect(domaineEnregistre("www.ville.example")).toBe("ville.example");
@@ -253,7 +263,12 @@ describe("fichiers lus par les outils", () => {
   };
   it("accepts a list and observations of the expected shape", () => {
     expect(validerListe({ domaines: [entree] })).toEqual([entree]);
-    const fichier = { principal: "192.0.2.53", controle: "198.51.100.53", debut: "2026-11-19T00:00:00.000Z", resultats: [{ entree, principale: observation, controle: observation }] };
+    const fichier = {
+      principal: "192.0.2.53",
+      controle: "198.51.100.53",
+      debut: "2026-11-19T00:00:00.000Z",
+      resultats: [{ entree, principale: observation, controle: observation }],
+    };
     expect(validerObservations(fichier).resultats[0]?.principale.a).toEqual(["192.0.2.10"]);
   });
   it("stops with the place and the reason on any other shape", () => {
@@ -261,9 +276,14 @@ describe("fichiers lus par les outils", () => {
     expect(() => validerListe({ domaines: [{ ...entree, nom: "pas un nom" }] })).toThrow("liste.domaines[0].nom");
     const incomplete: Record<string, unknown> = { ...observation };
     delete incomplete["adressesNs"];
-    expect(() => validerObservations({ principal: "a", controle: "b", debut: "c", resultats: [{ entree, principale: incomplete, controle: observation }] })).toThrow(
-      "observations.resultats[0].principale.adressesNs",
-    );
+    expect(() =>
+      validerObservations({
+        principal: "a",
+        controle: "b",
+        debut: "c",
+        resultats: [{ entree, principale: incomplete, controle: observation }],
+      }),
+    ).toThrow("observations.resultats[0].principale.adressesNs");
     expect(() => validerObservation({ ...observation, a: ["2001:db8::5"] }, "obs")).toThrow("obs.a");
     expect(validerListeFastly({ addresses: ["198.51.100.0/24"], ipv6_addresses: ["2001:db8::/32"] })).toHaveLength(2);
     expect(() => validerListeFastly({ addresses: "198.51.100.0/24" })).toThrow("liste de Fastly");

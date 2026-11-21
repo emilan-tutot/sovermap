@@ -41,6 +41,7 @@ const liste: ListeReference = {
     ],
   ]),
   exclus: new Map(),
+  ecartes: new Map(),
 };
 
 const zone = {

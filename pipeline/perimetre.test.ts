@@ -60,6 +60,20 @@ describe("the reference list", () => {
     expect(liste.exclus.get("environnement")).toBe(1);
   });
 
+  it("counts a name set aside once, keeps it, and measures it when the fourth rule is suspended", () => {
+    const copies = [
+      { date: "2024-12-11", csv: "name,type\nx.in.phm.ministere.gouv.example,\nin.ministere.gouv.example,\n" },
+      { date: "2026-11-19", csv: "name,type\nx.in.phm.ministere.gouv.example,\n" },
+    ];
+    const avec = construireListe(copies, null, suffixes, plateformes, ".gouv.example");
+    expect(avec.exclus.get("sous-zone interne")).toBe(1);
+    expect([...(avec.ecartes.get("sous-zone interne") ?? [])]).toEqual(["x.in.phm.ministere.gouv.example"]);
+    expect(avec.noms.has("in.ministere.gouv.example")).toBe(true);
+    const sans = construireListe(copies, null, suffixes, plateformes, ".gouv.example", { sousZoneInterne: false });
+    expect(sans.noms.has("x.in.phm.ministere.gouv.example")).toBe(true);
+    expect(sans.exclus.has("sous-zone interne")).toBe(false);
+  });
+
   it("gives each unit its web name, adding the apex when no www. is listed", () => {
     expect(liste.domaines.get("mairie.example")?.nomWeb).toBe("www.mairie.example");
     const ministere = liste.domaines.get("ministere.gouv.example");

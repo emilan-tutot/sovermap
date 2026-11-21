@@ -54,13 +54,29 @@ export class Cadence {
     );
     return 1000 / debit;
   }
-  async attendre(): Promise<void> {
-    const maintenant = this.horloge.maintenant();
+  /** The earliest start this cadence can give at `maintenant`. */
+  libre(maintenant: number): number {
     this.#debut ??= maintenant;
-    const depart = Math.max(maintenant, this.#prochain);
-    this.#prochain = depart + this.#intervalle(depart);
-    if (depart > maintenant) await this.horloge.dormir(depart - maintenant);
+    return Math.max(maintenant, this.#prochain);
   }
+  /** Takes the start `depart` (never earlier than `libre`): the next one is one interval after it. */
+  prendre(depart: number): void {
+    this.#prochain = Math.max(this.#prochain, depart + this.#intervalle(depart));
+  }
+  async attendre(): Promise<void> {
+    await instantCommun([this], this.horloge);
+  }
+}
+
+/**
+ * One start taken at the same instant at every cadence (the name servers of a zone): the question leaves when all of
+ * them can give it, so no cadence ever sees two questions closer than its interval, whichever server gets it.
+ */
+export async function instantCommun(cadences: readonly Cadence[], horloge: Horloge): Promise<void> {
+  const maintenant = horloge.maintenant();
+  const depart = Math.max(maintenant, ...cadences.map((c) => c.libre(maintenant)));
+  for (const c of cadences) c.prendre(depart);
+  if (depart > maintenant) await horloge.dormir(depart - maintenant);
 }
 
 /** At most `max` tasks at a time for one key (a zone). */

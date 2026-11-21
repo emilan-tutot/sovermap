@@ -5,7 +5,7 @@
 // .gouv.fr and the DILA's websites (decision D1, a2, before the perimeter of C.5), « hors État » otherwise.
 import type { ReferentielDila } from "./dila";
 import { lignesCsv, nomValide } from "./liste";
-import { type RaisonExclusion, raisonExclusion } from "./noms";
+import { REGLES_EXCLUSION, type RaisonExclusion, type ReglesExclusion, raisonExclusion } from "./noms";
 import { domaineEnregistrable, type ListeSuffixes } from "./psl";
 
 export type Exclusion = RaisonExclusion | "plateforme tierce sans nom propre" | "suffixe public";
@@ -35,7 +35,10 @@ export type EntreeDomaine = {
 export type ListeReference = {
   noms: Map<string, EntreeNom>;
   domaines: Map<string, EntreeDomaine>;
+  /** Distinct names set aside, per rule (a name in two copies of the list counts once). */
   exclus: Map<Exclusion, number>;
+  /** The names each rule set aside (the fourth rule's are asked again to Quad9 at each new list). */
+  ecartes: Map<Exclusion, Set<string>>;
 };
 
 export type CopieListe = { date: string; csv: string };
@@ -56,10 +59,13 @@ export function construireListe(
   plateformes: ReadonlySet<string>,
   /** The suffix of the State's own domains (decision D1, a1). */
   suffixeEtat = ".gouv.fr",
+  /** The rules in force (the fourth one may be suspended). */
+  regles: ReglesExclusion = REGLES_EXCLUSION,
 ): ListeReference {
   const noms = new Map<string, EntreeNom>();
-  const exclus = new Map<Exclusion, number>();
-  const exclure = (raison: Exclusion) => exclus.set(raison, (exclus.get(raison) ?? 0) + 1);
+  const ecartes = new Map<Exclusion, Set<string>>();
+  const exclure = (raison: Exclusion, nom: string) =>
+    ecartes.set(raison, (ecartes.get(raison) ?? new Set<string>()).add(nom));
   const ajouter = (brut: string, provenance: string, type: string | null, organisme: string | null) => {
     const nom = nomValide(brut);
     if (nom === null) return;
@@ -71,10 +77,10 @@ export function construireListe(
       return;
     }
     const domaine = uniteDe(nom, suffixes, plateformes);
-    if (domaine === null) return void exclure("suffixe public");
-    if (plateformes.has(nom)) return void exclure("plateforme tierce sans nom propre");
-    const raison = raisonExclusion(nom, domaineEnregistrable(nom, suffixes) ?? domaine);
-    if (raison !== null) return void exclure(raison);
+    if (domaine === null) return void exclure("suffixe public", nom);
+    if (plateformes.has(nom)) return void exclure("plateforme tierce sans nom propre", nom);
+    const raison = raisonExclusion(nom, domaineEnregistrable(nom, suffixes) ?? domaine, regles);
+    if (raison !== null) return void exclure(raison, nom);
     noms.set(nom, {
       nom,
       domaine,
@@ -129,5 +135,6 @@ export function construireListe(
       ministeres: trie(organismes.flatMap((o) => (ministereDe.has(o) ? [ministereDe.get(o) as string] : []))),
     });
   }
-  return { noms, domaines, exclus };
+  const exclus = new Map<Exclusion, number>([...ecartes].map(([raison, ensemble]) => [raison, ensemble.size]));
+  return { noms, domaines, exclus, ecartes };
 }

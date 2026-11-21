@@ -146,6 +146,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 ### Partie D — T4, le vrai site (`feat/c2-site-…`)
 - [ ] D.1 Le site complet dans les préversions protégées et en local ; la production derrière la porte.
 - [ ] D.2 Les pages : Atlas, pays, Radiographie, ministères, exploitants, territoires, démarches (si C.8), journal, recherche, qualité et fraîcheur.
+  - La page Qualité montre au moins, d'après `etat.json` : les échecs DNS non confirmés et les pannes confirmées par Quad9, séparément (point 02) ; l'âge de la copie d'IPtoASN (point 02) ; chaque règle d'exclusion avec le nombre de noms qu'elle écarte, dont « sous-zone interne », son texte, son état et son dernier contrôle à Quad9 (point 04) ; la part des secondes au-delà de 10 questions vers un même serveur, et le plus grand nombre de questions reçues par un serveur en une seconde (point 04).
 - [ ] D.3 Le design (`DESIGN.md`) et les cinq corrections des vidéos de Brume douce.
 - [ ] D.4 Vitesse et coûts (budgets, poids, cache, projection des quotas).
 - [ ] D.5 Sécurité (aucun tiers, CS-09 ; essai de `experimental.sri`).

@@ -7,7 +7,7 @@
 // domain that fails is asked again, at most twice, 10 minutes apart; a failure stays a failure, never « no site ».
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
-import { Cadence, type Horloge, HORLOGE_REELLE, melanger, type Montee, ParZone } from "./politesse";
+import { Cadence, type Horloge, HORLOGE_REELLE, instantCommun, melanger, type Montee, ParZone } from "./politesse";
 import { EchecRecherche, etendreSpf, type ResolveurSpf, type ResultatSpf } from "./spf";
 
 export type OptionsCollecte = {
@@ -20,12 +20,19 @@ export type OptionsCollecte = {
    * server under the limit of 10 questions per second, whatever the logs say (brief B.3).
    */
   parentParSeconde: number;
-  /** Questions per second to one zone's own servers (its turn of two at a time is not enough when a domain's names
-   * all come together): plan § 5, the politeness towards each zone. */
-  zoneParSeconde: number;
+  /**
+   * Questions per second to one name server (a host named in a zone's NS records), counted over every zone it serves:
+   * a question of a delegated zone takes the same instant at each of its zone's name servers, so that no server, shared
+   * by hundreds of domains or not, gets more of our questions than this in a second, whichever one the resolver picks
+   * (brief B.3). A zone whose servers are not known keeps a pace of its own.
+   */
+  serveurParSeconde: number;
   /** Called once the first pass has ended (every domain measured), before the attempts: the controls may start. */
   apresPremierePasse?: (resultat: ResultatCollecte) => void;
-  /** Names in flight at once (each one may wait for its domain to open, or for a slow server). */
+  /**
+   * Domains in flight at once in the first pass (each one waits for its opening, then for its name servers' pace):
+   * enough that the domains of a busy shared server never hold all the places.
+   */
   enVol: number;
   /** The domains' rate climbs from `depart` per second to `domainesParSeconde` (a cold cache never bursts). */
   montee: Montee | null;
@@ -55,8 +62,8 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   domainesParSeconde: 8,
   parZone: 2,
   parentParSeconde: 6,
-  zoneParSeconde: 5,
-  enVol: 128,
+  serveurParSeconde: 5,
+  enVol: 512,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
@@ -123,6 +130,8 @@ export class ClientParZone implements ClientDns {
   readonly #parents = new Map<string, Cadence>();
   /** The pace of each zone's own servers. */
   readonly #rythmes = new Map<string, Cadence>();
+  /** The name servers of each delegated zone (its NS records, from its opening): their paces are shared. */
+  readonly #serveurs = new Map<string, string[]>();
   /**
    * The zones known as delegated: their apex answered its NS or its SOA records. Until then (a zone its parent serves
    * itself, a name that does not exist, an opening that failed), every question of the zone goes to the parent's
@@ -142,7 +151,7 @@ export class ClientParZone implements ClientDns {
     private readonly frein: OptionsCollecte["frein"] = undefined,
     private readonly parentParSeconde = Number.POSITIVE_INFINITY,
     private readonly horloge: Horloge = HORLOGE_REELLE,
-    private readonly zoneParSeconde = Number.POSITIVE_INFINITY,
+    private readonly serveurParSeconde = Number.POSITIVE_INFINITY,
   ) {
     this.id = base.id;
     this.#zones = new ParZone(parZone);
@@ -267,7 +276,11 @@ export class ClientParZone implements ClientDns {
       if (pendant !== null) return pendant;
       if (!this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
       else if (this.frein) await this.frein(nom, zone, false);
-      await this.#cadence(this.#rythmes, zone, this.zoneParSeconde).attendre();
+      // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace.
+      await instantCommun(
+        (this.#serveurs.get(zone) ?? [zone]).map((cle) => this.#cadence(this.#rythmes, cle, this.serveurParSeconde)),
+        this.horloge,
+      );
       const r = await this.base.demander(nom, type);
       // Its apex answered its own NS or SOA records: the zone is delegated, its servers answer its questions.
       if (
@@ -275,6 +288,10 @@ export class ClientParZone implements ClientDns {
         r.reponses.some((e) => (e.donnee.type === "NS" || e.donnee.type === "SOA") && e.proprietaire === zone)
       ) {
         this.#deleguees.add(zone);
+        const serveurs = r.reponses.flatMap((e) =>
+          e.donnee.type === "NS" && e.proprietaire === zone ? [e.donnee.cible.toLowerCase().replace(/\.$/, "")] : [],
+        );
+        if (serveurs.length > 0) this.#serveurs.set(zone, [...new Set(serveurs)].sort());
       }
       if (nom === zone) {
         // Three failures in a row of the apex's questions: the zone is down for this attempt.
@@ -355,7 +372,7 @@ export async function collecter(
     options.frein,
     options.parentParSeconde,
     horloge,
-    options.zoneParSeconde,
+    options.serveurParSeconde,
   );
   const spfClient = resolveurSpf(client);
   const cadenceNoms = new Cadence(options.nomsParSeconde, horloge);
