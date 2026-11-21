@@ -56,7 +56,31 @@ describe("the safeguard of the fourth rule (internal sub-zones)", () => {
     ).toBe(3);
   });
 
+  it("proves nothing when Quad9 never answers: the rule keeps its state, and the list is asked again", async () => {
+    const noms = Array.from({ length: 30 }, (_, i) => `n${i}.in.phm.ministere.example`);
+    const muet = client(() => "TIMEOUT");
+    const suspendue = await reposerNoms(
+      muet,
+      noms,
+      generateur(1),
+      "2026-12-02",
+      "2026-12-01",
+      "0.3",
+      etat({ etat: "suspendue" }),
+    );
+    expect(suspendue).toMatchObject({ etat: "suspendue", liste: "2026-11-19" });
+    expect(controleDu(suspendue, "2026-12-01", "0.3")).toBe("garder");
+    const neuve = await reposerNoms(muet, noms, generateur(1), "2026-12-02", "2026-12-01", "0.3");
+    expect(neuve).toMatchObject({ etat: "appliquée", liste: "", controle: { poses: 20, reponses: 0 } });
+    expect(controleDu(neuve, "2026-12-01", "0.3")).toBe("reposer");
+  });
+
   it("reads yesterday's state field by field, and nothing else", () => {
+    // Dates and a version only: nothing else is ever published again from yesterday's state.
+    expect(lireEtatRegleInterne({ ...etat(), liste: "" })?.liste).toBe("");
+    expect(lireEtatRegleInterne({ ...etat(), liste: "<b>gras</b>" })).toBeNull();
+    expect(lireEtatRegleInterne({ ...etat(), methode: "la dernière" })).toBeNull();
+    expect(lireEtatRegleInterne({ ...etat(), controle: { ...etat().controle, date: "hier" } })).toBeNull();
     expect(lireEtatRegleInterne(etat())).toEqual(etat());
     expect(lireEtatRegleInterne({ ...etat(), etat: "peut-être" })).toBeNull();
     expect(lireEtatRegleInterne({ ...etat(), controle: { date: "2026-11-21", poses: -1, reponses: 0 } })).toBeNull();

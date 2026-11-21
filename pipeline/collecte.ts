@@ -27,6 +27,19 @@ export type OptionsCollecte = {
    * (brief B.3). A zone whose servers are not known keeps a pace of its own.
    */
   serveurParSeconde: number;
+  /**
+   * What the resolver's logs tell, for the pace (debit-serveurs.ts): `cout`, how many questions one of ours to a zone
+   * lately cost that zone's servers (the resolver adds its own: a sub-zone's referral, a retry on another server);
+   * `envoi`, called as each of our questions leaves; `adresses`, the addresses the resolver uses for a name server
+   * (two names of one server then share its pace).
+   */
+  journal?: {
+    cout: (zone: string) => number;
+    envoi: (zone: string) => void;
+    adresses: (hote: string) => readonly string[];
+  };
+  /** Names of one domain in flight at once in the first pass: a large domain never holds the names' pace alone. */
+  nomsParDomaine: number;
   /** Called once the first pass has ended (every domain measured), before the attempts: the controls may start. */
   apresPremierePasse?: (resultat: ResultatCollecte) => void;
   /**
@@ -64,6 +77,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   parentParSeconde: 6,
   serveurParSeconde: 5,
   enVol: 512,
+  nomsParDomaine: 4,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
@@ -120,6 +134,12 @@ const groupeDuParent = (zone: string) => {
 };
 /** Slots a first question may take while the brake holds it, before it goes on its last one. */
 const CRENEAUX_MAX = 5;
+/**
+ * Upstream questions one of ours may cost and still keep a server, at our full pace (5 per second), under 8: a zone
+ * whose questions cost more takes several instants per question (4 at most).
+ */
+const AMPLIFICATION_PERMISE = 1.6;
+const POIDS_MAX = 4;
 
 export class ClientParZone implements ClientDns {
   readonly id: string;
@@ -144,6 +164,10 @@ export class ClientParZone implements ClientDns {
   readonly #sousEchecs = new Map<string, Set<string>>();
   readonly #sousVivantes = new Set<string>();
   readonly #sousMortes = new Set<string>();
+  /** The zones whose opening answered NXDOMAIN and nothing else: nothing exists under them (RFC 8020). */
+  readonly #inexistantes = new Set<string>();
+  /** The zones that failed once in this run: the resolver may try each of their servers for one question. */
+  readonly #echouees = new Set<string>();
   constructor(
     private readonly base: ClientDns,
     private readonly zoneDe: (nom: string) => string,
@@ -152,6 +176,7 @@ export class ClientParZone implements ClientDns {
     private readonly parentParSeconde = Number.POSITIVE_INFINITY,
     private readonly horloge: Horloge = HORLOGE_REELLE,
     private readonly serveurParSeconde = Number.POSITIVE_INFINITY,
+    private readonly journal: OptionsCollecte["journal"] = undefined,
   ) {
     this.id = base.id;
     this.#zones = new ParZone(parZone);
@@ -216,9 +241,9 @@ export class ClientParZone implements ClientDns {
         // Every new zone opens with its own NS question, alone, at its parent's pace, asked once more if it fails: its
         // other questions then know whether they go to the zone's own servers or to its parent's. A zone first reached
         // by a host, an SPF lookup or a platform's name opens the same way.
-        let ouverture = await this.#poser(zone, zone, "NS");
+        let ouverture = await this.#poser(zone, zone, "NS", true);
         if (CODES_EN_ECHEC.has(ouverture.code) && this.#muette(zone, zone) === null) {
-          ouverture = await this.#poser(zone, zone, "NS");
+          ouverture = await this.#poser(zone, zone, "NS", true);
         }
         if (nom === zone && type === "NS") return ouverture;
       } finally {
@@ -237,6 +262,29 @@ export class ClientParZone implements ClientDns {
       return { code: "SOUS_ZONE_MUETTE", ad: false, reponses: [], duree: 0 };
     }
     return null;
+  }
+
+  /**
+   * The answer known without asking: a zone that does not exist has nothing under it (its other questions get its
+   * NXDOMAIN), and a zone or sub-zone that is down is not asked again in this attempt.
+   */
+  #sansQuestion(nom: string, zone: string, ouverture: boolean): Reponse | null {
+    if (!ouverture && this.#inexistantes.has(zone)) return { code: "NXDOMAIN", ad: false, reponses: [], duree: 0 };
+    return this.#muette(nom, zone);
+  }
+
+  /** The pace keys of a zone: the addresses of its name servers (the resolver's logs), else their names, else itself. */
+  #cles(zone: string): string[] {
+    const hotes = this.#serveurs.get(zone);
+    if (hotes === undefined) return [zone];
+    return [
+      ...new Set(
+        hotes.flatMap((hote) => {
+          const adresses = this.journal?.adresses(hote) ?? [];
+          return adresses.length > 0 ? adresses : [hote];
+        }),
+      ),
+    ];
   }
 
   #cadence(table: Map<string, Cadence>, cle: string, parSeconde: number): Cadence {
@@ -266,22 +314,35 @@ export class ClientParZone implements ClientDns {
    * not known as delegated takes a slot of its parent's pace while holding the zone's turn: one zone never reserves
    * more than two slots of its parent. Every question keeps the zone's own pace.
    */
-  async #poser(nom: string, zone: string, type: TypeRr): Promise<Reponse> {
-    const avant = this.#muette(nom, zone);
+  async #poser(nom: string, zone: string, type: TypeRr, ouverture = false): Promise<Reponse> {
+    const avant = this.#sansQuestion(nom, zone, ouverture);
     if (avant !== null) return avant;
     await this.#zones.prendre(zone);
     try {
       // The zone may have gone down while the question waited for its turn.
-      const pendant = this.#muette(nom, zone);
+      const pendant = this.#sansQuestion(nom, zone, ouverture);
       if (pendant !== null) return pendant;
-      if (!this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
+      // An opening asks the parent for the delegation, at every attempt too: a slot of the parent's pace.
+      if (ouverture || !this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
       else if (this.frein) await this.frein(nom, zone, false);
-      // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace.
-      await instantCommun(
-        (this.#serveurs.get(zone) ?? [zone]).map((cle) => this.#cadence(this.#rythmes, cle, this.serveurParSeconde)),
-        this.horloge,
+      // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
+      // question that costs the servers more than one question (the resolver's logs, a zone that failed) takes more.
+      const poids = Math.min(
+        POIDS_MAX,
+        Math.max(this.#echouees.has(zone) ? 2 : 1, Math.ceil((this.journal?.cout(zone) ?? 1) / AMPLIFICATION_PERMISE)),
       );
+      await instantCommun(
+        this.#cles(zone).map((cle) => this.#cadence(this.#rythmes, cle, this.serveurParSeconde)),
+        this.horloge,
+        poids,
+      );
+      this.journal?.envoi(zone);
       const r = await this.base.demander(nom, type);
+      if (CODES_EN_ECHEC.has(r.code)) this.#echouees.add(zone);
+      if (ouverture) {
+        if (r.code === "NXDOMAIN" && r.reponses.length === 0) this.#inexistantes.add(zone);
+        else this.#inexistantes.delete(zone);
+      }
       // Its apex answered its own NS or SOA records: the zone is delegated, its servers answer its questions.
       if (
         nom === zone &&
@@ -308,6 +369,19 @@ export class ClientParZone implements ClientDns {
   fermer(): void {
     this.base.fermer();
   }
+}
+
+/** Runs `faire` on each element, `n` at a time, in order. */
+async function enParallele<T>(elements: readonly T[], n: number, faire: (x: T) => Promise<void>): Promise<void> {
+  let suivant = 0;
+  const ouvrier = async () => {
+    while (suivant < elements.length) {
+      const x = elements[suivant] as T;
+      suivant += 1;
+      await faire(x);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(Math.max(1, n), elements.length) }, ouvrier));
 }
 
 /** A failed lookup makes the SPF expansion « echec » (its list would be incomplete), never « none ». */
@@ -373,6 +447,7 @@ export async function collecter(
     options.parentParSeconde,
     horloge,
     options.serveurParSeconde,
+    options.journal,
   );
   const spfClient = resolveurSpf(client);
   const cadenceNoms = new Cadence(options.nomsParSeconde, horloge);
@@ -456,10 +531,11 @@ export async function collecter(
     ordreUnites.map((unite) => async () => {
       await cadenceDomaines.attendre();
       await options.frein?.(unite, options.zoneDe(unite), true);
-      // The measurement is called first: its NS question is the zone's first (client per zone, above).
+      // The measurement is called first: its NS question is the zone's first (client per zone, above). Its names go a
+      // few at a time: a large domain never takes every slot of the names' pace at once.
       await Promise.all([
         mesurerDomaine(unite),
-        ...melanger(parUnite.get(unite) ?? [], options.aleatoire).map(async (nom) => {
+        enParallele(melanger(parUnite.get(unite) ?? [], options.aleatoire), options.nomsParDomaine, async (nom) => {
           await cadenceNoms.attendre();
           await mesurerUnNom(nom);
         }),

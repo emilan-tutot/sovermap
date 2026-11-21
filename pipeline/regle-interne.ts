@@ -44,12 +44,23 @@ export async function reposerNoms(
   date: string,
   liste: string,
   methode: string,
+  precedent: EtatRegleInterne | null = null,
 ): Promise<EtatRegleInterne> {
   const tires = melanger(noms, aleatoire).slice(0, NOMS_REPOSES);
   const reponses = await Promise.all(tires.map((nom) => client.demander(nom, "A")));
   const codes: Record<string, number> = {};
   for (const r of reponses) codes[r.code] = (codes[r.code] ?? 0) + 1;
   const repondus = reponses.filter((r) => repond(r.code)).length;
+  // Quad9 never answered (every question timed out, or could not be sent): the check proves nothing. The rule keeps
+  // its state, and the list is asked again the next day.
+  if (tires.length > 0 && reponses.every((r) => r.code === "TIMEOUT" || r.code === "ERREUR")) {
+    return {
+      etat: precedent?.etat ?? "appliquée",
+      liste: precedent?.liste ?? "",
+      methode,
+      controle: { date, poses: tires.length, reponses: 0, codes },
+    };
+  }
   return {
     etat: repondus > 0 ? "suspendue" : "appliquée",
     liste,
@@ -63,10 +74,13 @@ export function lireEtatRegleInterne(valeur: unknown): EtatRegleInterne | null {
   if (typeof valeur !== "object" || valeur === null) return null;
   const v = valeur as Record<string, unknown>;
   const c = v["controle"];
+  // A list's date (or none yet), a method's version and a day: nothing else is ever published again from here.
   if (
     (v["etat"] !== "appliquée" && v["etat"] !== "suspendue") ||
     typeof v["liste"] !== "string" ||
+    !/^(\d{4}-\d{2}-\d{2})?$/.test(v["liste"]) ||
     typeof v["methode"] !== "string" ||
+    !/^\d{1,3}(\.\d{1,3}){0,3}$/.test(v["methode"]) ||
     typeof c !== "object" ||
     c === null
   ) {
@@ -77,7 +91,14 @@ export function lireEtatRegleInterne(valeur: unknown): EtatRegleInterne | null {
   const poses = entier(controle["poses"]);
   const reponses = entier(controle["reponses"]);
   const codesBruts = controle["codes"];
-  if (typeof controle["date"] !== "string" || poses === null || reponses === null) return null;
+  if (
+    typeof controle["date"] !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(controle["date"]) ||
+    poses === null ||
+    reponses === null
+  ) {
+    return null;
+  }
   const codes: Record<string, number> = {};
   if (typeof codesBruts === "object" && codesBruts !== null) {
     for (const [code, n] of Object.entries(codesBruts)) {

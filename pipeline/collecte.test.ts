@@ -279,27 +279,38 @@ describe("the scheduling of a collection", () => {
     expect(t("www.c.fr")).toBe(ensuite);
   });
 
-  it("paces every question of a zone that is not delegated: its parent's servers answer them all", async () => {
+  it("paces every question of a zone that is not delegated, and never asks under a zone that does not exist", async () => {
     const horloge = fausseHorloge();
     const debuts: number[] = [];
-    // No NS at the apex: a zone the parent serves itself, or a name that does not exist.
+    // No NS at the apex: a zone its parent serves itself (NODATA), or one that does not exist (NXDOMAIN).
     const base: ClientDns = {
       id: "base",
-      demander: async () => {
+      demander: async (nom) => {
         debuts.push(horloge.maintenant());
-        return { code: "NXDOMAIN", ad: false, reponses: [], duree: 1 };
+        return { code: nom.endsWith("absent.fr") ? "NXDOMAIN" : "NOERROR", ad: false, reponses: [], duree: 1 };
       },
       fermer: () => {},
     };
     const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
     for (const [nom, type] of [
-      ["absent.fr", "NS"],
-      ["absent.fr", "SOA"],
-      ["www.absent.fr", "A"],
+      ["servi.fr", "NS"],
+      ["servi.fr", "SOA"],
+      ["www.servi.fr", "A"],
     ] as const) {
       await client.demander(nom, type);
     }
     expect(debuts).toEqual([0, 500, 1000]);
+    // Nothing exists under a name that does not exist (RFC 8020): its opening alone is asked, at the parent's pace.
+    const codes: string[] = [];
+    for (const [nom, type] of [
+      ["absent.fr", "NS"],
+      ["absent.fr", "SOA"],
+      ["www.absent.fr", "A"],
+    ] as const) {
+      codes.push((await client.demander(nom, type)).code);
+    }
+    expect(codes).toEqual(["NXDOMAIN", "NXDOMAIN", "NXDOMAIN"]);
+    expect(debuts).toEqual([0, 500, 1000, 1500]);
   });
 
   it("stops asking a zone whose apex failed three times in a row, until the next attempt", async () => {
@@ -390,6 +401,130 @@ describe("the scheduling of a collection", () => {
     const apres = envois.filter((e) => e.question.endsWith(" A")).map((e) => e.t - debut);
     // b waits for ns2's next instant; a's second question waits for ns2 too, although ns1 is free.
     expect(apres).toEqual([0, 500, 1000]);
+  });
+
+  it("opens a zone again at each attempt at its parent's pace, delegated or not", async () => {
+    const horloge = fausseHorloge();
+    const ouvertures: number[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (type === "NS") ouvertures.push(horloge.maintenant());
+        const reponses: Reponse["reponses"] =
+          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // Two new zones per second under one parent; an attempt asks the parent for the delegations again.
+    const client = new ClientParZone(base, zoneDe, 2, undefined, 2, horloge);
+    for (const zone of ["a.example", "b.example"]) await client.demander(zone, "NS");
+    client.oublierZonesMortes();
+    for (const zone of ["a.example", "b.example"]) await client.demander(zone, "NS");
+    expect(ouvertures).toEqual([0, 500, 1000, 1500]);
+  });
+
+  it("gives two names of one server one pace, from the addresses the resolver's logs tell", async () => {
+    const horloge = fausseHorloge();
+    const envois: number[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (type === "A") envois.push(horloge.maintenant());
+        const cible = nom === "a.example" ? "ns3.hebergeur.example" : "ns4.hebergeur.example";
+        const reponses: Reponse["reponses"] =
+          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // ns3 and ns4 are one server: one address in the logs.
+    const journal = {
+      cout: () => 1,
+      envoi: () => {},
+      adresses: (hote: string) => (hote.endsWith(".hebergeur.example") ? ["192.0.2.34"] : []),
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2, journal);
+    await client.demander("a.example", "NS");
+    await client.demander("b.example", "NS");
+    const debut = horloge.maintenant();
+    await client.demander("www.a.example", "A");
+    await client.demander("www.b.example", "A");
+    expect(envois.map((t) => t - debut)).toEqual([0, 500]);
+  });
+
+  it("weighs a question by what it costs the servers, and a zone that failed by two", async () => {
+    const horloge = fausseHorloge();
+    const envois: string[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (type === "A") envois.push(`${nom} ${horloge.maintenant()}`);
+        const reponses: Reponse["reponses"] =
+          type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
+        return { code: nom === "x.panne.example" ? "SERVFAIL" : "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // lourd.example's questions cost its servers 3.2 questions each (1.6 allowed at full pace): two instants each.
+    const journal = {
+      cout: (zone: string) => (zone === "lourd.example" ? 3.2 : 1),
+      envoi: () => {},
+      adresses: () => [],
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2, journal);
+    await client.demander("lourd.example", "NS");
+    await client.demander("panne.example", "NS");
+    const debut = horloge.maintenant();
+    for (const n of ["a", "b", "c"]) await client.demander(`${n}.lourd.example`, "A");
+    expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([0, 1000, 2000]);
+    // After a failure, the resolver may try each of the zone's servers: two instants per question too.
+    envois.length = 0;
+    const apres = horloge.maintenant();
+    for (const n of ["x", "y", "z"]) await client.demander(`${n}.panne.example`, "A");
+    expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 1500]);
+  });
+
+  it("keeps a zone's own pace when its name servers are not known (a delegation proved by its SOA)", async () => {
+    const horloge = fausseHorloge();
+    const debuts: number[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        debuts.push(horloge.maintenant());
+        const reponses: Reponse["reponses"] =
+          type === "SOA" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "SOA", mname: `ns.${nom}`, serial: 1 } }] : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2);
+    await client.demander("soa.example", "NS");
+    await client.demander("soa.example", "SOA");
+    for (const n of ["www1", "www2"]) await client.demander(`${n}.soa.example`, "A");
+    expect(debuts).toEqual([0, 500, 1000, 1500]);
+  });
+
+  it("measures a domain's names a few at a time", async () => {
+    let enVol = 0;
+    let max = 0;
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (nom.startsWith("n") && type === "A") {
+          enVol += 1;
+          max = Math.max(max, enVol);
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          enVol -= 1;
+        }
+        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    const noms = new Map<string, string>([["grand.example", "grand.example"]]);
+    for (let i = 0; i < 12; i += 1) noms.set(`n${i}.grand.example`, "grand.example");
+    await collecter(noms, base, { ...POLITESSE, zoneDe, horloge: fausseHorloge(), parZone: 50, nomsParDomaine: 3 });
+    expect(max).toBe(3);
   });
 
   it("keeps each zone's own pace, and asks each SPF lookup once in a run", async () => {

@@ -150,7 +150,8 @@ jobs:
           esac
       - if: always()
         run: |
-          docker logs knot 2>&1 | grep -v "querying:" | tail -n 20 || true
+          # The resolver's last lines, for a failure: never its questions nor a server's address (the log is public).
+          docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
           docker rm -f knot > /dev/null 2>&1 || true
 
       - if: steps.collecte.outputs.publiable != ''

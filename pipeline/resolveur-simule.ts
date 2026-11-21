@@ -34,8 +34,11 @@ export class ResolveurSimule implements ClientDns {
     let courant = nom;
     for (let i = 0; i < 12; i += 1) {
       const entree = this.zone[courant];
-      if (entree === undefined)
-        return { code: reponses.length > 0 ? "NOERROR" : "NXDOMAIN", ad: false, reponses, duree: 1 };
+      if (entree === undefined) {
+        // A name with names under it exists, empty (an empty non-terminal): NODATA, never NXDOMAIN (RFC 8020).
+        const auDessus = Object.keys(this.zone).some((n) => n.endsWith(`.${courant}`));
+        return { code: reponses.length > 0 || auDessus ? "NOERROR" : "NXDOMAIN", ad: false, reponses, duree: 1 };
+      }
       const alias = type === "CNAME" ? undefined : entree.CNAME?.[0];
       if (alias?.type === "CNAME") {
         reponses.push({ proprietaire: courant, ttl: 300, donnee: alias });

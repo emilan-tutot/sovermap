@@ -72,10 +72,17 @@ export class Cadence {
  * One start taken at the same instant at every cadence (the name servers of a zone): the question leaves when all of
  * them can give it, so no cadence ever sees two questions closer than its interval, whichever server gets it.
  */
-export async function instantCommun(cadences: readonly Cadence[], horloge: Horloge): Promise<void> {
+export async function instantCommun(cadences: readonly Cadence[], horloge: Horloge, poids = 1): Promise<void> {
   const maintenant = horloge.maintenant();
   const depart = Math.max(maintenant, ...cadences.map((c) => c.libre(maintenant)));
-  for (const c of cadences) c.prendre(depart);
+  for (const c of cadences) {
+    // The start, then `poids - 1` instants more after it: a question that costs the servers several questions.
+    let instant = depart;
+    for (let fois = 0; fois < poids; fois += 1) {
+      c.prendre(instant);
+      instant = c.libre(instant);
+    }
+  }
   if (depart > maintenant) await horloge.dormir(depart - maintenant);
 }
 

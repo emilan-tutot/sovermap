@@ -162,7 +162,7 @@ Principe :
 
 | Source | Usage | Requêtes | Volume | Limite documentée (lue le 18/11/2026) |
 |---|---|---|---|---|
-| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5), messagerie comprise | ≈ 510 000 par jour au résolveur (recalcul du 20/11/2026), réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, mesuré chaque jour sur les journaux du résolveur (`etat.json`, `debitMaxParServeur`) ; mélange aléatoire des noms ; 8 domaines nouveaux par seconde au plus |
+| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5), messagerie comprise | ≈ 510 000 par jour au résolveur (recalcul du 20/11/2026), réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, réglé à la source (6 zones nouvelles par seconde au plus vers les serveurs d'un même registre ; 5 questions par seconde au plus vers chaque serveur de noms, toutes zones comprises) et mesuré chaque jour sur les journaux du résolveur (`etat.json`, `qualite.debitMaxParServeur` : part des secondes au-delà de 10 et maximum) ; tolérance de départ : 0,1 % des secondes, jamais plus de 15 (point 04) ; mesure domaine par domaine, les plus grands d'abord ; 8 domaines nouveaux par seconde au plus |
 | Quad9 | Contrôle : nom web et MX de tous les domaines du périmètre « État », 3 % des autres, les témoins, et les hôtes des serveurs de noms et de messagerie de l'État | ≈ 10 000 par jour, à 2 par seconde | — | Pas de plafond chiffré ; contact demandé avant un « large-scale DNS traffic » |
 | Cloudflare 1.1.1.1 | Contrôle (témoins) | ≈ 100 par jour | — | Aucune limite publiée |
 | IPtoASN | IP → AS | 1 fichier par jour | 10,9 Mo | Aucune ; fichiers faits pour cet usage |

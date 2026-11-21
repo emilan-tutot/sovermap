@@ -36,6 +36,7 @@ describe("the pace towards each authoritative server", () => {
         { adresse: "198.51.100.53", questions: 4, parType: { A: 4 }, tlds: ["exemple"] },
         { adresse: "192.0.2.53", questions: 3, parType: { A: 3 }, tlds: ["exemple"] },
       ],
+      amplifications: [],
     });
   });
 
@@ -56,15 +57,34 @@ describe("the pace towards each authoritative server", () => {
     });
   });
 
-  it("counts a second once when two servers are above 10 in it, and the seconds from the first question to the last", () => {
+  it("counts a second once when two servers are above 10 in it, and only the seconds with questions", () => {
     const c = new CompteurServeurs((nom) => nom.split(".").slice(-2).join("."));
     for (let i = 0; i < 11; i += 1) c.lire(ligne("10", "192.0.2.53", "a.exemple.", `n${i}.a.exemple.`, "NS"));
     for (let i = 0; i < 11; i += 1) c.lire(ligne("10", "198.51.100.53", `z${i}.exemple.`, `www.z${i}.exemple.`));
     c.lire(ligne("19", "192.0.2.53"));
     const r = c.resultat();
-    expect(r).toMatchObject({ depassements: 2, secondesAuDela: 1, secondes: 10 });
+    // Two seconds with questions (10 and 19): the waits between them are not seconds of the measurement.
+    expect(r).toMatchObject({ depassements: 2, secondesAuDela: 1, secondes: 2 });
     // The shared server: eleven zone cuts and eleven registered zones in its worst second.
     expect(r.auDela).toContainEqual({ tlds: [], secondes: 1, max: 11, coupes: 11, zones: 11, parType: { A: 11 } });
+  });
+
+  it("tells the addresses of a name server, and what our questions to a zone cost its servers", () => {
+    const c = new CompteurServeurs((nom) => nom.split(".").slice(-2).join("."));
+    // Our 20 questions to a.exemple, and the resolver's 50 to its servers and a sub-zone's (its referrals).
+    const t = Date.parse("2026-11-21T03:17:10.200Z");
+    for (let i = 0; i < 20; i += 1) c.noterEnvoi("a.exemple", t);
+    for (let i = 0; i < 50; i += 1) {
+      c.lire(ligne("10", "192.0.2.53", i % 2 === 0 ? "a.exemple." : "sous.a.exemple.", `n${i}.sous.a.exemple.`));
+    }
+    // A question to its parent (the delegation) is not one to the zone's servers.
+    c.lire(ligne("10", "198.51.100.1", "exemple.", "a.exemple.", "NS"));
+    expect(c.adresses("NS1.exemple.")).toEqual(["192.0.2.53", "198.51.100.1"]);
+    expect(c.cout("a.exemple", Date.parse("2026-11-21T03:17:13.000Z"))).toBe(2.5);
+    // Too few questions of ours tell nothing yet; a minute later, it is forgotten.
+    expect(c.cout("b.exemple", t)).toBe(1);
+    expect(c.cout("a.exemple", Date.parse("2026-11-21T03:19:00.000Z"))).toBe(1);
+    expect(c.resultat().amplifications).toEqual([{ zone: "a.exemple", envois: 20, amont: 50, parType: { A: 50 } }]);
   });
 
   it("holds back only the questions that would go to a busy server, and every question near the limit", () => {

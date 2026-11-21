@@ -259,10 +259,13 @@ function suivreDebit(
   zoneDe: (nom: string) => string,
 ): {
   frein: OptionsCollecte["frein"];
+  journal: OptionsCollecte["journal"];
   arreter: () => { debit: DebitServeurs | null; attentes: Attentes };
 } {
   const attentes: Attentes = { ouvertures: 0, questions: 0, secondes: 0 };
-  if (conteneur === undefined) return { frein: undefined, arreter: () => ({ debit: null, attentes }) };
+  if (conteneur === undefined) {
+    return { frein: undefined, journal: undefined, arreter: () => ({ debit: null, attentes }) };
+  }
   const compteur = new CompteurServeurs(zoneDe);
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -288,6 +291,12 @@ function suivreDebit(
       }
       attentes.secondes += (Date.now() - debut) / 1000;
       return true;
+    },
+    // What the logs tell the pace: the cost of a zone's questions, our questions, the servers' addresses.
+    journal: {
+      cout: (zone) => compteur.cout(zone, Date.now()),
+      envoi: (zone) => compteur.noterEnvoi(zone, Date.now()),
+      adresses: (hote) => compteur.adresses(hote),
     },
     arreter: () => {
       enfant.kill();
@@ -370,7 +379,16 @@ async function principal(): Promise<number> {
   const regleInterne: EtatRegleInterne =
     regleVeille !== null && controleDu(regleVeille, derniereListe, METHODE) === "garder"
       ? regleVeille
-      : await reposerNoms(quad9, nomsRegle, generateur(graine + 2), date, derniereListe, METHODE);
+      : // Drawn by the list, not by the day: a check that a red day did not publish draws the same names again.
+        await reposerNoms(
+          quad9,
+          nomsRegle,
+          generateur(Number(derniereListe.replaceAll("-", "")) + 2),
+          date,
+          derniereListe,
+          METHODE,
+          regleVeille,
+        );
   const liste =
     regleInterne.etat === "suspendue"
       ? construireListe(ref.copies, dila, ref.psl, ref.plateformes, ".gouv.fr", { sousZoneInterne: false })
@@ -446,6 +464,7 @@ async function principal(): Promise<number> {
       suivi,
       apresPremierePasse: (m) => void lancerControleHotes(m),
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
+      ...(debit.journal === undefined ? {} : { journal: debit.journal }),
     }),
     controler(quad9, plan.noms, plan.mx),
     controler(cloudflare, nomsTemoins, []),
@@ -841,6 +860,20 @@ async function principal(): Promise<number> {
               .join(", ")})`,
         )
         .join(" ; ") || "aucun"
+    }.`,
+    // The zones whose servers got the most questions per question of ours, which the pace weighs: named only when they
+    // are units of the list (public bodies' domains, published anyway), never a third party's.
+    `- Questions du résolveur par question de la collecte (les zones qui en ajoutent le plus) : ${
+      (debitServeurs?.amplifications ?? [])
+        .map(
+          (a) =>
+            `${liste.domaines.has(a.zone) ? a.zone : "une autre zone"} : ${String(Math.round((10 * a.amont) / a.envois) / 10).replace(".", ",")} (${a.amont} pour ${a.envois} ; ${Object.entries(
+              a.parType,
+            )
+              .map(([type, n]) => `${type} ${n}`)
+              .join(", ")})`,
+        )
+        .join(" ; ") || "aucune"
     }.`,
     // Only the top-level zones are named in this public summary; the others (a host's customers, a CDN…) are counted.
     `- Frein : ${attentesFrein.ouvertures} questions vers une zone parente (ouverture d’un domaine, première question d’une zone) et ${attentesFrein.questions} autres questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${

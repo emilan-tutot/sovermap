@@ -10,8 +10,8 @@ export type DebitServeurs = {
   /** Seconds in which one address got more than 10 questions (each address and second noted once). */
   depassements: number;
   /**
-   * Seconds from the first question seen to the last, and those in which at least one address got more than 10: the
-   * two figures of the tolerance (docs/methode.md, B.3), published every day with the highest count.
+   * Seconds in which the resolver asked at least one question (the seconds of the measurement, waits left out), and
+   * those in which at least one address got more than 10: the tolerance's figures (docs/methode.md, B.3).
    */
   secondes: number;
   secondesAuDela: number;
@@ -43,9 +43,14 @@ export type DebitServeurs = {
    * (the summary names those zones, never the address).
    */
   adressesChargees: { adresse: string; questions: number; parType: Record<string, number>; tlds: string[] }[];
+  /**
+   * The zones whose servers got the most questions per question of ours (at least 20 of ours): the resolver's own
+   * questions (a sub-zone's referral, a retry) that the pace weighs; for the summary.
+   */
+  amplifications: { zone: string; envois: number; amont: number; parType: Record<string, number> }[];
 };
 
-const QUESTION = /querying: '[^']*'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?(?: qtype: '([^']*)')?/;
+const QUESTION = /querying: '([^']*)'@'([^']+)'(?: zone cut: '([^']*)')?(?: qname: '([^']*)')?(?: qtype: '([^']*)')?/;
 const HORODATAGE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/;
 
 /** The limit of brief B.3. */
@@ -64,6 +69,13 @@ const noter = (memoire: Map<string, Map<string, number>>, adresse: string, cle: 
   const vues = memoire.get(adresse) ?? new Map<string, number>();
   vues.set(cle, t);
   memoire.set(adresse, vues);
+};
+
+/** Adds one to the count of `cle` at second `t`. */
+const compter = (table: Map<string, Map<number, number>>, cle: string, t: number) => {
+  const secondes = table.get(cle) ?? new Map<number, number>();
+  secondes.set(t, (secondes.get(t) ?? 0) + 1);
+  table.set(cle, secondes);
 };
 
 /** Is `nom` the zone `coupe` or below it? The root (« ») holds every name. */
@@ -88,9 +100,15 @@ export class CompteurServeurs {
   #zonesRecentes = new Map<string, Map<string, number>>();
   #oubli = 0;
   #parAdresseTotal = new Map<string, { questions: number; parType: Map<string, number>; tlds: Set<string> }>();
-  #premiere: number | null = null;
-  #derniere: number | null = null;
+  #secondesVues = new Set<number>();
   #secondesAuDela = 0;
+  /** The addresses the resolver used for each name server (its name, without the final dot). */
+  #adressesParHote = new Map<string, Set<string>>();
+  /** Per registered zone and per second: our questions (the client tells them) and the resolver's to its servers. */
+  #envois = new Map<string, Map<number, number>>();
+  #amont = new Map<string, Map<number, number>>();
+  #envoisTotal = new Map<string, number>();
+  #amontTotal = new Map<string, { n: number; parType: Map<string, number> }>();
   /** Within the current second, per address: the registered zones of the names asked, and the question types. */
   #zonesParAdresse = new Map<string, Set<string>>();
   #typesParAdresse = new Map<string, Map<string, number>>();
@@ -103,7 +121,7 @@ export class CompteurServeurs {
   lire(ligne: string): void {
     const question = QUESTION.exec(ligne);
     const temps = HORODATAGE.exec(ligne);
-    if (question?.[1] === undefined || temps?.[1] === undefined) return;
+    if (question?.[2] === undefined || temps?.[1] === undefined) return;
     const seconde = temps[1];
     if (seconde !== this.#courante) {
       this.#clore();
@@ -115,48 +133,65 @@ export class CompteurServeurs {
       this.#chargeCourante = 0;
     }
     this.#questions += 1;
-    const n = (this.#parAdresse.get(question[1]) ?? 0) + 1;
-    this.#parAdresse.set(question[1], n);
+    const n = (this.#parAdresse.get(question[2]) ?? 0) + 1;
+    this.#parAdresse.set(question[2], n);
     const t = Date.parse(`${seconde}Z`) / 1000;
-    this.#premiere ??= t;
-    this.#derniere = t;
-    const typeDeLaSeconde = question[4] ?? "?";
-    const types = this.#typesParAdresse.get(question[1]) ?? new Map<string, number>();
+    this.#secondesVues.add(t);
+    const hote = (question[1] ?? "").toLowerCase().replace(/\.$/, "");
+    if (hote !== "") {
+      const adresses = this.#adressesParHote.get(hote) ?? new Set<string>();
+      adresses.add(question[2]);
+      this.#adressesParHote.set(hote, adresses);
+    }
+    if (question[3] !== undefined && question[4] !== undefined) {
+      // A question to the zone's own servers, or to a sub-zone's: what our pace weighs (never one to its parent).
+      const zoneAmont = this.zoneDe(coupeNormale(question[4]));
+      if (sous(coupeNormale(question[3]), zoneAmont)) {
+        compter(this.#amont, zoneAmont, t);
+        const total = this.#amontTotal.get(zoneAmont) ?? { n: 0, parType: new Map<string, number>() };
+        total.n += 1;
+        const type = question[5] ?? "?";
+        total.parType.set(type, (total.parType.get(type) ?? 0) + 1);
+        this.#amontTotal.set(zoneAmont, total);
+      }
+    }
+    const typeDeLaSeconde = question[5] ?? "?";
+    const types = this.#typesParAdresse.get(question[2]) ?? new Map<string, number>();
     types.set(typeDeLaSeconde, (types.get(typeDeLaSeconde) ?? 0) + 1);
-    this.#typesParAdresse.set(question[1], types);
+    this.#typesParAdresse.set(question[2], types);
+    if (question[4] !== undefined) {
+      const zones = this.#zonesParAdresse.get(question[2]) ?? new Set<string>();
+      zones.add(this.zoneDe(coupeNormale(question[4])));
+      this.#zonesParAdresse.set(question[2], zones);
+    }
     if (question[3] !== undefined) {
-      const zones = this.#zonesParAdresse.get(question[1]) ?? new Set<string>();
-      zones.add(this.zoneDe(coupeNormale(question[3])));
-      this.#zonesParAdresse.set(question[1], zones);
-    }
-    if (question[2] !== undefined) {
-      const coupe = coupeNormale(question[2]);
-      const coupes = this.#coupesParAdresse.get(question[1]) ?? new Set<string>();
+      const coupe = coupeNormale(question[3]);
+      const coupes = this.#coupesParAdresse.get(question[2]) ?? new Set<string>();
       coupes.add(coupe);
-      this.#coupesParAdresse.set(question[1], coupes);
-      noter(this.#coupesRecentes, question[1], coupe, t);
+      this.#coupesParAdresse.set(question[2], coupes);
+      noter(this.#coupesRecentes, question[2], coupe, t);
     }
-    const total = this.#parAdresseTotal.get(question[1]) ?? {
+    const total = this.#parAdresseTotal.get(question[2]) ?? {
       questions: 0,
       parType: new Map<string, number>(),
       tlds: new Set<string>(),
     };
-    if (question[2] !== undefined) {
-      const coupe = coupeNormale(question[2]);
+    if (question[3] !== undefined) {
+      const coupe = coupeNormale(question[3]);
       if (coupe !== "" && !coupe.includes(".")) total.tlds.add(coupe);
     }
     total.questions += 1;
-    const type = question[4] ?? "?";
+    const type = question[5] ?? "?";
     total.parType.set(type, (total.parType.get(type) ?? 0) + 1);
-    this.#parAdresseTotal.set(question[1], total);
-    if (question[3] !== undefined) {
-      const zone = this.zoneDe(coupeNormale(question[3]));
-      const coupe = question[2] === undefined ? null : coupeNormale(question[2]);
+    this.#parAdresseTotal.set(question[2], total);
+    if (question[4] !== undefined) {
+      const zone = this.zoneDe(coupeNormale(question[4]));
+      const coupe = question[3] === undefined ? null : coupeNormale(question[3]);
       // A parent asked for a zone's delegation or its DS (« <zone> NS », QNAME minimisation; « <zone> DS ») does not
       // serve the zone: only its openings wait for it. A zone that is not delegated is learned from its other questions.
       const auParent =
-        coupe !== null && coupe !== zone && sous(zone, coupe) && (question[4] === "NS" || question[4] === "DS");
-      if (!auParent) noter(this.#zonesRecentes, question[1], zone, t);
+        coupe !== null && coupe !== zone && sous(zone, coupe) && (question[5] === "NS" || question[5] === "DS");
+      if (!auParent) noter(this.#zonesRecentes, question[2], zone, t);
     }
     if (t - this.#oubli >= 10) {
       this.#oubli = t;
@@ -165,11 +200,16 @@ export class CompteurServeurs {
           for (const [cle, vue] of vues) if (t - vue > MEMOIRE_SECONDES) vues.delete(cle);
           if (vues.size === 0) memoire.delete(adresse);
         }
+      for (const parSeconde of [this.#envois, this.#amont])
+        for (const [zone, secondes] of parSeconde) {
+          for (const s of secondes.keys()) if (t - s > 2 * MEMOIRE_SECONDES) secondes.delete(s);
+          if (secondes.size === 0) parSeconde.delete(zone);
+        }
     }
     this.#chargeCourante = Math.max(this.#chargeCourante, n);
     if (n > this.#max) {
       this.#max = n;
-      this.#adresse = question[1];
+      this.#adresse = question[2];
       this.#seconde = seconde;
     }
   }
@@ -203,6 +243,32 @@ export class CompteurServeurs {
       }
     }
     return false;
+  }
+
+  /** The addresses the resolver used for a name server, as its logs tell (none yet: an empty list). */
+  adresses(hote: string): string[] {
+    return [...(this.#adressesParHote.get(hote.toLowerCase().replace(/\.$/, "")) ?? [])].sort();
+  }
+
+  /** One of our questions to `zone` leaves now (`maintenant`: milliseconds since 1970). */
+  noterEnvoi(zone: string, maintenant: number): void {
+    compter(this.#envois, zone, Math.floor(maintenant / 1000));
+    this.#envoisTotal.set(zone, (this.#envoisTotal.get(zone) ?? 0) + 1);
+  }
+
+  /**
+   * How many questions one of ours to `zone` cost its servers over the last minute (the last 2 seconds left out: the
+   * logs may not have them yet); 1 while fewer than 8 of ours tell it.
+   */
+  cout(zone: string, maintenant: number): number {
+    const fin = Math.floor(maintenant / 1000) - 2;
+    const somme = (secondes: Map<number, number> | undefined) => {
+      let n = 0;
+      for (const [s, k] of secondes ?? []) if (s > fin - MEMOIRE_SECONDES && s <= fin) n += k;
+      return n;
+    };
+    const envois = somme(this.#envois.get(zone));
+    return envois < 8 ? 1 : Math.max(1, somme(this.#amont.get(zone)) / envois);
   }
 
   #frais(maintenant: number): boolean {
@@ -262,7 +328,7 @@ export class CompteurServeurs {
     return {
       questions: this.#questions,
       depassements: this.#depassements,
-      secondes: this.#premiere === null || this.#derniere === null ? 0 : this.#derniere - this.#premiere + 1,
+      secondes: this.#secondesVues.size,
       secondesAuDela: this.#secondesAuDela,
       auDela: [...this.#auDela]
         .sort(([a, x], [b, y]) => y.secondes - x.secondes || y.max - x.max || (a < b ? -1 : 1))
@@ -281,6 +347,17 @@ export class CompteurServeurs {
       tldsMax: this.#adresse === null ? [] : [...(this.#parAdresseTotal.get(this.#adresse)?.tlds ?? [])].sort(),
       coupesChaudes,
       adressesChargees,
+      amplifications: [...this.#envoisTotal]
+        .filter(([, envois]) => envois >= 20)
+        .map(([zone, envois]) => ({ zone, envois, amont: this.#amontTotal.get(zone) }))
+        .sort((a, b) => (b.amont?.n ?? 0) / b.envois - (a.amont?.n ?? 0) / a.envois || (a.zone < b.zone ? -1 : 1))
+        .slice(0, 5)
+        .map(({ zone, envois, amont }) => ({
+          zone,
+          envois,
+          amont: amont?.n ?? 0,
+          parType: Object.fromEntries([...(amont?.parType ?? [])].sort(([, x], [, y]) => y - x)),
+        })),
     };
   }
 }
