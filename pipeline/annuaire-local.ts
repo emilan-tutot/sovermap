@@ -58,7 +58,12 @@ export async function copieCourante(obtenir: Obtenir): Promise<FichierCopie[]> {
     const taille = o["size"];
     if (typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) throw new Error(`${chemin} : somme illisible`);
     if (typeof id !== "string" || !/^[0-9a-f]{40}$/.test(id)) throw new Error(`${chemin} : commit illisible`);
-    if (typeof date !== "string" || typeof taille !== "number" || !Number.isSafeInteger(taille) || taille < 12) {
+    // The date goes into a commit message and a summary: an exact ISO time, or the copy is refused.
+    const dateLisible =
+      typeof date === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(date) &&
+      !Number.isNaN(Date.parse(date));
+    if (!dateLisible || typeof taille !== "number" || !Number.isSafeInteger(taille) || taille < 12) {
       throw new Error(`${chemin} : date ou taille illisible`);
     }
     fichiers.push({ chemin, taille, sha256, commit: id, date });
@@ -224,6 +229,30 @@ export async function lireFichier(obtenir: Obtenir, fichier: FichierCopie): Prom
 
 /** What the « donnees » branch keeps of a copy: its files, its number of offices, and when it was read. */
 export type CopieAnnuaire = { fichiers: FichierCopie[]; guichets: number; lue: string };
+
+/** The published copy's description, read back from « donnees » and checked at the border: null when it is not one. */
+export function lireCopieAnnuaire(texte: string): CopieAnnuaire | null {
+  let brut: unknown;
+  try {
+    brut = JSON.parse(texte);
+  } catch {
+    return null;
+  }
+  if (typeof brut !== "object" || brut === null || Array.isArray(brut)) return null;
+  const o = brut as Record<string, unknown>;
+  const { fichiers, guichets, lue } = o;
+  if (!Array.isArray(fichiers) || typeof lue !== "string") return null;
+  if (typeof guichets !== "number" || !Number.isSafeInteger(guichets) || guichets < 0) return null;
+  const lus: FichierCopie[] = [];
+  for (const f of fichiers) {
+    if (typeof f !== "object" || f === null) return null;
+    const { chemin, taille, sha256, commit, date } = f as Record<string, unknown>;
+    if (typeof chemin !== "string" || typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) return null;
+    if (typeof commit !== "string" || typeof date !== "string" || typeof taille !== "number") return null;
+    lus.push({ chemin, taille, sha256, commit, date });
+  }
+  return { fichiers: lus, guichets, lue };
+}
 
 /** Is it the copy already published: the same files, with the same SHA-256? */
 export function memeCopie(fichiers: readonly FichierCopie[], publiee: CopieAnnuaire | null): boolean {

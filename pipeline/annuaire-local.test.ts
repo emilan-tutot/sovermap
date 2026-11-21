@@ -11,6 +11,7 @@ import {
   hotesDe,
   lieuDe,
   lignesGuichets,
+  lireCopieAnnuaire,
   memeCopie,
   type Obtenir,
   plagesPermises,
@@ -198,6 +199,14 @@ describe("the publication of a copy of the local directory (C.6)", () => {
     expect(memeCopie([fichier("data/a.parquet", SHA), fichier("data/b.parquet", "d".repeat(64))], publiee)).toBe(false);
     expect(memeCopie([fichier("data/a.parquet", SHA)], publiee)).toBe(false);
     expect(memeCopie(publiee.fichiers, null)).toBe(false);
+  });
+
+  it("reads the published copy's description back, checked: an unreadable one counts as none", () => {
+    expect(lireCopieAnnuaire(JSON.stringify(publiee))).toEqual(publiee);
+    expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, guichets: "1000" }))).toBeNull();
+    expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, fichiers: [{ chemin: "x", sha256: "court" }] }))).toBeNull();
+    expect(lireCopieAnnuaire("pas du JSON")).toBeNull();
+    expect(lireCopieAnnuaire("[]")).toBeNull();
   });
 
   it("never lets a broken copy replace a good one: 10 % of the published offices at most, and never none", () => {

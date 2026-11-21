@@ -15,6 +15,7 @@ import {
   ecartVolume,
   type Guichet,
   lignesGuichets,
+  lireCopieAnnuaire,
   lireFichier,
   memeCopie,
 } from "../annuaire-local";
@@ -42,10 +43,12 @@ const obtenir = (adresse: string, entetes?: Record<string, string>) => telecharg
 
 const fichiers = await copieCourante(obtenir);
 const cheminPubliee = o.donnees === undefined ? null : path.join(o.donnees, "territoires", "annuaire", "copie.json");
+// Read back and checked: an unreadable description counts as no published copy (the new one is then read whole).
 const publiee =
-  cheminPubliee !== null && existsSync(cheminPubliee)
-    ? (JSON.parse(readFileSync(cheminPubliee, "utf8")) as CopieAnnuaire)
-    : null;
+  cheminPubliee !== null && existsSync(cheminPubliee) ? lireCopieAnnuaire(readFileSync(cheminPubliee, "utf8")) : null;
+if (cheminPubliee !== null && existsSync(cheminPubliee) && publiee === null) {
+  console.log("annuaire : la description de la copie publiée est illisible ; elle est ignorée.");
+}
 if (!o.essai && memeCopie(fichiers, publiee)) {
   console.log("annuaire : la copie publiée est la copie courante ; rien à écrire.");
   dire("nouvelle", "false");
