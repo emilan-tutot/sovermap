@@ -170,8 +170,13 @@ export class ClientParZone implements ClientDns {
   readonly #sousMortes = new Set<string>();
   /** The zones whose opening answered NXDOMAIN and nothing else: nothing exists under them (RFC 8020). */
   readonly #inexistantes = new Set<string>();
-  /** The zones that failed once in this run: the resolver may try each of their servers for one question. */
-  readonly #echouees = new Set<string>();
+  /**
+   * Where a question failed in this run: the apexes, and below them the sub-zone that holds each failed name (the name
+   * itself when it sits right under the apex). The resolver tries their other servers, and again: their questions
+   * weigh more, never the rest of the zone (a large domain with one dead sub-zone keeps its pace).
+   */
+  readonly #apexEnPanne = new Set<string>();
+  readonly #sousEnPanne = new Set<string>();
   /** The zones each zone's CNAMEs lead to: the resolver's next question goes to their servers. */
   readonly #suites = new Map<string, Set<string>>();
   /** The names between a zone and the names asked, already asked by the resolver (QNAME minimisation). */
@@ -340,7 +345,7 @@ export class ClientParZone implements ClientDns {
       else if (this.frein) await this.frein(nom, zone, false);
       // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
       // question that costs the servers more than one question takes more: what the logs measured for the zone; four
-      // for a zone that failed (the resolver tries its other servers, and again: up to 5 questions for one of ours);
+      // where a question failed (the resolver tries the other servers, and again: up to 5 questions for one of ours);
       // and, before the logs can tell, one more for each new name between the zone and the asked name (the resolver
       // asks those first: QNAME minimisation).
       const intermediaires =
@@ -349,10 +354,14 @@ export class ClientParZone implements ClientDns {
           : ClientParZone.sousZones(nom, zone)
               .slice(1)
               .filter((n) => !this.#intermediairesVus.has(n));
+      const enPanne =
+        nom === zone
+          ? this.#apexEnPanne.has(zone)
+          : ClientParZone.sousZones(nom, zone).some((s) => this.#sousEnPanne.has(s));
       const poids = Math.min(
         POIDS_MAX,
         Math.max(
-          this.#echouees.has(zone) ? 4 : 1,
+          enPanne ? 4 : 1,
           Math.ceil((this.journal?.cout(zone) ?? 1) / AMPLIFICATION_PERMISE),
           1 + intermediaires.length,
         ),
@@ -365,7 +374,13 @@ export class ClientParZone implements ClientDns {
       this.journal?.envoi(zone);
       const r = await this.base.demander(nom, type);
       for (const n of intermediaires) this.#intermediairesVus.add(n);
-      if (CODES_EN_ECHEC.has(r.code)) this.#echouees.add(zone);
+      if (CODES_EN_ECHEC.has(r.code)) {
+        if (nom === zone) this.#apexEnPanne.add(zone);
+        else {
+          const sous = ClientParZone.sousZones(nom, zone);
+          this.#sousEnPanne.add(sous[1] ?? nom);
+        }
+      }
       // The zones the answer's CNAMEs lead to: the resolver asked their servers too, for this question of ours.
       const suites = new Set<string>();
       for (const e of r.reponses) {
@@ -396,9 +411,8 @@ export class ClientParZone implements ClientDns {
         const primaire = r.reponses.flatMap((e) =>
           e.donnee.type === "SOA" && e.proprietaire === zone ? [e.donnee.mname.toLowerCase().replace(/\.$/, "")] : [],
         );
-        const connus = serveurs.length > 0 ? serveurs : primaire;
-        if (connus.length > 0)
-          this.#serveurs.set(zone, [...new Set([...(this.#serveurs.get(zone) ?? []), ...connus])].sort());
+        if (serveurs.length > 0) this.#serveurs.set(zone, [...new Set(serveurs)].sort());
+        else if (primaire.length > 0 && !this.#serveurs.has(zone)) this.#serveurs.set(zone, [...new Set(primaire)]);
       }
       if (nom === zone) {
         // Three failures in a row of the apex's questions: the zone is down for this attempt.

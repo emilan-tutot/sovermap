@@ -459,7 +459,7 @@ describe("the scheduling of a collection", () => {
     expect(envois.map((t) => t - debut)).toEqual([500, 1000]);
   });
 
-  it("weighs a question by what it costs the servers, and a zone that failed by four", async () => {
+  it("weighs a question by what it costs the servers, and by four where a question failed", async () => {
     const horloge = fausseHorloge();
     const envois: string[] = [];
     const base: ClientDns = {
@@ -468,7 +468,7 @@ describe("the scheduling of a collection", () => {
         if (type === "A") envois.push(`${nom} ${horloge.maintenant()}`);
         const reponses: Reponse["reponses"] =
           type === "NS" ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }] : [];
-        return { code: nom === "x.panne.example" ? "SERVFAIL" : "NOERROR", ad: false, reponses, duree: 1 };
+        return { code: nom === "x.sous.panne.example" ? "SERVFAIL" : "NOERROR", ad: false, reponses, duree: 1 };
       },
       fermer: () => {},
     };
@@ -486,11 +486,14 @@ describe("the scheduling of a collection", () => {
     for (const n of ["a", "b", "c"]) await client.demander(`${n}.lourd.example`, "A");
     // The opening took two instants of the zone already (0 and 500): then two each, a second apart.
     expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([1000, 2000, 3000]);
-    // After a failure, the resolver tries the zone's other servers, and again: four instants per question.
+    // A name fails in sous.panne.example: the resolver tries the other servers, and again. The sub-zone's next question
+    // takes four instants; the rest of the zone keeps one (x took two: sous.panne.example was new to the resolver).
     envois.length = 0;
     const apres = horloge.maintenant();
-    for (const n of ["x", "y", "z"]) await client.demander(`${n}.panne.example`, "A");
-    expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 2500]);
+    for (const nom of ["x.sous.panne.example", "y.sous.panne.example", "www.panne.example", "mail.panne.example"]) {
+      await client.demander(nom, "A");
+    }
+    expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 1000, 3000, 3500]);
   });
 
   it("paces a zone whose NS do not answer by the servers the resolver used for it, and its CNAMEs' zones", async () => {
@@ -535,6 +538,33 @@ describe("the scheduling of a collection", () => {
     await client.demander("x.plateforme.example", "A");
     expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 500, 1000]);
     expect(notes.filter((z) => z === "plateforme.example")).toHaveLength(3);
+  });
+
+  it("takes a SOA's primary as a key only for a zone whose NS records did not answer", async () => {
+    const horloge = fausseHorloge();
+    const envois: string[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (type === "A") envois.push(`${nom} ${horloge.maintenant()}`);
+        const reponses: Reponse["reponses"] =
+          type === "NS"
+            ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }]
+            : type === "SOA"
+              ? [{ proprietaire: nom, ttl: 1, donnee: { type: "SOA", mname: "ns1.primaire.example", serial: 1 } }]
+              : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // Two zones on servers of their own, whose SOA names one same primary (a registrar's default): no shared pace.
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2);
+    for (const zone of ["a.example", "b.example"]) await client.demander(zone, "NS");
+    for (const zone of ["a.example", "b.example"]) await client.demander(zone, "SOA");
+    const debut = horloge.maintenant();
+    await client.demander("www.a.example", "A");
+    await client.demander("www.b.example", "A");
+    expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([500, 500]);
   });
 
   it("weighs a name's first question by the names the resolver asks before it (QNAME minimisation)", async () => {
