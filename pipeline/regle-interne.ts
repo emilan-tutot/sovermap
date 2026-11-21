@@ -50,8 +50,12 @@ const avecAdresse = (r: Reponse) =>
 async function issueDe(client: ClientDns, nom: string): Promise<Issue> {
   const a = await client.demander(nom, "A");
   if (avecAdresse(a)) return "avecAdresse";
-  if (a.code === "NOERROR") return avecAdresse(await client.demander(nom, "AAAA")) ? "avecAdresse" : "sansAdresse";
-  switch (a.code) {
+  // A without an address: the AAAA decides; its failure is never « no address » (nobody proved it).
+  const r = a.code === "NOERROR" ? await client.demander(nom, "AAAA") : a;
+  if (a.code === "NOERROR" && (r.code === "NOERROR" || r.code === "NXDOMAIN")) {
+    return avecAdresse(r) ? "avecAdresse" : "sansAdresse";
+  }
+  switch (r.code) {
     case "NXDOMAIN":
       return "nxdomain";
     case "SERVFAIL":

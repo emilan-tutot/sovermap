@@ -92,6 +92,12 @@ describe("the safeguard of the fourth rule (internal sub-zones)", () => {
       codes: codes({ nxdomain: 1, sansAdresse: 1, delai: 1, servfail: 17 }),
     });
     expect(sansAdresse.poses).toContain(`${noms[1]} AAAA`);
+    // A without an address, then an AAAA that times out: unknown, never « no address ».
+    const aaaaMuet = client((nom, type) =>
+      nom === noms[0] ? (type === "AAAA" ? { code: "TIMEOUT" } : { code: "NOERROR" }) : { code: "SERVFAIL" },
+    );
+    const inconnu = await reposerNoms(aaaaMuet, NOMS, generateur(1), "2026-11-21", "2026-11-19", "0.3");
+    expect(inconnu.controle.codes).toEqual(codes({ delai: 1, servfail: 19 }));
     // A name with an IPv6 address only answers too.
     const ipv6 = client((nom, type) =>
       nom === noms[4]

@@ -16,8 +16,13 @@ export type MesureNom = {
   cname: string[];
   a: AdresseTtl[];
   aaaa: AdresseTtl[];
-  /** Both answers validated by DNSSEC (the resolver's AD flag). */
+  /** The answers that came validated by DNSSEC (the resolver's AD flag), failed ones left out. */
   ad: boolean;
+  /**
+   * A name that works with one family of addresses while the other's question failed: that failure's code (the name
+   * stays « ok »; its addresses of that family are unknown, never « none »).
+   */
+  echecFamille?: { famille: "A" | "AAAA"; code: Code };
 };
 
 const ECHECS = new Set<Code>(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR", "ZONE_MUETTE", "SOUS_ZONE_MUETTE"]);
@@ -61,11 +66,19 @@ export async function mesurerNom(nom: string, client: ClientDns): Promise<Mesure
     aaaa: aaaa.adresses,
   };
   if (a.boucle || aaaa.boucle) return { ...base, etat: "echec", echec: "ERREUR", a: [], aaaa: [], ad: false };
-  // A failure of either question leaves the name's measurement incomplete: a failure, asked again, never an « ok »
-  // without one family of addresses (that would publish an absence) nor a DNSSEC read on half of the answers.
   const echec = [ra.code, raaaa.code].find((c) => ECHECS.has(c)) ?? null;
+  if (base.a.length + base.aaaa.length > 0) {
+    // One family answered: the name works. The other family's failure is kept (`echecFamille`, counted and published
+    // with the day's quality), and never asked again: it repeats (a broken DNSSEC proof, a server that refuses AAAA),
+    // and each new question cost the servers again, up to 18 DNSKEY questions for one at a zone whose proof is broken
+    // (the trial of 21/11/2026). Its DNSSEC is read on the answers that came.
+    const repondues = [ra, raaaa].filter((r) => !ECHECS.has(r.code));
+    const resultat: MesureNom = { ...base, etat: "ok", echec: null, ad: repondues.every((r) => r.ad) };
+    return echec === null
+      ? resultat
+      : { ...resultat, echecFamille: { famille: ECHECS.has(ra.code) ? "A" : "AAAA", code: echec } };
+  }
   if (echec !== null) return { ...base, etat: "echec", echec, a: [], aaaa: [], ad: false };
-  if (base.a.length + base.aaaa.length > 0) return { ...base, etat: "ok", echec: null, ad: ra.ad && raaaa.ad };
   if (ra.code === "NXDOMAIN" && raaaa.code === "NXDOMAIN")
     return { ...base, etat: "nxdomain", echec: null, ad: ra.ad && raaaa.ad };
   return { ...base, etat: "nodata", echec: null, ad: ra.ad && raaaa.ad };

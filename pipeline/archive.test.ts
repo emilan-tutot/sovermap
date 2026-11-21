@@ -31,5 +31,9 @@ describe("the monthly archive's exact addresses", () => {
     // No range to check them against, or no measurement of that day.
     expect(adressesExactes({ ...publie, reseaux: [{ as: 64500, plage: null }] }, mesure(["192.0.2.10"]))).toEqual([]);
     expect(adressesExactes(publie, undefined)).toEqual([]);
+    // The record shows two networks, today's addresses only one of them: not the same day's networks.
+    const deux = { ...publie, reseaux: [...publie.reseaux, { as: 64501, plage: "198.51.100.0-198.51.100.255" }] };
+    expect(adressesExactes(deux, mesure(["192.0.2.10"]))).toEqual([]);
+    expect(adressesExactes(deux, mesure(["192.0.2.10", "198.51.100.10"]))).toHaveLength(2);
   });
 });

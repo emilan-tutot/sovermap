@@ -86,7 +86,8 @@ jobs:
     needs: jour
     if: needs.jour.outputs.faite != 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 240
+    # A trial is capped (it never runs into a day's collection: pipeline/creneau.ts counts on it).
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 240 }}
     # One measurement at a time of each kind: a trial never takes the place of a day's waiting measurement (GitHub keeps
     # one waiting job per group). A trial never measures during, or around the start of, a day's collection (its first
     # step below): two measurements at once would double the questions to the shared servers (brief B.3).
@@ -115,6 +116,19 @@ jobs:
         run: |
           en_cours=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --limit 50 --json event,status --jq '[.[] | select(.event != "pull_request" and .status != "completed")] | length')
           npx tsx pipeline/cli/creneau-essai.ts "$en_cours"
+      # The day's collection waits for a trial that measures (45 minutes at most: a trial is capped), so that the two
+      # never ask the servers at once, whatever started them (a manual run, a late schedule).
+      - if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for minute in $(seq 1 46); do
+            essais=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --event pull_request --limit 50 --json status --jq '[.[] | select(.status == "in_progress")] | length')
+            if [ "$essais" -eq 0 ]; then exit 0; fi
+            echo "Un essai mesure : la collecte du jour attend (minute $minute)."
+            sleep 60
+          done
+          echo "Un essai mesure encore après 45 minutes : la collecte du jour part." >&2"
 
       # The resolver: the official image, pinned by its digest, kept in the Actions cache (brief B.2).
       - id: image
@@ -269,8 +283,8 @@ jobs:
           if [ "$premier" = false ]; then
             publie=$(jq -r '.date // ""' etat.json 2> /dev/null || true)
             du_jour=$(jq -r '.date' ../collecte/sortie/etat.json)
-            if [ -n "$publie" ] && [[ ! "$du_jour" > "$publie" ]]; then
-              echo "publication : le jour $du_jour n'est pas plus récent que le jour publié ($publie) ; rien n'est publié." >&2
+            if [ -n "$publie" ] && [[ "$du_jour" < "$publie" ]]; then
+              echo "publication : le jour $du_jour est plus ancien que le jour publié ($publie) ; rien n'est publié." >&2
               exit 1
             fi
           fi
@@ -281,6 +295,12 @@ jobs:
           if git diff --cached --quiet; then
             echo "Rien de nouveau à publier." >> "$GITHUB_STEP_SUMMARY"
             exit 0
+          fi
+          # The same day again, with another content (a second measurement of that day): refused, its journal would be
+          # replaced. A re-run of the same publication changes nothing, and goes on to the Release above.
+          if [ "$premier" = false ] && [ -n "$publie" ] && [ "$du_jour" = "$publie" ]; then
+            echo "publication : le jour $du_jour est déjà publié, avec un autre contenu ; rien n'est publié." >&2
+            exit 1
           fi
           git commit -q -m "donnees : collecte du $DATE"
           if [ "$premier" = true ]; then revs="HEAD"; else revs=$'HEAD\n^HEAD~1'; fi

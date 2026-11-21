@@ -74,6 +74,7 @@ export const NOM: Schema = objet(
     echec,
     cname: liste(nomDns, 10),
     dnssec: { type: "boolean" },
+    familleEnEchec: { enum: ["A", "AAAA", null] },
     reseaux: liste(
       objet({ as: { type: "integer", minimum: 0 }, plage: { type: ["string", "null"], maxLength: 100 } }),
       100,

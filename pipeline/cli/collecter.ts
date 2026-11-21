@@ -562,6 +562,8 @@ async function principal(): Promise<number> {
   );
   const mesuresNoms = [...jour.noms.values()];
   const echecs = mesuresNoms.filter((n) => n.etat === "echec").length;
+  // The names that work with one family of addresses while the other's question failed (never asked again).
+  const famillesEnEchec = [...mesures.noms.values()].filter((m) => m.echecFamille !== undefined).length;
   const echecsParCode: Record<string, number> = {};
   for (const m of mesures.noms.values())
     if (m.etat === "echec") echecsParCode[m.echec ?? "ERREUR"] = (echecsParCode[m.echec ?? "ERREUR"] ?? 0) + 1;
@@ -780,6 +782,7 @@ async function principal(): Promise<number> {
       couverturePourcent: liste.noms.size === 0 ? 0 : Math.round((1000 * mesuresNoms.length) / liste.noms.size) / 10,
       echecs,
       echecsParCode,
+      nomsUneFamilleEnEchec: famillesEnEchec,
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
       enregistrementsReduits: rapportJour.reduits,
       enregistrementsEnErreur: rapportJour.erreurs,
@@ -932,7 +935,7 @@ async function principal(): Promise<number> {
       Object.entries(echecsParCode)
         .map(([c, n]) => `${c} ${n}`)
         .join(", ") || "aucun"
-    }.`,
+    } ; noms qui marchent avec une seule famille d'adresses (l'autre en échec, jamais reprise) : ${famillesEnEchec}.`,
     "",
     "| Garde-fou | Résultat | Détail |",
     "|---|---|---|",

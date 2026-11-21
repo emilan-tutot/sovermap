@@ -27,6 +27,8 @@ export type EnregistrementNom = {
   echec: Echec | null;
   cname: string[];
   dnssec: boolean;
+  /** The family of addresses whose question failed while the other answered: its addresses are unknown, never « none ». */
+  familleEnEchec: "A" | "AAAA" | null;
   reseaux: { as: number; plage: string | null }[];
   cdn: { id: string; methode: string } | null;
   exploitants: Exploitant[];

@@ -22,6 +22,7 @@ const nom = (n: string, domaine: string, societe: string, horsUE: boolean): Enre
   echec: null,
   cname: [],
   dnssec: false,
+  familleEnEchec: null,
   reseaux: [{ as: horsUE ? 64501 : 64496, plage: null }],
   cdn: null,
   exploitants: [{ role: "hébergé par", societe, preuve: "AS64496", niveau: "confirmé" }],

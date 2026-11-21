@@ -91,6 +91,7 @@ export function construireEtat(
       echec,
       cname: [],
       dnssec: false,
+      familleEnEchec: m.echecFamille?.famille ?? null,
       reseaux: [],
       cdn: null,
       exploitants: [],
@@ -109,12 +110,14 @@ export function construireEtat(
         echec,
         cname: c.cname,
         dnssec: c.dnssec,
+        familleEnEchec: m.echecFamille?.famille ?? null,
         reseaux: c.reseaux.map((r) => ({ as: r.as, plage: r.plage })),
         cdn: c.cdn ? { id: c.cdn.id, methode: c.cdn.methode } : null,
         exploitants: exploitantsDe(c),
         categorie: c.categorie,
         horsUE: c.horsUE,
-        niveau: c.niveau,
+        // One family unknown: what the other shows is never « confirmé » for the whole name.
+        niveau: m.echecFamille !== undefined && c.niveau === "confirmé" ? "probable" : c.niveau,
         controle: c.controle,
       });
     };

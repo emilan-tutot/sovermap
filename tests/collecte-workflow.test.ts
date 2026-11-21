@@ -30,9 +30,12 @@ describe("the collection's workflow", () => {
 
   it("publishes only a day newer than the published one, before replacing any file", () => {
     const publier = tache("publier");
-    const controle = publier.indexOf('[[ ! "$du_jour" > "$publie" ]]');
+    const controle = publier.indexOf('[[ "$du_jour" < "$publie" ]]');
     expect(controle).toBeGreaterThan(-1);
     expect(controle).toBeLessThan(publier.indexOf("cp -a ../collecte/sortie/. ./"));
+    // The same day: only an identical content passes (a re-run), after the comparison of the files.
+    const memeJour = publier.indexOf('[ "$du_jour" = "$publie" ]');
+    expect(memeJour).toBeGreaterThan(publier.indexOf("if git diff --cached --quiet; then"));
   });
 
   it("reads « no data branch yet » from exit code 2 only, in the measuring and the publishing jobs", () => {
@@ -53,5 +56,10 @@ describe("the collection's workflow", () => {
     expect(mesurer.slice(mesurer.lastIndexOf("- if:", creneau), creneau)).toContain(
       "github.event_name == 'pull_request'",
     );
+    // A trial is capped, and the day's collection waits for a trial that measures.
+    expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 240 }}");
+    const attente = mesurer.indexOf("--event pull_request");
+    expect(attente).toBeGreaterThan(-1);
+    expect(attente).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));
   });
 });

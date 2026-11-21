@@ -33,5 +33,9 @@ export function adressesExactes(
   if (adresses.length === 0 || JSON.stringify(mesure.cname) !== JSON.stringify(enregistrement.cname)) return [];
   const plages = enregistrement.reseaux.flatMap((r) => (r.plage === null ? [] : [r.plage]));
   if (plages.length === 0) return [];
-  return adresses.every((x) => plages.some((p) => dansLaPlage(x.adresse, p))) ? adresses : [];
+  // Every address in one of the record's ranges, and every range holding one of the addresses: the same networks.
+  const memes =
+    adresses.every((x) => plages.some((p) => dansLaPlage(x.adresse, p))) &&
+    plages.every((p) => adresses.some((x) => dansLaPlage(x.adresse, p)));
+  return memes ? adresses : [];
 }

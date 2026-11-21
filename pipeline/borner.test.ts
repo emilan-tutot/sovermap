@@ -17,6 +17,7 @@ const nom: EnregistrementNom = {
   echec: null,
   cname: ["<script>.example", ...Array.from({ length: 10 }, (_, i) => long(i))],
   dnssec: false,
+  familleEnEchec: null,
   reseaux: Array.from({ length: 40 }, (_, i) => ({ as: 64496 + (i % 16), plage: `192.0.2.${i}-192.0.2.${i}` })),
   cdn: null,
   exploitants: Array.from({ length: 30 }, () => exploitant),
