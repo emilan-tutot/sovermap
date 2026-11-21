@@ -6,6 +6,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Minor versions and patches only: a major version waits for its own decision (A.1). This rule does not restrict
+    # security updates.
+    allow:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
     groups:
       npm:
         patterns: ["*"]
@@ -15,6 +20,9 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    allow:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
     groups:
       actions:
         patterns: ["*"]
