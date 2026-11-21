@@ -740,7 +740,8 @@ async function principal(): Promise<number> {
               questions: debitServeurs.questions,
               depassements: debitServeurs.depassements,
               max: debitServeurs.max,
-              adresse: debitServeurs.adresse,
+              // The server's top-level zones, never its address.
+              serveur: debitServeurs.tldsMax,
               seconde: debitServeurs.seconde,
             },
       disjoncteur: b.disjoncteur,
@@ -771,7 +772,7 @@ async function principal(): Promise<number> {
     `- Débit maximal vers un même serveur faisant autorité : ${
       debitServeurs === null
         ? "non mesuré"
-        : `${debitServeurs.max} questions en une seconde (${debitServeurs.adresse ?? "?"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
+        : `${debitServeurs.max} questions en une seconde (${debitServeurs.tldsMax.length > 0 ? `un serveur de « ${debitServeurs.tldsMax.join(", ")} »` : "un serveur d'une autre zone"}, ${debitServeurs.seconde ?? "?"}) ; secondes au-delà de 10 : ${debitServeurs.depassements}`
     }.`,
     // Only the top-level zones are named in this public summary; the others (a host's customers, a CDN…) are counted.
     `- Frein : ${attentesFrein.ouvertures} questions vers une zone parente (ouverture d’un domaine, première question d’une zone) et ${attentesFrein.questions} autres questions ont attendu (${Math.round(attentesFrein.secondes)} s en tout) ; secondes chargées par zone : ${

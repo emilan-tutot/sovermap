@@ -86,8 +86,8 @@ export type MesureZone = {
   mxEtat: "ok" | "aucun" | "nul" | "echec";
   /** The SPF record, the only TXT record ever kept. */
   spf: string | null;
-  /** The questions that failed (CAA, TXT): their answer is unknown, never « none ». */
-  echecs: ("CAA" | "TXT")[];
+  /** The questions that failed (SOA, CAA, TXT): their answer is unknown, never « none ». */
+  echecs: ("SOA" | "CAA" | "TXT")[];
 };
 
 const deType = <T extends Enregistrement["donnee"]["type"]>(reponse: Reponse, proprietaire: string, type: T) =>
@@ -99,13 +99,19 @@ const deType = <T extends Enregistrement["donnee"]["type"]>(reponse: Reponse, pr
 /** One zone: six questions, at most two at a time (the scheduler holds the per-zone limit). */
 export async function mesurerZone(domaine: string, client: ClientDns): Promise<MesureZone> {
   const [rns, rsoa] = await Promise.all([client.demander(domaine, "NS"), client.demander(domaine, "SOA")]);
+  // A name that does not exist (NXDOMAIN to NS and SOA) has no CAA, MX nor TXT either: they are not asked (each one
+  // would go to the parent's servers, which answered already).
+  const absent = rns.code === "NXDOMAIN" && rsoa.code === "NXDOMAIN";
+  const sansQuestion: Reponse = { code: "NXDOMAIN", ad: false, reponses: [], duree: 0 };
   // No DS question: it would go to the parent (a top-level domain) for every domain, twice its load. The resolver
   // validates the zone's answers (the AD flag) only when the parent holds the zone's DS and the chain holds.
-  const [rcaa, rmx, rtxt] = await Promise.all([
-    client.demander(domaine, "CAA"),
-    client.demander(domaine, "MX"),
-    client.demander(domaine, "TXT"),
-  ]);
+  const [rcaa, rmx, rtxt] = absent
+    ? [sansQuestion, sansQuestion, sansQuestion]
+    : await Promise.all([
+        client.demander(domaine, "CAA"),
+        client.demander(domaine, "MX"),
+        client.demander(domaine, "TXT"),
+      ]);
   const ns = deType(rns, domaine, "NS")
     .map((r) => r.donnee.cible)
     .sort();
@@ -115,14 +121,18 @@ export async function mesurerZone(domaine: string, client: ClientDns): Promise<M
     .sort((x, y) => x.preference - y.preference || (x.hote < y.hote ? -1 : 1));
   const nul = mxs.length === 1 && (mxs[0]?.hote ?? "x") === "";
   const echec = [rns.code, rsoa.code].find((c) => ECHECS.has(c)) ?? null;
+  // Name servers read: the zone answers. Otherwise a failed NS or SOA question is a failure, never « no name servers »
+  // (a SOA read without its NS question is not enough to publish an empty list).
   const etat: Etat =
-    ns.length > 0 || soaRr !== undefined
+    ns.length > 0
       ? "ok"
       : echec !== null
         ? "echec"
-        : rns.code === "NXDOMAIN"
-          ? "nxdomain"
-          : "nodata";
+        : soaRr !== undefined
+          ? "ok"
+          : rns.code === "NXDOMAIN"
+            ? "nxdomain"
+            : "nodata";
   return {
     domaine,
     etat,
@@ -138,6 +148,7 @@ export async function mesurerZone(domaine: string, client: ClientDns): Promise<M
     spf: deType(rtxt, domaine, "TXT")[0]?.donnee.spf ?? null,
     echecs: (
       [
+        ["SOA", rsoa],
         ["CAA", rcaa],
         ["TXT", rtxt],
       ] as const

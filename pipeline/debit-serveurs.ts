@@ -9,10 +9,14 @@ export type DebitServeurs = {
   questions: number;
   /** Seconds in which one address got more than 10 questions (each one noted; the collection slows down). */
   depassements: number;
-  /** The highest number of questions sent to one address within one second, and when. */
+  /**
+   * The highest number of questions sent to one address within one second, and when; `tldsMax`: the top-level zones
+   * that address served (what is published: never the address itself).
+   */
   max: number;
   adresse: string | null;
   seconde: string | null;
+  tldsMax: string[];
   /** The zone cuts whose servers were busy most often (seconds at the brake's threshold or above), for the summary. */
   coupesChaudes: { coupe: string; secondes: number }[];
   /**
@@ -197,6 +201,7 @@ export class CompteurServeurs {
       max: this.#max,
       adresse: this.#adresse,
       seconde: this.#seconde,
+      tldsMax: this.#adresse === null ? [] : [...(this.#parAdresseTotal.get(this.#adresse)?.tlds ?? [])].sort(),
       coupesChaudes,
       adressesChargees,
     };

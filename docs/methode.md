@@ -188,6 +188,9 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
 - **Domaines témoins** : un petit panel fixe, au comportement connu, est contrôlé à chaque collecte (`referentiels/temoins.json`) : le résolveur de la collecte, Quad9 et Cloudflare doivent tous retrouver chaque témoin tel qu'il est connu. Un écart bloque la publication.
 - **Échecs DNS** : au-delà de 2 % de noms en échec, rien n'est publié.
 - **Échecs** : plusieurs essais espacés. Un échec reste un échec, jamais un « pas de site ».
+  - Deux codes disent qu'une question n'a pas été posée pendant un essai, et pourquoi : `ZONE_MUETTE` (le sommet de la zone a échoué trois fois de suite) et `SOUS_ZONE_MUETTE` (huit noms d'une même sous-zone ont échoué, et aucun n'a jamais répondu : souvent des noms internes). Chaque essai suivant les repose.
+  - Un domaine qui n'existe pas (NXDOMAIN à NS et à SOA) n'est pas interrogé sur CAA, MX et TXT : la réponse est connue. Une question NS en échec rend le domaine « en échec », jamais « sans serveurs de noms ».
+- **Ordre de la mesure** : domaine par domaine, dans un ordre tiré au hasard ; un domaine s'ouvre par sa question NS, au rythme de son domaine de premier niveau (6 zones nouvelles par seconde au plus pour les extensions de l'AFNIC, ensemble), puis ses noms sont mesurés tout de suite, pendant que sa délégation est connue du résolveur.
 - **Politesse** :
   - débit limité, et respect des conditions de chaque source ;
   - un agent utilisateur qui s'identifie, sans adresse e-mail ni nom de compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 ;

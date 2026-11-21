@@ -169,7 +169,7 @@ describe("the scheduling of a collection", () => {
     expect(ecarts.at(-1)).toBeCloseTo(125, 6);
   });
 
-  it("sends the first question of a zone alone: the zone's other questions wait for its answer", async () => {
+  it("opens every new zone with its own NS question, alone: the zone's other questions wait for its answer", async () => {
     const journal: string[] = [];
     let repondre: () => void = () => {};
     const lent: ClientDns = {
@@ -186,15 +186,56 @@ describe("the scheduling of a collection", () => {
     const a = client.demander("www.nouveau.example", "A");
     const aaaa = client.demander("www.nouveau.example", "AAAA");
     await new Promise((resolve) => setTimeout(resolve, 5));
-    expect(journal).toEqual(["début www.nouveau.example A"]);
+    expect(journal).toEqual(["début nouveau.example NS"]);
     repondre();
     await Promise.all([a, aaaa]);
-    expect(journal).toEqual([
-      "début www.nouveau.example A",
-      "fin www.nouveau.example A",
-      "début www.nouveau.example AAAA",
-      "fin www.nouveau.example AAAA",
+    expect(journal.slice(0, 2)).toEqual(["début nouveau.example NS", "fin nouveau.example NS"]);
+    expect(journal).toContain("début www.nouveau.example A");
+    expect(journal).toContain("début www.nouveau.example AAAA");
+  });
+
+  it("measures domain by domain: each domain's names right after its opening", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe);
+    const debuts: string[] = [];
+    await collecter(
+      new Map([
+        ["www.mairie.example", "mairie.example"],
+        ["mairie.example", "mairie.example"],
+        ["www.sansmail.example", "sansmail.example"],
+      ]),
+      r,
+      {
+        ...POLITESSE,
+        zoneDe,
+        enVol: 1,
+        horloge: fausseHorloge(),
+        aleatoire: generateur(3),
+        frein: async (nom, zone, ouverture) => {
+          if (ouverture) debuts.push(zone);
+        },
+      },
+    );
+    // One domain at a time (one task in flight): every question of the first domain comes before the second's.
+    const zones = r.questions
+      .map((q) => zoneDe(q.split(" ")[0] ?? ""))
+      .filter((z) => z.endsWith(".example") && !z.startsWith("hebergeur"));
+    const premier = zones[0];
+    const fin = zones.lastIndexOf(premier ?? "");
+    expect(zones.slice(0, fin + 1).every((z) => z === premier)).toBe(true);
+  });
+
+  it("asks a domain that does not exist its NS and SOA only, and publishes a failed NS as a failure", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe);
+    const absent = await mesurerZone("absent.example", r);
+    expect(absent.etat).toBe("nxdomain");
+    expect(r.questions.filter((q) => q.startsWith("absent.example "))).toEqual([
+      "absent.example NS",
+      "absent.example SOA",
     ]);
+    const sansNs = new ResolveurSimule(ZONE, zoneDe, new Set(["mairie.example NS"]));
+    const z = await mesurerZone("mairie.example", sansNs);
+    // The SOA answered but the NS question failed: never « no name servers ».
+    expect(z).toMatchObject({ etat: "echec", echec: "SERVFAIL", ns: [] });
   });
 
   it("asks again a domain whose CAA question failed, and keeps the CAA unknown, never « no CAA »", async () => {

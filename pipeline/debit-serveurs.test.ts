@@ -27,6 +27,7 @@ describe("the pace towards each authoritative server", () => {
       max: 3,
       adresse: "198.51.100.53",
       seconde: "2026-11-21T03:17:06",
+      tldsMax: ["exemple"],
       coupesChaudes: [],
       adressesChargees: [
         { adresse: "198.51.100.53", questions: 4, parType: { A: 4 }, tlds: ["exemple"] },

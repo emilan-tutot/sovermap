@@ -16,7 +16,7 @@ export type OptionsCollecte = {
   parZone: number;
   /**
    * New zones per second under one parent (a top-level domain, a public suffix): the first question of a zone asks
-   * its parent for the delegation, and the resolver sends most of them to one of the parent's servers. 5 keeps that
+   * its parent for the delegation, and the resolver sends most of them to one of the parent's servers. 6 keeps that
    * server under the limit of 10 questions per second, whatever the logs say (brief B.3).
    */
   parentParSeconde: number;
@@ -51,7 +51,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   nomsParSeconde: 25,
   domainesParSeconde: 8,
   parZone: 2,
-  parentParSeconde: 5,
+  parentParSeconde: 6,
   enVol: 128,
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
@@ -144,11 +144,15 @@ export class ClientParZone implements ClientDns {
     this.#zones = new ParZone(parZone);
   }
 
-  /** A new attempt: the zones and sub-zones that were down are asked again (those that ever answered stay known). */
+  /**
+   * A new attempt: the zones and sub-zones that were down are asked again (those that ever answered stay known), and
+   * every zone opens again with its NS question (its delegation may have left the resolver's cache).
+   */
   oublierZonesMortes(): void {
     this.#mortes.clear();
     this.#sousEchecs.clear();
     this.#sousMortes.clear();
+    this.#premieres.clear();
   }
 
   /** The sub-zones between a name and its zone's apex, deepest first (the name itself included). */
@@ -196,10 +200,15 @@ export class ClientParZone implements ClientDns {
         }),
       );
       try {
-        return await this.#auParent(nom, zone, type);
+        // Every new zone opens with its own NS question, at its parent's pace: its other questions then know whether
+        // they go to the zone's own servers (delegated) or to its parent's (a zone the parent serves, a name that does
+        // not exist). A zone first reached by a host, an SPF lookup or a platform's name is opened the same way.
+        const ouverture = await this.#auParent(zone, zone, "NS");
+        if (nom === zone && type === "NS") return ouverture;
       } finally {
         finie();
       }
+      return this.#deleguees.has(zone) ? this.#poser(nom, zone, type, false, true) : this.#auParent(nom, zone, type);
     }
     await premiere;
     return this.#deleguees.has(zone) ? this.#poser(nom, zone, type, false, true) : this.#auParent(nom, zone, type);
@@ -353,23 +362,6 @@ export async function collecter(
     else resultat.spf.delete(domaine);
   };
 
-  // A domain opens at the domains' pace (its first questions go to its parents). Its measurement then runs on its own
-  // (hosts, SPF, slow servers can take seconds): its names go as soon as it has opened, never held behind it.
-  const ouverts = new Map<string, Promise<void>>();
-  const mesuresDomaines: Promise<void>[] = [];
-  const ouvrir = (domaine: string): Promise<void> => {
-    const deja = ouverts.get(domaine);
-    if (deja) return deja;
-    const ouverture = cadenceDomaines.attendre().then(async () => {
-      await options.frein?.(domaine, options.zoneDe(domaine), true);
-    });
-    ouverts.set(domaine, ouverture);
-    // The measurement starts before the names of the domain (reactions run in their order): its NS question is the
-    // zone's first, so its names know at once whether the zone is delegated (client per zone, above).
-    mesuresDomaines.push(ouverture.then(() => mesurerDomaine(domaine)));
-    return ouverture;
-  };
-
   const mesurerUnNom = async (nom: string): Promise<void> => {
     essai(nom);
     resultat.noms.set(nom, await mesurerNom(nom, client));
@@ -385,29 +377,47 @@ export async function collecter(
         faites += 1;
         if (faites % 2_000 === 0) {
           const parSeconde = faites / Math.max(1, (horloge.maintenant() - debut) / 1000);
-          options.suivi?.(`${faites} / ${taches.length} (${parSeconde.toFixed(1)} par seconde)`);
+          options.suivi?.(
+            `${faites} / ${taches.length} domaines (${parSeconde.toFixed(1)} par seconde ; ${resultat.noms.size} noms mesurés)`,
+          );
         }
       }
     };
     await Promise.all(Array.from({ length: Math.min(options.enVol, file.length) }, ouvrier));
   };
 
-  // First pass: every name, in random order; each one opens its domain first; then the domains' measurements end.
-  const ordre = melanger([...noms.keys()], options.aleatoire);
+  // First pass, domain by domain, in random order: a domain opens at the domains' pace, its zone's NS question first
+  // (alone, at its parent's pace), then its measurement and all its names together, while its delegation is fresh in
+  // the resolver's cache (an hour for .fr): no name of it asks its parent again later.
+  const parUnite = new Map<string, string[]>();
+  for (const [nom, unite] of noms) {
+    const liste = parUnite.get(unite);
+    if (liste === undefined) parUnite.set(unite, [nom]);
+    else liste.push(nom);
+  }
   await passe(
-    ordre.map((nom) => async () => {
-      await cadenceNoms.attendre();
-      await ouvrir(noms.get(nom) ?? nom);
-      await mesurerUnNom(nom);
+    melanger([...parUnite.keys()], options.aleatoire).map((unite) => async () => {
+      await cadenceDomaines.attendre();
+      await options.frein?.(unite, options.zoneDe(unite), true);
+      // The measurement is called first: its NS question is the zone's first (client per zone, above).
+      await Promise.all([
+        mesurerDomaine(unite),
+        ...melanger(parUnite.get(unite) ?? [], options.aleatoire).map(async (nom) => {
+          await cadenceNoms.attendre();
+          await mesurerUnNom(nom);
+        }),
+      ]);
     }),
   );
-  await Promise.all(mesuresDomaines);
   options.apresPremierePasse?.(resultat);
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).
   for (let reprise = 1; reprise <= options.reprises; reprise += 1) {
     const nomsEchoues = [...resultat.noms.values()].filter(enEchec).map((m) => m.nom);
-    const domainesEchoues = [...resultat.domaines.values()].filter(domaineEnEchec).map((z) => z.domaine);
+    // A domain whose SPF list is incomplete (a lookup failed) is asked again too.
+    const domainesEchoues = [...resultat.domaines.values()]
+      .filter((z) => domaineEnEchec(z) || resultat.spf.get(z.domaine)?.statut === "echec")
+      .map((z) => z.domaine);
     const hotesEchoues = [...resultat.hotes.values()].filter(enEchec).map((m) => m.nom);
     if (nomsEchoues.length + domainesEchoues.length + hotesEchoues.length === 0) break;
     if (options.echeance !== undefined && Date.now() + options.delaiRepriseMs > options.echeance) {
