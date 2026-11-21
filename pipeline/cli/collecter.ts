@@ -261,6 +261,7 @@ function suivreDebit(
   conteneur: string | undefined,
   zoneDe: (nom: string) => string,
   estSuffixe: (zone: string) => boolean,
+  estUnite: (zone: string) => boolean,
 ): {
   frein: OptionsCollecte["frein"];
   journal: OptionsCollecte["journal"];
@@ -270,7 +271,7 @@ function suivreDebit(
   if (conteneur === undefined) {
     return { frein: undefined, journal: undefined, arreter: () => ({ debit: null, attentes }) };
   }
-  const compteur = new CompteurServeurs(zoneDe, estSuffixe);
+  const compteur = new CompteurServeurs(zoneDe, estSuffixe, estUnite);
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -432,8 +433,13 @@ async function principal(): Promise<number> {
   const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
   // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
-  // companies' platforms.
-  const debit = suivreDebit(o.conteneur, zoneDe, (zone) => ref.psl.icann?.has(zone) === true);
+  // companies' platforms. Only the units of the list name a busy second's zones.
+  const debit = suivreDebit(
+    o.conteneur,
+    zoneDe,
+    (zone) => ref.psl.icann?.has(zone) === true,
+    (zone) => liste.domaines.has(zone),
+  );
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
   // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),

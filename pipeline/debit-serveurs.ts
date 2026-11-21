@@ -32,7 +32,7 @@ export type DebitServeurs = {
      */
     noms: number;
     auParent: number;
-    /** The registered zones of that second (5 at most, sorted): the summary names only the units of the list. */
+    /** The units of the list among the registered zones of that second (5 at most, sorted): the summary names them. */
     zonesVues: string[];
     parType: Record<string, number>;
   }[];
@@ -99,6 +99,8 @@ export class CompteurServeurs {
   constructor(
     private readonly zoneDe: (nom: string) => string = (nom) => nom,
     private readonly estSuffixe: (zone: string) => boolean = () => false,
+    /** A unit of the list (a public body's domain, published anyway): the only zones a busy second keeps by name. */
+    private readonly estUnite: (zone: string) => boolean = () => true,
   ) {}
 
   #questions = 0;
@@ -345,7 +347,11 @@ export class CompteurServeurs {
           s.zones = this.#zonesParAdresse.get(adresse)?.size ?? 0;
           s.noms = this.#nomsParAdresse.get(adresse)?.size ?? 0;
           s.auParent = this.#auParentParAdresse.get(adresse) ?? 0;
-          s.zonesVues = [...(this.#zonesParAdresse.get(adresse) ?? [])].sort().slice(0, 5);
+          // The units of the list first, then the cut: a unit never falls behind a third party's zone.
+          s.zonesVues = [...(this.#zonesParAdresse.get(adresse) ?? [])]
+            .filter((z) => this.estUnite(z))
+            .sort()
+            .slice(0, 5);
           s.parType = new Map(this.#typesParAdresse.get(adresse) ?? []);
         }
         this.#auDela.set(adresse, s);
