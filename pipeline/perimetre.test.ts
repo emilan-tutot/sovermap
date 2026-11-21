@@ -112,14 +112,23 @@ describe("the reference list", () => {
         {
           source: "sig",
           date: "2026-11-01",
-          sites: ["agence.example", "portail.ministere.gouv.example", "x.createur.example"],
+          sites: ["agence.example", "portail.ministere.gouv.example", "x.createur.example", "Bureau.Agence.example"],
+          ministeres: new Map([
+            ["agence.example", "m2"],
+            ["Bureau.Agence.example", "m3"],
+          ]),
         },
         { source: "mesr", date: "2026-11-21", sites: ["www.universite.example", "recette.ecole.example"] },
       ],
     );
     // A site that is not in the list enters it, with its provenance; its unit is « État ».
     expect(avecPerimetre.noms.get("agence.example")?.provenances).toEqual(["sig:2026-11-01"]);
-    expect(avecPerimetre.domaines.get("agence.example")).toMatchObject({ perimetre: "État", raisons: ["sig"] });
+    // Its ministry, as the SIG gives it, for each of its sites (a site written in capitals included).
+    expect(avecPerimetre.domaines.get("agence.example")).toMatchObject({
+      perimetre: "État",
+      raisons: ["sig"],
+      ministeres: ["m2", "m3"],
+    });
     // A listed name keeps its provenances, and its unit gains the reason.
     expect(avecPerimetre.noms.get("www.universite.example")?.provenances).toEqual([
       "dinum:2026-11-19",

@@ -50,8 +50,15 @@ export type RaisonEtat = "gouv.fr" | "dila" | "sig" | "mesr";
 /**
  * A dated copy of an open list of the « État » perimeter (referentiels/perimetre/): the SIG's sites, the MESR's public
  * institutions. Its sites enter the list with their provenance (« sig:AAAA-MM-JJ »), and their units the perimeter.
+ * `ministeres`: a site's ministry, by the identifier the SIG publishes, which is the DILA Référentiel's own (its name
+ * is the Référentiel's); none for the MESR, whose list does not say it.
  */
-export type CopiePerimetre = { source: "sig" | "mesr"; date: string; sites: readonly string[] };
+export type CopiePerimetre = {
+  source: "sig" | "mesr";
+  date: string;
+  sites: readonly string[];
+  ministeres?: ReadonlyMap<string, string>;
+};
 
 const trie = (valeurs: Iterable<string>) => [...new Set(valeurs)].sort();
 
@@ -120,8 +127,16 @@ export function construireListe(
       if (service.ministere !== null) ministereDe.set(service.id, service.ministere);
     }
   }
+  // A site's ministry, by its name in the list (the SIG's identifier is the Référentiel's).
+  const ministeresDuNom = new Map<string, Set<string>>();
   for (const copie of perimetre) {
-    for (const site of copie.sites) ajouter(site, `${copie.source}:${copie.date}`, null, null);
+    for (const site of copie.sites) {
+      ajouter(site, `${copie.source}:${copie.date}`, null, null);
+      const nom = nomValide(site);
+      const ministere = copie.ministeres?.get(site);
+      if (nom !== null && ministere !== undefined && noms.has(nom))
+        ministeresDuNom.set(nom, (ministeresDuNom.get(nom) ?? new Set<string>()).add(ministere));
+    }
   }
 
   // Units, their web name (added to the measured names when it is not listed) and their perimeter.
@@ -150,7 +165,10 @@ export function construireListe(
       raisons,
       plateforme: enPlateforme,
       organismes,
-      ministeres: trie(organismes.flatMap((o) => (ministereDe.has(o) ? [ministereDe.get(o) as string] : []))),
+      ministeres: trie([
+        ...organismes.flatMap((o) => (ministereDe.has(o) ? [ministereDe.get(o) as string] : [])),
+        ...entrees.flatMap((e) => [...(ministeresDuNom.get(e.nom) ?? [])]),
+      ]),
     });
   }
   const exclus = new Map<Exclusion, number>([...ecartes].map(([raison, ensemble]) => [raison, ensemble.size]));

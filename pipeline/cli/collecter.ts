@@ -116,7 +116,8 @@ function referentiels() {
       return date === undefined ? [] : [{ date, csv: lire(RACINE, "referentiels/listes", f) }];
     })
     .sort((a, b) => (a.date < b.date ? -1 : 1));
-  // The dated copies of the « État » perimeter's open lists (brief C.5): the latest of each source, its sites only.
+  // The dated copies of the « État » perimeter's open lists (brief C.5): the latest of each source, its sites and,
+  // for the SIG, each site's ministry (the DILA Référentiel's identifier).
   const FICHIERS_PERIMETRE = {
     sig: /^sig-(\d{4}-\d{2}-\d{2})\.csv$/,
     mesr: /^mesr-(\d{4}-\d{2}-\d{2})\.csv$/,
@@ -130,10 +131,20 @@ function referentiels() {
     const date = fichier === undefined ? undefined : FICHIERS_PERIMETRE[source].exec(fichier)?.[1];
     if (fichier === undefined || date === undefined) return [];
     const lignes = lignesCsv(lire(RACINE, "referentiels/perimetre", fichier));
-    const iSite = (lignes.next().value ?? []).indexOf("site");
+    const entete = lignes.next().value ?? [];
+    const iSite = entete.indexOf("site");
+    const iMinistere = entete.indexOf("ministere");
     if (iSite < 0) throw new Error(`referentiels/perimetre/${fichier} : colonne « site » attendue`);
-    const sites = [...lignes].flatMap((ligne) => (ligne[iSite] ? [ligne[iSite]] : []));
-    return [{ source, date, sites }];
+    const sites: string[] = [];
+    const ministeres = new Map<string, string>();
+    for (const ligne of lignes) {
+      const site = ligne[iSite];
+      if (!site) continue;
+      sites.push(site);
+      const ministere = iMinistere < 0 ? undefined : ligne[iMinistere];
+      if (ministere) ministeres.set(site, ministere);
+    }
+    return [{ source, date, sites, ministeres }];
   });
   const fichierPsl = readdirSync(path.join(RACINE, "referentiels/psl"))
     .filter((f) => /^public_suffix_list-\d{4}-\d{2}-\d{2}\.dat$/.test(f))
