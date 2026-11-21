@@ -98,6 +98,7 @@ describe("the records of a day", () => {
     });
     const d = etat.domaines.get("ministere.example");
     if (d === undefined) throw new Error("domaine absent");
+    expect(web?.reduit).toBeUndefined();
     expect(signatures(d, web).adresses).toBe("nul");
   });
 

@@ -167,6 +167,21 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
     expect(bilan(jour, hier, hier, false).disjoncteur).toEqual({ compares: 100, changes: 0, part: 0 });
   });
 
+  it("never compares a layer one of the two days did not determine (a host measured on one family)", () => {
+    const hier = etat(10, 0);
+    const aujourdhui = etat(10, 0);
+    // d0's name servers: a host measured on one family today, its layer « non déterminé ».
+    const d = aujourdhui.domaines.get("d0.example") as EnregistrementDomaine;
+    aujourdhui.domaines.set(d.domaine, {
+      ...d,
+      serveursDeNoms: { hotes: [], categorie: "non déterminé", horsUE: null, niveau: "non déterminé" },
+    });
+    const b = bilan(aujourdhui, hier, hier, false);
+    // Its other layer (the addresses) is still compared, and nothing changed: no change, nothing in the journal.
+    expect(b.disjoncteur).toEqual({ compares: 10, changes: 0, part: 0 });
+    expect(b.changements).toEqual([]);
+  });
+
   it("never compares a reduced record, and never publishes it in place of the published one", () => {
     const publie = etat(10, 0);
     const reduire = (e: Etat) => {

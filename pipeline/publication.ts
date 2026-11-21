@@ -161,8 +161,10 @@ export function signatures(d: EnregistrementDomaine, web: EnregistrementNom | un
   return { adresses, serveursDeNoms, messagerie };
 }
 
+// A layer that one of the two days did not determine (a failure, no MX, a reduced record, or a category « non
+// déterminé », such as a host measured on one family) is never compared: only what both days determined is.
 const indetermine = (s: string) =>
-  ["echec", "absent", "nxdomain", "nodata", "aucun", "nul"].includes(s.split("|")[0] ?? "");
+  ["echec", "absent", "nxdomain", "nodata", "aucun", "nul", "non déterminé"].includes(s.split("|")[0] ?? "");
 
 // ---------------------------------------------------------------------------------------------------------------
 // Hysteresis, journal and circuit breaker.
