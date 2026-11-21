@@ -1,6 +1,7 @@
 // The daily collection's workflow guards (the code review of PR 6, findings 2, 3, 4 and 5): read as text, so that a
 // later edit cannot drop one silently.
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(".github/workflows/collecte.yml", "utf8");
@@ -61,5 +62,26 @@ describe("the collection's workflow", () => {
     const attente = mesurer.indexOf("--event pull_request");
     expect(attente).toBeGreaterThan(-1);
     expect(attente).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));
+  });
+
+  it("has shell blocks that bash can read (a stray quote would fail a day's run)", () => {
+    const bash = spawnSync("bash", ["--version"], { encoding: "utf8" });
+    if (bash.error !== undefined || bash.status !== 0) return; // no bash here: the CI's runner has one
+    for (const fichier of readdirSync(".github/workflows").filter((f) => f.endsWith(".yml"))) {
+      const lignes = readFileSync(`.github/workflows/${fichier}`, "utf8").split("\n");
+      for (let i = 0; i < lignes.length; i += 1) {
+        const ouverture = /^(\s*)(?:- )?run: \|\s*$/.exec(lignes[i] ?? "");
+        if (ouverture === null) continue;
+        const retrait = (ouverture[1] ?? "").length;
+        const bloc: string[] = [];
+        for (let j = i + 1; j < lignes.length; j += 1) {
+          const ligne = lignes[j] ?? "";
+          if (ligne.trim() !== "" && ligne.search(/\S/) <= retrait) break;
+          bloc.push(ligne);
+        }
+        const verdict = spawnSync("bash", ["-n"], { input: bloc.join("\n"), encoding: "utf8" });
+        expect(verdict.status, `${fichier}, ligne ${i + 1} : ${verdict.stderr}`).toBe(0);
+      }
+    }
   });
 });

@@ -128,7 +128,7 @@ jobs:
             echo "Un essai mesure : la collecte du jour attend (minute $minute)."
             sleep 60
           done
-          echo "Un essai mesure encore après 45 minutes : la collecte du jour part." >&2"
+          echo "Un essai mesure encore après 45 minutes : la collecte du jour part." >&2
 
       # The resolver: the official image, pinned by its digest, kept in the Actions cache (brief B.2).
       - id: image
