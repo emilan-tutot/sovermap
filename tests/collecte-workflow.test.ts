@@ -14,6 +14,20 @@ const tache = (nom: string) => {
 };
 
 describe("the collection's workflow", () => {
+  it("enables the scheduled workflows again from two places, with the least rights, never on a pull request", () => {
+    const entretien = tache("entretien");
+    expect(entretien).toContain("if: github.event_name != 'pull_request'");
+    expect(entretien).toMatch(/permissions:\n {6}actions: write\n {4}env:/);
+    for (const fichier of ["collecte.yml", "fraicheur.yml", "archives.yml"]) expect(entretien).toContain(fichier);
+    expect(entretien).toContain('gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"');
+    // The freshness check does the same every 6 hours, and opens an issue when one cannot be enabled.
+    const fraicheur = readFileSync(".github/workflows/fraicheur.yml", "utf8");
+    expect(fraicheur).toContain('titre="Workflow planifié désactivé"');
+    expect(fraicheur).toContain('gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"');
+    // A third chance for the day's collection, which does nothing once the day has started.
+    expect(workflow).toContain('- cron: "17 15 * * *"');
+  });
+
   it("never reads an error of GitHub's API as « today is not done » (the day would be measured twice)", () => {
     const jour = tache("jour");
     expect(jour).toContain('grep -q "HTTP 404"');

@@ -1,7 +1,7 @@
 name: Collecte
 
-# The daily collection (brief B of chantier 2, plan § 4 to § 13): at 03:17 UTC, and again at 09:47 UTC, which does
-# nothing once the day's measurement has started. The measuring job has read-only rights; only the publishing job may write (the
+# The daily collection (brief B of chantier 2, plan § 4 to § 13): at 03:17 UTC, and again at 09:47 and 15:17 UTC,
+# which do nothing once the day has started. The measuring job has read-only rights; only the publishing job may write (the
 # « donnees » branch and the « donnees-courant » release), and only the alerting job may open or comment an issue.
 # A pull request that touches the collection runs the measuring job alone, on a sample (LIMITE_ESSAI), as a trial:
 # nothing is published, nothing is kept for tomorrow, no issue is opened; it never measures during, or around the
@@ -13,6 +13,9 @@ on:
   schedule:
     - cron: "17 3 * * *"
     - cron: "47 9 * * *"
+    # A third chance (GitHub skipped the run of 03:17 on 22/11/2026 and started the one of 09:47 1 h 38 late); like
+    # 09:47, it does nothing once the day has started, so the servers are never asked twice the same day.
+    - cron: "17 15 * * *"
   workflow_dispatch:
     inputs:
       essai:
@@ -414,3 +417,22 @@ jobs:
           # Nothing was published: the run ends in red, beside the issue (brief B.7).
           echo "Rien n'a été publié : l'exécution finit en rouge." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+  # GitHub disables the scheduled workflows of a public repository after 60 days without activity (the owner's answer
+  # to point 13, § 8): each scheduled run enables them again (the freshness check does the same every 6 hours, and
+  # opens the issue « Workflow planifié désactivé » when one cannot be). Never on a pull request.
+  entretien:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          for fichier in collecte.yml fraicheur.yml archives.yml; do
+            gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null
+            echo "$fichier : activé."
+          done

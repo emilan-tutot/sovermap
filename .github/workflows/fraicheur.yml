@@ -59,3 +59,42 @@ jobs:
           elif [ -n "$n" ]; then
             gh issue close "$n" --repo "$REPO" --comment "La collecte est de nouveau à jour : la dernière date de $fin."
           fi
+
+  # GitHub disables the scheduled workflows of a public repository after 60 days without activity (the owner's answer
+  # to point 13, § 8): every 6 hours, this job enables the scheduled workflows again (the collection does the same each
+  # day), and opens the issue « Workflow planifié désactivé » when one cannot be enabled, with the gesture to make.
+  entretien:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          titre="Workflow planifié désactivé"
+          echec=""
+          for fichier in collecte.yml fraicheur.yml archives.yml; do
+            etat=$(gh api "repos/$REPO/actions/workflows/$fichier" --jq .state 2> /dev/null || echo "illisible")
+            if [ "$etat" = "active" ]; then
+              gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null || echec="$echec $fichier"
+            elif [ "$etat" = "disabled_inactivity" ] || [ "$etat" = "disabled_manually" ]; then
+              echo "$fichier : $etat ; réactivation." >&2
+              gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null || echec="$echec $fichier"
+            else
+              echec="$echec $fichier"
+            fi
+          done
+          if [ -n "$echec" ]; then
+            {
+              echo "Ces workflows planifiés n'ont pas pu être réactivés :$echec."
+              echo
+              echo "Le geste : Actions › le workflow › « Enable workflow »."
+            } > corps.md
+            n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty")
+            if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
+            exit 1
+          fi
+          echo "Workflows planifiés actifs : collecte.yml, fraicheur.yml, archives.yml."
