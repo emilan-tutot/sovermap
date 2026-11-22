@@ -218,6 +218,7 @@ jobs:
           name: collecte
           path: |
             travail/sortie
+            travail/ouvertes
             travail/resume.md
             travail/rapport.json
           retention-days: 7
@@ -319,6 +320,9 @@ jobs:
               --notes "En préparation : le site n'est pas encore ouvert ; ne pas citer avant l'ouverture. Ce fichier est remplacé chaque jour par la collecte. Licence et attributions : README.md de la branche donnees."
           fi
           gh release upload donnees-courant ../donnees-courant.tar.gz --clobber
+          # The open files of the day (brief F.1): CSV and JSON tables, their data package and their checksums,
+          # replaced every day beside the backup file; never in the history of the « donnees » branch.
+          gh release upload donnees-courant ../collecte/ouvertes/* --clobber
 
   alerter:
     needs: [jour, mesurer, publier]

@@ -29,6 +29,7 @@ import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
+import { fichiersOuverts } from "../ouvertes";
 import { construireListe, type CopieListe } from "../perimetre";
 import {
   controleDu,
@@ -881,6 +882,13 @@ async function principal(): Promise<number> {
     const cible = path.join(travail, "sortie", chemin);
     mkdirSync(path.dirname(cible), { recursive: true });
     writeFileSync(cible, texte);
+  }
+  // The open files of the day (brief F.1), beside the published state, never in it: the publishing job puts them in
+  // the « donnees-courant » release, never into the history of the « donnees » branch.
+  rmSync(path.join(travail, "ouvertes"), { recursive: true, force: true });
+  mkdirSync(path.join(travail, "ouvertes"), { recursive: true });
+  for (const [nom, texte] of fichiersOuverts(b.etat, { societes, organismes, jours }, { date, methode: METHODE })) {
+    writeFileSync(path.join(travail, "ouvertes", nom), texte);
   }
   // The registered zones of a busy second that are units of the list (public bodies' domains, published anyway): named;
   // never a third party's.
