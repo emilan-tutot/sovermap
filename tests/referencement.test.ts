@@ -62,6 +62,10 @@ describe("the site's structured data (D.7)", () => {
       url: "https://sovermap.com/",
     });
   });
+
+  it("names no organization, no publisher and no author while no legal structure exists (point 11, Q4)", () => {
+    expect(jsonLdSite("https://sovermap.com")).not.toMatch(/Organization|publisher|author|creator/);
+  });
 });
 
 describe("the domains' index (D.2, D.7)", () => {
