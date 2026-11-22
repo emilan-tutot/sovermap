@@ -8,6 +8,7 @@ import {
   type EnregistrementNom,
   type Etat,
   fragments,
+  index,
   jsonStable,
   journal,
   seau,
@@ -221,5 +222,52 @@ describe("the figures", () => {
     const c = chiffres(e, "0.2") as { statut: string; chiffreTitre: { domaines: number; auMoinsPourcent: number } };
     expect(c.statut).toBe("preparation");
     expect(c.chiffreTitre).toMatchObject({ domaines: 10, auMoinsPourcent: 20 });
+  });
+});
+
+describe("the indexes", () => {
+  it("counts a country only for an established seat of an ultimate parent, and names each company's owners", () => {
+    const e = etat(3, 1);
+    // A third company whose parent is not established: never counted in its own country.
+    const web = e.noms.get("www.d2.example");
+    if (web === undefined) throw new Error("état d'essai incomplet");
+    e.noms.set("www.d2.example", {
+      ...web,
+      exploitants: [{ ...web.exploitants[0], societe: "filiale-inconnue" } as EnregistrementNom["exploitants"][number]],
+    });
+    const societe = (nom: string, pays: string, mere: string | null, paysMere: string | null) => ({
+      nom,
+      pays,
+      mere,
+      paysMere,
+      categorie:
+        paysMere === null
+          ? ("non déterminé" as const)
+          : paysMere === "FR"
+            ? ("France" as const)
+            : ("hors d'Europe" as const),
+      maillons: mere === null || mere === nom ? [] : [{ cle: mere, nom: "Groupe Exemple, Inc.", pays: paysMere ?? "" }],
+      controle: null,
+    });
+    const fichiers = index(e, {
+      as: new Map(),
+      societes: new Map([
+        ["cloud-us", societe("Cloud Exemple Europe", "IE", "groupe-us", "US")],
+        ["hebergeur-fr", societe("Hébergeur Exemple", "FR", "hebergeur-fr", "FR")],
+        ["filiale-inconnue", societe("Filiale Exemple", "NL", null, null)],
+      ]),
+      organismes: new Map(),
+      organismesDe: new Map(),
+    });
+    expect(JSON.parse(fichiers.get("index/pays.json") ?? "{}")).toEqual({
+      FR: { domaines: 1, domainesEtat: 1 },
+      US: { domaines: 1, domainesEtat: 1 },
+    });
+    const exploitants = JSON.parse(fichiers.get("index/exploitants.json") ?? "{}") as Record<
+      string,
+      { maillons: unknown[] }
+    >;
+    expect(exploitants["cloud-us"]?.maillons).toEqual([{ cle: "groupe-us", nom: "Groupe Exemple, Inc.", pays: "US" }]);
+    expect(exploitants["filiale-inconnue"]?.maillons).toEqual([]);
   });
 });

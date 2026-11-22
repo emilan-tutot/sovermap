@@ -364,7 +364,9 @@ export function index(
     for (const e of exploitants) {
       if (e.societe === null) continue;
       noter(parSociete, e.societe, d.domaine);
-      const pays = details.societes.get(e.societe)?.paysMere ?? details.societes.get(e.societe)?.pays;
+      // The country of the ultimate parent's seat, and only when it is established: a company whose parent is unknown
+      // is never counted in its own country (index/pays.json says where the seats are, not where the operators are).
+      const pays = details.societes.get(e.societe)?.paysMere;
       if (pays) {
         const p = parPays.get(pays) ?? { domaines: new Set(), etat: new Set() };
         p.domaines.add(d.domaine);
