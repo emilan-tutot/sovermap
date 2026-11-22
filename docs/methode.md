@@ -191,6 +191,7 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
 
 ## 7. Garde-fous de publication
 
+- **Arrêt d'urgence** (depuis le 22/11/2026) : quand 15 % des 400 derniers domaines mesurés sont en échec, une fois 800 domaines mesurés, la collecte ne pose plus aucune question et ses reprises sautent : les serveurs répondent alors mal (un jour ordinaire en a moins de 3 %), le jour serait rouge de toute façon, et les serveurs sont épargnés des heures de reprises du résolveur. Une collecte arrêtée n'est jamais publiée (garde-fou « collecte menée à son terme ») ; l'état de la veille reste affiché.
 - **Hystérésis** : un changement (un « déménagement ») n'est publié qu'après deux collectes successives concordantes.
 - **Disjoncteur** : si une collecte change plus de 2 % des classements, rien n'est publié, une alerte part, et l'état de la veille reste affiché. Ce seuil est provisoire : il sera justifié par la variation mesurée d'un jour à l'autre pendant les premières semaines de collecte.
 - **Domaines témoins** : un petit panel fixe, au comportement connu, est contrôlé à chaque collecte (`referentiels/temoins.json`) : le résolveur de la collecte, Quad9 et Cloudflare doivent tous retrouver chaque témoin tel qu'il est connu. Un écart bloque la publication.

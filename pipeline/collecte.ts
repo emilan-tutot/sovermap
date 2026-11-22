@@ -72,6 +72,14 @@ export type OptionsCollecte = {
    * (the review of 22/11/2026: a retry that started late had no end).
    */
   finReprises?: number;
+  /**
+   * The emergency stop: once `minimum` domains are measured in the first pass, the collection asks nothing more when
+   * `part` of the last `fenetre` domains failed. The servers then answer badly (the trials of 22/11/2026 at 17:11 and
+   * 20:14: 16 to 17 % of the domains failed, none confirmed by Quad9; day 2, a slow day: 0.6 % of the zones failed),
+   * the day would be red anyway, and the servers are spared hours of the resolver's retries. A guard keeps the day
+   * unpublished (collecter.ts).
+   */
+  arret: { fenetre: number; minimum: number; part: number };
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -93,6 +101,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
+  arret: { fenetre: 400, minimum: 800, part: 0.15 },
 };
 
 export type ResultatCollecte = {
@@ -105,6 +114,8 @@ export type ResultatCollecte = {
   essais: Map<string, number>;
   debut: number;
   fin: number;
+  /** Why the collection stopped before its end (the emergency stop), or null: a stopped day is never published. */
+  arret: string | null;
 };
 
 /** The client, with the per-zone limit on every question. */
@@ -591,6 +602,7 @@ export async function collecter(
     essais: new Map(),
     debut: Date.now(),
     fin: 0,
+    arret: null,
   };
   const hotesEnCours = new Map<string, Promise<void>>();
   const essai = (cle: string) => resultat.essais.set(cle, (resultat.essais.get(cle) ?? 0) + 1);
@@ -605,10 +617,34 @@ export async function collecter(
     return promesse;
   };
 
+  // The emergency stop (OptionsCollecte.arret): the outcome of the first pass's last domains, in a sliding window.
+  let premierePasse = true;
+  let mesuresPremierePasse = 0;
+  const fenetre: boolean[] = [];
+  let enEchecDansFenetre = 0;
+  const noterDomaine = (zone: MesureZone) => {
+    if (!premierePasse || resultat.arret !== null) return;
+    mesuresPremierePasse += 1;
+    const echec = domaineEnEchec(zone);
+    fenetre.push(echec);
+    if (echec) enEchecDansFenetre += 1;
+    if (fenetre.length > options.arret.fenetre && fenetre.shift() === true) enEchecDansFenetre -= 1;
+    if (
+      mesuresPremierePasse >= options.arret.minimum &&
+      enEchecDansFenetre >= options.arret.part * options.arret.fenetre
+    ) {
+      resultat.arret =
+        `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${enEchecDansFenetre} des ${fenetre.length} ` +
+        `derniers en échec (seuil : ${Math.round(100 * options.arret.part)} %)`;
+      options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);
+    }
+  };
+
   const mesurerDomaine = async (domaine: string): Promise<void> => {
     essai(domaine);
     const zone = await mesurerZone(domaine, client);
     resultat.domaines.set(domaine, zone);
+    noterDomaine(zone);
     options.apresDomaine?.(domaine, zone);
     // At most 13 name servers and 10 mail exchangers per domain are asked: a domain that names hundreds of slow hosts
     // can never hold the collection (the records keep as many).
@@ -629,6 +665,11 @@ export async function collecter(
     let coupee = false;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
+        // The emergency stop: no task is taken once the collection decided to stop (those under way end).
+        if (resultat.arret !== null) {
+          file.length = 0;
+          break;
+        }
         // The wall clock, like `echeance` (the review of PR 20: the measuring clock counts from the process's start, and
         // compared with a date it never cut anything).
         if (fin !== undefined && Date.now() >= fin.a) {
@@ -684,6 +725,7 @@ export async function collecter(
       ]);
     }),
   );
+  premierePasse = false;
   // The cap on the questions waiting through the parents' servers holds in the first pass only (PARENT_EN_VOL); the
   // job's log tells how its questions went, for a later decision on the retries.
   const attente = client.attenteParents;
@@ -697,6 +739,10 @@ export async function collecter(
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).
   for (let reprise = 1; reprise <= options.reprises; reprise += 1) {
+    if (resultat.arret !== null) {
+      options.suivi?.(`reprise ${reprise} sautée : arrêt d'urgence`);
+      break;
+    }
     const nomsEchoues = [...resultat.noms.values()].filter(enEchec).map((m) => m.nom);
     // A domain whose SPF list is incomplete (a lookup failed) is asked again too.
     const domainesEchoues = [...resultat.domaines.values()]

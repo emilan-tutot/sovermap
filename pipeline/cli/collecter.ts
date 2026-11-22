@@ -756,6 +756,8 @@ async function principal(): Promise<number> {
 
   const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
   const gardes: Garde[] = [
+    // The emergency stop (collecte.ts): a collection stopped before its end is never published.
+    { nom: "collecte menée à son terme", ok: mesures.arret === null, detail: mesures.arret ?? "" },
     {
       nom: "témoins concordants",
       ok: temoins.concordants,

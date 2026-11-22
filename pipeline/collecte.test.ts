@@ -984,6 +984,52 @@ describe("the scheduling of a collection", () => {
     expect(ligne).toMatch(/reprises sans plafond$/);
   });
 
+  it("stops asking when its domains fail far above an ordinary day, and skips its retries (22/11/2026)", async () => {
+    // Every question fails: once 20 domains are measured, all 10 of the last ones failed, and nothing more is asked.
+    const base: ClientDns = {
+      id: "base",
+      demander: async () => ({ code: "SERVFAIL", ad: false, reponses: [], duree: 1 }),
+      fermer: () => {},
+    };
+    const liste = new Map(Array.from({ length: 60 }, (_, i) => [`www.p${i}.example`, `p${i}.example`] as const));
+    const lignes: string[] = [];
+    const r = await collecter(liste, base, {
+      ...POLITESSE,
+      zoneDe,
+      enVol: 4,
+      horloge: fausseHorloge(),
+      arret: { fenetre: 10, minimum: 20, part: 0.5 },
+      suivi: (ligne) => lignes.push(ligne),
+    });
+    expect(r.arret).toBe("arrêt d'urgence après 20 domaines : 10 des 10 derniers en échec (seuil : 50 %)");
+    expect(r.domaines.size).toBeLessThan(30);
+    expect(lignes).toContain(`${r.arret} ; plus aucune question, le jour ne sera pas publié`);
+    expect(lignes).toContain("reprise 1 sautée : arrêt d'urgence");
+  });
+
+  it("never stops an ordinary collection: a few failed domains stay under the threshold", async () => {
+    // One domain in ten fails; the others answer.
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom) => ({
+        code: /(^|[.])p[0-9]*0[.]example$/.test(nom) ? "SERVFAIL" : "NOERROR",
+        ad: false,
+        reponses: [],
+        duree: 1,
+      }),
+      fermer: () => {},
+    };
+    const liste = new Map(Array.from({ length: 60 }, (_, i) => [`www.p${i}.example`, `p${i}.example`] as const));
+    const r = await collecter(liste, base, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+      arret: { fenetre: 10, minimum: 20, part: 0.5 },
+    });
+    expect(r.arret).toBeNull();
+    expect(r.domaines.size).toBe(60);
+  });
+
   it("asks again, at the next attempt, a zone that was down", async () => {
     const r = new ResolveurSimule(ZONE, zoneDe, new Set(["mairie.example"]));
     await collecter(new Map([["www.mairie.example", "mairie.example"]]), r, {
