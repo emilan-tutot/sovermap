@@ -73,6 +73,30 @@ export function partageDe(type: TypePartage, titre: string, description: string)
   };
 }
 
+/**
+ * The open data's structured data (schema.org Dataset, for Google Dataset Search; D.7): its name, its description, its
+ * page, its licence, the day it was last published and its CSV files, as the text of a script that is never executed.
+ */
+export function jsonLdDataset(
+  origine: string,
+  date: string,
+  fichiers: readonly { fichier: string; adresse: string }[],
+): string {
+  const donnees = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: fr.donneesOuvertes.jeu,
+    description: fr.donneesOuvertes.description,
+    url: `${origine}/donnees`,
+    license: "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    isAccessibleForFree: true,
+    dateModified: date,
+    spatialCoverage: "France",
+    distribution: fichiers.map((f) => ({ "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: f.adresse })),
+  };
+  return JSON.stringify(donnees).replace(/</g, "\\u003c");
+}
+
 /** The metadata of a text page (part E): its title, its description, its canonical address and the Atlas's image. */
 export function metadonneesTexte(page: { chemin: string; titre: string; description: string }): Metadata {
   return {

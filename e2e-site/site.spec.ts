@@ -23,6 +23,7 @@ const PAGES: [string, string][] = [
   ["/journal/2026-11-21", fr.journal.jour("21/11/2026")],
   ["/pays/etats-unis", "États-Unis"],
   ["/qualite", fr.qualite.titre],
+  ["/donnees", fr.donneesOuvertes.titre],
   ...PAGES_DE_TEXTE.map((p): [string, string] => [p.chemin, p.titre]),
 ];
 

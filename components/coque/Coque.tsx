@@ -10,6 +10,8 @@ const NAVIGATION = [
   { href: "/ministeres", texte: fr.coque.navigation.ministeres },
   { href: "/societes", texte: fr.coque.navigation.societes },
   { href: "/journal", texte: fr.coque.navigation.journal },
+  { href: "/methode", texte: fr.coque.navigation.methode },
+  { href: "/donnees", texte: fr.coque.navigation.donnees },
 ] as const;
 
 /**

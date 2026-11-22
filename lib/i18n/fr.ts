@@ -25,6 +25,8 @@ export const fr = {
       ministeres: "Ministères",
       societes: "Sociétés",
       journal: "Journal",
+      methode: "Méthode",
+      donnees: "Données",
     },
     filAriane: "Fil d’Ariane",
   },
@@ -66,6 +68,49 @@ export const fr = {
       phrase: "Le pays du siège de la maison mère, jamais l’emplacement des serveurs.",
     },
     alt: (etiquette: string, question: string) => `Sovermap · ${etiquette}${NBSP}: ${question}`,
+  },
+  /** The open data's page (F.1): the day's files, their licences, the dated sources, how to check a file. */
+  donneesOuvertes: {
+    titre: "Les données",
+    description: `Les données de Sovermap, librement réutilisables${NBSP}: l’état du jour en CSV et en JSON, avec leur schéma, leurs licences, leurs sources datées et leurs sommes de contrôle.`,
+    chapo: `Tout ce que Sovermap publie se réutilise librement. Voici l’état du jour, en fichiers ouverts.`,
+    fichiers: "Les fichiers du jour",
+    fichiersDate: (date: string) =>
+      `L’état publié du ${date}, remplacé chaque jour, avant l’ouverture marqué «${NBSP}en préparation${NBSP}».`,
+    noms: {
+      "sovermap-domains.csv": "les domaines, couche par couche (CSV)",
+      "sovermap-domains.json": "les domaines (JSON)",
+      "sovermap-operators.csv": "les exploitants, sociétés ou organismes publics (CSV)",
+      "sovermap-operators.json": "les exploitants (JSON)",
+      "sovermap-ministries.csv": "les ministères (CSV)",
+      "sovermap-ministries.json": "les ministères (JSON)",
+      "sovermap-countries.csv": "les pays des sièges (CSV)",
+      "sovermap-countries.json": "les pays des sièges (JSON)",
+      "datapackage.json": "le schéma de chaque fichier, ses champs décrits en français, sa licence et ses sources",
+      SHA256SUMS: "les sommes de contrôle",
+      "donnees-courant.tar.gz": "l’état complet du jour, tel que le site le lit",
+    },
+    licences: "Les licences",
+    licencesTexte: [
+      `Les données${NBSP}: Licence Ouverte 2.0, sauf les noms d’organisations tirés de la base du RIPE, qui restent soumis à ses conditions.`,
+      `Le code${NBSP}: EUPL 1.2.`,
+      `Le titulaire${NBSP}: «${NBSP}Les contributeurs de Sovermap${NBSP}».`,
+    ],
+    sources: "Les sources du jour",
+    methode: (version: string) => `Version de la méthode${NBSP}: ${version}.`,
+    source: (id: string, fiche: number, date: string, etat: string) =>
+      `${id} (fiche ${fiche} du registre des sources)${NBSP}: copie du ${date}, ${etat}.`,
+    sansDate: "date inconnue",
+    verifier: "Vérifier un fichier",
+    verifierTexte:
+      "Chaque fichier a sa somme de contrôle SHA-256 dans SHA256SUMS. Pour la vérifier, dans le dossier des fichiers téléchargés :",
+    commandes: {
+      windows: "Get-FileHash -Algorithm SHA256 sovermap-domains.csv",
+      unix: "sha256sum -c SHA256SUMS",
+    },
+    commandeWindows: "Commande Windows (PowerShell)",
+    commandeUnix: "Commande macOS ou Linux",
+    jeu: "Sovermap : qui héberge les sites publics français",
   },
   /** The text pages (part E): their shared words. Each page's own words: lib/i18n/fr-textes.ts. */
   textes: {

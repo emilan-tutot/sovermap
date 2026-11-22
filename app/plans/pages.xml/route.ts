@@ -37,6 +37,7 @@ export async function GET(): Promise<Response> {
     }),
     { chemin: "/journal" },
     { chemin: "/qualite" },
+    { chemin: "/donnees" },
     ...PAGES_DE_TEXTE.map((p) => ({ chemin: p.chemin })),
   ];
   return new Response(plan(origineDuSite(), adresses), {

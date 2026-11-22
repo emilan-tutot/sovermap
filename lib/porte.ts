@@ -97,6 +97,7 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/recherche/index.json", famille: "index de recherche", attendu: "introuvable" },
   { chemin: "/plans/pages.xml", famille: "sous-plans du site", attendu: "introuvable" },
   { chemin: "/a-propos", famille: "pages de textes", attendu: "introuvable" },
+  { chemin: "/donnees", famille: "page des données ouvertes", attendu: "introuvable" },
   { chemin: "/partage/radiographie.png", famille: "images de partage des pages", attendu: "introuvable" },
   { chemin: "/pays/etats-unis", famille: "pages des pays", attendu: "introuvable" },
   { chemin: "/pays/etats-unis", famille: "page d'un pays, navigation interne", attendu: "introuvable", entetes: RSC },
