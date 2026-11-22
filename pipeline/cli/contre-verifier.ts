@@ -316,6 +316,7 @@ const lignes = [
   `Tirage : graine ${graine} (le jour de l'état), ${STRATES.map((s) => `${s.nombre} « ${s.strate} »`).join(", ")}.`,
   `Résultat : ${concordent} couches concordent sur ${verifies} vérifiées${part === null ? "" : ` (${(part * 100).toFixed(1)} %)`} ; ${tous.length - verifies} non vérifiables.`,
   `Questions : Team Cymru ${cymru} (au plus ${BUDGET_CYMRU}), RIPEstat ${ripestat} (au plus ${BUDGET_RIPESTAT}).`,
+  "Sources de contrôle : Team Cymru ; RIPE NCC, RIPEstat (données de RIS, du RIPE NCC ; conditions, article 3.2) ; GLEIF (CC0).",
   "",
   "| Domaine | Strate | Couche | Verdict | Publié | Trouvé ailleurs | Source |",
   "|---|---|---|---|---|---|---|",

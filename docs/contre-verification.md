@@ -13,7 +13,7 @@ L'objectif : au moins 95 % des couches vérifiées concordent, et chaque désacc
 - **30 domaines, par strates**, dans cet ordre : 10 de l'État (hors opérateurs), 5 opérateurs de l'État, 5 collectivités, 5 derrière un CDN, 5 pour la messagerie. Un domaine n'est tiré qu'une fois, dans la première strate qui le prend.
 - **Opérateur** : un domaine du périmètre « État » par l'Observatoire du SIG ou par la liste du MESR ; si l'état n'a pas ces listes, par le Référentiel de la DILA, hors de gouv.fr. **Collectivité** : un domaine hors du périmètre « État » dont un nom porte, dans la liste de la DINUM, un type de collectivité (commune, EPCI, collectivité, conseil départemental, conseil régional). **CDN** : le nom web est diffusé par un CDN reconnu. **Messagerie** : le domaine publie des serveurs de messagerie (MX).
 - **Seuls les domaines mesurés ce jour-là** peuvent être tirés : le nom web a répondu, l'enregistrement est complet.
-- **Le hasard est écrit** : les candidats de chaque strate sont triés par nom, puis mélangés avec une graine, le jour de l'état (AAAAMMJJ). N'importe qui refait le même tirage (§ 6).
+- **Le hasard est écrit** : les candidats de chaque strate sont triés par nom, puis mélangés avec une graine, le jour de l'état (AAAAMMJJ). N'importe qui refait le même tirage (§ 7).
 
 ## 3. Les couches, et le chemin indépendant de chacune
 
@@ -37,11 +37,20 @@ Deux écarts attendus ne sont pas des erreurs, et sont expliqués comme tels : u
 - Team Cymru (fiche 24 du registre des sources) : 100 questions par jour au plus. RIPEstat (fiche 20) : 140 requêtes par jour au plus. Tous deux servent au contrôle seulement : ce document dit s'ils concordent, jamais ce qu'ils répondent.
 - La GLEIF (fiche 31) : une seule question par LEI, une seconde au moins entre deux requêtes, avec l'agent utilisateur du projet.
 
-## 5. Les passages
+## 5. Les conditions de RIPEstat
+
+- **L'article 3.2** des conditions du service RIPEstat (https://www.ripe.net/about-us/legal/ripestat-service-terms-and-conditions, relues le 22/11/2026) :
+  - l'usage suit l'objet du service, que l'article 3.1 décrit (l'analyse et la surveillance des réseaux, leur débogage, la recherche) ;
+  - un utilisateur qui fait une recherche avec RIPEstat en déclare les résultats au RIPE NCC, par un e-mail à l'adresse du service que donne l'article (« they must notify the RIPE NCC about the results of this research ») ;
+  - quand il publie ces résultats, il cite le RIPE NCC et la source des données de RIPEstat, si elle est autre.
+- **L'article 3.3** interdit de redistribuer les données de RIPEstat : aucune n'est publiée ici, seulement la concordance.
+- **Ce que fait Sovermap** : chaque passage cite « RIPE NCC, RIPEstat (données de RIS, du RIPE NCC) ». La déclaration par e-mail se fera au chantier 3, depuis une adresse sur sovermap.com (décision du propriétaire du 22/11/2026, point 13, Q2 A).
+
+## 6. Les passages
 
 <!-- Le passage sur l'état du jour 2 (22/11/2026) s'écrit ici : date, état, graine, résultat, tableau, désaccords expliqués. -->
 
-## 6. Refaire la contre-vérification
+## 7. Refaire la contre-vérification
 
 ```
 git worktree add --detach ../donnees origin/donnees
