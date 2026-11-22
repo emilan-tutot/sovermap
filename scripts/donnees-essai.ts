@@ -77,12 +77,14 @@ const etat: Etat = {
     ["nuage.example", domaine("nuage.example", "État", [MINISTERE])],
     ["mairie.example", domaine("mairie.example", "hors État", [])],
     ["panne.example", domaine("panne.example", "hors État", [])],
+    ["nompanne.example", domaine("nompanne.example", "hors État", [])],
   ]),
   noms: new Map([
     ["www.service.example", nom("www.service.example", "service.example", "hebergeur-fr", "hébergé par", "France")],
     ["www.nuage.example", nom("www.nuage.example", "nuage.example", "cdn-us", "diffusé par", "hors d'Europe")],
     ["www.mairie.example", nom("www.mairie.example", "mairie.example", null, "hébergé par", "non déterminé")],
     ["www.panne.example", nom("www.panne.example", "panne.example", null, "hébergé par", "non déterminé")],
+    ["www.nompanne.example", nom("www.nompanne.example", "nompanne.example", null, "hébergé par", "non déterminé")],
   ]),
 };
 
@@ -144,6 +146,14 @@ if ([...etat.domaines.keys()].some((d) => d !== "panne.example" && seau(d) === s
   throw new Error("données d'essai : panne.example partage son fichier avec un autre domaine");
 }
 fichiers.set(fichierPanne, `${fichiers.get(fichierPanne) ?? ""} `);
+// A domain whose own record reads, but not its web name's: its Radiographie must answer an error too, never its layers
+// « non déterminé » as facts (the review of PR 22). Its web name's bucket holds no other name of the state.
+const [hautNomPanne, basNomPanne] = seau("www.nompanne.example").split("/");
+const fichierNomPanne = `noms/${hautNomPanne}/${basNomPanne}.json`;
+if ([...etat.noms.keys()].some((n) => n !== "www.nompanne.example" && seau(n) === seau("www.nompanne.example"))) {
+  throw new Error("données d'essai : www.nompanne.example partage son fichier avec un autre nom");
+}
+fichiers.set(fichierNomPanne, `${fichiers.get(fichierNomPanne) ?? ""} `);
 const sommes = Object.fromEntries(
   [...fichiers]
     .filter(([c]) => /^(noms|domaines)\/[0-9a-f]{2}\/sommes\.json$/.test(c) || /^(index|agregats|journal)\//.test(c))

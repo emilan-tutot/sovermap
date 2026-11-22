@@ -137,7 +137,21 @@ function etatAdresses(r: NonNullable<Radiographie["web"]>): string {
 const niveauAdresses = (r: NonNullable<Radiographie["web"]>): Niveau =>
   r.controle === null ? "probable" : r.controle.accord ? "confirmé" : "non déterminé";
 
-export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRadiographie; mode: Mode }) {
+export function VueRadiographie({
+  r,
+  s,
+  dates,
+  slugs,
+  mode,
+}: {
+  r: Radiographie;
+  s: SourcesRadiographie;
+  /** The days of the records the layers were read from: the domain's, and its web name's (lecture.ts). */
+  dates: { domaine: string; nom: string };
+  /** Each ministry's address, by its name, as its page has it (lib/donnees/ministeres.ts). */
+  slugs: ReadonlyMap<string, string>;
+  mode: Mode;
+}) {
   const web = r.web;
   const expert = mode === "expert";
   const exploitants = web?.exploitants ?? [];
@@ -198,7 +212,6 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
           : web.categorie === "hors d'Europe" || web.categorie === "Europe hors UE",
     },
   ];
-  const collecte = s.collecte;
   const versionAs = s.referentiels.as ?? t.nonDetermine;
   return (
     <div className="radiographie">
@@ -246,7 +259,7 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
                       {/^[0-9a-f-]{36}$/.test(m) ? (
                         m
                       ) : (
-                        <Link href={`/ministeres/${slugMinistere(m)}`} prefetch={false}>
+                        <Link href={`/ministeres/${slugs.get(m) ?? slugMinistere(m)}`} prefetch={false}>
                           {m}
                         </Link>
                       )}
@@ -261,7 +274,7 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
               numero={2}
               titre={t.serveurs.titre}
               source={t.serveurs.source}
-              date={collecte}
+              date={dates.domaine}
               niveau={r.serveurs.niveau}
             >
               <p>{t.serveurs.valeur(r.serveurs.ns.length)}</p>
@@ -275,7 +288,7 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
               numero={3}
               titre={t.adresses.titre}
               source={t.adresses.source}
-              date={collecte}
+              date={dates.nom}
               niveau={web === null ? null : niveauAdresses(web)}
             >
               {web === null ? (
@@ -420,7 +433,7 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
               numero={8}
               titre={t.cdn.titre}
               source={t.cdn.source(s.referentiels.cdn ?? t.nonDetermine)}
-              date={collecte}
+              date={dates.nom}
               niveau={null}
             >
               <p>

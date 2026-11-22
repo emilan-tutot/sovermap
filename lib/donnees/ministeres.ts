@@ -36,7 +36,10 @@ export function lireMinisteres(valeur: unknown): Ministere[] | null {
   }
   const vus = new Map<string, number>();
   for (const m of liste) vus.set(m.slug, (vus.get(m.slug) ?? 0) + 1);
-  for (const m of liste) if ((vus.get(m.slug) ?? 0) > 1) m.slug = `${m.slug}-${m.id.slice(-12)}`;
+  // Two names that give one address: each keeps the end of its id, within the 100 characters of an address.
+  for (const m of liste) {
+    if ((vus.get(m.slug) ?? 0) > 1) m.slug = `${m.slug.slice(0, 87).replace(/-+$/, "")}-${m.id.slice(-12)}`;
+  }
   const ordre = new Intl.Collator("fr", { sensitivity: "base", numeric: true });
   return liste.sort((a, b) => ordre.compare(a.nom, b.nom));
 }

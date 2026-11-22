@@ -7,6 +7,7 @@ import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
+import { lireMinisteres, type Ministere } from "@/lib/donnees/ministeres";
 import {
   lireIndexAs,
   lireIndexMinisteres,
@@ -78,12 +79,31 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
     lire("index/as.json"),
     lire("index/ministeres.json"),
   ]);
+  // A read that failed, or an index that does not pass its checks, is an error, never kept by the CDN: it would show
+  // « non déterminé » or « aucun réseau » as facts. Only a file that does not exist yet stands for « not published »
+  // (the review of PR 22).
+  if ([web, societes, as, ministeres].some((l) => l.statut === "indisponible" || l.statut === "porte fermée")) {
+    indisponible();
+  }
+  const indexSocietes = societes.statut === "ok" ? lireIndexSocietes(societes.donnees) : new Map();
+  const indexAs = as.statut === "ok" ? lireIndexAs(as.donnees) : new Map();
+  const indexMinisteres = ministeres.statut === "ok" ? lireIndexMinisteres(ministeres.donnees) : new Map();
+  // Each ministry's address as its own page has it (two names that give one address keep the end of their id).
+  const slugs = new Map<string, string>(
+    (ministeres.statut === "ok" ? (lireMinisteres(ministeres.donnees) ?? []) : []).map((m: Ministere) => [
+      m.nom,
+      m.slug,
+    ]),
+  );
+  if (indexSocietes === null || indexAs === null || indexMinisteres === null) indisponible();
   const r = radiographieDe(enregistrement, web.statut === "ok" ? (web.donnees as unknown as EnregistrementNom) : null, {
-    societes: (societes.statut === "ok" ? lireIndexSocietes(societes.donnees) : null) ?? new Map(),
-    as: (as.statut === "ok" ? lireIndexAs(as.donnees) : null) ?? new Map(),
-    ministeres: (ministeres.statut === "ok" ? lireIndexMinisteres(ministeres.donnees) : null) ?? new Map(),
+    societes: indexSocietes,
+    as: indexAs,
+    ministeres: indexMinisteres,
   });
   const s = sourcesDe(etat.donnees);
+  // Each layer is dated by the record it was read from: the day before's, when today's could not be read.
+  const dates = { domaine: lu.date, nom: web.statut === "ok" ? web.date : lu.date };
   return (
     <Coque large>
       <FilAriane miettes={[{ nom: r.domaine, chemin: `/radiographie/${r.domaine}` }]} />
@@ -92,7 +112,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
         <Valeur texte={r.domaine} />
       </h1>
       <p className="chapo">{fr.radiographie.chapo}</p>
-      <VueRadiographie r={r} s={s} mode={vue} />
+      <VueRadiographie r={r} s={s} dates={dates} slugs={slugs} mode={vue} />
     </Coque>
   );
 }

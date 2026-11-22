@@ -38,13 +38,18 @@ export async function GET(): Promise<Response> {
     return new Response(null, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
   // Every registered domain from the index; before it was published (until 23/11/2026), the domains the companies'
-  // lists give, « État » when the perimeter's exact reasons say so (.gouv.fr, a ministry of the Référentiel).
+  // lists give, « État » when the perimeter's exact reasons say so (.gouv.fr, a ministry of the Référentiel). An index
+  // published but unreadable is an error, never a smaller index kept 6 hours (the review of PR 22).
+  const indisponibleSansCache = () => new Response(null, { status: 503, headers: { "Cache-Control": "no-store" } });
+  if (luDomaines.statut !== "ok" && luDomaines.statut !== "absent") return indisponibleSansCache();
   let domaines = luDomaines.statut === "ok" ? lireDomaines(luDomaines.donnees) : null;
+  if (luDomaines.statut === "ok" && domaines === null) return indisponibleSansCache();
   if (domaines === null) {
     const desMinisteres = new Set(ministeres.flatMap((m) => m.domaines));
     const listes = await Promise.all(
       [...societes.keys()].map((cle) => lecteur.fichier(`index/exploitants/${cle}.json`)),
     );
+    if (listes.some((lu) => lu.statut !== "ok" && lu.statut !== "absent")) return indisponibleSansCache();
     const tous = new Set(
       listes.flatMap((lu, i) =>
         lu.statut === "ok" ? (lireDomainesSociete(lu.donnees, [...societes.keys()][i] ?? "") ?? []) : [],

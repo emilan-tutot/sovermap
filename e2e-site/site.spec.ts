@@ -190,6 +190,14 @@ test("site complet : une page dont les données ne se lisent pas répond une err
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(erreur.titre);
 });
 
+test("site complet : une Radiographie dont le nom web ne se lit pas répond une erreur, jamais « non déterminé »", async ({
+  page,
+}) => {
+  const reponse = await page.goto("/radiographie/nompanne.example");
+  expect(reponse?.status()).toBeGreaterThanOrEqual(500);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(erreur.titre);
+});
+
 test("site complet : un domaine que l'état du jour ne publie pas répond 404", async ({ page }) => {
   const reponse = await page.goto("/radiographie/inconnu.example");
   expect(reponse?.status()).toBe(404);

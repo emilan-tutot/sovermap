@@ -31,6 +31,15 @@ describe("the ministries' pages (D.2)", () => {
     expect(lireMinisteres([])).toBeNull();
   });
 
+  it("keeps two long homonyms apart within the 100 characters of an address (the review of PR 22)", () => {
+    // An address of exactly 90 characters (the longest a name gives), the end of an id then added.
+    const long = `${"x".repeat(90)} y`;
+    const m = lireMinisteres({ [ID(4)]: { nom: long, domaines: [] }, [ID(5)]: { nom: long, domaines: [] } }) ?? [];
+    expect(m).toHaveLength(2);
+    expect(new Set(m.map((x) => x.slug)).size).toBe(2);
+    for (const x of m) expect(x.slug).toMatch(/^[a-z0-9-]{1,100}$/);
+  });
+
   it("groups the domains by the company that serves them, the unknown last, and counts each category", () => {
     const societes = lireIndexSocietes({
       zeta: { nom: "Zêta", pays: "FR", mere: "zeta", paysMere: "FR", categorie: "France" },

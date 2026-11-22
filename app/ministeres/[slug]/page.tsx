@@ -27,9 +27,23 @@ const CATEGORIES: readonly Categorie[] = [
 ];
 const estSlug = (s: string) => /^[a-z0-9-]{1,100}$/.test(s);
 
+/**
+ * The ministry of an address: null when the day's index has none (or is not published yet); « indisponible » when the
+ * index cannot be read or does not pass its checks, an error, never a « not found » kept by the CDN (the review of PR
+ * 22).
+ */
 async function ministereDe(slug: string) {
   const lu = await lecteur.fichier("index/ministeres.json");
-  return lu.statut === "ok" ? (lireMinisteres(lu.donnees)?.find((m) => m.slug === slug) ?? null) : null;
+  if (lu.statut === "absent" || lu.statut === "porte fermée") return null;
+  const liste = lu.statut === "ok" ? lireMinisteres(lu.donnees) : null;
+  return liste === null ? "indisponible" : (liste.find((m) => m.slug === slug) ?? null);
+}
+
+/** Maps a list a few at a time: a ministry's records are read 16 at once, never hundreds (GitHub's limits). */
+async function parLots<T, U>(liste: readonly T[], fn: (e: T) => Promise<U>, n = 16): Promise<U[]> {
+  const resultats: U[] = [];
+  for (let i = 0; i < liste.length; i += n) resultats.push(...(await Promise.all(liste.slice(i, i + n).map(fn))));
+  return resultats;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -38,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const etat = await lecteur.etat();
   if (etat.statut !== "ok") return {};
   const m = await ministereDe(slug);
-  return m === null
+  return m === null || m === "indisponible"
     ? {}
     : {
         title: t.titrePage(m.nom),
@@ -68,20 +82,25 @@ export default async function MinisterePage({ params }: Props) {
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
   if (etat.statut !== "ok") indisponible();
   const m = await ministereDe(slug);
+  if (m === "indisponible") indisponible();
   if (m === null) notFound();
   const lire = (chemin: string) => lecteur.fichier(chemin);
-  const [luSocietes, ...servis] = await Promise.all([
-    lire("index/exploitants.json"),
-    ...m.domaines.map(async (d): Promise<DomaineServi> => {
-      const lu = await fiche(lire, "domaines", d);
-      if (lu.statut !== "ok") return servi(d, null);
-      const nomWeb = (lu.donnees as unknown as EnregistrementDomaine).nomWeb;
-      const web = await fiche(lire, "noms", nomWeb);
-      return servi(d, web.statut === "ok" ? (web.donnees as unknown as EnregistrementNom) : null);
-    }),
-  ]);
-  const societes = (luSocietes.statut === "ok" ? lireIndexSocietes(luSocietes.donnees) : null) ?? new Map();
-  const domaines = servis as DomaineServi[];
+  // A record that cannot be read is an error, never « non déterminé » kept by the CDN; a record that is not published
+  // stays « non déterminé » (the review of PR 22).
+  const luSocietes = await lire("index/exploitants.json");
+  const servis = await parLots(m.domaines, async (d): Promise<DomaineServi | null> => {
+    const lu = await fiche(lire, "domaines", d);
+    if (lu.statut === "absent") return servi(d, null);
+    if (lu.statut !== "ok") return null;
+    const nomWeb = (lu.donnees as unknown as EnregistrementDomaine).nomWeb;
+    const web = await fiche(lire, "noms", nomWeb);
+    if (web.statut !== "ok" && web.statut !== "absent") return null;
+    return servi(d, web.statut === "ok" ? (web.donnees as unknown as EnregistrementNom) : null);
+  });
+  if (luSocietes.statut !== "ok" && luSocietes.statut !== "absent") indisponible();
+  const societes = luSocietes.statut === "ok" ? lireIndexSocietes(luSocietes.donnees) : new Map();
+  if (societes === null || servis.some((s) => s === null)) indisponible();
+  const domaines = servis.filter((s): s is DomaineServi => s !== null);
   const groupes = groupesDe(domaines, societes);
   return (
     <Coque>
