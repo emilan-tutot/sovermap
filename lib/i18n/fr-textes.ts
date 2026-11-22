@@ -2,6 +2,7 @@
 // of their last revision. Not read again by the publisher yet (relu: false), until the review of brief E.5. French
 // typography: a non-breaking space before « : ; ! ? » and inside « » (DESIGN.md §6).
 import { type Editeur, HEBERGEUR } from "@/lib/editeur";
+import logiciels from "@/lib/credits.json";
 import type { PageDeTexte, Segment } from "@/lib/textes";
 
 const NBSP = " ";
@@ -427,13 +428,12 @@ export const credits: PageDeTexte = soignee({
       titre: "Les logiciels libres",
       blocs: [
         {
-          liste: [
-            ["Next.js et React (licence MIT)."],
-            ["three.js (licence MIT), pour le globe."],
-            ["dns-packet (licence MIT)."],
-            ["Pour la collecte : Knot Resolver, de CZ.NIC (licence GPL)."],
+          paragraphe: [
+            "Ceux du site et de la collecte, tirés de leurs dépendances, chacun avec sa version et sa licence :",
           ],
         },
+        // lib/credits.json, written by scripts/credits.ts; tests/credits.test.ts fails when it no longer matches.
+        { liste: logiciels.map((l) => [`${l.nom} ${l.version} (licence ${l.licence}).`]) },
       ],
     },
     {
