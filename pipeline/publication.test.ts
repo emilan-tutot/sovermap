@@ -339,6 +339,24 @@ describe("the figures' history", () => {
     expect(historiqueRelu(null)).toBe(false);
     expect(historiqueRelu("pas un objet")).toBe(false);
     expect(historiqueRelu({ jours: [{ date: "pas une date" }] })).toBe(false);
+    // Only in full: one unreadable day, or none at all, holds the day.
+    const jour = { date: "2026-11-21", methode: "0.2.1", reglesChangees: false };
+    expect(historiqueRelu({ jours: [jour, { date: "pas une date" }] })).toBe(false);
+    expect(historiqueRelu({ jours: [] })).toBe(false);
+    // A history frozen in the format published since 22/11/2026: if the reading ever asks for more, the CI says so
+    // before the guard turns red on the day after a merge.
+    expect(
+      historiqueRelu({
+        jours: [
+          {
+            ...jour,
+            chiffreTitre: { perimetre: "État", auMoinsPourcent: 5.3, domaines: 1424, nonDeterminePourcent: 41.4 },
+            messagerie: { perimetre: "État", auMoinsPourcent: 0.3, domaines: 1218 },
+          },
+          { date: "2026-11-22", methode: "0.2.3", reglesChangees: true },
+        ],
+      }),
+    ).toBe(true);
   });
 
   it("starts from the day before, taken from the published figures, so that two days show from the first run", () => {

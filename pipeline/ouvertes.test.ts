@@ -284,5 +284,11 @@ describe("the open data of the day (F.1)", () => {
       "sovermap-countries.csv : en-tête différent du schéma",
     ]);
     expect(verifierOuvertes(new Map())).toEqual(["datapackage.json : absent"]);
+    const court = new Map(fichiers);
+    court.set(
+      "sovermap-countries.csv",
+      (fichiers.get("sovermap-countries.csv") ?? "").replace(/\r\n[^\r\n]+\r\n$/, "\r\n"),
+    );
+    expect(verifierOuvertes(court)).toEqual(["sovermap-countries.csv : nombre de lignes différent du JSON"]);
   });
 });

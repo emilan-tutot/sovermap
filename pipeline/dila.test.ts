@@ -23,6 +23,7 @@ describe("the DILA Référentiel", () => {
       "Nom\r\nExemple",
       "Nom; =Exemple",
       "Service; Exemple",
+      'A;"=1+1;',
       "=",
     ];
     const json = JSON.stringify({ service: noms.map((n, i) => service(`s${i}`, n, [`https://s${i}.example`])) });
@@ -36,9 +37,11 @@ describe("the DILA Référentiel", () => {
       ["Nom Exemple", ["s5.example"]],
       ["Nom; Exemple", ["s6.example"]],
       ["Service; Exemple", ["s7.example"]],
+      ["A; 1+1;", ["s8.example"]],
+      // A name of signs only is no name: the service keeps its place, named by its identifier (it has no acronym).
+      ["s9", ["s9.example"]],
     ]);
-    // Eight names made plain text; the last one, of signs only, is no name: its service is left out, as one without a name.
-    expect(ref.neutralises).toBe(8);
+    expect(ref.neutralises).toBe(9);
     expect(nomNeutre("A; -B; C")).toBe("A; B; C");
   });
 

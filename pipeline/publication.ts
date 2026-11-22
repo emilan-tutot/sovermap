@@ -529,7 +529,6 @@ export function historiqueRelu(brut: unknown): boolean {
  * checked, the day added (or replaced, when the same day runs again), in date order. When no history was published
  * yet, the day before is taken from the published figures and state, so that two days show from the first run.
  */
-
 export function historique(
   publie: { historique: unknown; chiffres: unknown; etat: unknown } | null,
   date: string,

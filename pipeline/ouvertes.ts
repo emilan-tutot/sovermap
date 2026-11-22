@@ -188,11 +188,11 @@ function servants(web: EnregistrementNom | undefined) {
   });
 }
 
-/** A list as one field: its elements separated by « ; »; null when it is empty. */
 /** The domain fields that hold one value per known operator, in the same order, « ; » between two. */
 const ALIGNES = ["roles", "operators", "operator_names", "operator_countries", "parents", "parent_countries"] as const;
 
-/** A list of the domains' file: a « ; » inside a value (a company's name) becomes a comma, so the lists stay aligned. */
+/** A list as one field: its elements separated by « ; », null when it is empty; a « ; » inside a value (a company's
+ * name) becomes a comma, so the lists stay aligned. */
 const liste = (valeurs: readonly string[]): string | null =>
   valeurs.length === 0 ? null : valeurs.map((v) => v.replaceAll(";", ",")).join(";");
 
