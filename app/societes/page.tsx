@@ -6,7 +6,7 @@ import { Coque } from "@/components/coque/Coque";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
 import { societesTriees } from "@/lib/donnees/societes";
-import { dateFr, nombre } from "@/lib/i18n/format";
+import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { sitePublic } from "@/lib/site";
 
@@ -40,7 +40,7 @@ export default async function SocietesPage() {
     <Coque>
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
-      <p className="releve-note">{t.entete(dateFr(etat.donnees.date), nombre(societes.length))}</p>
+      <p className="releve-note">{t.entete(nombre(societes.length))}</p>
       <ul className="liste-societes">
         {societes.map(([cle, s]) => (
           <li key={cle}>

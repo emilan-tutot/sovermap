@@ -6,7 +6,7 @@ import { Valeur } from "@/components/texte/Valeur";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays, sourcesDe } from "@/lib/donnees/radiographie";
 import { estCleSociete, lireDomainesSociete, pageDe } from "@/lib/donnees/societes";
-import { dateFr, nombre } from "@/lib/i18n/format";
+import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 
 type Props = { params: Promise<{ cle: string }>; searchParams: Promise<{ page?: string | string[] }> };
@@ -63,7 +63,6 @@ export default async function SocietePage({ params, searchParams }: Props) {
     <Coque>
       <p className="etiquette-capitales">{t.surtitre}</p>
       <h1 className="titre-page">{s.nom}</h1>
-      <p className="releve-note">{fr.radiographie.collecte(dateFr(etat.donnees.date))}</p>
       <section className="releve" aria-labelledby="titre-chaine">
         <h2 id="titre-chaine">{t.chaine}</h2>
         <p>{t.pays(nomPays(s.pays) ?? s.pays)}</p>

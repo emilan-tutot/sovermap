@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { Constellation } from "@/components/ministeres/Constellation";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
 import { lecteur } from "@/lib/donnees/lecture";
 import { type DomaineServi, groupesDe, lireMinisteres, parCategorie } from "@/lib/donnees/ministeres";
 import { type Categorie, lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
-import { dateFr, nombre } from "@/lib/i18n/format";
+import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
 
@@ -83,7 +84,6 @@ export default async function MinisterePage({ params }: Props) {
     <Coque>
       <p className="etiquette-capitales">{t.surtitre}</p>
       <h1 className="titre-page">{m.nom}</h1>
-      <p className="releve-note">{fr.radiographie.collecte(dateFr(etat.donnees.date))}</p>
       <section className="releve" aria-labelledby="titre-repartition">
         <h2 id="titre-repartition">{t.repartition}</h2>
         <p>{t.domaines(domaines.length, nombre(domaines.length))}</p>
@@ -95,6 +95,10 @@ export default async function MinisterePage({ params }: Props) {
           ))}
         </ul>
         <p className="releve-note">{t.repartitionNote}</p>
+      </section>
+      <section className="releve" aria-labelledby="titre-constellation">
+        <h2 id="titre-constellation">{t.constellation.titre}</h2>
+        <Constellation groupes={groupes} />
       </section>
       <section className="releve" aria-labelledby="titre-groupes">
         <h2 id="titre-groupes">{t.groupes}</h2>

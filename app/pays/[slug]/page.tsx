@@ -5,7 +5,7 @@ import { Coque } from "@/components/coque/Coque";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, paysDuSlug, societesDuPays } from "@/lib/donnees/pays";
 import { lireIndexSocietes } from "@/lib/donnees/radiographie";
-import { dateFr, nombre } from "@/lib/i18n/format";
+import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -46,7 +46,6 @@ export default async function PaysPage({ params }: Props) {
       <p className="etiquette-capitales">{t.surtitre}</p>
       <h1 className="titre-page">{p.nom}</h1>
       <p className="chapo">{t.honnetete}</p>
-      <p className="releve-note">{fr.radiographie.collecte(dateFr(etat.donnees.date))}</p>
       <p className="valeur">{t.domaines(nombre(chiffres.domaines), nombre(chiffres.domainesEtat))}</p>
       <section className="releve" aria-labelledby="titre-societes">
         <h2 id="titre-societes">{t.societes}</h2>

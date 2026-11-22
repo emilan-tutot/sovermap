@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
-import { dateFr, nombre } from "@/lib/i18n/format";
+import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { sitePublic } from "@/lib/site";
 
@@ -37,7 +37,7 @@ export default async function MinisteresPage() {
     <Coque>
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
-      <p className="releve-note">{t.entete(dateFr(etat.donnees.date), nombre(ministeres.length))}</p>
+      <p className="releve-note">{t.entete(nombre(ministeres.length))}</p>
       <ul className="liste-societes">
         {ministeres.map((m) => (
           <li key={m.id}>

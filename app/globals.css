@@ -802,6 +802,73 @@
     color: var(--color-accent);
   }
 
+  /* The constellation of a ministry (DESIGN.md §5): one disc per site, grouped by company, the accent outside the EU. */
+  .constellation {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .constellation-legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .constellation-legende li {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .constellation-groupes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 1.75rem;
+    align-items: flex-end;
+  }
+
+  .constellation-groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .constellation-groupe svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .constellation-groupe figcaption {
+    display: flex;
+    gap: 0.5rem;
+    font-size: var(--text-sm);
+  }
+
+  .constellation-hors-ue circle {
+    fill: var(--color-accent);
+  }
+
+  .constellation-ue circle {
+    fill: none;
+    stroke: var(--color-encre);
+    stroke-width: 1.5px;
+  }
+
+  .constellation-inconnu circle {
+    fill: none;
+    stroke: var(--color-discret);
+    stroke-width: 1.5px;
+    stroke-dasharray: 2 2;
+  }
+
   .groupe-ministere {
     display: flex;
     flex-direction: column;

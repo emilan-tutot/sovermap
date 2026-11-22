@@ -5,7 +5,7 @@ import { Valeur } from "@/components/texte/Valeur";
 import { type Chiffres, filsDe, lireChiffres, origineDe } from "@/lib/donnees/atlas";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
-import { dateFr, nombre, pourcent } from "@/lib/i18n/format";
+import { nombre, pourcent } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { Recherche } from "@/components/recherche/Recherche";
 import { GlobeAtlas } from "./GlobeAtlas";
@@ -13,7 +13,7 @@ import { GlobeAtlas } from "./GlobeAtlas";
 const t = fr.atlas;
 const pc = (n: number) => pourcent(n, 1);
 
-function ChiffreTitre({ c, date }: { c: Chiffres; date: string }) {
+function ChiffreTitre({ c }: { c: Chiffres }) {
   const titre = c.chiffreTitre;
   return (
     <section className="atlas-chiffre" aria-labelledby="atlas-chiffre">
@@ -25,9 +25,7 @@ function ChiffreTitre({ c, date }: { c: Chiffres; date: string }) {
         <li>{t.probable(pc(titre.probablePourcent))}</li>
         <li>{t.nonDetermine(pc(titre.nonDeterminePourcent))}</li>
       </ul>
-      <p className="releve-note">
-        {fr.radiographie.liste([t.collecte(dateFr(date)), ...(c.avertissement === null ? [] : [c.avertissement])])}
-      </p>
+      {c.avertissement === null ? null : <p className="releve-note">{c.avertissement}</p>}
       <ul className="atlas-sous-chiffres" aria-label={t.sousChiffres}>
         {c.sousChiffreGouvFr === null ? null : (
           <li>{t.gouvFr(pc(c.sousChiffreGouvFr.auMoinsPourcent), nombre(c.sousChiffreGouvFr.domaines))}</li>
@@ -78,7 +76,7 @@ export async function Atlas() {
       <div className="atlas-haut">
         <div className="atlas-texte">
           <h1 className="question">{fr.site.question}</h1>
-          <ChiffreTitre c={chiffres} date={etat.donnees.date} />
+          <ChiffreTitre c={chiffres} />
         </div>
         <div className="atlas-globe-bloc">
           <GlobeAtlas fils={fils} origine={origineDe(index)} liens={liens} />

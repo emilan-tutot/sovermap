@@ -291,7 +291,7 @@ export const fr = {
     description: `Les sociétés qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et le pays du siège de leur maison mère.`,
     chapo:
       "Les sociétés qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public y figure avec sa nature, jamais comme une société.",
-    entete: (date: string, n: string) => `Collecte du ${date} · ${n}${NBSP}sociétés et organismes`,
+    entete: (n: string) => `${n}${NBSP}sociétés et organismes`,
     domaines: (n: number, texte: string) => (n === 1 ? "1 domaine servi" : `${texte} domaines servis`),
     siege: (pays: string, categorie: string) =>
       `Siège de la maison mère${NBSP}: ${pays === categorie ? pays : `${pays} · ${categorie}`}`,
@@ -319,7 +319,7 @@ export const fr = {
     description: `Les ministères et les services de l’État auxquels le Référentiel de la DILA rattache des sites${NBSP}: qui les héberge ou les diffuse, et le pays du siège de sa maison mère.`,
     chapo:
       "Les ministères et les services de l’État auxquels le Référentiel de l’organisation administrative de l’État (DILA) rattache des sites mesurés, dans l’ordre alphabétique.",
-    entete: (date: string, n: string) => `Collecte du ${date} · ${n}${NBSP}ministères et services`,
+    entete: (n: string) => `${n}${NBSP}ministères et services`,
     domaines: (n: number, texte: string) => (n === 1 ? "1 domaine" : `${texte} domaines`),
     surtitre: "Ministère",
     titrePage: (nom: string) => `${nom}${NBSP}: qui héberge ses sites${NBSP}?`,
@@ -331,6 +331,19 @@ export const fr = {
     groupes: "Les domaines, par société",
     sansSociete: "Société non déterminée",
     ligne: (categorie: string, n: string) => `${categorie}${NBSP}: ${n}`,
+    /** The constellation (DESIGN.md §5). */
+    constellation: {
+      titre: "La constellation",
+      legende: "Légende de la constellation",
+      genres: {
+        "hors-ue": "Maison mère hors de l’Union européenne",
+        ue: "Maison mère en France ou dans l’Union",
+        inconnu: "Société ou maison mère non déterminée",
+      },
+      taille: "Un disque par site ; un groupe par société, plus grand avec plus de sites.",
+      libelleGroupe: (nom: string, n: number, genre: string) =>
+        `${nom}${NBSP}: ${n === 1 ? "1 site" : `${n}${NBSP}sites`}, ${genre.toLowerCase()}`,
+    },
     source: `Source${NBSP}: Référentiel de l’organisation administrative de l’État (DILA), et collecte du jour.`,
   },
   /** The journal (D.2, R10): the changes of hosting confirmed by two successive collections, day by day. */

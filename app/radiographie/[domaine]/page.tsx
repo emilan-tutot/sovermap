@@ -13,7 +13,6 @@ import {
   radiographieDe,
   sourcesDe,
 } from "@/lib/donnees/radiographie";
-import { dateFr } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
 import { estNomDns } from "@/pipeline/schemas";
@@ -88,7 +87,6 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
         <Valeur texte={r.domaine} />
       </h1>
       <p className="chapo">{fr.radiographie.chapo}</p>
-      <p className="releve-note">{fr.radiographie.collecte(dateFr(s.collecte))}</p>
       <VueRadiographie r={r} s={s} mode={vue} forme={forme} />
     </Coque>
   );
