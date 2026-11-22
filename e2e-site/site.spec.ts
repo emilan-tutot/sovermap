@@ -126,7 +126,11 @@ test("plans du site : un index de deux sous-plans, qui ne listent que les pages 
   expect(pages).not.toContain("/pays/allemagne");
   expect(pages.filter((c) => c.startsWith("/journal/") || c.startsWith("/radiographie/"))).toEqual([]);
   const radiographies = chemins(await (await request.get("/plans/radiographies.xml")).text());
-  expect(radiographies).toEqual(["/radiographie/nuage.example", "/radiographie/service.example"]);
+  expect(radiographies).toEqual([
+    "/radiographie/nuage.example",
+    "/radiographie/relais.example",
+    "/radiographie/service.example",
+  ]);
 });
 
 test("accueil : les données structurées WebSite donnent le nom du site et son adresse", async ({ page }) => {
@@ -201,6 +205,21 @@ test("site complet : une Radiographie dont le nom web ne se lit pas répond une 
 test("site complet : un domaine que l'état du jour ne publie pas répond 404", async ({ page }) => {
   const reponse = await page.goto("/radiographie/inconnu.example");
   expect(reponse?.status()).toBe(404);
+});
+
+test("site complet : un site servi par la filiale américaine d'un groupe français montre ses deux sièges (C2-4)", async ({
+  page,
+}) => {
+  // The retained seat, the farther one, gives the category and the link; both seats are written below it.
+  await page.goto("/radiographie/relais.example");
+  const pays = fr.radiographie.pays;
+  await expect(
+    page.getByText(pays.valeur("États-Unis", fr.radiographie.categories["hors d'Europe"])).first(),
+  ).toBeVisible();
+  await expect(page.getByText(pays.deuxSieges("États-Unis", "France"))).toBeVisible();
+  // The country's page files it under the United States, the farther seat.
+  await page.goto("/pays/etats-unis");
+  await expect(page.locator("main")).toContainText("Relais Exemple, Inc.");
 });
 
 test("site complet : le curseur du temps montre chaque jour publié, au clavier", async ({ page }) => {

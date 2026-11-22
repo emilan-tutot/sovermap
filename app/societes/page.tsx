@@ -22,17 +22,14 @@ export const metadata: Metadata = {
 
 const t = fr.societes;
 
-/** The country of a company's ultimate parent's seat, as the table says it, under its header. */
+/** The retained seat (the farther of the company's and its ultimate parent's), as the table says it. */
 const siegeDe = (s: SocieteIndex) =>
-  s.mere === null
+  s.categorie === "non déterminé"
     ? t.siegeInconnu
-    : t.siegeCourt(
-        nomPays(s.paysMere) ?? s.paysMere ?? fr.radiographie.nonDetermine,
-        fr.radiographie.categories[s.categorie],
-      );
+    : t.siegeCourt(nomPays(s.paysRetenu) ?? s.paysRetenu, fr.radiographie.categories[s.categorie]);
 
 // The companies (D.2, R9): those that host or deliver the measured sites that day, in alphabetical order (a list,
-// never a ranking), each with the country of its ultimate parent's seat and the number of domains it serves, in a
+// never a ranking), each with its retained seat (ARRÊT 2: the farther of its own and its ultimate parent's) and the number of domains it serves, in a
 // table (point 11, Q2 A, chosen by the owner on 22/11/2026). Behind a closed door, no data is read: « not found ».
 export default async function SocietesPage() {
   // Behind a closed door, never rendered (« not found »); behind an open door, rendered on demand with the day's data,

@@ -66,7 +66,7 @@ export const fr = {
     pays: {
       etiquette: "Pays du siège",
       question: `Quels sites publics dépendent de ses exploitants${NBSP}?`,
-      phrase: "Le pays du siège de la maison mère, jamais l’emplacement des serveurs.",
+      phrase: "Le pays du siège, jamais l’emplacement des serveurs.",
     },
     alt: (etiquette: string, question: string) => `Sovermap · ${etiquette}${NBSP}: ${question}`,
   },
@@ -92,7 +92,8 @@ export const fr = {
   },
   globe: {
     titre: "Les fils de la France vers les pays des sièges",
-    honnetete: "Les fils vont vers le pays du siège de la maison mère, pas vers l’emplacement d’un serveur.",
+    honnetete:
+      "Les fils vont vers le pays du siège retenu, le plus éloigné de celui de la société et de celui de sa maison mère, pas vers l’emplacement d’un serveur.",
     descriptionScene: `Globe${NBSP}: des fils partent de la France vers les pays des sièges des maisons mères. La liste des pays suit.`,
     chargement: "Chargement de la carte en relief",
     recentrer: "Recentrer",
@@ -303,6 +304,10 @@ export const fr = {
       titre: "Le pays du siège",
       /** « États-Unis · hors d’Europe »; « France » once, never « France · France ». */
       valeur: (pays: string, categorie: string) => (pays === categorie ? pays : `${pays} · ${categorie}`),
+      /** Both seats, when the company's and its ultimate parent's differ (rule C2-4: the farther one is retained). */
+      deuxSieges: (paysSociete: string, paysMere: string) =>
+        `Siège de la société${NBSP}: ${paysSociete}${NBSP}; de sa maison mère${NBSP}: ${paysMere}.`,
+      sansMere: "Maison mère non déterminée.",
     },
     cdn: {
       titre: "Le CDN",
@@ -337,23 +342,25 @@ export const fr = {
     titre: "Les sociétés et organismes",
     /** The breadcrumb of the list and of each operator's page (the navigation keeps « Sociétés », DESIGN.md §8). */
     miette: "Sociétés et organismes",
-    description: `Les sociétés et organismes publics qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et le pays du siège de leur maison mère.`,
+    description: `Les sociétés et organismes publics qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et les pays de leur siège et de celui de leur maison mère.`,
     chapo:
       "Les sociétés et les organismes publics qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public n’y est jamais appelé société.",
     entete: (n: string) => `${n}${NBSP}sociétés et organismes`,
     domaines: (n: number, texte: string) => (n === 1 ? "1 domaine servi" : `${texte} domaines servis`),
     siege: (pays: string, categorie: string) =>
-      `Siège de la maison mère${NBSP}: ${pays === categorie ? pays : `${pays} · ${categorie}`}`,
+      `Siège retenu${NBSP}: ${pays === categorie ? pays : `${pays} · ${categorie}`}`,
+    siegeExplication:
+      "Le siège retenu est le plus éloigné de son propre siège et de celui de sa maison mère : c’est lui qui fait la catégorie, et le fil de l’Atlas.",
     siegeInconnu: "Maison mère non déterminée",
     /** The table's columns (point 11, Q2 A). */
-    colonnes: { societe: "Société ou organisme", siege: "Siège de la maison mère", domaines: "Domaines servis" },
+    colonnes: { societe: "Société ou organisme", siege: "Siège retenu", domaines: "Domaines servis" },
     /** The seat in the table's column, whose header already names it. */
     siegeCourt: (pays: string, categorie: string) => (pays === categorie ? pays : `${pays} · ${categorie}`),
     controle: (texte: string) => `Contrôle${NBSP}: ${texte}`,
     surtitre: "Exploitant",
     titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis`,
     descriptionPage: (nom: string) =>
-      `Les domaines des sites publics servis par ${nom}, sa chaîne de propriété et le pays du siège de sa maison mère.`,
+      `Les domaines des sites publics servis par ${nom}, sa chaîne de propriété, et les pays de son siège et de celui de sa maison mère.`,
     pays: (pays: string) => `Pays${NBSP}: ${pays}`,
     chaine: "Qui possède qui",
     sommet: "Au sommet de sa chaîne.",
@@ -369,7 +376,7 @@ export const fr = {
   /** The ministries (D.2, R8): the sites the DILA's Référentiel links to each ministry, and who serves them. */
   ministeres: {
     titre: "Les ministères",
-    description: `Les ministères et les services de l’État auxquels le Référentiel de la DILA rattache des sites${NBSP}: qui les héberge ou les diffuse, et le pays du siège de sa maison mère.`,
+    description: `Les ministères et les services de l’État auxquels le Référentiel de la DILA rattache des sites${NBSP}: qui les héberge ou les diffuse, et le pays de son siège ou de sa maison mère.`,
     chapo:
       "Les ministères et les services de l’État auxquels le Référentiel de l’organisation administrative de l’État (DILA) rattache des sites mesurés, dans l’ordre alphabétique.",
     entete: (n: string) => `${n}${NBSP}ministères et services`,
@@ -379,8 +386,8 @@ export const fr = {
     surtitre: "Ministère",
     titrePage: (nom: string) => `${nom}${NBSP}: qui héberge ses sites${NBSP}?`,
     descriptionPage: (nom: string) =>
-      `Les sites de ${nom}${NBSP}: la société ou l’organisme qui sert chacun d’eux et le pays du siège de sa maison mère.`,
-    repartition: "Le pays du siège de la maison mère",
+      `Les sites de ${nom}${NBSP}: la société ou l’organisme qui sert chacun d’eux, et le pays de son siège ou de celui de sa maison mère.`,
+    repartition: "Le pays du siège retenu",
     repartitionNote:
       "Pour chaque domaine, l’exploitant qui sert son nom web (celui qui le diffuse quand un CDN s’interpose, sinon celui qui l’héberge).",
     groupes: "Les domaines, par exploitant",
@@ -423,18 +430,19 @@ export const fr = {
     surtitre: "Pays du siège",
     titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis par ses exploitants`,
     descriptionPage: (nom: string) =>
-      `${nom}${NBSP}: les exploitants dont la maison mère y a son siège, et les domaines des sites publics qu’ils servent.`,
-    honnetete: "Le pays du siège de la maison mère, pas l’emplacement des serveurs.",
+      `${nom}${NBSP}: les exploitants dont le siège retenu y est (le leur ou celui de leur maison mère, le plus éloigné), et les domaines des sites publics qu’ils servent.`,
+    honnetete:
+      "Le pays du siège retenu (celui de l’exploitant ou de sa maison mère, le plus éloigné), pas l’emplacement des serveurs.",
     domaines: (n: string, etat: string) =>
       `${n}${NBSP}domaines servis, dont ${etat}${NBSP}du périmètre «${NBSP}État${NBSP}»`,
     societes: "Les exploitants",
-    aucune: "Aucun exploitant dont la maison mère a son siège dans ce pays, ce jour-là.",
+    aucune: "Aucun exploitant dont le siège retenu est dans ce pays, ce jour-là.",
   },
   /** The Atlas (D.2): the question, the headline figure and its neighbours, the globe and its table. */
   atlas: {
     auMoins: (pourcent: string) => `Au moins ${pourcent}`,
     definition: (domaines: string) =>
-      `des ${domaines}${NBSP}domaines du périmètre «${NBSP}État${NBSP}» sont servis par au moins une société dont la maison mère a son siège hors de l’Union européenne, établi par deux sources indépendantes à chaque étape («${NBSP}confirmé${NBSP}»).`,
+      `des ${domaines}${NBSP}domaines du périmètre «${NBSP}État${NBSP}» sont servis par au moins une société qui a son siège, ou dont la maison mère a le sien, hors de l’Union européenne, établi par deux sources indépendantes à chaque étape («${NBSP}confirmé${NBSP}»).`,
     probable: (pourcent: string) => `Probable${NBSP}: ${pourcent} de plus`,
     nonDetermine: (pourcent: string) => `Non déterminé${NBSP}: ${pourcent}`,
     collecte: (date: string) => `Collecte du ${date}`,

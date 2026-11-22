@@ -24,6 +24,9 @@ if (dossier === undefined) throw new Error("usage : npx tsx scripts/donnees-essa
 const DATE_ESSAI = "2026-11-21";
 const MINISTERE = "00000000-0000-4000-8000-000000000001";
 
+/** The AS of each made-up company: the CDN's, the relay's (an American subsidiary of a French group), the host's. */
+const asDe = (societe: string | null) => (societe === "cdn-us" ? 64500 : societe === "relais-us" ? 64501 : 64496);
+
 const nom = (
   n: string,
   domaine: string,
@@ -40,9 +43,9 @@ const nom = (
   cname: role === "diffusé par" ? [`${domaine}.cdn.example`] : [],
   dnssec: false,
   familleEnEchec: null,
-  reseaux: [{ as: societe === "cdn-us" ? 64500 : 64496, plage: "192.0.2.0-192.0.2.255" }],
+  reseaux: [{ as: asDe(societe), plage: "192.0.2.0-192.0.2.255" }],
   cdn: role === "diffusé par" ? { id: "cloudflare", methode: "cname" } : null,
-  exploitants: societe === null ? [] : [{ role, societe, preuve: "AS64496", niveau: "probable" }],
+  exploitants: societe === null ? [] : [{ role, societe, preuve: `AS${asDe(societe)}`, niveau: "probable" }],
   categorie,
   horsUE: categorie === "hors d'Europe" ? true : categorie === "non déterminé" ? null : false,
   niveau: "probable",
@@ -75,6 +78,7 @@ const etat: Etat = {
   domaines: new Map([
     ["service.example", domaine("service.example", "État", [MINISTERE])],
     ["nuage.example", domaine("nuage.example", "État", [MINISTERE])],
+    ["relais.example", domaine("relais.example", "État", [MINISTERE])],
     ["mairie.example", domaine("mairie.example", "hors État", [])],
     ["panne.example", domaine("panne.example", "hors État", [])],
     ["nompanne.example", domaine("nompanne.example", "hors État", [])],
@@ -82,6 +86,8 @@ const etat: Etat = {
   noms: new Map([
     ["www.service.example", nom("www.service.example", "service.example", "hebergeur-fr", "hébergé par", "France")],
     ["www.nuage.example", nom("www.nuage.example", "nuage.example", "cdn-us", "diffusé par", "hors d'Europe")],
+    // The Imperva case (rule C2-4): served by an American subsidiary of a French group, « hors d'Europe » by its seat.
+    ["www.relais.example", nom("www.relais.example", "relais.example", "relais-us", "hébergé par", "hors d'Europe")],
     ["www.mairie.example", nom("www.mairie.example", "mairie.example", null, "hébergé par", "non déterminé")],
     ["www.panne.example", nom("www.panne.example", "panne.example", null, "hébergé par", "non déterminé")],
     ["www.nompanne.example", nom("www.nompanne.example", "nompanne.example", null, "hébergé par", "non déterminé")],
@@ -111,13 +117,53 @@ const fichiers = new Map<string, string>([
     as: new Map([
       [64496, { description: "EXEMPLE-HEBERGEUR", paysEnregistrement: "FR", titulaire: "Hébergeur Exemple SAS" }],
       [64500, { description: "EXEMPLE-CDN", paysEnregistrement: "US", titulaire: "CDN Exemple, Inc." }],
+      [64501, { description: "EXEMPLE-RELAIS", paysEnregistrement: "US", titulaire: "Relais Exemple, Inc." }],
     ]),
     societes: new Map([
       [
         "hebergeur-fr",
-        { nom: "Hébergeur Exemple", pays: "FR", mere: "hebergeur-fr", paysMere: "FR", categorie: "France" },
+        {
+          nom: "Hébergeur Exemple",
+          pays: "FR",
+          mere: "hebergeur-fr",
+          paysMere: "FR",
+          paysRetenu: "FR",
+          categorie: "France",
+        },
       ],
-      ["cdn-us", { nom: "CDN Exemple, Inc.", pays: "US", mere: "cdn-us", paysMere: "US", categorie: "hors d'Europe" }],
+      [
+        "cdn-us",
+        {
+          nom: "CDN Exemple, Inc.",
+          pays: "US",
+          mere: "cdn-us",
+          paysMere: "US",
+          paysRetenu: "US",
+          categorie: "hors d'Europe",
+        },
+      ],
+      [
+        "relais-us",
+        {
+          nom: "Relais Exemple, Inc.",
+          pays: "US",
+          mere: "groupe-fr",
+          paysMere: "FR",
+          paysRetenu: "US",
+          categorie: "hors d'Europe",
+        },
+      ],
+      [
+        "groupe-fr",
+        {
+          nom: "Groupe Exemple SA",
+          pays: "FR",
+          mere: "groupe-fr",
+          paysMere: "FR",
+          paysRetenu: "FR",
+          categorie: "France",
+        },
+      ],
     ]),
     organismes: new Map([[MINISTERE, { nom: "Ministère de l’Exemple", sigle: null, ministere: null }]]),
     organismesDe: new Map(),

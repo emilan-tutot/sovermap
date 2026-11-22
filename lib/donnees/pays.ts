@@ -39,5 +39,5 @@ export function lireIndexPays(valeur: unknown): Map<string, { domaines: number; 
 /** The companies whose ultimate parent has its seat in a country, in alphabetical order of their names. */
 export function societesDuPays(code: string, societes: IndexSocietes): [string, SocieteIndex][] {
   const ordre = new Intl.Collator("fr", { sensitivity: "base", numeric: true });
-  return [...societes].filter(([, s]) => s.paysMere === code).sort(([, a], [, b]) => ordre.compare(a.nom, b.nom));
+  return [...societes].filter(([, s]) => s.paysRetenu === code).sort(([, a], [, b]) => ordre.compare(a.nom, b.nom));
 }

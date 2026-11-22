@@ -92,13 +92,11 @@ export default async function SocietePage({ params, searchParams }: Props) {
             ))}
           </ol>
         )}
-        {s.mere === null ? null : (
-          <p>
-            {t.siege(
-              nomPays(s.paysMere) ?? s.paysMere ?? fr.radiographie.nonDetermine,
-              fr.radiographie.categories[s.categorie],
-            )}
-          </p>
+        {s.categorie === "non déterminé" ? null : (
+          <>
+            <p>{t.siege(nomPays(s.paysRetenu) ?? s.paysRetenu, fr.radiographie.categories[s.categorie])}</p>
+            <p className="releve-note">{t.siegeExplication}</p>
+          </>
         )}
         {s.controle === null ? null : <p>{t.controle(s.controle)}</p>}
         <p className="releve-note">{t.source(sources.referentiels.societes ?? fr.radiographie.nonDetermine)}</p>

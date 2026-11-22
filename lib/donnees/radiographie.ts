@@ -17,6 +17,8 @@ export type SocieteIndex = {
   pays: string;
   mere: string | null;
   paysMere: string | null;
+  /** The seat that gives the category and the thread, published by the collection (before 23/11/2026: the parent's). */
+  paysRetenu: string;
   categorie: Categorie;
   /** The companies above it, from its direct parent up (published from 23/11/2026; none before). */
   maillons: Maillon[];
@@ -73,6 +75,7 @@ export function lireIndexSocietes(valeur: unknown): IndexSocietes | null {
       pays: paysSociete,
       mere,
       paysMere: codePays(e["paysMere"]),
+      paysRetenu: codePays(e["paysRetenu"]) ?? codePays(e["paysMere"]) ?? paysSociete,
       categorie,
       maillons,
       controle: texte(e["controle"], 300),
@@ -118,6 +121,7 @@ export type SocieteVue = {
   cle: string;
   nom: string;
   pays: string;
+  paysRetenu: string;
   mere: MereVue;
   categorie: Categorie;
   maillons: Maillon[];
@@ -158,6 +162,8 @@ export type Radiographie = {
     cdn: { id: string; nom: string; methode: string } | null;
     exploitants: ExploitantVu[];
     categorie: Categorie;
+    /** The collection's verdict (rule C2-4): a company serving it, or its ultimate parent, outside the EU. */
+    horsUE: boolean | null;
     niveau: Niveau;
     controle: { resolveur: string; accord: boolean } | null;
     /** Its lists were shortened to stay within its size, or it could not be built that day (identity only). */
@@ -230,7 +236,15 @@ export function societeVue(cle: string | null, societes: IndexSocietes): Societe
       : s.mere === cle
         ? "sommet"
         : { cle: s.mere, nom: nomMere, pays: s.paysMere, page: societes.has(s.mere) };
-  return { cle, nom: s.nom, pays: s.pays, mere, categorie: s.categorie, maillons: s.maillons };
+  return {
+    cle,
+    nom: s.nom,
+    pays: s.pays,
+    paysRetenu: s.paysRetenu,
+    mere,
+    categorie: s.categorie,
+    maillons: s.maillons,
+  };
 }
 
 const niveauDe = (v: string): Niveau => NIVEAUX.find((n) => n === v) ?? "non déterminé";
@@ -297,6 +311,7 @@ export function radiographieDe(
             cdn: web.cdn === null ? null : { ...web.cdn, nom: NOMS_CDN.get(web.cdn.id) ?? web.cdn.id },
             exploitants: exploitantsVus(web.exploitants, index.societes),
             categorie: categorieDe(web.categorie),
+            horsUE: web.horsUE === true ? true : web.horsUE === false ? false : null,
             niveau: niveauDe(web.niveau),
             controle: web.controle,
             partiel: web.tronque === true || web.reduit === true,

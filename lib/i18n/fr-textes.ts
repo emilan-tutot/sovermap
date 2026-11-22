@@ -66,7 +66,7 @@ export const aPropos: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            "Pour chacun, il donne la société ou l’organisme qui le sert et le pays du siège de sa maison mère, couche par couche, avec la source et la date de chaque couche.",
+            "Pour chacun, il donne la société ou l’organisme qui le sert, et les pays de son siège et de celui de sa maison mère, couche par couche, avec la source et la date de chaque couche.",
           ],
         },
         {
@@ -238,7 +238,9 @@ export const glossaire: PageDeTexte = soignee({
             ],
             ["Exploitant : la société, ou l’organisme public, qui exploite ce réseau."],
             ["Maison mère ultime : la société qui contrôle la société exploitante, en haut de la chaîne de propriété."],
-            ["Pays du siège : le pays où la maison mère a son siège. Ce n’est jamais l’emplacement des serveurs."],
+            [
+              "Pays du siège : le pays où la société qui sert le site a son siège, et celui de sa maison mère ; le plus éloigné des deux, le siège retenu, fait la catégorie. Ce n’est jamais l’emplacement des serveurs.",
+            ],
             [
               "CDN (réseau de diffusion) : un réseau placé devant un site, qui le sert aux visiteurs depuis ses propres serveurs.",
             ],
@@ -251,7 +253,7 @@ export const glossaire: PageDeTexte = soignee({
             [
               "Non déterminé : les sources manquent ou se contredisent ; le désaccord est montré. Sovermap ne devine jamais.",
             ],
-            ["Hors UE : la maison mère a son siège hors de l’Union européenne."],
+            ["Hors UE : la société qui sert le site, ou sa maison mère, a son siège hors de l’Union européenne."],
             [
               `Périmètre «${NBSP}État${NBSP}» : les domaines en `,
               { valeur: ".gouv.fr" },
@@ -578,7 +580,9 @@ export const methode: PageDeTexte = soignee({
             ["Le réseau qui annonce chaque adresse, établi par deux sources indépendantes."],
             ["L’exploitant de ce réseau, société ou organisme public."],
             ["Sa maison mère ultime (GLEIF, puis un registre officiel ou le rapport annuel du groupe)."],
-            ["Le pays du siège de chacune."],
+            [
+              "Le pays du siège de chacune : un site dépend d’un siège hors de l’Union européenne dès que la société qui le sert, ou sa maison mère ultime, y a le sien ; sa catégorie suit le plus éloigné des deux.",
+            ],
             [
               "SecNumCloud : la société a-t-elle au moins une offre qualifiée ? Cela ne veut pas dire que le site l’utilise.",
             ],

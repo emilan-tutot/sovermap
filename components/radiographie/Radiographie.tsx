@@ -163,9 +163,10 @@ export function VueRadiographie({
   const exploitants = web?.exploitants ?? [];
   const lesSocietes = societes(exploitants);
   const meres = lesSocietes.map((so) => ({ so, mere: so.mere }));
-  // The chain, from the site to the country of a seat (its forms: Chaine.tsx).
-  const paysDesMeres = [
-    ...new Set(meres.flatMap(({ so, mere }) => (mere === null ? [] : [pays(mere === "sommet" ? so.pays : mere.pays)]))),
+  // The chain, from the site to the country of a seat (its forms: Chaine.tsx): each company's retained seat, the farther
+  // of its own and its ultimate parent's (ARRÊT 2), as the collection published it.
+  const paysRetenus = [
+    ...new Set(lesSocietes.flatMap((so) => (so.categorie === "non déterminé" ? [] : [pays(so.paysRetenu)]))),
   ];
   const etapes: Etape[] = [
     { couche: 1, libelle: t.site, valeur: r.nomWeb, brute: true, horsUE: null },
@@ -206,16 +207,14 @@ export function VueRadiographie({
       couche: 7,
       libelle: t.pays.titre,
       valeur:
-        web === null || paysDesMeres.length === 0
+        web === null || paysRetenus.length === 0
           ? web === null
             ? t.nonDetermine
             : categorie(web.categorie)
-          : t.pays.valeur(t.liste(paysDesMeres), categorie(web.categorie)),
+          : t.pays.valeur(t.liste(paysRetenus), categorie(web.categorie)),
       brute: false,
-      horsUE:
-        web === null || web.categorie === "non déterminé"
-          ? null
-          : web.categorie === "hors d'Europe" || web.categorie === "Europe hors UE",
+      // The collection's verdict (rule C2-4): the company that serves the site, or its parent, outside the EU.
+      horsUE: web === null ? null : web.horsUE,
     },
   ];
   const versionAs = s.referentiels.as ?? t.nonDetermine;
@@ -423,13 +422,22 @@ export function VueRadiographie({
                 <ul className="couche-liste">
                   {meres.map(({ so, mere }) => (
                     <li key={so.cle}>
-                      {mere === null ? (
+                      {/* The retained seat (the farther of the company's and its parent's: ARRÊT 2), then both seats
+                          when they differ, or the parent left undetermined. */}
+                      {so.categorie === "non déterminé" ? (
                         t.nonDetermine
                       ) : (
-                        <LienPays code={mere === "sommet" ? so.pays : mere.pays}>
-                          {t.pays.valeur(pays(mere === "sommet" ? so.pays : mere.pays), categorie(so.categorie))}
+                        <LienPays code={so.paysRetenu}>
+                          {t.pays.valeur(pays(so.paysRetenu), categorie(so.categorie))}
                         </LienPays>
                       )}
+                      {mere === null ? (
+                        so.categorie === "non déterminé" ? null : (
+                          <p className="releve-note">{t.pays.sansMere}</p>
+                        )
+                      ) : mere !== "sommet" && mere.pays !== null && mere.pays !== so.pays ? (
+                        <p className="releve-note">{t.pays.deuxSieges(pays(so.pays), pays(mere.pays))}</p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
