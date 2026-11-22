@@ -88,6 +88,8 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/partage.png", famille: "image de partage de la page d'attente", attendu: "fichier" },
   { chemin: "/licenses/manrope-OFL.txt", famille: "licences des polices", attendu: "fichier" },
   { chemin: "/page-qui-n-existe-pas", famille: "pages", attendu: "introuvable" },
+  { chemin: "/qualite", famille: "pages de données", attendu: "introuvable" },
+  { chemin: "/qualite", famille: "page de données, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas", famille: "navigation interne de Next.js", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas", famille: "préchargement", attendu: "introuvable", entetes: PRECHARGEMENT },
   {
