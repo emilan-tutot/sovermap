@@ -3,12 +3,11 @@
 // MX and TXT, then the addresses of its name servers and mail exchangers (once per host for the whole collection) and
 // its SPF record expanded — and at most 8 domains open per second, so that the servers of a top-level domain (.fr)
 // get at most one referral per new domain. Every single question holds one of the two permits of the zone it goes to
-// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks; and at most 8
-// questions waiting for their answer among those that go through the servers of one registry (the openings, the
-// questions of zones not known as delegated), in the first pass, and in the retries after a first pass whose questions
-// to parents often failed, so that servers that answer late never have more than these pending with the resolver. A
-// name or a domain that fails is asked again, at most twice, 10 minutes apart; a failure stays a failure, never « no
-// site ».
+// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks; and, in the
+// first pass, at most 8 questions waiting for their answer among those that go through the servers of one registry
+// (the openings, the questions of zones not known as delegated), so that servers that answer late never have more
+// than these pending with the resolver. A name or a domain that fails is asked again, at most twice, 10 minutes apart;
+// a failure stays a failure, never « no site ».
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
 import { Cadence, type Horloge, HORLOGE_REELLE, instantCommun, melanger, type Montee, ParZone } from "./politesse";
@@ -155,19 +154,14 @@ const CRENEAUX_MAX = 5;
  * makes the load (the trial of 22/11/2026, from 17:24 UTC: 22 questions in a second to a server of .fr, five of the
  * resolver's for one of ours). A place is taken before the parent's pace and its brake, and held until the answer, the
  * child zone's servers included: the pace keeps its six openings per second while they answer within 1.3 s on
- * average, but a zone whose servers never answer holds one for each question to its apex until the client gives up
- * (12 s), three in a row before it is taken for down: up to 36 s. The first pass is always capped. The retries are
- * capped only after a first pass whose questions to parents often failed (PART_ECHECS_GARDE); otherwise they are made
- * mostly of dead zones, and with the cap a retry of a few hundred of them would last most of an hour (the reviews of
- * 22/11/2026).
+ * average, but a zone whose servers never answer holds places for up to 36 s (its two openings, then its SOA and the
+ * first question of one of its names, 12 s each, until the client gives up). The cap holds in the first pass only: the
+ * retries are made mostly of such zones, and with it a retry of a few hundred of them would last most of an hour. After
+ * a first pass when a registry's servers answered badly, the retries reopen its zones at the pace and under the brake
+ * only, as before this cap; a decision by registry, from the counts the job's log now gives, may come later (the three
+ * reviews of 22/11/2026).
  */
 export const PARENT_EN_VOL = 8;
-/**
- * The share of the first pass's questions to parents that failed, from which the retries keep the cap: a day when a
- * registry's servers answered badly (the trial of 17:11: 15 % of the domains failed, none confirmed by Quad9). On an
- * ordinary day, the zones whose servers never answer make about 2 to 7 % of them (three failed questions each).
- */
-export const PART_ECHECS_GARDE = 0.1;
 /**
  * Upstream questions one of ours may cost and still keep a server, at our full pace (5 per second), under 8: a zone
  * whose questions cost more takes several instants per question (4 at most).
@@ -189,7 +183,7 @@ export class ClientParZone implements ClientDns {
    * (milliseconds of the clock; the wait for the parent's pace counts, since the place is taken before it).
    */
   readonly #attenteParents = { questions: 0, ms: 0, total: 0, echecs: 0 };
-  /** The cap holds until it is lifted (leverPlafondParents), after a first pass whose questions to parents seldom failed. */
+  /** The cap holds in the first pass only (leverPlafondParents). */
   #plafonne = true;
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
@@ -496,9 +490,8 @@ export class ClientParZone implements ClientDns {
   }
 
   /**
-   * From now on, no question waits for a place among those of its parent's servers (PARENT_EN_VOL): after a first pass
-   * whose questions to parents seldom failed, the retries are mostly zones whose servers never answer, each of which
-   * would hold a place until the client gives up.
+   * From now on (the retries), no question waits for a place among those of its parent's servers (PARENT_EN_VOL): the
+   * retries are mostly zones whose servers never answer, each of which would hold places until the client gives up.
    */
   leverPlafondParents(): void {
     this.#plafonne = false;
@@ -691,17 +684,15 @@ export async function collecter(
       ]);
     }),
   );
-  // The cap on the questions waiting through the parents' servers (PARENT_EN_VOL): the retries keep it when the first
-  // pass's questions to parents often failed (a registry's servers answered badly that day), and go without it
-  // otherwise.
+  // The cap on the questions waiting through the parents' servers holds in the first pass only (PARENT_EN_VOL); the
+  // job's log tells how its questions went, for a later decision on the retries.
   const attente = client.attenteParents;
-  const garde = attente.total > 0 && attente.echecs >= PART_ECHECS_GARDE * attente.total;
   options.suivi?.(
     `questions par les serveurs parents, première passe : ${attente.total}, dont ${attente.echecs} en échec ; ` +
       `${attente.questions} ont attendu une place (${Math.round(attente.ms / 1000)} s en tout ; ${PARENT_EN_VOL} au ` +
-      `plus en attente par registre) ; reprises : plafond ${garde ? "gardé" : "levé"}`,
+      `plus en attente par registre) ; reprises sans plafond`,
   );
-  if (!garde) client.leverPlafondParents();
+  client.leverPlafondParents();
   options.apresPremierePasse?.(resultat);
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).

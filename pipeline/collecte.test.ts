@@ -1,7 +1,7 @@
 // Tests of the measurement and of its scheduling: a simulated resolver, a fake clock, documentation names and
 // addresses only (RFC 2606, RFC 5737, RFC 3849).
 import { describe, expect, it } from "vitest";
-import { ClientParZone, collecter, PARENT_EN_VOL, PART_ECHECS_GARDE, POLITESSE } from "./collecte";
+import { ClientParZone, collecter, PARENT_EN_VOL, POLITESSE } from "./collecte";
 import type { ClientDns, Reponse } from "./dns-bas";
 import type { Horloge } from "./politesse";
 import { Cadence, generateur } from "./politesse";
@@ -905,7 +905,7 @@ describe("the scheduling of a collection", () => {
     await reprise;
 
     // A collection says, after its first pass, how its questions to parents went (none waited, when the answers come
-    // in time), and lifts the cap for its retries.
+    // in time).
     const lignes: string[] = [];
     await collecter(noms, new ResolveurSimule(ZONE, zoneDe), {
       ...POLITESSE,
@@ -914,7 +914,7 @@ describe("the scheduling of a collection", () => {
       suivi: (ligne) => lignes.push(ligne),
     });
     expect(lignes.find((l) => l.startsWith("questions par les serveurs parents"))).toMatch(
-      /^questions par les serveurs parents, première passe : [1-9][0-9]*, dont [0-9]+ en échec ; 0 ont attendu une place \(0 s en tout ; 8 au plus en attente par registre\) ; reprises : plafond levé$/,
+      /^questions par les serveurs parents, première passe : [1-9][0-9]*, dont [0-9]+ en échec ; 0 ont attendu une place \(0 s en tout ; 8 au plus en attente par registre\) ; reprises sans plafond$/,
     );
   });
 
@@ -964,30 +964,24 @@ describe("the scheduling of a collection", () => {
     });
     while (!fini) {
       enAttente.shift()?.();
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      await new Promise((resolve) => setImmediate(resolve));
     }
     await collecte;
     return { max, ligne: lignes.find((l) => l.startsWith("questions par les serveurs parents")) ?? "" };
   }
 
-  it("keeps the cap for the retries after a first pass whose questions to parents often failed", async () => {
-    // Twenty zones under AFNIC whose servers answer late, then fail, in both passes: eight in flight at most in each.
-    const { max, ligne } = await collecteRetenue(20, 0, () => true);
+  it("caps a whole collection's first pass, and lifts the cap for its retries (mostly dead zones)", async () => {
+    // Twenty zones under AFNIC whose servers answer late, then fail, in both passes: eight in flight at most in the
+    // first pass; their retry leaves together, beyond the cap. The log line counts the first pass's questions.
+    const { max, ligne } = await collecteRetenue(20, 3, () => true);
     expect(max.premiere).toBe(PARENT_EN_VOL);
-    expect(max.reprise).toBe(PARENT_EN_VOL);
-    const [, total = "0", echecs = "0"] = /première passe : ([0-9]+), dont ([0-9]+) en échec/.exec(ligne) ?? [];
-    expect(Number(echecs)).toBeGreaterThanOrEqual(PART_ECHECS_GARDE * Number(total));
-    expect(ligne).toMatch(/reprises : plafond gardé$/);
-  });
-
-  it("lifts the cap for the retries after an ordinary first pass (the retries are then dead zones)", async () => {
-    // Nine dead zones among two hundred and fifty that answer: few failures in the first pass. The retry reopens the
-    // nine dead zones, held: their questions (two at a time per zone) leave together, beyond the cap.
-    const { max, ligne } = await collecteRetenue(9, 250, (reprise) => reprise);
-    const [, total = "0", echecs = "0"] = /première passe : ([0-9]+), dont ([0-9]+) en échec/.exec(ligne) ?? [];
-    expect(Number(echecs)).toBeLessThan(PART_ECHECS_GARDE * Number(total));
-    expect(ligne).toMatch(/reprises : plafond levé$/);
     expect(max.reprise).toBeGreaterThan(PARENT_EN_VOL);
+    const [, total = "0", echecs = "0", attendu = "0"] =
+      /première passe : ([0-9]+), dont ([0-9]+) en échec ; ([0-9]+) ont attendu/.exec(ligne) ?? [];
+    expect(Number(echecs)).toBeGreaterThan(0);
+    expect(Number(echecs)).toBeLessThan(Number(total));
+    expect(Number(attendu)).toBeGreaterThan(0);
+    expect(ligne).toMatch(/reprises sans plafond$/);
   });
 
   it("asks again, at the next attempt, a zone that was down", async () => {
