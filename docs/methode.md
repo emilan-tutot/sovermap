@@ -25,7 +25,7 @@ Les sources citées ici sont décrites, avec leurs licences et leurs conditions,
 - si un site respecte la loi ;
 - l'hébergeur d'origine caché derrière un CDN (« non observable »).
 
-Une dépendance n'est pas une faute. Un site public peut légalement passer par un CDN étranger. Les règles strictes visent surtout les données sensibles (voir `docs/juridique.md`).
+Une dépendance n'est pas une faute, et Sovermap ne juge jamais la légalité d'un choix : les règles dépendent de la sensibilité des données, qu'il ne voit pas (voir `docs/juridique.md`).
 
 ## 2. Vocabulaire
 

@@ -43,10 +43,17 @@ export const aPropos: PageDeTexte = soignee({
   court: "À propos",
   titre: "À propos de Sovermap",
   description: `Sovermap est un site indépendant${NBSP}: chaque jour, il mesure par le DNS qui sert les sites publics français, avec ses sources et sa méthode.`,
-  chapo: "Un site indépendant, sans lien avec l’État ni avec les sociétés qu’il décrit.",
+  chapo: "Un site indépendant, sans lien avec l’État.",
   sections: [
     {
       blocs: [
+        {
+          paragraphe: [
+            "Il n’est pas pour autant sans lien avec les sociétés qu’il décrit : il utilise les offres gratuites de Vercel (pour le site) et de GitHub, filiale de Microsoft (pour le code et les données), et son nom de domaine passe par Cloudflare, son registraire. Elles peuvent figurer parmi les sociétés mesurées (voir ",
+            { lien: "Sovermap, passé à sa propre radiographie", vers: "/radiographie-de-sovermap" },
+            ").",
+          ],
+        },
         {
           paragraphe: [
             `Chaque jour, Sovermap mesure par le DNS seulement (l’annuaire d’Internet) les sites publics français de la liste officielle des noms de domaine du secteur public, complétée par d’autres sources ouvertes${NBSP}: plus de 40${NBSP}000 domaines enregistrés, dont environ 1${NBSP}900 forment le périmètre «${NBSP}État${NBSP}».`,
@@ -150,7 +157,13 @@ export const accessibilite: PageDeTexte = soignee({
   sections: [
     {
       titre: "État de conformité",
-      blocs: [{ paragraphe: ["Partiellement conforme. Aucun audit indépendant n’a encore été fait."] }],
+      blocs: [
+        {
+          paragraphe: [
+            "Aucun audit d’accessibilité n’a encore été fait : le site ne déclare donc aucun état de conformité. L’objectif est le niveau AA des règles d’accessibilité WCAG 2.2. Déjà vérifié à chaque version, sur chaque type de page, à l’ordinateur et au téléphone : aucune erreur sérieuse ou critique de l’outil automatique axe, et aucun défilement horizontal.",
+          ],
+        },
+      ],
     },
     {
       titre: "Ce qui est vérifié à chaque version du site",
@@ -309,7 +322,7 @@ export const pourquoi: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            "Ces règles dépendent de la sensibilité des données, que Sovermap ne voit pas : un site public peut légalement passer par un réseau de diffusion non européen (doctrine « Cloud au centre », règle R9).",
+            "Ces règles dépendent de la sensibilité des données, que Sovermap ne voit pas. La doctrine « Cloud au centre » (règle 9, sur le site de la DINUM, lue le 22/11/2026) n’exige une offre de cloud qualifiée SecNumCloud que pour les données d’une sensibilité particulière, et ne parle ni des réseaux de diffusion ni des sites publics. Sovermap décrit des dépendances ; il ne juge jamais leur légalité.",
           ],
         },
       ],
@@ -519,7 +532,7 @@ export const methode: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            "Une dépendance n’est pas une faute : un site public peut légalement passer par un CDN étranger. Les règles strictes visent surtout les données sensibles (voir ",
+            "Une dépendance n’est pas une faute, et Sovermap ne juge jamais la légalité d’un choix : les règles dépendent de la sensibilité des données, qu’il ne voit pas (voir ",
             { lien: "Pourquoi ça compte", vers: "/pourquoi-ca-compte" },
             ").",
           ],
@@ -596,7 +609,7 @@ export const methode: PageDeTexte = soignee({
             ["Des domaines témoins, au comportement connu, sont contrôlés à chaque collecte."],
             ["Au-delà de 2 % de domaines en échec que le résolveur de contrôle ne confirme pas, rien n’est publié."],
             [
-              "La mesure est polie : un débit limité, 10 questions par seconde au plus vers un même serveur, un agent qui s’identifie, et aucune requête vers les sites mesurés.",
+              "La mesure est polie : un agent qui s’identifie, aucune requête vers les sites mesurés, et un débit limité. L’objectif est de ne jamais dépasser 10 questions par seconde vers un même serveur ; une collecte reste acceptée tant qu’elle n’en pose jamais plus de 15, avec au plus une seconde au-delà de 10 (ou 0,1 % des secondes, si c’est plus). Les dépassements de chaque jour sont publiés sur la page Qualité.",
             ],
           ],
         },
