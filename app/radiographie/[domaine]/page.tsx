@@ -51,8 +51,9 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
   const { mode, chaine } = await searchParams;
   const vue: Mode = mode === "expert" ? "expert" : "simple";
-  // The chain's form, provisional until the owner chooses (point 11): A by default, « ?chaine=b » or « ?chaine=c ».
-  const forme: FormeChaine = chaine === "b" ? "b" : chaine === "c" ? "c" : "a";
+  // The chain's form, provisional until the owner chooses (point 10, Q2): B, recommended, by default; « ?chaine=a » or
+  // « ?chaine=c » for the others.
+  const forme: FormeChaine = chaine === "a" ? "a" : chaine === "c" ? "c" : "b";
   const lire = (chemin: string) => lecteur.fichier(chemin);
   const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine) : etat;
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();

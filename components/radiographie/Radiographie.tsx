@@ -141,7 +141,7 @@ export function VueRadiographie({
   r,
   s,
   mode,
-  forme = "a",
+  forme = "b",
 }: {
   r: Radiographie;
   s: SourcesRadiographie;
