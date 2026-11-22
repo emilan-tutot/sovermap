@@ -432,7 +432,7 @@ jobs:
       REPO: ${{ github.repository }}
     steps:
       - run: |
-          for fichier in collecte.yml fraicheur.yml archives.yml; do
+          for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do
             gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null
             echo "$fichier : activé."
           done

@@ -76,7 +76,7 @@ jobs:
       - run: |
           titre="Workflow planifié désactivé"
           echec=""
-          for fichier in collecte.yml fraicheur.yml archives.yml; do
+          for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do
             etat=$(gh api "repos/$REPO/actions/workflows/$fichier" --jq .state 2> /dev/null || echo "illisible")
             if [ "$etat" = "active" ]; then
               gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null || echec="$echec $fichier"
@@ -97,4 +97,4 @@ jobs:
             if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
             exit 1
           fi
-          echo "Workflows planifiés actifs : collecte.yml, fraicheur.yml, archives.yml."
+          echo "Workflows planifiés actifs : collecte.yml, fraicheur.yml, archives.yml, copies.yml."

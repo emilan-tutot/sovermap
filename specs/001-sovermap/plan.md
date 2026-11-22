@@ -635,6 +635,8 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 
 - **La robustesse des workflows planifiés (22/11/2026, consigne du propriétaire, point 13, § 8 ; se défait)** : GitHub coupe les workflows planifiés d'un dépôt public après 60 jours sans activité. Chaque collecte planifiée, et la vérification de fraîcheur toutes les 6 heures, les réactivent par l'API (permission `actions: write` sur une tâche à part) ; si l'un ne peut pas l'être, l'issue « Workflow planifié désactivé » s'ouvre, avec le geste. Une collecte de secours part à 15:17 UTC (GitHub a sauté celle de 03:17 et retardé celle de 09:47 le 22/11/2026) ; comme celle de 09:47, elle ne fait rien quand la mesure du jour a commencé ; les essais l'évitent comme les deux autres (60 minutes avant, 120 après).
 
+- **La vérification mensuelle des copies épinglées (22/11/2026, consigne du propriétaire au point 13, § 8)** : le 3 de chaque mois, `copies.yml` lit les étiquettes de l'image de Knot Resolver (Docker Hub), la Public Suffix List (publicsuffix.org) et la fiche du COG (data.gouv.fr), robots.txt lu d'abord, une requête par source ; une version plus récente ouvre l'issue « Copie épinglée à renouveler ». Fiches 12, 42 et 48 du registre complétées avant tout usage. Premier passage à la main, le 22/11/2026 : l'image et le COG à jour, la Public Suffix List plus récente (2026-11-21 contre 2026-11-19 épinglée).
+
 ## 16. Questions pour plus tard (listées seulement)
 
 - L'identité de l'éditeur dans les mentions légales.

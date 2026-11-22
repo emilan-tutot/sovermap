@@ -18,7 +18,9 @@ describe("the collection's workflow", () => {
     const entretien = tache("entretien");
     expect(entretien).toContain("if: github.event_name != 'pull_request'");
     expect(entretien).toMatch(/permissions:\n {6}actions: write\n {4}env:/);
-    for (const fichier of ["collecte.yml", "fraicheur.yml", "archives.yml"]) expect(entretien).toContain(fichier);
+    for (const fichier of ["collecte.yml", "fraicheur.yml", "archives.yml", "copies.yml"]) {
+      expect(entretien).toContain(fichier);
+    }
     expect(entretien).toContain('gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"');
     // The freshness check does the same every 6 hours, and opens an issue when one cannot be enabled.
     const fraicheur = readFileSync(".github/workflows/fraicheur.yml", "utf8");
