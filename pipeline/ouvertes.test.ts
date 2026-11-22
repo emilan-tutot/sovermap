@@ -164,7 +164,11 @@ describe("the open data of the day (F.1)", () => {
   });
 
   it("publishes each table as CSV and JSON, their data package and their checksums", () => {
-    const fichiers = fichiersOuverts(etat, refs, { date: "2026-11-22", methode: "0.2.3" });
+    const fichiers = fichiersOuverts(etat, refs, {
+      date: "2026-11-22",
+      methode: "0.2.3",
+      sources: [{ id: "iptoasn", fiche: 18, etat: "relevé manuel", date: "2026-11-20" }],
+    });
     expect([...fichiers.keys()].sort()).toEqual([
       "SHA256SUMS",
       "datapackage.json",
@@ -182,8 +186,13 @@ describe("the open data of the day (F.1)", () => {
     const paquet = JSON.parse(fichiers.get("datapackage.json") ?? "{}") as {
       resources: { path: string; schema: { fields: { name: string; description: string }[] } }[];
       sovermap: { method: string };
+      sources: Record<string, unknown>[];
     };
     expect(paquet.sovermap.method).toBe("0.2.3");
+    // The day's sources, dated, and never their addresses (one of them names the repository's account).
+    expect(paquet.sources).toEqual([
+      { title: "iptoasn (fiche 18 du registre des sources de Sovermap)", date: "2026-11-20", state: "relevé manuel" },
+    ]);
     for (const r of paquet.resources) {
       const entete = (fichiers.get(r.path) ?? "").split("\r\n")[0];
       expect(entete, r.path).toBe(r.schema.fields.map((f) => f.name).join(","));

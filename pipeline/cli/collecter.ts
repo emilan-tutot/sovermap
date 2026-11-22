@@ -887,7 +887,15 @@ async function principal(): Promise<number> {
   // the « donnees-courant » release, never into the history of the « donnees » branch.
   rmSync(path.join(travail, "ouvertes"), { recursive: true, force: true });
   mkdirSync(path.join(travail, "ouvertes"), { recursive: true });
-  for (const [nom, texte] of fichiersOuverts(b.etat, { societes, organismes, jours }, { date, methode: METHODE })) {
+  for (const [nom, texte] of fichiersOuverts(
+    b.etat,
+    { societes, organismes, jours },
+    {
+      date,
+      methode: METHODE,
+      sources: sources.map((s) => ({ id: s.id, fiche: s.fiche, etat: s.etat, date: s.date })),
+    },
+  )) {
     writeFileSync(path.join(travail, "ouvertes", nom), texte);
   }
   // The registered zones of a busy second that are units of the list (public bodies' domains, published anyway): named;

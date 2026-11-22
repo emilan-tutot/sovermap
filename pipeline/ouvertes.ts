@@ -260,13 +260,19 @@ export function lignesPays(domaines: readonly Ligne[]): Ligne[] {
 const sha256 = (texte: string) => createHash("sha256").update(texte, "utf8").digest("hex");
 
 /**
+ * A source read for the day, as etat.json publishes it: its identifier, its card in the registry of sources, its
+ * state and the date of its copy. Never its address: one of them names the repository's account.
+ */
+export type SourceDuJour = { id: string; fiche: number; etat: string; date: string | null };
+
+/**
  * The open files of the day: each table as CSV and JSON, their data package (Table Schema, licences, the method's
  * version, the day), and their checksums (SHA256SUMS, the format of `sha256sum`).
  */
 export function fichiersOuverts(
   etat: Etat,
   refs: Referentiels,
-  jour: { date: string; methode: string },
+  jour: { date: string; methode: string; sources: readonly SourceDuJour[] },
 ): Map<string, string> {
   const domaines = lignesDomaines(etat, refs);
   const tables: [string, string, readonly Champ[], Ligne[]][] = [
@@ -308,6 +314,12 @@ export function fichiersOuverts(
       },
     ],
     contributors: [{ title: "Les contributeurs de Sovermap", role: "author" }],
+    // The sources read that day, with the date of each copy; their exact attributions: the registry of sources.
+    sources: jour.sources.map((s) => ({
+      title: `${s.id} (fiche ${s.fiche} du registre des sources de Sovermap)`,
+      date: s.date,
+      state: s.etat,
+    })),
     resources: tables.map(([nom, description, champs]) => ({
       name: nom,
       path: `sovermap-${nom}.csv`,
