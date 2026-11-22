@@ -40,6 +40,7 @@ function soignee(p: PageDeTexte): PageDeTexte {
 
 export const aPropos: PageDeTexte = soignee({
   chemin: "/a-propos",
+  court: "À propos",
   titre: "À propos de Sovermap",
   description: `Sovermap est un site indépendant${NBSP}: chaque jour, il mesure par le DNS qui sert les sites publics français, avec ses sources et sa méthode.`,
   chapo: "Un site indépendant, sans lien avec l’État ni avec les sociétés qu’il décrit.",
@@ -84,6 +85,7 @@ export const aPropos: PageDeTexte = soignee({
 
 export const corrections: PageDeTexte = soignee({
   chemin: "/corrections",
+  court: "Signaler une erreur",
   titre: "Signaler une erreur",
   description: `Une donnée de Sovermap vous semble fausse${NBSP}? Comment la signaler, ce qui se passe ensuite, et le droit de réponse sous trois jours.`,
   chapo: `Sovermap peut se tromper${NBSP}: une source en retard, une société mal rattachée à sa maison mère, un site mal classé. Signalez-le${NBSP}: chaque signalement est lu, et chaque correction est datée.`,
@@ -141,6 +143,7 @@ export const corrections: PageDeTexte = soignee({
 
 export const accessibilite: PageDeTexte = soignee({
   chemin: "/accessibilite",
+  court: "Accessibilité",
   titre: "Déclaration d’accessibilité",
   description: `Sovermap publie volontairement sa déclaration d’accessibilité${NBSP}: le niveau visé (WCAG${NBSP}2.2 AA), ce qui est vérifié, et les contenus qui ont une alternative.`,
   chapo: `Sovermap n’est pas tenu par la loi de publier cette déclaration${NBSP}: il la publie volontairement, et vise le niveau AA des règles WCAG${NBSP}2.2.`,
@@ -195,6 +198,7 @@ export const accessibilite: PageDeTexte = soignee({
 
 export const glossaire: PageDeTexte = soignee({
   chemin: "/glossaire",
+  court: "Glossaire",
   titre: "Glossaire",
   description: `Les mots de Sovermap expliqués simplement${NBSP}: DNS, réseau (AS), société exploitante, maison mère, CDN, SecNumCloud, confirmé, probable.`,
   chapo: "Les mots du site, en une phrase chacun.",
@@ -258,6 +262,7 @@ export const glossaire: PageDeTexte = soignee({
 
 export const pourquoi: PageDeTexte = soignee({
   chemin: "/pourquoi-ca-compte",
+  court: "Pourquoi ça compte",
   titre: "Pourquoi ça compte",
   description:
     "Le pays du siège d’une société peut décider du droit qui s’applique aux données qu’elle détient : les règles des États-Unis, de l’Union et de la France, une source par phrase.",
@@ -361,6 +366,7 @@ export const pourquoi: PageDeTexte = soignee({
 
 export const credits: PageDeTexte = soignee({
   chemin: "/credits",
+  court: "Crédits",
   titre: "Crédits",
   description:
     "Qui a fait quoi : les textes et le code écrits avec l’aide d’une IA, les polices sous licence libre, les logiciels libres et le fond de carte.",
@@ -434,6 +440,7 @@ export const credits: PageDeTexte = soignee({
 
 export const radiographieDeSovermap: PageDeTexte = soignee({
   chemin: "/radiographie-de-sovermap",
+  court: "Sovermap, radiographié",
   titre: "Sovermap, passé à sa propre radiographie",
   description:
     "Sovermap dépend lui aussi de sociétés dont la maison mère a son siège hors de l’Union européenne : son hébergement, ses données, sa collecte.",
@@ -478,6 +485,7 @@ export const radiographieDeSovermap: PageDeTexte = soignee({
 
 export const methode: PageDeTexte = soignee({
   chemin: "/methode",
+  court: "Méthode",
   titre: "La méthode",
   description:
     "Comment Sovermap mesure chaque site public par le DNS, couche par couche, avec deux sources pour le « confirmé », et comment refaire chaque mesure à la main.",
@@ -653,6 +661,7 @@ export const methode: PageDeTexte = soignee({
 
 export const confidentialite: PageDeTexte = soignee({
   chemin: "/confidentialite",
+  court: "Confidentialité",
   titre: "Confidentialité",
   description:
     "Ce que Sovermap sait de ses visiteurs : aucun cookie, aucun traceur ; les journaux techniques de son hébergeur, gardés peu de temps ; vos droits.",

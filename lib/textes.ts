@@ -13,6 +13,8 @@ export type PageDeTexte = {
   /** The address of the page (spec.md, EX-26). */
   chemin: string;
   titre: string;
+  /** Its name in the site's footer. */
+  court: string;
   /** The page's description for the engines, about 155 characters. */
   description: string;
   chapo: string;

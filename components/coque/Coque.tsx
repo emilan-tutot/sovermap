@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { fr } from "@/lib/i18n/fr";
+import { PAGES_DE_TEXTE } from "@/lib/i18n/fr-textes";
 import { servedVersion, sitePublic } from "@/lib/site";
 import { Fraicheur } from "./Fraicheur";
 
@@ -41,6 +42,15 @@ export function Coque({ children, large = false }: { children: ReactNode; large?
         {children}
       </main>
       <footer className="pied">
+        {sitePublic() ? (
+          <nav className="pied-liens" aria-label={fr.footer.liens}>
+            {PAGES_DE_TEXTE.map((p) => (
+              <Link key={p.chemin} href={p.chemin} prefetch={false}>
+                {p.court}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
         <p>
           {fr.footer.version} <span className="valeur">{servedVersion()}</span>
         </p>

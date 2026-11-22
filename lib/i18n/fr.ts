@@ -78,6 +78,8 @@ export const fr = {
   footer: {
     version: `Version servie${NBSP}:`,
     independent: "Site indépendant, sans lien avec l’État.",
+    /** The links to the text pages, behind an open door. */
+    liens: "Pages du site",
   },
   notFound: {
     code: "404",

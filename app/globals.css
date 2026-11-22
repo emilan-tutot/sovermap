@@ -271,6 +271,14 @@
     margin: 0.25rem 0;
   }
 
+  /* The links to the text pages (part E), behind an open door: a wrapping row, never a horizontal scroll. */
+  .pied-liens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
   /* Quality page, proposal A (« le bulletin »): sections of term-value rows on fine rules. Provisional until chosen. */
   .bulletin-tete {
     margin: 0;
