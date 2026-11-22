@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Valeur } from "@/components/texte/Valeur";
+import { CoucheLue } from "./CoucheLue";
 import {
   type Categorie,
   type ExploitantVu,
@@ -367,6 +368,7 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
             </li>
           </ol>
         </aside>
+        <CoucheLue />
       </div>
       <section className="releve" aria-labelledby="titre-messagerie">
         <h2 id="titre-messagerie">{t.messagerie.titre}</h2>

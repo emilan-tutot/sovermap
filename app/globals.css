@@ -385,7 +385,8 @@
     scroll-margin-top: 1rem;
   }
 
-  .couche:target {
+  .couche:target,
+  .couche[data-lue] {
     background: var(--color-surface-2);
   }
 
@@ -455,6 +456,15 @@
   .chaine a {
     color: var(--color-discret);
     font-size: var(--text-sm);
+  }
+
+  .chaine li[data-lue] {
+    border-left-color: var(--color-encre);
+    background: var(--color-surface-2);
+  }
+
+  .chaine li[data-lue] a {
+    color: var(--color-encre);
   }
 
   .commande {
