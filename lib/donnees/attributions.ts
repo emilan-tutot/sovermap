@@ -3,7 +3,7 @@
 // countries and the companies, from the referentials the site is built with. Files or readings of several days give
 // their period. A source whose date is not given is left out, never dated wrong. Pure.
 import { dateFr } from "@/lib/i18n/format";
-import { fr } from "@/lib/i18n/fr";
+import { donneesOuvertes } from "@/lib/i18n/fr-donnees";
 import pays from "@/referentiels/pays.json";
 import societes from "@/referentiels/societes.json";
 import type { EtatPublie } from "./lecture";
@@ -23,7 +23,7 @@ function periode(jours: readonly (string | null)[]): string | null {
   const premier = tries[0];
   const dernier = tries.at(-1);
   if (premier === undefined || dernier === undefined) return null;
-  return fr.donneesOuvertes.attributions.periode(dateFr(premier), dateFr(dernier));
+  return donneesOuvertes.attributions.periode(dateFr(premier), dateFr(dernier));
 }
 
 /** The days the companies' table read a producer's records, among its sources whose title starts with its name. */
@@ -39,7 +39,7 @@ function lectures(producteur: string): (string | null)[] {
 
 /** The attributions of the day's state, those the licences or the conditions require first, then by courtesy. */
 export function attributionsDe(etat: EtatPublie): Attributions {
-  const t = fr.donneesOuvertes.attributions;
+  const t = donneesOuvertes.attributions;
   const versions = objet(etat.brut["versions"]);
   const regles = objet(versions?.["regles"]);
   const telecharges = new Map<string, string>();

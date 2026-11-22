@@ -1,8 +1,8 @@
 import type { DonneesOuvertes } from "@/lib/donnees/ouvertes";
 import { dateFr } from "@/lib/i18n/format";
-import { fr } from "@/lib/i18n/fr";
+import { donneesOuvertes } from "@/lib/i18n/fr-donnees";
 
-const t = fr.donneesOuvertes;
+const t = donneesOuvertes;
 
 /** The day's sources (F.1): each download with its card of the registry, the date of its file and its state. */
 export function SourcesDuJour({ donnees }: { donnees: DonneesOuvertes }) {

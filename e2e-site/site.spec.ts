@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { dateFr } from "../lib/i18n/format";
 import { fr } from "../lib/i18n/fr";
+import { donneesOuvertes } from "../lib/i18n/fr-donnees";
 import { erreur } from "../lib/i18n/fr-erreur";
 import { PAGES_DE_TEXTE } from "../lib/i18n/fr-textes";
 
@@ -23,7 +24,7 @@ const PAGES: [string, string][] = [
   ["/journal/2026-11-21", fr.journal.jour("21/11/2026")],
   ["/pays/etats-unis", "États-Unis"],
   ["/qualite", fr.qualite.titre],
-  ["/donnees", fr.donneesOuvertes.titre],
+  ["/donnees", donneesOuvertes.titre],
   ...PAGES_DE_TEXTE.map((p): [string, string] => [p.chemin, p.titre]),
 ];
 

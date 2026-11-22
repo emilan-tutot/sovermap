@@ -1,7 +1,7 @@
 import type { Attributions } from "@/lib/donnees/attributions";
-import { fr } from "@/lib/i18n/fr";
+import { donneesOuvertes } from "@/lib/i18n/fr-donnees";
 
-const t = fr.donneesOuvertes.attributions;
+const t = donneesOuvertes.attributions;
 
 /**
  * The sources' attributions (F.1; docs/sources.md): those the licences or the conditions require, then those given by

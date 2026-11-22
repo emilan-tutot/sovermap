@@ -2,6 +2,7 @@
 // the site's structured data. Pure: the pages, the sitemap routes and the tests share it.
 import type { Metadata } from "next";
 import { fr } from "@/lib/i18n/fr";
+import { donneesOuvertes } from "@/lib/i18n/fr-donnees";
 import { indexingOpen } from "@/lib/site";
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -85,8 +86,8 @@ export function jsonLdDataset(
   const donnees = {
     "@context": "https://schema.org",
     "@type": "Dataset",
-    name: fr.donneesOuvertes.jeu,
-    description: fr.donneesOuvertes.description,
+    name: donneesOuvertes.jeu,
+    description: donneesOuvertes.description,
     url: `${origine}/donnees`,
     license: "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
     isAccessibleForFree: true,

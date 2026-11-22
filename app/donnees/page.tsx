@@ -11,10 +11,11 @@ import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { donneesOuvertes } from "@/lib/i18n/fr-donnees";
 import { jsonLdDataset, partageDe } from "@/lib/referencement";
 import { origineDuSite, sitePublic } from "@/lib/site";
 
-const t = fr.donneesOuvertes;
+const t = donneesOuvertes;
 
 export const metadata: Metadata = {
   title: t.titre,
