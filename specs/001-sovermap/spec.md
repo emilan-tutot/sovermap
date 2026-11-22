@@ -126,7 +126,8 @@ Ce qui distingue Sovermap :
   - `/ministeres` et `/ministeres/<nom>` : la liste, puis un ministère par son nom court ; un ministère renommé garde son ancienne adresse, qui renvoie (308) vers la nouvelle ;
   - `/societes` et `/societes/<clé>` : la liste, puis une société par sa clé du référentiel (`/societes/celeste`) ;
   - `/territoires`, puis une région, un département, une commune ou un groupement par son code officiel et son nom : `/regions/53-bretagne`, `/departements/35-ille-et-vilaine`, `/communes/35238-rennes`, `/groupements/<SIREN>-<nom>` (le code officiel d'abord : deux communes peuvent porter le même nom ; un nom sans accents ni espaces) ;
-  - `/journal` et `/journal/<AAAA-MM-JJ>` ; `/recherche` ; `/qualite` ;
+  - `/journal` et `/journal/<AAAA-MM-JJ>` ; `/qualite` ;
+  - la recherche, sur l'Atlas (point 10) : pas de page à elle ; son index, chargé au premier usage, a son adresse : `/recherche/index.json` ;
   - les plans du site (D.7) : `/sitemap.xml` (l'index), `/plans/pages.xml` et `/plans/radiographies.xml` ;
   - les pages de textes (E) : `/methode`, `/donnees`, `/sources`, `/glossaire`, `/pourquoi-ca-compte`, `/corrections`, `/mentions-legales`, `/confidentialite`, `/accessibilite`, `/credits`, `/a-propos`, et `/radiographie-de-sovermap` (Sovermap passé à sa propre radiographie).
 
