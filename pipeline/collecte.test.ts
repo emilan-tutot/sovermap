@@ -849,9 +849,9 @@ describe("the scheduling of a collection", () => {
     expect(horloge.attentes).toContain(4000);
   });
 
-  it("holds at most eight questions in flight to one registry's servers: the others wait their turn (22/11/2026)", async () => {
-    // The parent's servers answer late: each question waits until the test lets it go, then ends in a TIMEOUT (so its
-    // opening is asked once more, as at the trial of 17:11).
+  it("holds at most eight questions in flight through one registry's servers in the first pass (22/11/2026)", async () => {
+    // The parent's servers answer late: each question waits until the test lets it go, then ends in a TIMEOUT a second
+    // later (so its opening is asked once more, as at the trial of 17:11).
     const enVol = new Map<string, number>();
     const maxEnVol = new Map<string, number>();
     const enAttente: (() => void)[] = [];
@@ -863,12 +863,14 @@ describe("the scheduling of a collection", () => {
         enVol.set(g, (enVol.get(g) ?? 0) + 1);
         maxEnVol.set(g, Math.max(maxEnVol.get(g) ?? 0, enVol.get(g) ?? 0));
         await new Promise<void>((resolve) => enAttente.push(resolve));
+        await horloge.dormir(1000);
         enVol.set(g, (enVol.get(g) ?? 1) - 1);
-        return { code: "TIMEOUT", ad: false, reponses: [], duree: 5000 };
+        return { code: "TIMEOUT", ad: false, reponses: [], duree: 1000 };
       },
       fermer: () => {},
     };
-    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, fausseHorloge());
+    const horloge = fausseHorloge();
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge);
     const zones = [...Array.from({ length: 12 }, (_, i) => `z${i}.fr`), "a.re", "b.example", "c.example"];
     const fini = Promise.all(zones.map((z) => client.demander(z, "NS")));
     await new Promise((resolve) => setTimeout(resolve, 5));
@@ -887,8 +889,23 @@ describe("the scheduling of a collection", () => {
     expect(reponses).toBe(2 * zones.length);
     expect(maxEnVol.get("afnic")).toBe(PARENT_EN_VOL);
     expect(client.attenteParents.questions).toBeGreaterThanOrEqual(5);
+    // The waits are measured on the clock: each answer took one second of it.
+    expect(client.attenteParents.ms).toBeGreaterThanOrEqual(1000);
 
-    // A collection says how many questions waited for a place (none, when the answers come in time).
+    // The retries go without the cap: thirteen new openings of AFNIC's zones leave at once.
+    client.leverPlafondParents();
+    enVol.clear();
+    const reprise = Promise.all(zones.slice(0, 13).map((z) => client.demander(`r${z}`, "NS")));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(enVol.get("afnic")).toBe(13);
+    while (enAttente.length > 0) {
+      enAttente.shift()?.();
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+    await reprise;
+
+    // A collection says, after its first pass, how many questions waited for a place (none, when the answers come in
+    // time).
     const lignes: string[] = [];
     await collecter(noms, new ResolveurSimule(ZONE, zoneDe), {
       ...POLITESSE,
@@ -897,7 +914,7 @@ describe("the scheduling of a collection", () => {
       suivi: (ligne) => lignes.push(ligne),
     });
     expect(lignes).toContain(
-      "questions aux serveurs parents : 8 en vol au plus par registre ; 0 ont attendu une place (0 s en tout)",
+      "questions par les serveurs parents, première passe : 8 au plus en attente par registre ; 0 ont attendu une place (0 s en tout)",
     );
   });
 

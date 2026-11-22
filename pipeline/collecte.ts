@@ -3,10 +3,11 @@
 // MX and TXT, then the addresses of its name servers and mail exchangers (once per host for the whole collection) and
 // its SPF record expanded — and at most 8 domains open per second, so that the servers of a top-level domain (.fr)
 // get at most one referral per new domain. Every single question holds one of the two permits of the zone it goes to
-// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks; and at most 8
-// questions in flight to the servers of one registry (the openings), so that servers that answer late never get more
-// of the resolver's retries than these. A name or a domain that fails is asked again, at most twice, 10 minutes
-// apart; a failure stays a failure, never « no site ».
+// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks; and, in the
+// first pass, at most 8 questions waiting for their answer among those that go through the servers of one registry
+// (the openings, the questions of zones not known as delegated), so that servers that answer late never have more
+// than these pending with the resolver. A name or a domain that fails is asked again, at most twice, 10 minutes apart;
+// a failure stays a failure, never « no site ».
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
 import { Cadence, type Horloge, HORLOGE_REELLE, instantCommun, melanger, type Montee, ParZone } from "./politesse";
@@ -141,16 +142,21 @@ const REGISTRES: Readonly<Record<string, string>> = {
 };
 const groupeDuParent = (zone: string) => {
   const tld = zone.slice(zone.lastIndexOf(".") + 1);
-  return REGISTRES[tld] ?? tld;
+  // Its own keys only: a label read in the DNS (« constructor ») is a top-level domain like any other.
+  return (Object.hasOwn(REGISTRES, tld) ? REGISTRES[tld] : undefined) ?? tld;
 };
 /** Slots a first question may take while the brake holds it, before it goes on its last one. */
 const CRENEAUX_MAX = 5;
 /**
- * Questions to a parent in flight at once, per group of parent servers (the openings of domains, and the questions of a
- * zone not known as delegated). When those servers answer late or not at all, the resolver asks each pending question
- * again on their other servers: their number, more than our pace, then makes the load (the trial of 22/11/2026, from
- * 17:24 UTC: 22 questions in a second to a server of .fr, five of the resolver's for one of ours). Eight never bind
- * while the answers come within a second (six openings per second); when they come late, the others wait their turn.
+ * Questions waiting for their answer at once, per group of parent servers, among those that go through them (the
+ * openings of domains, and the questions of a zone not known as delegated), in the first pass. When those servers
+ * answer late or not at all, the resolver asks each pending question again on their other servers: their number, more
+ * than our pace, then makes the load (the trial of 22/11/2026, from 17:24 UTC: 22 questions in a second to a server of
+ * .fr, five of the resolver's for one of ours). A place is held until the answer, the child zone's servers included:
+ * six openings per second that answer within a second hold fewer than eight, but a zone whose servers never answer
+ * holds its place until the client gives up (12 s). The retries, made mostly of such zones while their parents answer
+ * at once, go without the cap: with it, a retry of a few hundred dead zones would last most of an hour (the review of
+ * 22/11/2026).
  */
 export const PARENT_EN_VOL = 8;
 /**
@@ -171,6 +177,8 @@ export class ClientParZone implements ClientDns {
   readonly #parentsEnVol = new ParZone(PARENT_EN_VOL);
   /** The questions that waited for a place among them, and how long in all (milliseconds of the clock). */
   readonly #attenteParents = { questions: 0, ms: 0 };
+  /** The cap holds until the end of the first pass (leverPlafondParents). */
+  #plafonne = true;
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
   /** The pace of each zone's own servers. */
@@ -364,16 +372,18 @@ export class ClientParZone implements ClientDns {
       // The zone may have gone down while the question waited for its turn.
       const pendant = this.#sansQuestion(nom, zone, ouverture);
       if (pendant !== null) return pendant;
-      // An opening asks the parent for the delegation, at every attempt too: a place among the questions in flight to
-      // the parent's servers (PARENT_EN_VOL), then a slot of the parent's pace.
+      // An opening asks the parent for the delegation, at every attempt too: in the first pass, a place among the
+      // questions waiting for an answer through the parent's servers (PARENT_EN_VOL); then a slot of the parent's pace.
       if (ouverture || !this.#deleguees.has(zone)) {
-        const groupe = groupeDuParent(zone);
-        const debut = this.horloge.maintenant();
-        const attendu = await this.#parentsEnVol.prendre(groupe);
-        auParent = groupe;
-        if (attendu) {
-          this.#attenteParents.questions += 1;
-          this.#attenteParents.ms += this.horloge.maintenant() - debut;
+        if (this.#plafonne) {
+          const groupe = groupeDuParent(zone);
+          const debut = this.horloge.maintenant();
+          const attendu = await this.#parentsEnVol.prendre(groupe);
+          auParent = groupe;
+          if (attendu) {
+            this.#attenteParents.questions += 1;
+            this.#attenteParents.ms += this.horloge.maintenant() - debut;
+          }
         }
         await this.#creneauParent(nom, zone);
       } else if (this.frein) await this.frein(nom, zone, false);
@@ -466,6 +476,14 @@ export class ClientParZone implements ClientDns {
   /** The questions that waited for a place among those in flight to a parent's servers, and how long in all (ms). */
   get attenteParents(): Readonly<{ questions: number; ms: number }> {
     return { ...this.#attenteParents };
+  }
+
+  /**
+   * From now on, no question waits for a place among those of its parent's servers (PARENT_EN_VOL): the retries are
+   * mostly zones whose servers never answer, each of which would hold a place until the client gives up.
+   */
+  leverPlafondParents(): void {
+    this.#plafonne = false;
   }
 
   fermer(): void {
@@ -655,6 +673,13 @@ export async function collecter(
       ]);
     }),
   );
+  // The cap on the questions waiting through the parents' servers holds in the first pass only (PARENT_EN_VOL).
+  const attente = client.attenteParents;
+  options.suivi?.(
+    `questions par les serveurs parents, première passe : ${PARENT_EN_VOL} au plus en attente par registre ; ` +
+      `${attente.questions} ont attendu une place (${Math.round(attente.ms / 1000)} s en tout)`,
+  );
+  client.leverPlafondParents();
   options.apresPremierePasse?.(resultat);
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).
@@ -696,11 +721,6 @@ export async function collecter(
       options.finReprises === undefined ? undefined : { a: options.finReprises, etiquette: `reprise ${reprise}` },
     );
   }
-  const attente = client.attenteParents;
-  options.suivi?.(
-    `questions aux serveurs parents : ${PARENT_EN_VOL} en vol au plus par registre ; ` +
-      `${attente.questions} ont attendu une place (${Math.round(attente.ms / 1000)} s en tout)`,
-  );
   resultat.fin = Date.now();
   return resultat;
 }
