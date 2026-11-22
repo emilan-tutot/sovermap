@@ -86,6 +86,16 @@ describe("the SecNumCloud survey (referentiels/secnumcloud.json)", () => {
       }
     }
     expect(lies).toBe(6);
+    // A decision is read or not found, never both; a decision read is always recopied (its service's « titulaire »).
+    const { decisionsLues, decisionsIntrouvables } = secnumcloud.rapprochement;
+    expect(decisionsLues.filter((d) => decisionsIntrouvables.includes(d))).toEqual([]);
+    for (const d of decisionsLues) {
+      expect(secnumcloud.services.find((s) => s.decision === d)?.titulaire ?? null, d).not.toBeNull();
+    }
+    // The rule is the method's (layer 8): a group never inherits a subsidiary's qualification.
+    const regle = "Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse.";
+    expect(secnumcloud.rapprochement.regle).toContain(regle);
+    expect(methode).toContain(regle);
     expect(luhn("790173066")).toBe(true);
     expect(luhn("790163066")).toBe(false);
   });

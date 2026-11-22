@@ -111,6 +111,7 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
   - Toutes les sociétés n'ont pas de LEI : le 18/11/2026, deux sociétés d'essai sur trois n'en avaient pas.
   - Une « exception de déclaration » de GLEIF marque souvent le sommet d'une chaîne, ou un contrôle par des personnes. Elle ne veut pas dire « maison mère inconnue ».
   - Chaque lien de la chaîne est donc confirmé par un rapport annuel ou un registre, avec sa date.
+- **Le sommet d'une chaîne** : la dernière société qu'aucune autre ne consolide (le critère des relations « parent ultime » de GLEIF, et des comptes consolidés). Une personne physique n'est jamais un maillon, ni les sociétés de détention qui portent son nom : la chaîne s'arrête à la société qu'elles contrôlent, et son champ « contrôle » le dit, sans nommer personne.
 - **À la main** : https://search.gleif.org/ (recherche par nom de société, onglet des relations), puis le rapport annuel de la tête de groupe (« filiales », « organigramme », « Exhibit 21 »).
 
 ### Couche 7 — Les pays des sièges
@@ -125,7 +126,7 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
 
 ### Couche 8 — SecNumCloud
 - **Valeur** : la société a-t-elle au moins une offre qualifiée SecNumCloud ?
-- **Source** : la liste officielle de l'ANSSI. Le site cyber.gouv.fr est protégé contre les robots (constat du 18/11/2026). La liste est donc relevée à la main par une personne, avec sa date. Aucun relevé n'est automatique.
+- **Source** : la liste officielle de l'ANSSI. Le site cyber.gouv.fr est protégé contre les robots (constat du 18/11/2026). La liste est donc relevée à la main par une personne, avec sa date. Les décisions de qualification, sur messervices.cyber.gouv.fr (ouvert aux robots), sont lues par l'agent de Sovermap, une à une, pour le rapprochement ci-dessous.
 - **Phrase obligatoire** : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise. »
 - **Rapprochement** : un service du catalogue n'est lié à une société du référentiel que par sa décision de qualification, lue sur le site de l'ANSSI. Le SIREN qu'elle écrit, s'il est valide, est celui de la société au répertoire Sirene ; sinon, sa raison sociale et sa ville. Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse. Seules comptent les qualifications en cours le jour de la mesure, entre leurs dates de début et de fin.
 
@@ -317,3 +318,4 @@ Vérifiés le 18/11/2026. Ces travaux sont cités pour situer Sovermap, pas copi
 | 0.2 | 19/11/2026 | Décisions D1 et corrections de l'ARRÊT 1 : noms internes exclus (§ 3), unité et périmètre (§ 3), contrôle de tous les domaines de l'État (§ 5), règle d'IPtoASN (§ 5), catégorie la plus éloignée (§ 6), agent utilisateur (§ 7). |
 | 0.2 (collecte v1) | 20/11/2026 | Sans changement de la règle du chiffre : couche 10 mesurée (C2-1) ; domaine enregistré par la Public Suffix List ; un nom hébergé sur une plateforme tierce (créateur de sites, réseau social) est sa propre unité ; le nom web d'un domaine (www. s'il est dans la liste, sinon l'apex) est ajouté aux noms mesurés s'il n'y est pas ; périmètre « État » provisoire : .gouv.fr et les sites du Référentiel de la DILA (C.5 le complètera) ; témoins et échecs DNS parmi les garde-fous (§ 7). |
 | 0.2.1 | 21/11/2026 | Quatrième règle des noms internes, « sous-zone interne », avec ses deux garde-fous (§ 3, décision du propriétaire au point 04) ; un nom exclu ne compte qu'une fois. Ordre et rythme de la mesure, à la source (§ 7) ; tolérance du débit (§ 7, B.3) et ses deux chiffres publiés chaque jour ; DNSSEC lu sur la validation du résolveur ; codes `ZONE_MUETTE` et `SOUS_ZONE_MUETTE` ; un domaine qui n'existe pas n'est plus interrogé, ni ses noms (§ 7) ; rythme par adresse de serveur, et poids d'une question selon ce que le résolveur y ajoute (§ 7). |
+| 0.2.4 | 22/11/2026 | Couche 8 (C.4) : un service qualifié SecNumCloud n'est lié à une société que par sa décision de qualification, lue sur messervices.cyber.gouv.fr (le SIREN qu'elle écrit, s'il est valide ; sinon sa raison sociale et sa ville, comparés au répertoire Sirene) ; seules comptent les qualifications en cours. Couche 6 : le sommet d'une chaîne écrit (aucune société ne le consolide ; ni une personne physique ni ses sociétés de détention ne sont des maillons). |
