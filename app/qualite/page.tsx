@@ -11,11 +11,13 @@ import { lecteur } from "@/lib/donnees/lecture";
 import { maintenant } from "@/lib/donnees/maintenant";
 import { qualiteDe } from "@/lib/donnees/qualite";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 
 export const metadata: Metadata = {
   title: fr.qualite.titre,
   description: fr.qualite.description,
   alternates: { canonical: "/qualite" },
+  openGraph: partageDe("accueil", fr.meta.titre(fr.qualite.titre), fr.qualite.description),
 };
 
 // The Quality page (D.2, EX-16): what the day's collection measured and how it was checked. Behind a closed door, no

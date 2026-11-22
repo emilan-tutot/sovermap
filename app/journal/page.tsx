@@ -8,12 +8,14 @@ import { cheminJour, joursPublies, lireJour } from "@/lib/donnees/journal";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: fr.journal.titre,
   description: fr.journal.description,
   alternates: { canonical: "/journal" },
+  openGraph: partageDe("accueil", fr.meta.titre(fr.journal.titre), fr.journal.description),
 };
 
 const t = fr.journal;

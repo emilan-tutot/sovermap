@@ -9,12 +9,14 @@ import { type Categorie, lireIndexSocietes, nomPays, type SocieteIndex } from "@
 import { formeDeListe, parLettre, societesTriees } from "@/lib/donnees/societes";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: fr.societes.titre,
   description: fr.societes.description,
   alternates: { canonical: "/societes" },
+  openGraph: partageDe("societe", fr.meta.titre(fr.societes.titre), fr.societes.description),
 };
 
 const t = fr.societes;

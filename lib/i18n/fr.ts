@@ -35,6 +35,38 @@ export const fr = {
     /** The text alternative of the waiting page's share image (public/partage.png). */
     partage: `Sovermap · Qui héberge l’État${NBSP}? Le site est en préparation.`,
   },
+  /**
+   * The share images of the full site (D.7, proposal A « la question »: public/partage/<type>.png, drawn by
+   * scripts/design/partage.ts), one per kind of page: its kind, its question, one sentence; and their text alternative.
+   */
+  partage: {
+    accueil: {
+      etiquette: "Atlas",
+      question: `Qui héberge l’État${NBSP}?`,
+      phrase: `Chaque site public français${NBSP}: la société qui le sert et le pays du siège de sa maison mère, jour après jour.`,
+    },
+    radiographie: {
+      etiquette: "Radiographie",
+      question: `Qui héberge ce site${NBSP}?`,
+      phrase: "Du nom du site au pays du siège de la société qui le sert, couche par couche, chacune avec sa source.",
+    },
+    ministere: {
+      etiquette: "Ministère",
+      question: `Qui héberge ses sites${NBSP}?`,
+      phrase: "Les sites d’un ministère, la société qui sert chacun d’eux et le pays du siège de sa maison mère.",
+    },
+    societe: {
+      etiquette: "Société",
+      question: `Quels sites publics sert-elle${NBSP}?`,
+      phrase: "Les domaines qu’elle sert, sa chaîne de propriété jusqu’à la maison mère, et le pays de son siège.",
+    },
+    pays: {
+      etiquette: "Pays du siège",
+      question: `Quels sites publics dépendent de ses sociétés${NBSP}?`,
+      phrase: "Le pays du siège de la maison mère, jamais l’emplacement des serveurs.",
+    },
+    alt: (etiquette: string, question: string) => `Sovermap · ${etiquette}${NBSP}: ${question}`,
+  },
   footer: {
     version: `Version servie${NBSP}:`,
     independent: "Site indépendant, sans lien avec l’État.",

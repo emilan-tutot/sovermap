@@ -8,7 +8,7 @@ import { cheminJour, estJour, joursPublies, lireJour, parCouche } from "@/lib/do
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
-import { robotsDe } from "@/lib/referencement";
+import { partageDe, robotsDe } from "@/lib/referencement";
 
 type Props = { params: Promise<{ date: string }> };
 
@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: t.descriptionJour(dateFr(date)),
         alternates: { canonical: `/journal/${date}` },
         robots: robotsDe(false),
+        openGraph: partageDe("accueil", fr.meta.titre(t.titreJour(dateFr(date))), t.descriptionJour(dateFr(date))),
       }
     : {};
 }

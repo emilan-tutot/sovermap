@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: { default: fr.meta.accueil, template: fr.meta.titre("%s") },
   description: fr.site.description,
   robots: robotsDe(true),
+  twitter: { card: "summary_large_image" },
   // The logo (lib/design/logo.ts, drawn by scripts/design/icones.ts), served from public/ at stable addresses.
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],

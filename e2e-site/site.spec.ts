@@ -123,6 +123,28 @@ test("accueil : les données structurées WebSite donnent le nom du site et son 
   expect(String(donnees["url"])).toMatch(/^https?:\/\/[^/]+\/$/);
 });
 
+test("partage : chaque type de page annonce son image, un fichier servi tel quel", async ({ page, request }) => {
+  const TYPES: [string, string][] = [
+    ["/", "accueil"],
+    ["/radiographie/service.example", "radiographie"],
+    ["/ministeres/ministere-de-l-exemple", "ministere"],
+    ["/societes/hebergeur-fr", "societe"],
+    ["/pays/etats-unis", "pays"],
+  ];
+  for (const [chemin, type] of TYPES) {
+    await page.goto(chemin);
+    const image = new URL(
+      (await page.locator('meta[property="og:image"]').getAttribute("content")) ?? "",
+      "relative:/",
+    );
+    expect(image.protocol, chemin).toMatch(/^https?:$/);
+    expect(image.pathname, chemin).toBe(`/partage/${type}.png`);
+    const reponse = await request.get(image.pathname);
+    expect(reponse.status(), chemin).toBe(200);
+    expect(reponse.headers()["content-type"], chemin).toContain("image/png");
+  }
+});
+
 test("site complet : un domaine que l'état du jour ne publie pas répond 404", async ({ page }) => {
   const reponse = await page.goto("/radiographie/inconnu.example");
   expect(reponse?.status()).toBe(404);

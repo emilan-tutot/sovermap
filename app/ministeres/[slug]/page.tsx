@@ -11,6 +11,7 @@ import { type DomaineServi, groupesDe, lireMinisteres, parCategorie } from "@/li
 import { type Categorie, lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -42,6 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: t.titrePage(m.nom),
         description: t.descriptionPage(m.nom),
         alternates: { canonical: `/ministeres/${slug}` },
+        openGraph: partageDe("ministere", fr.meta.titre(t.titrePage(m.nom)), t.descriptionPage(m.nom)),
       };
 }
 

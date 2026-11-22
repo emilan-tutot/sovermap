@@ -9,6 +9,7 @@ import { lireIndexSocietes, nomPays, sourcesDe } from "@/lib/donnees/radiographi
 import { estCleSociete, lireDomainesSociete, numeroDePage, pageDe } from "@/lib/donnees/societes";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 
 type Props = { params: Promise<{ cle: string }>; searchParams: Promise<{ page?: string | string[] }> };
 
@@ -30,6 +31,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     title: t.titrePage(s.nom),
     description: t.descriptionPage(s.nom),
     alternates: { canonical: p === 1 ? `/societes/${cle}` : `/societes/${cle}?page=${p}` },
+    openGraph: partageDe("societe", fr.meta.titre(t.titrePage(s.nom)), t.descriptionPage(s.nom)),
   };
 }
 

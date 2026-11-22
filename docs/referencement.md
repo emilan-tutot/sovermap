@@ -18,13 +18,14 @@ Rien ici ne recommande un hébergeur : les pages décrivent des dépendances, sa
 | Plans fermés porte fermée ou indexation fermée | `lib/referencement.ts` (`robotsDe`), `lib/porte.ts` | `tests/referencement.test.ts`, `probe:prod`, `e2e/porte.spec.ts` |
 | Aucune balise `hreflang` tant que les pages anglaises n'existent pas (T11) | — | aucune dans le code |
 | Liens internes (pays, sociétés, ministères, fiches) | Radiographie, pages des sociétés, des ministères et des pays, recherche | — |
+| Images de partage dessinées par le code, par type de page, sans tiers | `scripts/design/partage.ts`, `public/partage/` (une image fixe par type, proposition A du point 11 ; la page d'attente garde `public/partage.png`) ; `partageDe` (`lib/referencement.ts`) | `e2e-site/site.spec.ts`, `e2e/porte.spec.ts` |
 
 **L'adresse canonique.** Elle ne garde jamais la requête : le mode expert de la Radiographie (`?mode=expert`) est la même page que le mode simple. Seule exception : une page de la liste d'une société au-delà de la première (`/societes/<clé>?page=2`) est sa propre adresse canonique, car elle montre d'autres domaines ; une page qui n'existe pas montre la première, et l'adresse canonique le dit.
 
 **Les plans du site.**
 - `/sitemap.xml` : l'index, construit une fois au build (un fichier, aucune fonction, aucune donnée lue). Vide tant que l'indexation est fermée, comme la porte l'attend (`lib/porte.ts`).
 - `/plans/pages.xml` : l'accueil, les listes, chaque ministère, chaque société, chaque pays qui sert au moins un domaine, le journal et la page Qualité.
-- `/plans/radiographies.xml` : les Radiographies du périmètre « État » (environ 1 900 domaines : plan § 7), lues dans `index/domaines.json`.
+- `/plans/radiographies.xml` : les Radiographies du périmètre « État » (environ 1 900 domaines : plan § 7), lues dans `index/domaines.json`, chacune avec le jour du dernier changement de sa page (`lastmod`) : celui où la collecte a publié un autre enregistrement pour le domaine ou pour son nom web. Le premier jour où ces dates sont publiées, un domaine inchangé prend la date de l'état de la veille (la plus tardive possible) ; ensuite, la date suit chaque changement.
 - Les deux sous-plans sont rendus à la demande avec les données du jour, gardés une heure par le CDN (`s-maxage=3600`), sans écriture ISR (D.4). Ils répondent 404 tant que l'indexation est fermée ; porte fermée, la porte répond 404 avant eux.
 - Les adresses sont absolues et canoniques. Ni `changefreq` ni `priority` : Google les ignore.
 
@@ -84,8 +85,7 @@ Les recherches viennent du brief et du propriétaire, jamais d'un outil de Googl
 ## 6. Ce qui reste
 
 **Avant l'ouverture (chantier 2) :**
-- les images de partage dessinées par le code, par type de page (trois propositions) ;
-- la date du dernier changement confirmé de chaque domaine, publiée par la collecte dans `index/domaines.json` (troisième valeur de chaque ligne), pour le `lastmod` des plans du site : le site la lit déjà quand elle est là ; sans elle, pas de `lastmod`, car Google ne l'utilise que si elle est exacte ;
+- la préversion, porte ouverte : les plans du site, les images de partage et le cache du CDN, vérifiés dans Edge ;
 - `Dataset` sur la page Données (F) ; la décision sur `Organization` (point 11, E.4).
 
 **Au chantier 3 (l'ouverture) :**

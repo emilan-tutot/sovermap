@@ -1,5 +1,6 @@
 // The foundations of search-engine indexing (D.7; docs/referencement.md): the robots rule of a page, the sitemaps and
 // the site's structured data. Pure: the pages, the sitemap routes and the tests share it.
+import type { Metadata } from "next";
 import { fr } from "@/lib/i18n/fr";
 import { indexingOpen } from "@/lib/site";
 
@@ -53,6 +54,23 @@ export function plan(origine: string, adresses: readonly AdressePlan[]): string 
     return `<url><loc>${echapper(`${origine}${chemin}`)}</loc>${jour}</url>`;
   });
   return `${ENTETE}\n<urlset xmlns="${ESPACE}">\n${lignes.join("\n")}\n</urlset>\n`;
+}
+
+/** The kinds of page that have a share image (public/partage/<type>.png, drawn by scripts/design/partage.ts). */
+export const TYPES_PARTAGE = ["accueil", "radiographie", "ministere", "societe", "pays"] as const;
+export type TypePartage = (typeof TYPES_PARTAGE)[number];
+
+/** A page's Open Graph data (D.7): its title and description, and the share image of its kind, a fixed file. */
+export function partageDe(type: TypePartage, titre: string, description: string): NonNullable<Metadata["openGraph"]> {
+  const t = fr.partage[type];
+  return {
+    type: "website",
+    siteName: fr.site.name,
+    locale: "fr_FR",
+    title: titre,
+    description,
+    images: [{ url: `/partage/${type}.png`, width: 1200, height: 630, alt: fr.partage.alt(t.etiquette, t.question) }],
+  };
 }
 
 /**

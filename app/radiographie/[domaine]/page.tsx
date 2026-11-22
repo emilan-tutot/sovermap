@@ -15,7 +15,7 @@ import {
   sourcesDe,
 } from "@/lib/donnees/radiographie";
 import { fr } from "@/lib/i18n/fr";
-import { robotsDe } from "@/lib/referencement";
+import { partageDe, robotsDe } from "@/lib/referencement";
 import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
 import { estNomDns } from "@/pipeline/schemas";
 
@@ -48,6 +48,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: fr.radiographie.description(domaine),
     alternates: { canonical: `/radiographie/${domaine}` },
     robots: robotsDe(deLEtat),
+    openGraph: partageDe(
+      "radiographie",
+      fr.meta.titre(fr.radiographie.titre(domaine)),
+      fr.radiographie.description(domaine),
+    ),
   };
 }
 

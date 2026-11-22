@@ -9,12 +9,14 @@ import { lireMinisteres, type Ministere, sujetMinistere } from "@/lib/donnees/mi
 import { formeDeListe, parLettre } from "@/lib/donnees/societes";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: fr.ministeres.titre,
   description: fr.ministeres.description,
   alternates: { canonical: "/ministeres" },
+  openGraph: partageDe("ministere", fr.meta.titre(fr.ministeres.titre), fr.ministeres.description),
 };
 
 const t = fr.ministeres;

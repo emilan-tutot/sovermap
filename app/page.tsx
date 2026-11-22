@@ -2,19 +2,23 @@ import type { Metadata } from "next";
 import { Atlas } from "@/components/atlas/Atlas";
 import { Coque } from "@/components/coque/Coque";
 import { fr } from "@/lib/i18n/fr";
+import { partageDe } from "@/lib/referencement";
 import { sitePublic } from "@/lib/site";
 
-// The share image of the waiting page (public/partage.png, drawn by scripts/design/icones.ts).
+// The share image of the waiting page (public/partage.png, drawn by scripts/design/icones.ts) behind a closed door; the
+// Atlas's behind an open one (public/partage/accueil.png, scripts/design/partage.ts). The door is read at build time.
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    siteName: fr.site.name,
-    title: fr.meta.accueil,
-    description: fr.site.description,
-    locale: "fr_FR",
-    images: [{ url: "/partage.png", width: 1200, height: 630, alt: fr.attente.partage }],
-  },
+  openGraph: sitePublic()
+    ? partageDe("accueil", fr.meta.accueil, fr.site.description)
+    : {
+        type: "website",
+        siteName: fr.site.name,
+        title: fr.meta.accueil,
+        description: fr.site.description,
+        locale: "fr_FR",
+        images: [{ url: "/partage.png", width: 1200, height: 630, alt: fr.attente.partage }],
+      },
 };
 
 // Production shows only this sober waiting page, without any data, until the launch (brief B.5 and E.2): behind a

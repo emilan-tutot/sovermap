@@ -8,7 +8,7 @@ import { lireIndexPays, paysDuSlug, societesDuPays } from "@/lib/donnees/pays";
 import { lireIndexSocietes } from "@/lib/donnees/radiographie";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
-import { robotsDe } from "@/lib/referencement";
+import { partageDe, robotsDe } from "@/lib/referencement";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -28,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t.descriptionPage(p.nom),
     alternates: { canonical: `/pays/${slug}` },
     robots: robotsDe((index?.get(p.code)?.domaines ?? 0) > 0),
+    openGraph: partageDe("pays", fr.meta.titre(t.titrePage(p.nom)), t.descriptionPage(p.nom)),
   };
 }
 
