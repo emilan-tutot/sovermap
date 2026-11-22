@@ -98,6 +98,17 @@ export function lireCopiePerimetre(source: CopiePerimetre["source"], date: strin
 
 const trie = (valeurs: Iterable<string>) => [...new Set(valeurs)].sort();
 
+/**
+ * A domain's ministries: the DILA Référentiel's when it gives some; else its SIG sites', and only on a day the
+ * Référentiel is read, which alone names the ministries (the SIG gives their identifiers). The SIG's are a fallback: its
+ * copy of 01/11/2026 gives 15 consulates the Prime Minister's identifier, where the Référentiel gives Foreign Affairs.
+ */
+export const ministeresDuDomaine = (
+  deLaDila: readonly string[],
+  duSig: readonly string[],
+  dilaLue: boolean,
+): string[] => (deLaDila.length > 0 ? [...deLaDila] : dilaLue ? [...duSig] : []);
+
 /** The unit of a name: its registrable domain, or the name itself when that domain is a third-party platform. */
 export function uniteDe(nom: string, suffixes: ListeSuffixes, plateformes: ReadonlySet<string>): string | null {
   const domaine = domaineEnregistrable(nom, suffixes);
@@ -142,8 +153,8 @@ export function construireListe(
     const domaine = uniteDe(nom, suffixes, plateformes);
     if (domaine === null) return void exclure("suffixe public", nom);
     if (plateformes.has(nom)) return void exclure("plateforme tierce sans nom propre", nom);
-    const raison = raisonExclusion(nom, domaineEnregistrable(nom, suffixes) ?? domaine, regles);
-    if (raison !== null && !(raison === "outil technique" && sitesSig.has(nom))) return void exclure(raison, nom);
+    const raison = raisonExclusion(nom, domaineEnregistrable(nom, suffixes) ?? domaine, regles, sitesSig.has(nom));
+    if (raison !== null) return void exclure(raison, nom);
     noms.set(nom, {
       nom,
       domaine,
@@ -209,10 +220,11 @@ export function construireListe(
       raisons,
       plateforme: enPlateforme,
       organismes,
-      ministeres: trie([
-        ...organismes.flatMap((o) => (ministereDe.has(o) ? [ministereDe.get(o) as string] : [])),
-        ...entrees.flatMap((e) => [...(ministeresDuNom.get(e.nom) ?? [])]),
-      ]),
+      ministeres: ministeresDuDomaine(
+        trie(organismes.flatMap((o) => (ministereDe.has(o) ? [ministereDe.get(o) as string] : []))),
+        trie(entrees.flatMap((e) => [...(ministeresDuNom.get(e.nom) ?? [])])),
+        dila !== null,
+      ),
     });
   }
   const exclus = new Map<Exclusion, number>([...ecartes].map(([raison, ensemble]) => [raison, ensemble.size]));

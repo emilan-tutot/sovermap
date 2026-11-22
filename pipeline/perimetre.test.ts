@@ -1,8 +1,9 @@
 // Tests of the reference list: made-up lists and Référentiel, documentation names only (RFC 2606), and a small
 // made-up suffix list in which « gouv.example » plays .gouv.fr's part.
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { ReferentielDila } from "./dila";
-import { construireListe, lireCopiePerimetre, uniteDe } from "./perimetre";
+import { construireListe, lireCopiePerimetre, ministeresDuDomaine, uniteDe } from "./perimetre";
 import { lireListeSuffixes } from "./psl";
 
 const suffixes = lireListeSuffixes(
@@ -103,7 +104,7 @@ describe("the reference list", () => {
   it("puts the SIG's sites and the MESR's public institutions in the « État » perimeter (C.5), never a platform", () => {
     const avecPerimetre = construireListe(
       [{ date: "2026-11-19", csv: "name,type\nwww.universite.example,\nmairie.example,Commune\n" }],
-      null,
+      dila,
       suffixes,
       plateformes,
       ".gouv.example",
@@ -112,10 +113,17 @@ describe("the reference list", () => {
         {
           source: "sig",
           date: "2026-11-01",
-          sites: ["agence.example", "portail.ministere.gouv.example", "x.createur.example", "Bureau.Agence.example"],
+          sites: [
+            "agence.example",
+            "portail.ministere.gouv.example",
+            "x.createur.example",
+            "Bureau.Agence.example",
+            "www.service.example",
+          ],
           ministeres: new Map([
             ["agence.example", "m2"],
             ["Bureau.Agence.example", "m3"],
+            ["www.service.example", "m9"],
           ]),
           empreinte: "000000000001",
         },
@@ -135,6 +143,8 @@ describe("the reference list", () => {
       raisons: ["sig"],
       ministeres: ["m2", "m3"],
     });
+    // The DILA's ministry first: the SIG's for the same domain is a fallback only.
+    expect(avecPerimetre.domaines.get("service.example")?.ministeres).toEqual(["m1"]);
     // A listed name keeps its provenances, and its unit gains the reason.
     expect(avecPerimetre.noms.get("www.universite.example")?.provenances).toEqual([
       "dinum:2026-11-19",
@@ -151,6 +161,30 @@ describe("the reference list", () => {
     expect(avecPerimetre.domaines.get("mairie.example")?.perimetre).toBe("hors État");
   });
 
+  it("gives a domain the DILA's ministries, else its SIG sites' on a day the Référentiel is read (C.5)", () => {
+    expect(ministeresDuDomaine(["m1"], ["m2"], true)).toEqual(["m1"]);
+    expect(ministeresDuDomaine([], ["m2"], true)).toEqual(["m2"]);
+    // Without the Référentiel, no ministry has a name: the SIG's identifiers are not published alone.
+    expect(ministeresDuDomaine([], ["m2"], false)).toEqual([]);
+  });
+
+  it("reads the real dated copies as the collection does: valid, unique sites, no address of a person", () => {
+    for (const source of ["sig", "mesr"] as const) {
+      const fichier = readdirSync("referentiels/perimetre")
+        .filter((f) => new RegExp(`^${source}-\\d{4}-\\d{2}-\\d{2}\\.csv$`).test(f))
+        .sort()
+        .at(-1);
+      expect(fichier, source).toBeDefined();
+      if (fichier === undefined) continue;
+      const texte = readFileSync(`referentiels/perimetre/${fichier}`, "utf8");
+      const copie = lireCopiePerimetre(source, fichier.slice(source.length + 1, -4), texte);
+      expect(copie.sites.length, source).toBeGreaterThan(100);
+      expect(new Set(copie.sites).size, source).toBe(copie.sites.length);
+      expect(texte, source).not.toContain("@");
+      if (source === "sig") expect(new Set(copie.ministeres?.values()).size).toBeLessThanOrEqual(20);
+    }
+  });
+
   it("never sets aside a site the SIG lists as a technical tool, and only for that rule (point 09, Q3)", () => {
     const avecSig = construireListe(
       [{ date: "2026-11-19", csv: "name,type\nmx.ambassade.example,\nmx.mairie.example,Commune\n" }],
@@ -163,7 +197,12 @@ describe("the reference list", () => {
         {
           source: "sig",
           date: "2026-11-01",
-          sites: ["mx.ambassade.example", "pop.patrimoine.gouv.example", "recette.agence.example"],
+          sites: [
+            "mx.ambassade.example",
+            "pop.patrimoine.gouv.example",
+            "recette.agence.example",
+            "mx.in.ambassade.example",
+          ],
           empreinte: "000000000001",
         },
         { source: "mesr", date: "2026-11-21", sites: ["mail.universite.example"], empreinte: "000000000002" },
@@ -178,9 +217,10 @@ describe("the reference list", () => {
       "mx.mairie.example",
     ]);
     expect(avecSig.exclus.get("outil technique")).toBe(2);
-    // The other rules still apply to a site the SIG lists.
+    // The other rules still apply to a site the SIG lists, the fourth one included.
     expect(avecSig.noms.has("recette.agence.example")).toBe(false);
     expect(avecSig.exclus.get("environnement")).toBe(1);
+    expect([...(avecSig.ecartes.get("sous-zone interne") ?? [])]).toEqual(["mx.in.ambassade.example"]);
   });
 
   it("reads a dated copy, checks it, and gives it a fingerprint that changes with its text", () => {
