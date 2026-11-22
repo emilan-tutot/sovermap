@@ -29,8 +29,9 @@ import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
+import { REGLES_EXCLUSION } from "../noms";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
-import { construireListe, type CopieListe } from "../perimetre";
+import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
 import { donneesPersonnelles } from "../personnelles";
 import {
   controleDu,
@@ -83,7 +84,7 @@ const SEUIL_REDUITES = 0.001;
 const VERSION_CLASSEMENT = 1;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.2.1";
+const METHODE = "0.2.3";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({
@@ -135,6 +136,22 @@ function referentiels() {
       return date === undefined ? [] : [{ date, csv: lire(RACINE, "referentiels/listes", f) }];
     })
     .sort((a, b) => (a.date < b.date ? -1 : 1));
+  // The dated copies of the « État » perimeter's open lists (brief C.5): the latest of each source, read and checked
+  // (pipeline/perimetre.ts, lireCopiePerimetre).
+  const FICHIERS_PERIMETRE = {
+    sig: /^sig-(\d{4}-\d{2}-\d{2})\.csv$/,
+    mesr: /^mesr-(\d{4}-\d{2}-\d{2})\.csv$/,
+  } as const;
+  const fichiersPerimetre = readdirSync(path.join(RACINE, "referentiels/perimetre"));
+  const perimetre: CopiePerimetre[] = (["sig", "mesr"] as const).flatMap((source) => {
+    const fichier = fichiersPerimetre
+      .filter((f) => FICHIERS_PERIMETRE[source].test(f))
+      .sort()
+      .at(-1);
+    const date = fichier === undefined ? undefined : FICHIERS_PERIMETRE[source].exec(fichier)?.[1];
+    if (fichier === undefined || date === undefined) return [];
+    return [lireCopiePerimetre(source, date, lire(RACINE, "referentiels/perimetre", fichier))];
+  });
   const fichierPsl = readdirSync(path.join(RACINE, "referentiels/psl"))
     .filter((f) => /^public_suffix_list-\d{4}-\d{2}-\d{2}\.dat$/.test(f))
     .sort()
@@ -150,6 +167,7 @@ function referentiels() {
   if (erreurs.length > 0) throw new Error(`référentiels invalides :\n- ${erreurs.join("\n- ")}`);
   const regles = {
     listes: copies.map((c) => c.date),
+    perimetre: perimetre.map((c) => `${c.source}:${c.date}:${c.empreinte}`),
     psl: psl.version,
     plateformes: plateformes.version,
     cdn: cdn.version,
@@ -159,7 +177,17 @@ function referentiels() {
     schema: VERSION_SCHEMA,
     classement: VERSION_CLASSEMENT,
   };
-  return { copies, psl, plateformes: new Set(plateformes.domaines), temoins, cdn, societes, tableAs, regles };
+  return {
+    copies,
+    perimetre,
+    psl,
+    plateformes: new Set(plateformes.domaines),
+    temoins,
+    cdn,
+    societes,
+    tableAs,
+    regles,
+  };
 }
 type Referentiels = ReturnType<typeof referentiels>;
 
@@ -395,7 +423,15 @@ async function principal(): Promise<number> {
   const quad9 = new ClientCadence(new ClientUdp("quad9", o.controle, 53, 8_000), 2);
   // The fourth rule of the method (§ 3, point 04): at each new list, 20 of its names are asked again to Quad9; if one
   // answers, the rule is suspended and its names are measured, until it is reviewed at the next point.
-  const listeAvecRegle = construireListe(ref.copies, dila, ref.psl, ref.plateformes);
+  const listeAvecRegle = construireListe(
+    ref.copies,
+    dila,
+    ref.psl,
+    ref.plateformes,
+    ".gouv.fr",
+    REGLES_EXCLUSION,
+    ref.perimetre,
+  );
   const nomsRegle = [...(listeAvecRegle.ecartes.get("sous-zone interne") ?? [])];
   const derniereListe = ref.copies.at(-1)?.date ?? "";
   const etatVeille =
@@ -418,7 +454,15 @@ async function principal(): Promise<number> {
         );
   const liste =
     regleInterne.etat === "suspendue"
-      ? construireListe(ref.copies, dila, ref.psl, ref.plateformes, ".gouv.fr", { sousZoneInterne: false })
+      ? construireListe(
+          ref.copies,
+          dila,
+          ref.psl,
+          ref.plateformes,
+          ".gouv.fr",
+          { sousZoneInterne: false },
+          ref.perimetre,
+        )
       : listeAvecRegle;
   const zoneDe = (nom: string) => domaineEnregistrable(nom, ref.psl) ?? nom;
   // Each unit's web name is measured too (it carries the domain's addresses layer); a trial draws a sample whose
