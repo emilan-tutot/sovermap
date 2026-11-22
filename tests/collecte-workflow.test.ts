@@ -59,7 +59,7 @@ describe("the collection's workflow", () => {
       "github.event_name == 'pull_request'",
     );
     // A trial is capped, and the day's collection waits for a trial that measures.
-    expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 240 }}");
+    expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
     const attente = mesurer.indexOf("--event pull_request");
     expect(attente).toBeGreaterThan(-1);
     expect(attente).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));
@@ -84,5 +84,93 @@ describe("the collection's workflow", () => {
         expect(verdict.status, `${fichier}, ligne ${i + 1} : ${verdict.stderr}`).toBe(0);
       }
     }
+  });
+
+  it("gives the resolver views Knot Resolver 6.5.1 accepts, over the collection's own address (the review of 96f0218)", () => {
+    const config = readFileSync("pipeline/knot/config.yaml", "utf8");
+    // The resolver listens where the collection asks.
+    expect(config).toContain("interface: 127.0.0.1@5300");
+    expect(tache("mesurer")).toContain("attendre-resolveur.ts 127.0.0.1:5300");
+    // The « views » section, to the next top-level key (comment lines left out); each view opens with « - » at two
+    // spaces, its keys at four.
+    const lignes = config.split("\n").filter((l) => !/^\s*#/.test(l));
+    const debut = lignes.indexOf("views:");
+    expect(debut).toBeGreaterThan(-1);
+    const fin = lignes.findIndex((l, i) => i > debut && /^\S/.test(l));
+    const section = lignes.slice(debut + 1, fin === -1 ? undefined : fin).join("\n");
+    const vues = section
+      .split(/^ {2}- /m)
+      .slice(1)
+      .map((v) => `    ${v}`);
+    expect(vues.length).toBeGreaterThan(0);
+    // An IPv4 subnet holds the address; any other (IPv6) never does.
+    const dans = (sousReseau: string, adresse: string) => {
+      const [reseau = "", longueur = "32"] = sousReseau.trim().split("/");
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(reseau)) return false;
+      const entier = (ip: string) => ip.split(".").reduce((n, octet) => n * 256 + Number(octet), 0);
+      const masque = 2 ** 32 - 2 ** (32 - Number(longueur));
+      return (entier(reseau) & masque) >>> 0 === (entier(adresse) & masque) >>> 0;
+    };
+    expect([dans("::1/128", "127.0.0.1"), dans("127.0.0.0/8", "127.0.0.1"), dans("10.0.0.0/8", "127.0.0.1")]).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    for (const vue of vues) {
+      const cles = [...vue.matchAll(/^ {4}([a-z-]+):/gm)].map((m) => m[1]);
+      // Exactly one of « answer » and « tags »: 6.5.1 refuses the whole configuration otherwise; and the answer lets
+      // the questions through (« refused » would refuse them all).
+      expect(
+        cles.filter((c) => c === "answer" || c === "tags"),
+        vue,
+      ).toHaveLength(1);
+      expect(vue, vue).toMatch(/^ {4}answer: allow$/m);
+      const sousReseaux = /^ {4}subnets: \[(.*)\]$/m.exec(vue)?.[1]?.split(",") ?? [];
+      expect(
+        sousReseaux.some((s) => dans(s, "127.0.0.1")),
+        vue,
+      ).toBe(true);
+    }
+    // The measured names are asked whole (method 0.2.4).
+    expect(vues.some((v) => /^ {4}options:\n {6}minimize: false$/m.test(v))).toBe(true);
+  });
+
+  it("measures a day once: the mark « measurement started » is saved and read back before the collection", () => {
+    const mesurer = tache("mesurer");
+    const debut = mesurer.indexOf("# A day is measured once");
+    const collecte = mesurer.indexOf("- id: collecte");
+    expect(debut).toBeGreaterThan(-1);
+    const temoin = mesurer.slice(debut, collecte);
+    // Three steps, none for a trial, in this order: refuse (a day already started, a re-run after midnight, a
+    // measurement that could not end before midnight), save, read back.
+    expect(temoin.match(/- if: env\.ESSAI != 'true'/g)).toHaveLength(3);
+    const refus = temoin.indexOf('if [ "$(date -u +%F)" != "$DATE" ]; then');
+    const enregistrement = temoin.indexOf(
+      "key: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}",
+    );
+    const relecture = temoin.indexOf(
+      "--ref refs/heads/main --key \"$CLE\" --json key --jq 'map(select(.key == env.CLE)) | length'",
+    );
+    expect([refus, enregistrement, relecture].every((i) => i > -1)).toBe(true);
+    expect(refus < enregistrement && enregistrement < relecture).toBe(true);
+    expect(temoin).toContain('if [ "$(date -u +%H%M)" -ge 1830 ]; then');
+    expect(temoin).toContain('--ref refs/heads/main --key "collecte-commencee-$DATE-"');
+    expect(temoin).toContain('if [ "$commencees" != "0" ]; then');
+    // Each refusal ends the step in red, the last one too (an « exit 0 » there would measure without a mark).
+    expect(temoin).toMatch(/une relance après minuit\)\." \| tee -a "\$GITHUB_STEP_SUMMARY" >&2\n\s*exit 1/);
+    expect(temoin).toMatch(
+      /croiser celle du lendemain ; rien n'est mesuré\." \| tee -a "\$GITHUB_STEP_SUMMARY" >&2\n\s*exit 1/,
+    );
+    expect(temoin).toMatch(
+      /une seule interrogation des serveurs par jour\)\." \| tee -a "\$GITHUB_STEP_SUMMARY" >&2\n\s*exit 1/,
+    );
+    expect(temoin).toMatch(/\} \| tee -a "\$GITHUB_STEP_SUMMARY" >&2\n\s*exit 1/);
+    // Never an error swallowed in these steps, but the read-back, which reads an error as « not yet » and refuses at
+    // the end (the wait above swallows them on purpose: a pattern easy to copy).
+    expect(temoin).not.toMatch(/\|\| true|2> \/dev\/null/);
+    expect(temoin.match(/\|\| trouvee=""/g)).toHaveLength(1);
+    // The run of 09:47 (« jour ») sees a day started, and a reply that is not « 0 » counts as one.
+    expect(tache("jour")).toContain('--ref refs/heads/main --key "collecte-commencee-$DATE-"');
+    expect(tache("jour")).toContain('[ "$commencees" != "0" ]');
   });
 });

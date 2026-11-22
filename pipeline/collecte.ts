@@ -64,6 +64,11 @@ export type OptionsCollecte = {
    * day still fit in the job's time limit (collecter.ts).
    */
   echeance?: number;
+  /**
+   * No task of a retry pass starts after this moment: what is left keeps its failure, and the job always ends in time
+   * (the review of 22/11/2026: a retry that started late had no end).
+   */
+  finReprises?: number;
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -181,7 +186,7 @@ export class ClientParZone implements ClientDns {
   readonly #sousEnPanne = new Set<string>();
   /** The zones each zone's CNAMEs lead to: the resolver's next question goes to their servers. */
   readonly #suites = new Map<string, Set<string>>();
-  /** The names between a zone and the names asked, already asked by the resolver (QNAME minimisation). */
+  /** The names between a zone and the names asked, already counted (a margin: the resolver may ask their DS). */
   readonly #intermediairesVus = new Set<string>();
   constructor(
     private readonly base: ClientDns,
@@ -349,7 +354,8 @@ export class ClientParZone implements ClientDns {
       // question that costs the servers more than one question takes more: what the logs measured for the zone; four
       // where a question failed (the resolver tries the other servers, and again: up to 5 questions for one of ours);
       // and, before the logs can tell, one more for each new name between the zone and the asked name (the resolver
-      // asks those first: QNAME minimisation).
+      // asked those first, with QNAME minimisation; it no longer minimises, since 22/11/2026, but the weight stays, as a
+      // margin: it may still ask the DS of such a name).
       const intermediaires =
         nom === zone
           ? []
@@ -553,12 +559,22 @@ export async function collecter(
     resultat.noms.set(nom, await mesurerNom(nom, client));
   };
 
-  const passe = async (taches: readonly (() => Promise<void>)[]) => {
+  const passe = async (taches: readonly (() => Promise<void>)[], fin?: { a: number; etiquette: string }) => {
     const file = [...taches];
     const debut = horloge.maintenant();
     let faites = 0;
+    let coupee = false;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
+        // The wall clock, like `echeance` (the review of PR 20: the measuring clock counts from the process's start, and
+        // compared with a date it never cut anything).
+        if (fin !== undefined && Date.now() >= fin.a) {
+          if (!coupee)
+            options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${file.length + 1} tâches non reprises`);
+          coupee = true;
+          file.length = 0;
+          break;
+        }
         await tache();
         faites += 1;
         if (faites % 2_000 === 0) {
@@ -627,21 +643,24 @@ export async function collecter(
     await horloge.dormir(options.delaiRepriseMs);
     client.oublierZonesMortes();
     for (const hote of hotesEchoues) hotesEnCours.delete(hote);
-    await passe([
-      ...melanger(domainesEchoues, options.aleatoire).map((d) => async () => {
-        await cadenceDomaines.attendre();
-        await options.frein?.(d, options.zoneDe(d), true);
-        await mesurerDomaine(d);
-      }),
-      ...melanger(hotesEchoues, options.aleatoire).map((h) => async () => {
-        await cadenceNoms.attendre();
-        await mesurerHote(h);
-      }),
-      ...melanger(nomsEchoues, options.aleatoire).map((n) => async () => {
-        await cadenceNoms.attendre();
-        await mesurerUnNom(n);
-      }),
-    ]);
+    await passe(
+      [
+        ...melanger(domainesEchoues, options.aleatoire).map((d) => async () => {
+          await cadenceDomaines.attendre();
+          await options.frein?.(d, options.zoneDe(d), true);
+          await mesurerDomaine(d);
+        }),
+        ...melanger(hotesEchoues, options.aleatoire).map((h) => async () => {
+          await cadenceNoms.attendre();
+          await mesurerHote(h);
+        }),
+        ...melanger(nomsEchoues, options.aleatoire).map((n) => async () => {
+          await cadenceNoms.attendre();
+          await mesurerUnNom(n);
+        }),
+      ],
+      options.finReprises === undefined ? undefined : { a: options.finReprises, etiquette: `reprise ${reprise}` },
+    );
   }
   resultat.fin = Date.now();
   return resultat;
