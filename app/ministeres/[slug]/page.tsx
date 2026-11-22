@@ -36,7 +36,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const etat = await lecteur.etat();
   if (etat.statut !== "ok") return {};
   const m = await ministereDe(slug);
-  return m === null ? {} : { title: t.titrePage(m.nom), description: t.descriptionPage(m.nom) };
+  return m === null
+    ? {}
+    : {
+        title: t.titrePage(m.nom),
+        description: t.descriptionPage(m.nom),
+        alternates: { canonical: `/ministeres/${slug}` },
+      };
 }
 
 /** The company that serves a web name: the one that delivers it when a CDN does, otherwise the first that hosts it. */

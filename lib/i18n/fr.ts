@@ -13,7 +13,7 @@ export const fr = {
   meta: {
     /** The title of a page, followed by the name of the site. */
     titre: (page: string) => `${page} · Sovermap`,
-    accueil: `Sovermap · Qui héberge l’État${NBSP}?`,
+    accueil: `Qui héberge l’État${NBSP}? · Sovermap`,
   },
   coque: {
     evitement: "Aller au contenu",
@@ -66,6 +66,7 @@ export const fr = {
   /** The Quality page (D.2, EX-16): what the day's collection measured and how it was checked. */
   qualite: {
     titre: "Qualité et fraîcheur",
+    description: `La qualité des données du jour${NBSP}: la date de la dernière collecte, l’âge de chaque source, la couverture, les échecs et les contrôles qui l’ont validée.`,
     chapo: "Ce que la collecte du jour a mesuré, comment elle a été contrôlée, et l’âge de chacune de ses sources.",
     nonPublie: "non publié",
     /** The day and the end of the collection (etat.json says when it ended, not when it was published). */
@@ -140,7 +141,7 @@ export const fr = {
   radiographie: {
     titre: (domaine: string) => `${domaine}${NBSP}: qui héberge ce site${NBSP}?`,
     description: (domaine: string) =>
-      `Radiographie de ${domaine}${NBSP}: serveurs de noms, adresses, réseau, société exploitante, maison mère et pays du siège, chacun avec sa source, sa date et son niveau de confiance.`,
+      `Radiographie de ${domaine}${NBSP}: serveurs de noms, adresses, réseau, société, maison mère et pays du siège, chacun avec sa source et sa date.`,
     surtitre: "Radiographie",
     chapo:
       "Les couches du site, de son nom au pays du siège de la société qui le sert. Chaque couche donne sa source, sa date et son niveau de confiance.",

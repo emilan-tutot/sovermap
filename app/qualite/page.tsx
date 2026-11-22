@@ -12,7 +12,11 @@ import { maintenant } from "@/lib/donnees/maintenant";
 import { qualiteDe } from "@/lib/donnees/qualite";
 import { fr } from "@/lib/i18n/fr";
 
-export const metadata: Metadata = { title: fr.qualite.titre };
+export const metadata: Metadata = {
+  title: fr.qualite.titre,
+  description: fr.qualite.description,
+  alternates: { canonical: "/qualite" },
+};
 
 // The Quality page (D.2, EX-16): what the day's collection measured and how it was checked. Behind a closed door, no
 // data is read: the page answers « not found ». Provisional, until the owner chooses its form (point 09, Q1): the

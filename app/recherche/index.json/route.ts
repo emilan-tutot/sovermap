@@ -1,6 +1,7 @@
 // The search's index (D.2, R4): built on demand from the day's data (never at build time, so that a new day needs no
 // deployment: EX-14), served with a shared cache, loaded whole by the browser at the search's first use. Behind a closed
 // door, the door's rewrite answers « not found » before this route; it checks the door again, and reads nothing.
+import { lireIndexDomaines } from "@/lib/donnees/domaines";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
 import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
@@ -11,15 +12,9 @@ import { sitePublic } from "@/lib/site";
 
 const ABSENT = () => new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
 
-/** index/domaines.json, checked: every registered domain, with 1 for the « État » perimeter; null when absent. */
+/** index/domaines.json, checked (lib/donnees/domaines.ts): every registered domain, with 1 for the « État » perimeter. */
 function lireDomaines(valeur: unknown): [string, 0 | 1][] | null {
-  if (typeof valeur !== "object" || valeur === null || !Array.isArray((valeur as { domaines?: unknown }).domaines))
-    return null;
-  return (valeur as { domaines: unknown[] }).domaines.flatMap((e): [string, 0 | 1][] =>
-    Array.isArray(e) && typeof e[0] === "string" && /^[a-z0-9_.-]{1,253}$/.test(e[0]) && (e[1] === 0 || e[1] === 1)
-      ? [[e[0], e[1]]]
-      : [],
-  );
+  return lireIndexDomaines(valeur)?.map((d): [string, 0 | 1] => [d.domaine, d.etat ? 1 : 0]) ?? null;
 }
 
 export async function GET(): Promise<Response> {

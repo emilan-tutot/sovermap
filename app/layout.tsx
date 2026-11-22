@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { fr } from "@/lib/i18n/fr";
-import { indexingOpen, origineDuSite, servedVersion } from "@/lib/site";
+import { robotsDe } from "@/lib/referencement";
+import { origineDuSite, servedVersion } from "@/lib/site";
 import { POLICES } from "./fonts";
 import "./globals.css";
 
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(origineDuSite()),
   title: { default: fr.meta.accueil, template: fr.meta.titre("%s") },
   description: fr.site.description,
-  robots: indexingOpen() ? { index: true, follow: true } : { index: false, follow: false },
+  robots: robotsDe(true),
   // The logo (lib/design/logo.ts, drawn by scripts/design/icones.ts), served from public/ at stable addresses.
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],

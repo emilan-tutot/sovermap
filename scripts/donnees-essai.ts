@@ -124,6 +124,14 @@ const fichiers = new Map<string, string>([
     `${jsonStable({ date: DATE_ESSAI, etatInitial: true, reglesChangees: false, changements: [] })}\n`,
   ],
 ]);
+// index/domaines.json, until the collection's own index writes it (its branch merges after the second day): every
+// domain, with 1 for the « État » perimeter, in the published format.
+if (!fichiers.has("index/domaines.json")) {
+  const domaines = [...etat.domaines.values()]
+    .map((d) => [d.domaine, d.perimetre === "État" ? 1 : 0] as const)
+    .sort(([a], [b]) => (a < b ? -1 : 1));
+  fichiers.set("index/domaines.json", `${jsonStable({ domaines })}\n`);
+}
 const sommes = Object.fromEntries(
   [...fichiers]
     .filter(([c]) => /^(noms|domaines)\/[0-9a-f]{2}\/sommes\.json$/.test(c) || /^(index|agregats|journal)\//.test(c))

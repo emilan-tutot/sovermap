@@ -9,6 +9,8 @@ import { nombre, pourcent } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { Recherche } from "@/components/recherche/Recherche";
 import { lireHistorique } from "@/lib/donnees/historique";
+import { jsonLdSite } from "@/lib/referencement";
+import { origineDuSite } from "@/lib/site";
 import { CurseurTemps } from "./CurseurTemps";
 import { GlobeAtlas } from "./GlobeAtlas";
 
@@ -83,6 +85,8 @@ export async function Atlas() {
       <div className="atlas-haut">
         <div className="atlas-texte">
           <h1 className="question">{fr.site.question}</h1>
+          {/* The site's structured data (D.7): its name and its home page, a script that is never executed. */}
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSite(origineDuSite()) }} />
           <ChiffreTitre c={chiffres} />
           <CurseurTemps jours={jours} />
         </div>

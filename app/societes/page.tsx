@@ -11,7 +11,11 @@ import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { sitePublic } from "@/lib/site";
 
-export const metadata: Metadata = { title: fr.societes.titre, description: fr.societes.description };
+export const metadata: Metadata = {
+  title: fr.societes.titre,
+  description: fr.societes.description,
+  alternates: { canonical: "/societes" },
+};
 
 const t = fr.societes;
 

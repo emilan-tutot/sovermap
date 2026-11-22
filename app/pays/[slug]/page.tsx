@@ -8,14 +8,27 @@ import { lireIndexPays, paysDuSlug, societesDuPays } from "@/lib/donnees/pays";
 import { lireIndexSocietes } from "@/lib/donnees/radiographie";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { robotsDe } from "@/lib/referencement";
 
 type Props = { params: Promise<{ slug: string }> };
 
 const t = fr.pays;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const p = paysDuSlug((await params).slug);
-  return p === null ? {} : { title: t.titrePage(p.nom), description: t.descriptionPage(p.nom) };
+  const { slug } = await params;
+  const p = paysDuSlug(slug);
+  if (p === null) return {};
+  // Indexable only when the country serves at least one domain: an empty page is never offered to the engines
+  // (docs/referencement.md). Behind a closed door, the reader reads nothing.
+  const etat = await lecteur.etat();
+  const lu = etat.statut === "ok" ? await lecteur.fichier("index/pays.json") : etat;
+  const index = lu.statut === "ok" ? lireIndexPays(lu.donnees) : null;
+  return {
+    title: t.titrePage(p.nom),
+    description: t.descriptionPage(p.nom),
+    alternates: { canonical: `/pays/${slug}` },
+    robots: robotsDe((index?.get(p.code)?.domaines ?? 0) > 0),
+  };
 }
 
 // A country's page (D.2, R7): the domains served from companies whose ultimate parent has its seat there, and those

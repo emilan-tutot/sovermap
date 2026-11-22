@@ -1,10 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import { DONNEES_ESSAI } from "./e2e-site/donnees";
 
-// The end-to-end tests of the full site (D.8): the door open, on a small made-up published state (written by
-// scripts/donnees-essai.ts with the collection's own publication code) read from a local folder instead of GitHub, with
-// a made-up account name: no network, no real data. Port 3100, never 3000; a production build. The door-closed tests
-// keep their own configuration (playwright.config.ts).
+// The end-to-end tests of the full site (D.8): the door and indexing open (to test the robots rule of each page and the
+// sitemaps, D.7), on a small made-up published state (written by scripts/donnees-essai.ts with the collection's own
+// publication code) read from a local folder instead of GitHub, with a made-up account name: no network, no real data.
+// Port 3100, never 3000; a production build, never deployed. The door-closed tests keep their own configuration
+// (playwright.config.ts).
 const PORT = 3100;
 const channel = process.env["PW_CHANNEL"] ?? "msedge";
 
@@ -32,7 +33,7 @@ export default defineConfig({
     timeout: 300_000,
     env: {
       SITE_PUBLIC: "open",
-      SITE_INDEXING: "closed",
+      SITE_INDEXING: "open",
       SOVERMAP_GITHUB_OWNER: "exemple",
       SOVERMAP_DONNEES_LOCALES: DONNEES_ESSAI,
     },

@@ -10,7 +10,11 @@ import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { sitePublic } from "@/lib/site";
 
-export const metadata: Metadata = { title: fr.journal.titre, description: fr.journal.description };
+export const metadata: Metadata = {
+  title: fr.journal.titre,
+  description: fr.journal.description,
+  alternates: { canonical: "/journal" },
+};
 
 const t = fr.journal;
 

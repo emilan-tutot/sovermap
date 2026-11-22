@@ -8,6 +8,7 @@ import { cheminJour, estJour, joursPublies, lireJour, parCouche } from "@/lib/do
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { robotsDe } from "@/lib/referencement";
 
 type Props = { params: Promise<{ date: string }> };
 
@@ -15,7 +16,15 @@ const t = fr.journal;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { date } = await params;
-  return estJour(date) ? { title: t.titreJour(dateFr(date)), description: t.descriptionJour(dateFr(date)) } : {};
+  // A day of the journal is never indexed: one a day, all alike; its links are followed (docs/referencement.md).
+  return estJour(date)
+    ? {
+        title: t.titreJour(dateFr(date)),
+        description: t.descriptionJour(dateFr(date)),
+        alternates: { canonical: `/journal/${date}` },
+        robots: robotsDe(false),
+      }
+    : {};
 }
 
 // A day of the journal (D.2, R10): its confirmed changes by layer, each domain leading to its Radiographie. A day the

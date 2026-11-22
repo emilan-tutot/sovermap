@@ -26,6 +26,12 @@ export function societesTriees(index: ReadonlyMap<string, SocieteIndex>): [strin
 export const PAR_PAGE = 200;
 export function pageDe<T>(liste: readonly T[], page: number): { elements: T[]; page: number; pages: number } {
   const pages = Math.max(1, Math.ceil(liste.length / PAR_PAGE));
-  const p = Number.isSafeInteger(page) && page >= 1 && page <= pages ? page : 1;
+  const p = numeroDePage(liste.length, page);
   return { elements: liste.slice((p - 1) * PAR_PAGE, p * PAR_PAGE), page: p, pages };
+}
+
+/** The page shown for a request, out of a list of `total` elements: the first when the request is not one of its pages. */
+export function numeroDePage(total: number, page: number): number {
+  const pages = Math.max(1, Math.ceil(total / PAR_PAGE));
+  return Number.isSafeInteger(page) && page >= 1 && page <= pages ? page : 1;
 }

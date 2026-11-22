@@ -10,7 +10,11 @@ import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { sitePublic } from "@/lib/site";
 
-export const metadata: Metadata = { title: fr.ministeres.titre, description: fr.ministeres.description };
+export const metadata: Metadata = {
+  title: fr.ministeres.titre,
+  description: fr.ministeres.description,
+  alternates: { canonical: "/ministeres" },
+};
 
 const t = fr.ministeres;
 

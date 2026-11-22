@@ -6,6 +6,7 @@ import { sitePublic } from "@/lib/site";
 
 // The share image of the waiting page (public/partage.png, drawn by scripts/design/icones.ts).
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: fr.site.name,

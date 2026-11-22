@@ -15,6 +15,7 @@ import {
   sourcesDe,
 } from "@/lib/donnees/radiographie";
 import { fr } from "@/lib/i18n/fr";
+import { robotsDe } from "@/lib/referencement";
 import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
 import { estNomDns } from "@/pipeline/schemas";
 
@@ -36,9 +37,18 @@ function domaineDe(brut: string): string | null {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const domaine = domaineDe((await params).domaine);
-  return domaine === null
-    ? {}
-    : { title: fr.radiographie.titre(domaine), description: fr.radiographie.description(domaine) };
+  if (domaine === null) return {};
+  // The indexing policy (docs/referencement.md): the Radiographies of the « État » perimeter only, and never a page
+  // whose data could not be read. Behind a closed door, the reader reads nothing.
+  const etat = await lecteur.etat();
+  const lu = etat.statut === "ok" ? await fiche((chemin) => lecteur.fichier(chemin), "domaines", domaine) : etat;
+  const deLEtat = lu.statut === "ok" && (lu.donnees as unknown as EnregistrementDomaine).perimetre === "État";
+  return {
+    title: fr.radiographie.titre(domaine),
+    description: fr.radiographie.description(domaine),
+    alternates: { canonical: `/radiographie/${domaine}` },
+    robots: robotsDe(deLEtat),
+  };
 }
 
 // The Radiographie of a domain (D.2; spec R2, R3, R5): its layers from the site to the country of a seat, each with

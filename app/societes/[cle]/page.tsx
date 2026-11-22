@@ -6,7 +6,7 @@ import { FilAriane } from "@/components/coque/FilAriane";
 import { Valeur } from "@/components/texte/Valeur";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays, sourcesDe } from "@/lib/donnees/radiographie";
-import { estCleSociete, lireDomainesSociete, pageDe } from "@/lib/donnees/societes";
+import { estCleSociete, lireDomainesSociete, numeroDePage, pageDe } from "@/lib/donnees/societes";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 
@@ -14,15 +14,23 @@ type Props = { params: Promise<{ cle: string }>; searchParams: Promise<{ page?: 
 
 const t = fr.societes;
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { cle } = await params;
   if (!estCleSociete(cle)) return {};
   // The name comes from the day's index; the metadata never reads data behind a closed door (the page answers 404).
   const etat = await lecteur.etat();
   if (etat.statut !== "ok") return {};
   const lu = await lecteur.fichier("index/exploitants.json");
-  const nom = lu.statut === "ok" ? lireIndexSocietes(lu.donnees)?.get(cle)?.nom : undefined;
-  return nom === undefined ? {} : { title: t.titrePage(nom), description: t.descriptionPage(nom) };
+  const s = lu.statut === "ok" ? lireIndexSocietes(lu.donnees)?.get(cle) : undefined;
+  if (s === undefined) return {};
+  // A page of the list past the first is its own canonical address; a page that is not one shows the first.
+  const { page } = await searchParams;
+  const p = numeroDePage(s.domaines, Number(typeof page === "string" ? page : "1"));
+  return {
+    title: t.titrePage(s.nom),
+    description: t.descriptionPage(s.nom),
+    alternates: { canonical: p === 1 ? `/societes/${cle}` : `/societes/${cle}?page=${p}` },
+  };
 }
 
 // A company's page (D.2, R9): its country, who owns whom up to its ultimate parent, who controls the top of its chain,
