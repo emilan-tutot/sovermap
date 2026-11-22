@@ -123,6 +123,27 @@ test("accueil : les données structurées WebSite donnent le nom du site et son 
   expect(String(donnees["url"])).toMatch(/^https?:\/\/[^/]+\/$/);
 });
 
+test("clavier : le lien d'évitement d'abord, puis chaque élément atteint montre son focus", async ({ page }) => {
+  for (const chemin of ["/", "/radiographie/service.example", "/ministeres", "/societes/hebergeur-fr", "/qualite"]) {
+    await page.goto(chemin);
+    await page.keyboard.press("Tab");
+    await expect(page.locator(":focus"), chemin).toHaveText(fr.coque.evitement);
+    for (let i = 0; i < 20; i += 1) {
+      await page.keyboard.press("Tab");
+      const focus = await page.evaluate(() => {
+        const e = document.activeElement;
+        if (e === null || e === document.body) return { nom: "body", visible: true };
+        const s = getComputedStyle(e);
+        return {
+          nom: `${e.tagName} ${e.textContent?.trim().slice(0, 40) ?? ""}`,
+          visible: s.outlineStyle !== "none" && Number.parseFloat(s.outlineWidth) > 0,
+        };
+      });
+      expect(focus.visible, `${chemin} : ${focus.nom}`).toBe(true);
+    }
+  }
+});
+
 test("partage : chaque type de page annonce son image, un fichier servi tel quel", async ({ page, request }) => {
   const TYPES: [string, string][] = [
     ["/", "accueil"],
