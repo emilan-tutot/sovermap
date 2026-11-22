@@ -28,6 +28,24 @@ const AGREGATS = [
   "/sources",
 ];
 
+/**
+ * The text pages (part E): they carry the date of the last collection (Fraicheur), so they are rendered on demand too,
+ * and kept like an aggregated page (the review of PR 22). /sources is among the aggregated pages. A test checks this
+ * list against the pages' own (lib/i18n/fr-textes.ts).
+ */
+export const TEXTES = [
+  "/a-propos",
+  "/corrections",
+  "/accessibilite",
+  "/glossaire",
+  "/pourquoi-ca-compte",
+  "/credits",
+  "/radiographie-de-sovermap",
+  "/methode",
+  "/confidentialite",
+  "/mentions-legales",
+];
+
 /** The cache rules of next.config.ts's headers(): none behind a closed door. */
 export function enTetesDeCache(env: Env = process.env): RegleEnTetes[] {
   if (!sitePublic(env)) return [];
@@ -35,5 +53,5 @@ export function enTetesDeCache(env: Env = process.env): RegleEnTetes[] {
     source,
     headers: [{ key: "Vercel-CDN-Cache-Control", value: valeur }],
   });
-  return [...FICHES.map((s) => regle(s, CACHE_FICHE)), ...AGREGATS.map((s) => regle(s, CACHE_AGREGAT))];
+  return [...FICHES.map((s) => regle(s, CACHE_FICHE)), ...[...AGREGATS, ...TEXTES].map((s) => regle(s, CACHE_AGREGAT))];
 }

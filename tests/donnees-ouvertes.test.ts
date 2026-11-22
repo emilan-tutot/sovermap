@@ -37,10 +37,11 @@ describe("the open data's page (F.1)", () => {
     expect(donneesOuvertesDe(etat({ versions: { regles: { methode: "dernière" } } })).methode).toBeNull();
   });
 
-  it("names a file of the release only from a configured account that is one", () => {
-    expect(adresseFichierOuvert("SHA256SUMS", "exemple")).toBe(
-      "https://github.com/exemple/sovermap/releases/download/donnees-courant/SHA256SUMS",
+  it("links a file of the release only from the project's organization, never a personal account", () => {
+    expect(adresseFichierOuvert("SHA256SUMS", "sovermap")).toBe(
+      "https://github.com/sovermap/sovermap/releases/download/donnees-courant/SHA256SUMS",
     );
+    expect(adresseFichierOuvert("SHA256SUMS", "exemple")).toBeNull();
     expect(adresseFichierOuvert("SHA256SUMS", undefined)).toBeNull();
     expect(adresseFichierOuvert("SHA256SUMS", "ex/../autre")).toBeNull();
   });

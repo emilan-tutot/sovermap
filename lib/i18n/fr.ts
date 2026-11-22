@@ -55,16 +55,17 @@ export const fr = {
     ministere: {
       etiquette: "Ministère",
       question: `Qui héberge ses sites${NBSP}?`,
-      phrase: "Les sites d’un ministère, la société qui sert chacun d’eux et le pays du siège de sa maison mère.",
+      phrase:
+        "Les sites d’un ministère, la société ou l’organisme qui sert chacun d’eux et le pays du siège de sa maison mère.",
     },
     societe: {
-      etiquette: "Société",
-      question: `Quels sites publics sert-elle${NBSP}?`,
-      phrase: "Les domaines qu’elle sert, sa chaîne de propriété jusqu’à la maison mère, et le pays de son siège.",
+      etiquette: "Exploitant",
+      question: `Quels sites publics sert-il${NBSP}?`,
+      phrase: "Les domaines qu’il sert, sa chaîne de propriété jusqu’à la maison mère, et le pays de son siège.",
     },
     pays: {
       etiquette: "Pays du siège",
-      question: `Quels sites publics dépendent de ses sociétés${NBSP}?`,
+      question: `Quels sites publics dépendent de ses exploitants${NBSP}?`,
       phrase: "Le pays du siège de la maison mère, jamais l’emplacement des serveurs.",
     },
     alt: (etiquette: string, question: string) => `Sovermap · ${etiquette}${NBSP}: ${question}`,
@@ -284,10 +285,10 @@ export const fr = {
         `IPtoASN, relevé du ${iptoasn}${NBSP}; RIS du RIPE${NBSP}NCC, du ${ris}`,
     },
     exploitant: {
-      titre: "La société exploitante",
+      titre: "L’exploitant",
       role: { "hébergé par": "Hébergé par", "diffusé par": "Diffusé par" },
       preuve: "Preuve",
-      aucune: "Aucune société établie",
+      aucune: "Aucun exploitant établi",
       source: (version: string) =>
         `Référentiels de Sovermap, version ${version} (sources de chaque ligne dans le registre)`,
     },
@@ -333,10 +334,10 @@ export const fr = {
   },
   /** The companies (D.2, R9): who hosts or delivers the measured sites, who owns whom. */
   societes: {
-    titre: "Les sociétés",
-    description: `Les sociétés qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et le pays du siège de leur maison mère.`,
+    titre: "Les sociétés et organismes",
+    description: `Les sociétés et organismes publics qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et le pays du siège de leur maison mère.`,
     chapo:
-      "Les sociétés qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public y figure avec sa nature, jamais comme une société.",
+      "Les sociétés et les organismes publics qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public n’y est jamais appelé société.",
     entete: (n: string) => `${n}${NBSP}sociétés et organismes`,
     domaines: (n: number, texte: string) => (n === 1 ? "1 domaine servi" : `${texte} domaines servis`),
     siege: (pays: string, categorie: string) =>
@@ -376,12 +377,12 @@ export const fr = {
     surtitre: "Ministère",
     titrePage: (nom: string) => `${nom}${NBSP}: qui héberge ses sites${NBSP}?`,
     descriptionPage: (nom: string) =>
-      `Les sites de ${nom}${NBSP}: la société qui sert chacun d’eux et le pays du siège de sa maison mère.`,
+      `Les sites de ${nom}${NBSP}: la société ou l’organisme qui sert chacun d’eux et le pays du siège de sa maison mère.`,
     repartition: "Le pays du siège de la maison mère",
     repartitionNote:
-      "Pour chaque domaine, la société qui sert son nom web (celle qui le diffuse quand un CDN s’interpose, sinon celle qui l’héberge).",
-    groupes: "Les domaines, par société",
-    sansSociete: "Société non déterminée",
+      "Pour chaque domaine, l’exploitant qui sert son nom web (celui qui le diffuse quand un CDN s’interpose, sinon celui qui l’héberge).",
+    groupes: "Les domaines, par exploitant",
+    sansSociete: "Exploitant non déterminé",
     ligne: (categorie: string, n: string) => `${categorie}${NBSP}: ${n}`,
     /** The constellation (DESIGN.md §5). */
     constellation: {
@@ -390,9 +391,9 @@ export const fr = {
       genres: {
         "hors-ue": "Maison mère hors de l’Union européenne",
         ue: "Maison mère en France ou dans l’Union",
-        inconnu: "Société ou maison mère non déterminée",
+        inconnu: "Exploitant ou maison mère non déterminés",
       },
-      taille: "Un disque par site ; un groupe par société, plus grand avec plus de sites.",
+      taille: "Un disque par site ; un groupe par exploitant, plus grand avec plus de sites.",
       libelleGroupe: (nom: string, n: number, genre: string) =>
         `${nom}${NBSP}: ${n === 1 ? "1 site" : `${n}${NBSP}sites`}, ${genre.toLowerCase()}`,
     },
@@ -418,14 +419,14 @@ export const fr = {
   /** A country (D.2, R7): the companies whose ultimate parent has its seat there. */
   pays: {
     surtitre: "Pays du siège",
-    titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis depuis ses sociétés`,
+    titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis par ses exploitants`,
     descriptionPage: (nom: string) =>
-      `${nom}${NBSP}: les sociétés dont la maison mère y a son siège, et les domaines des sites publics qu’elles servent.`,
+      `${nom}${NBSP}: les exploitants dont la maison mère y a son siège, et les domaines des sites publics qu’ils servent.`,
     honnetete: "Le pays du siège de la maison mère, pas l’emplacement des serveurs.",
     domaines: (n: string, etat: string) =>
       `${n}${NBSP}domaines servis, dont ${etat}${NBSP}du périmètre «${NBSP}État${NBSP}»`,
-    societes: "Les sociétés",
-    aucune: "Aucune société dont la maison mère a son siège dans ce pays, ce jour-là.",
+    societes: "Les exploitants",
+    aucune: "Aucun exploitant dont la maison mère a son siège dans ce pays, ce jour-là.",
   },
   /** The Atlas (D.2): the question, the headline figure and its neighbours, the globe and its table. */
   atlas: {

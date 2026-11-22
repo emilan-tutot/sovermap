@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { EnTete, Sources } from "@/components/qualite/Commun";
@@ -24,6 +25,8 @@ export const metadata: Metadata = {
 // data is read: the page answers « not found ». Its form is the guards' scales (point 09, Q1 B, chosen by the owner on
 // 22/11/2026), then the figures of the day as term-value rows.
 export default async function QualitePage() {
+  // Rendered at each request, never at build time: connection() before any read (the review of PR 22).
+  await connection();
   const lu = await lecteur.etat();
   if (lu.statut === "porte fermée") notFound();
   // Unreadable today (and no copy of the day before): an error, never kept by the CDN; « not published » is only for

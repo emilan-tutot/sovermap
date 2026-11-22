@@ -44,6 +44,7 @@ export default async function DonneesPage() {
       <section className="texte-section" aria-labelledby="donnees-fichiers">
         <h2 id="donnees-fichiers">{t.fichiers}</h2>
         <p>{t.fichiersDate(dateFr(d.date))}</p>
+        {fichiers.every(({ adresse }) => adresse === null) ? <p>{t.sansLiens}</p> : null}
         <ul>
           {fichiers.map(({ fichier, adresse }) => (
             <li key={fichier}>

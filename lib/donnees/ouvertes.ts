@@ -17,18 +17,23 @@ export const FICHIERS_OUVERTS = [
   "donnees-courant.tar.gz",
 ] as const;
 
-const MOTIF_COMPTE = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
+/**
+ * The project's GitHub organization (chantier 3): the only account a page may name. Until the repository moves there,
+ * no page carries the name of the account that publishes the data (plan § 15, 21/11/2026; the review of PR 22).
+ */
+export const ORGANISATION = "sovermap";
 
 /**
- * The address of an open file in the release, or null when the account (configuration) is not one. The account comes
- * from the server's configuration, never from the code.
+ * The address of an open file in the release, or null while the data is not published by the project's organization
+ * (configuration, `SOVERMAP_GITHUB_OWNER`): the files are then listed without links.
  */
 export function adresseFichierOuvert(
   fichier: (typeof FICHIERS_OUVERTS)[number],
   compte: string | undefined,
 ): string | null {
-  const c = compte?.trim() ?? "";
-  return MOTIF_COMPTE.test(c) ? `https://github.com/${c}/sovermap/releases/download/donnees-courant/${fichier}` : null;
+  return compte?.trim() === ORGANISATION
+    ? `https://github.com/${ORGANISATION}/sovermap/releases/download/donnees-courant/${fichier}`
+    : null;
 }
 
 export type SourceDatee = { id: string; fiche: number; etat: string; date: string | null };

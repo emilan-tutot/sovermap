@@ -19,7 +19,16 @@ const NAVIGATION = [
  * served version. The navigation of the site (Atlas, Ministères, Sociétés, Journal, Méthode, Données, FR · EN) joins
  * the header when its pages exist: until the launch, production shows only the waiting page.
  */
-export function Coque({ children, large = false }: { children: ReactNode; large?: boolean }) {
+export function Coque({
+  children,
+  large = false,
+  fraicheur = true,
+}: {
+  children: ReactNode;
+  large?: boolean;
+  /** The date of the last collection (Fraicheur), on every page but the 404 page, which stays static and costs nothing. */
+  fraicheur?: boolean;
+}) {
   return (
     <div className="coque">
       <a className="evitement" href="#contenu">
@@ -40,7 +49,7 @@ export function Coque({ children, large = false }: { children: ReactNode; large?
         ) : null}
       </header>
       <main id="contenu" className={large ? "contenu contenu-large" : "contenu"}>
-        {sitePublic() ? <Fraicheur /> : null}
+        {fraicheur && sitePublic() ? <Fraicheur /> : null}
         {children}
       </main>
       <footer className="pied">

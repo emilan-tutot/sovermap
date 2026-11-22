@@ -9,6 +9,8 @@ export const donneesOuvertes = {
   description: `Les données de Sovermap, librement réutilisables${NBSP}: l’état du jour en CSV et en JSON, avec leur schéma, leurs licences, leurs sources datées et leurs sommes de contrôle.`,
   chapo: `Tout ce que Sovermap publie se réutilise librement. Voici l’état du jour, en fichiers ouverts.`,
   fichiers: "Les fichiers du jour",
+  /** While the data is not published by the project's organization (chantier 3): no link, no account's name. */
+  sansLiens: "Leurs liens de téléchargement seront donnés ici à l’ouverture du site.",
   fichiersDate: (date: string) =>
     `L’état publié du ${date}, remplacé chaque jour, avant l’ouverture marqué «${NBSP}en préparation${NBSP}».`,
   noms: {
