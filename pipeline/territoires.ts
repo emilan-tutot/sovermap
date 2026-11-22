@@ -4,7 +4,7 @@
 // never taken outside that département. A commune whose postcode is a neighbouring département's, or an office of an
 // overseas collectivity (absent from the communes' file), stays without a commune (« non déterminé »), unless that
 // département has a commune of the same name, which is then taken (a rare case, not measured: no postcode file).
-import type { Guichet } from "./annuaire-local";
+import { type Guichet, TYPE_DEPARTEMENT, TYPE_GROUPEMENT, TYPE_MAIRIE, TYPE_REGION } from "./annuaire-local";
 import { lignesCsv } from "./liste";
 
 export type Commune = { code: string; nom: string; dep: string; reg: string };
@@ -86,11 +86,11 @@ export function communeDe(nom: string, codePostal: string | null, index: IndexCo
   return candidates.length === 1 ? (candidates[0] ?? null) : null;
 }
 
-/** The kinds of local authority an office of the directory stands for (card 50: its « types »). */
-const MAIRIE = "mairie";
-const GROUPEMENT = "epci";
-const DEPARTEMENT = "cg (Collectivité locale)";
-const REGION = "cr (Collectivité locale)";
+/** The kinds of local authority an office of the directory stands for (card 50: its « types »), the only ones kept. */
+const MAIRIE = TYPE_MAIRIE;
+const GROUPEMENT = TYPE_GROUPEMENT;
+const DEPARTEMENT = TYPE_DEPARTEMENT;
+const REGION = TYPE_REGION;
 
 export type Territoire = {
   /** The commune whose town hall's website is the domain's; null for a group's, a département's or a région's. */

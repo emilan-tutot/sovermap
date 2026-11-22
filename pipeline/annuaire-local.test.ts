@@ -17,6 +17,7 @@ import {
   type Obtenir,
   plagesPermises,
   sansStatistiques,
+  TYPES_GUICHET,
 } from "./annuaire-local";
 
 const SHA = "a".repeat(64);
@@ -199,6 +200,9 @@ describe("the local directory, read by ranges (C.6)", () => {
       modification: "2026-11-12",
     });
     expect(guichetDe({ name: "", types: "mairie" })).toBeNull();
+    // A category column keeps its known values only (P13): an office of another kind is never copied.
+    expect(guichetDe({ name: "Exemple", types: "Une autre catégorie, écrite par quelqu'un" })).toBeNull();
+    for (const type of TYPES_GUICHET) expect(guichetDe({ name: "Exemple", types: type })?.type).toBe(type);
     expect(guichetDe({ name: "Mairie", types: "mairie", siren: "12345", siret: "abc" })).toMatchObject({
       siren: null,
       siret: null,

@@ -183,11 +183,22 @@ export function lieuDe(adresses: unknown): { commune: string | null; codePostal:
   return { commune: null, codePostal: null };
 }
 
-/** One office from the values of its row (the useful columns only). */
+/**
+ * The kinds of office the territories read (territoires.ts): the only values of the « types » column ever kept (the
+ * owner's answer to point 13, P13: a category column keeps its known values; an office of another kind is never
+ * copied, and counted).
+ */
+export const TYPE_MAIRIE = "mairie";
+export const TYPE_GROUPEMENT = "epci";
+export const TYPE_DEPARTEMENT = "cg (Collectivité locale)";
+export const TYPE_REGION = "cr (Collectivité locale)";
+export const TYPES_GUICHET: readonly string[] = [TYPE_MAIRIE, TYPE_GROUPEMENT, TYPE_DEPARTEMENT, TYPE_REGION];
+
+/** One office from the values of its row (the useful columns only); null without a name, or of another kind. */
 export function guichetDe(ligne: Partial<Record<Colonne, unknown>>): Guichet | null {
   const nom = texte(ligne.name);
   const type = texte(ligne.types, 120);
-  if (nom === null || type === null) return null;
+  if (nom === null || type === null || !TYPES_GUICHET.includes(type)) return null;
   const siren = texte(ligne.siren, 20);
   const siret = texte(ligne.siret, 20);
   const modification = texte(ligne.modification_date, 40);
@@ -204,8 +215,14 @@ export function guichetDe(ligne: Partial<Record<Colonne, unknown>>): Guichet | n
 
 const COMPRESSEURS = { ZSTD: (entree: Uint8Array) => new Uint8Array(zstdDecompressSync(entree)) };
 
-/** Reads one file of the copy: its footer, then each useful column on its own; returns its offices. */
-export async function lireFichier(obtenir: Obtenir, fichier: FichierCopie): Promise<Guichet[]> {
+/**
+ * Reads one file of the copy: its footer, then each useful column on its own; returns its offices of the kinds kept,
+ * and the number of the others (another kind, or none), never copied.
+ */
+export async function lireFichier(
+  obtenir: Obtenir,
+  fichier: FichierCopie,
+): Promise<{ guichets: Guichet[]; autres: number }> {
   const adresse = `https://huggingface.co/datasets/${JEU}/resolve/${fichier.commit}/${fichier.chemin}`;
   const lire = async (debut: number, fin: number): Promise<ArrayBuffer> => {
     const r = await obtenir(adresse, { range: `bytes=${debut}-${fin - 1}` });
@@ -237,13 +254,15 @@ export async function lireFichier(obtenir: Obtenir, fichier: FichierCopie): Prom
   }
   const total = Number(meta.num_rows);
   const guichets: Guichet[] = [];
+  let autres = 0;
   for (let i = 0; i < total; i += 1) {
     const ligne: Partial<Record<Colonne, unknown>> = {};
     for (const colonne of COLONNES) ligne[colonne] = colonnes.get(colonne)?.[i];
     const g = guichetDe(ligne);
     if (g !== null) guichets.push(g);
+    else if (texte(ligne.name) !== null) autres += 1;
   }
-  return guichets;
+  return { guichets, autres };
 }
 
 /**

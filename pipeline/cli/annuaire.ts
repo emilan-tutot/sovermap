@@ -58,9 +58,12 @@ if (!o.essai && memeCopie(fichiers, publiee)) {
 } else {
   const guichets: Guichet[] = [];
   for (const fichier of fichiers) {
-    const lus = await lireFichier(obtenir, fichier);
+    const { guichets: lus, autres } = await lireFichier(obtenir, fichier);
     guichets.push(...lus);
-    console.log(`annuaire : ${fichier.chemin} (copie du ${fichier.date.slice(0, 10)}) : ${lus.length} guichets`);
+    console.log(
+      `annuaire : ${fichier.chemin} (copie du ${fichier.date.slice(0, 10)}) : ${lus.length} guichets gardés ; ` +
+        `${autres} d'un autre type (ni mairie, ni EPCI, ni conseil départemental ou régional), jamais copiés`,
+    );
   }
   const ecart = ecartVolume(guichets.length, publiee);
   if (ecart !== null && (guichets.length === 0 || !o["accepter-ecart"])) {
