@@ -59,7 +59,13 @@ import {
 import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
 import { fichiersSchemas, schemaDe, valider } from "../schemas";
-import { chaineDepuisSociete, type ReferentielAs, type ReferentielSocietes, validerReferentiels } from "../societes";
+import {
+  chaineDepuisSociete,
+  type ReferentielAs,
+  type ReferentielSocietes,
+  siegeRetenu,
+  validerReferentiels,
+} from "../societes";
 import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
@@ -707,7 +713,7 @@ async function principal(): Promise<number> {
   const organismes = new Map(
     [...(dila?.services.values() ?? [])].map((s) => [s.id, { nom: s.nom, sigle: s.sigle, ministere: s.ministere }]),
   );
-  // Each company with its ultimate parent and the country category of its chain (the v0 rules, societes.ts).
+  // Each company with its ultimate parent, both seats, and the category of the farther one (ARRÊT 2, societes.ts).
   const societes = new Map(
     Object.entries(ref.societes.societes).map(([cle, s]) => {
       const chaine = chaineDepuisSociete(cle, ref.societes);
@@ -718,7 +724,7 @@ async function principal(): Promise<number> {
           pays: s.pays,
           mere: chaine.mere?.cle ?? null,
           paysMere: chaine.mere?.pays ?? null,
-          categorie: chaine.categorie,
+          categorie: siegeRetenu(s.pays, chaine.mere?.pays ?? null).categorie,
         },
       ] as const;
     }),

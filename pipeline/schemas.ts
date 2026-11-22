@@ -52,6 +52,7 @@ const exploitant = objet({
   societe: { type: ["string", "null"], maxLength: 100 },
   preuve: texte(200),
   niveau,
+  niveauSociete: niveau,
 });
 
 const hote = objet({

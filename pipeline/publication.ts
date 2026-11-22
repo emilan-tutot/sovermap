@@ -4,17 +4,26 @@
 // of the SHA-256 of the name, so a record never moves — in folders of 256 entries at most. A record changes only when
 // two collections in a row agree on its new content (hysteresis); a change of hosting then enters the journal, never a
 // change of rules or of the list; on the first day the initial state is published, without changes.
+import { siegeRetenu } from "./societes";
 import { createHash } from "node:crypto";
 import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
 import type { Categorie, Niveau } from "./types";
 
 /** 2 since 21/11/2026: a domain's reasons of the « État » perimeter gain « sig » and « mesr » (brief C.5). */
-export const VERSION_SCHEMA = 2;
+export const VERSION_SCHEMA = 3;
 export const TAILLE_MAX_FRAGMENT = 8 * 1024;
 export const SEUIL_DISJONCTEUR = 0.02;
 export const SEUIL_ECHECS = 0.02;
 
-export type Exploitant = { role: string; societe: string | null; preuve: string; niveau: Niveau };
+export type Exploitant = {
+  role: string;
+  societe: string | null;
+  preuve: string;
+  /** The whole chain's level: the address layer, the link to the company, the company and its parents. */
+  niveau: Niveau;
+  /** The level of the company's own seat as a proof (rule C2-4): the same, without its parents (schema 3). */
+  niveauSociete: Niveau;
+};
 
 /** A failure after every attempt: its DNS code, and the resolver that confirmed it (« quad9 »), if any. */
 export type Echec = { code: string; confirmePar: string | null };
@@ -119,9 +128,14 @@ export function seau(cle: string): string {
   return `${h.slice(0, 2)}/${h.slice(2, 4)}`;
 }
 
-export const exploitantsDe = (couche: {
-  exploitants: { role: string; societe: string | null; preuve: string; niveau: Niveau }[];
-}) => couche.exploitants.map((e) => ({ role: e.role, societe: e.societe, preuve: e.preuve, niveau: e.niveau }));
+export const exploitantsDe = (couche: { exploitants: Exploitant[] }): Exploitant[] =>
+  couche.exploitants.map((e) => ({
+    role: e.role,
+    societe: e.societe,
+    preuve: e.preuve,
+    niveau: e.niveau,
+    niveauSociete: e.niveauSociete,
+  }));
 
 export function hoteDe(h: CoucheHotes["hotes"][number]): Hote {
   return {
@@ -163,9 +177,16 @@ export function signatures(d: EnregistrementDomaine, web: EnregistrementNom | un
 }
 
 // A layer that one of the two days did not determine (a failure, no MX, a reduced record, or a category « non
-// déterminé », such as a host measured on one family) is never compared: only what both days determined is.
-const indetermine = (s: string) =>
-  ["echec", "absent", "nxdomain", "nodata", "aucun", "nul", "non déterminé"].includes(s.split("|")[0] ?? "");
+// déterminé », such as a host measured on one family) is never compared: only what both days determined is. Since rule
+// C2-4, a « non déterminé » category can come with horsUE true (a company outside the EU whose parent is unknown): that
+// layer is determined.
+const indetermine = (s: string) => {
+  const [premier, horsUE] = s.split("|");
+  return (
+    ["echec", "absent", "nxdomain", "nodata", "aucun", "nul", "non déterminé"].includes(premier ?? "") &&
+    horsUE !== "true"
+  );
+};
 
 // ---------------------------------------------------------------------------------------------------------------
 // Hysteresis, journal and circuit breaker.
@@ -352,7 +373,10 @@ export function index(
     for (const e of exploitants) {
       if (e.societe === null) continue;
       noter(parSociete, e.societe, d.domaine);
-      const pays = details.societes.get(e.societe)?.paysMere ?? details.societes.get(e.societe)?.pays;
+      // The thread goes to the farther of the company's seat and its parent's (ARRÊT 2): an American subsidiary of a
+      // French group is filed under the United States.
+      const societe = details.societes.get(e.societe);
+      const pays = societe === undefined ? undefined : siegeRetenu(societe.pays, societe.paysMere).pays;
       if (pays) {
         const p = parPays.get(pays) ?? { domaines: new Set(), etat: new Set() };
         p.domaines.add(d.domaine);

@@ -14,7 +14,9 @@ const nomValide = {
   familleEnEchec: null,
   reseaux: [{ as: 64496, plage: "192.0.2.0-192.0.2.255" }],
   cdn: null,
-  exploitants: [{ role: "hébergé par", societe: "hebergeur-fr", preuve: "AS64496", niveau: "confirmé" }],
+  exploitants: [
+    { role: "hébergé par", societe: "hebergeur-fr", preuve: "AS64496", niveau: "confirmé", niveauSociete: "confirmé" },
+  ],
   categorie: "France",
   horsUE: false,
   niveau: "confirmé",

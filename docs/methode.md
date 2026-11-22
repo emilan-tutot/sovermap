@@ -1,6 +1,6 @@
 # Méthode de mesure de Sovermap
 
-Version 0.2, **provisoire**, du 19/11/2026. Elle intègre les décisions et corrections de l'ARRÊT 1 du chantier T1. Elle sera figée en version 1.0 à l'ouverture. Chaque changement de méthode prend un nouveau numéro et s'inscrit au § 11.
+Version 0.3, **provisoire**, du 22/11/2026 (la 0.2 du 19/11/2026 intégrait les décisions et corrections de l'ARRÊT 1 du chantier T1). Elle sera figée en version 1.0 à l'ouverture. Chaque changement de méthode prend un nouveau numéro et s'inscrit au § 11.
 
 Cette méthode se refait à la main, avec les outils de tout ordinateur :
 - Windows : `Resolve-DnsName` (PowerShell) et `nslookup` ;
@@ -120,7 +120,7 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
 
 ### Couche 7 — Les pays des sièges
 - **Valeur** : le pays du siège de la société exploitante et celui de la maison mère.
-- **Classement** : la catégorie affichée suit la **maison mère ultime**, car c'est elle qui peut exposer à des lois extraterritoriales. Mais un site compte comme **dépendant d'un siège hors de l'Union européenne** quand la société qui le sert **ou** sa maison mère ultime y a son siège (règle C2-4, méthode 0.3 : le cas Imperva, filiale américaine d'un groupe français). Quand seule la société qui sert est hors de l'UE, le niveau de confiance est celui de ce qui le prouve : la couche des adresses, le lien vers la société (le CDN ou l'AS) et les sources du pays de la société, sans sa chaîne de propriété. Catégories :
+- **Classement** : deux sièges comptent, celui de la société qui sert le site et celui de sa **maison mère ultime** : la maison mère peut exposer la société à des lois extraterritoriales, et la société y est soumise elle-même. Un site compte comme **dépendant d'un siège hors de l'Union européenne** quand la société qui le sert **ou** sa maison mère ultime y a son siège (règle C2-4, méthode 0.3 : le cas Imperva, filiale américaine d'un groupe français). La catégorie d'une société, et son fil sur l'Atlas et dans les pages de pays, suivent le **plus éloigné des deux sièges**, celui de la maison mère sur une égalité (décision de l'ARRÊT 2) ; quand la maison mère n'est pas établie, une société hors d'Europe reste « hors d'Europe », quelle que soit sa maison mère, et les autres sont « non déterminé ». La fiche affiche les deux sièges. Chacune des deux preuves suffit, et le site prend le meilleur de leurs niveaux : pour le siège de la maison mère, toute la chaîne ; pour le siège de la société qui le sert, la couche des adresses, le lien vers la société (le CDN ou l'AS) et les sources de son siège, sans sa chaîne de propriété. Chaque exploitant publié porte les deux niveaux : `niveau` (toute la chaîne) et `niveauSociete` (le siège de la société seul). Les chiffres des serveurs de noms et de la messagerie suivent la même règle. Catégories :
   - France ;
   - Union européenne hors France ;
   - Europe hors UE (Royaume-Uni, Suisse, Norvège…) ;
@@ -140,16 +140,20 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
   - par un maillon de la chaîne CNAME qui se termine par un suffixe connu (par exemple `edgesuite.net` ou `akamai.net`, `fastly.net`, `cdn.cloudflare.net`) ;
   - ou par l'AS de l'adresse, s'il figure dans la liste des AS de CDN.
 - **Liste** : elle est tenue à la main, et chaque entrée cite la documentation du fournisseur.
+- **Niveau** : « confirmé » par un suffixe de CNAME que le fournisseur documente, ou par une adresse de sa liste officielle de plages ; « probable » par un AS réservé au seul service, confirmé au registre ; un AS qui sert aussi à autre chose ne suffit jamais seul.
 - **Conséquence** : le site est « diffusé par » ce CDN, et son hébergeur d'origine est « non observable ».
+- **Les relais de sécurité** (pare-feu applicatif en nuage, protection contre les attaques par saturation : Imperva, Radware) placés devant un site se traitent comme des CDN, avec les mêmes preuves et les mêmes niveaux : le site est « diffusé par » le relais, et son hébergeur d'origine est « non observable ».
 
 ### Couche 10 — La messagerie (MX et SPF)
 - **Valeur** : les serveurs de messagerie du domaine, et la même chaîne (adresse, réseau, société, maison mère, pays) ; les expéditeurs autorisés par son enregistrement SPF (`v=spf1`), réduits à leurs AS, ses `include` et `redirect` suivis dans la limite de 10 recherches de la RFC 7208 (les macros ne sont jamais évaluées).
-- **Décision C2-1** (20/11/2026) : mesurée depuis la collecte v1, avec son propre chiffre, à part du chiffre-titre. Un MX nul (RFC 7505) se dit « nul », l'absence de MX « aucun ». Ce qu'elle montre et ce qu'elle ne montre pas sera écrit en méthode 0.3 (C.2) ; d'ici là, son chiffre est provisoire.
+- **Décision C2-1** (20/11/2026) : mesurée depuis la collecte v1, avec son propre chiffre, à part du chiffre-titre. Un MX nul (RFC 7505) se dit « nul », l'absence de MX « aucun ». Son chiffre n'est jamais un jugement de sécurité.
+- **Ce qu'elle montre** (méthode 0.3) : qui reçoit le courrier du domaine (ses serveurs MX), et qui peut en envoyer en son nom (son SPF). Une passerelle de filtrage placée devant un autre service est l'exploitant visible : le service qui est derrière elle n'est pas observable, comme l'hébergeur d'origine derrière un CDN.
+- **Ce qu'elle ne montre pas** : où sont stockées les boîtes aux lettres, qui lit le courrier, ni aucune qualité de sécurité (chiffrement, authentification, filtrage).
 - **À la main** : `Resolve-DnsName -Name impots.gouv.fr -Type MX -Server 9.9.9.9`, ou `dig MX impots.gouv.fr @9.9.9.9`.
 
 ## 5. Croisements et niveaux de confiance
 
-- **Confirmé** : pour chaque couche qui entre dans le chiffre selon D1, au moins deux sources indépendantes concordent. Pour l'adresse servie, cela vaut à chaque étape : adresses, réseau, société exploitante, maison mère, pays.
+- **Confirmé** : pour chaque couche qui entre dans le chiffre selon D1, au moins deux sources indépendantes concordent. Pour l'adresse servie, cela vaut à chaque étape : adresses, réseau, société exploitante, maison mère, pays. Quand le site compte comme dépendant par le seul siège de la société qui le sert (règle C2-4), les étapes sont : adresses, réseau (ou CDN), société exploitante et pays de son siège ; la maison mère n'en fait pas partie.
   - Une liste officielle unique vaut source pour sa couche, avec sa date (par exemple la liste SecNumCloud de l'ANSSI).
 - **Probable** : une seule source, cohérente.
 - **Non déterminé** : les sources manquent ou se contredisent. Le désaccord est montré.
@@ -173,7 +177,7 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
 - **CNAME en chaîne** : on suit jusqu'à 10 maillons. Au-delà, ou en cas de boucle, la couche est « non déterminé ».
 - **Plusieurs adresses** : toutes sont rattachées.
   - Si elles mènent à des sociétés différentes, le site est servi par plusieurs sociétés. Toutes sont affichées.
-  - Le classement prend la catégorie la plus éloignée, et le dit (décision D1 du 19/11/2026 : un domaine compte comme dépendant dès qu'**au moins une** des sociétés qui le servent a sa maison mère hors de l'UE).
+  - Le classement prend la catégorie la plus éloignée, et le dit (décision D1 du 19/11/2026, modifiée par C2-4 en méthode 0.3 : un domaine compte comme dépendant dès qu'**au moins une** des sociétés qui le servent a son siège, ou sa maison mère ultime le sien, hors de l'UE).
 - **IPv6 seul** : le site est mesuré par ses adresses AAAA, comme les autres.
 - **Domaine qui ne répond pas** : on distingue :
   - le nom n'existe pas (NXDOMAIN) ;
@@ -188,8 +192,8 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
   - **Le problème.** Les CDN répondent selon la position du résolveur (géolocalisation par le DNS, option EDNS Client Subnet, RFC 7871). Les adresses servies à une machine aux États-Unis peuvent donc différer de celles servies en France. Elles peuvent même appartenir à un autre réseau.
   - **La parade.** Chaque réponse garde le nom du résolveur et le lieu connu de la machine qui mesure. Un résolveur public européen sert de contrôle. Le classement d'un site derrière un CDN repose sur le CDN, que la position du résolveur ne change pas.
   - Le choix du résolveur principal est décrit dans `specs/001-sovermap/plan.md`.
-- **Filiale européenne d'un groupe non européen** : les deux sièges sont affichés, et le site compte comme dépendant d'un siège hors de l'UE (par sa maison mère).
-- **Filiale non européenne d'un groupe européen** (le cas Imperva) : les deux sièges sont affichés ; la catégorie affichée reste celle de la maison mère, mais le site compte comme dépendant d'un siège hors de l'UE (par la société qui le sert, règle C2-4).
+- **Filiale européenne d'un groupe non européen** : les deux sièges sont affichés ; la catégorie et le fil suivent le siège de la maison mère, le plus éloigné, et le site compte comme dépendant d'un siège hors de l'UE.
+- **Filiale non européenne d'un groupe européen** (le cas Imperva) : les deux sièges sont affichés ; la catégorie et le fil suivent le siège de la société, le plus éloigné, et le site compte comme dépendant d'un siège hors de l'UE (par la société qui le sert, règle C2-4).
 - **Ancien bloc d'adresses** : le nom historique d'un bloc ne dit pas qui l'exploite aujourd'hui. On suit le titulaire actuel de l'AS d'origine.
 
 ## 7. Garde-fous de publication
@@ -328,4 +332,4 @@ Vérifiés le 18/11/2026. Ces travaux sont cités pour situer Sovermap, pas copi
 | 0.2.3 | 22/11/2026 | La règle « outil technique » n'écarte jamais un site que l'Observatoire du SIG recense (§ 3, point 09 du chantier 2) : 2 noms de plus mesurés. |
 | 0.2.4 | 22/11/2026 | Politesse (§ 7) : le résolveur ne minimise plus les noms qu'il demande (`minimize: false`, dans une vue de Knot Resolver) ; le poids d'un nom intermédiaire nouveau reste, par marge. Sans effet sur la règle du chiffre. Publication (§ 7) : la provenance d'un nom venu du Référentiel de la DILA ne porte plus le fichier du jour (« dila » seulement ; le fichier est dans etat.json) : chaque fiche de la DILA est réécrite une fois. |
 | 0.2.5 | 22/11/2026 | Couche 8 (C.4) : un service qualifié SecNumCloud n'est lié à une société que par sa décision de qualification, lue sur messervices.cyber.gouv.fr (le SIREN qu'elle écrit, s'il est valide ; sinon sa raison sociale et sa ville, comparés au répertoire Sirene) ; seules comptent les qualifications en cours. Couche 6 : le sommet d'une chaîne écrit (aucune société ne le consolide ; ni une personne physique ni ses sociétés de détention ne sont des maillons). |
-| 0.3 | 22/11/2026 | Couche 7 et chiffre-titre (règle C2-4, plan § 15) : un site compte comme dépendant d'un siège hors de l'Union européenne quand la société qui le sert **ou** sa maison mère ultime y a son siège ; la catégorie affichée reste celle de la maison mère ; quand seule la société qui sert est hors de l'UE, le niveau est celui de ce qui le prouve (couche des adresses, lien vers la société, sources de son pays). Effet mesuré sur l'état publié du jour 2 : sur 1 424 noms web « État » qui répondent, 33 de plus (+2,3 points, de 8,6 à 10,9 %), dont 31 servis par Incapsula Inc (États-Unis, filiale d'Imperva) et 2 par Radware (Israël). Un changement de règles : rien n'entre au journal le lendemain. |
+| 0.3 | 22/11/2026 | Couche 7 et chiffre-titre (règle C2-4, plan § 15) : un site compte comme dépendant d'un siège hors de l'Union européenne quand la société qui le sert **ou** sa maison mère ultime y a son siège ; la catégorie et le fil d'une société suivent le plus éloigné des deux sièges, et la fiche affiche les deux (décision de l'ARRÊT 2) ; chacune des deux preuves suffit, et le site prend le meilleur de leurs niveaux (pour le siège de la société seul : couche des adresses, lien vers la société, sources de son siège) ; les chiffres des serveurs de noms et de la messagerie suivent la même règle ; schéma des fiches 3 : chaque exploitant publie aussi `niveauSociete`. Couche 9 : les niveaux d'un CDN, et les relais de sécurité traités comme des CDN. Couche 10 : ce que la messagerie montre et ne montre pas. Effet mesuré sur l'état publié du jour 2, sur 1 424 noms web « État » qui répondent : le chiffre-titre passe de « au moins 6,5 % » à « au moins 7,0 % » (92 à 99 « confirmé » : 7 sites de Fastly, dont le siège a deux sources, quand le lien « aucune maison mère au-dessus » n'en a qu'une) ; la part « probable » de 2,1 à 3,9 % (30 à 56 : 33 noms de plus hors UE, 31 servis par Incapsula Inc, filiale américaine d'Imperva, groupe Thales, dont le siège n'a qu'une source, et 2 par Radware, Israël, reconnu par son AS) ; la part « non déterminé » de 36,9 à 36,8 % ; catégories : 31 noms passent de « France » à « hors d'Europe » (Incapsula) et 2 de « non déterminé » à « hors d'Europe » (Radware), aucun autre. Un changement de règles : rien n'entre au journal le lendemain. |

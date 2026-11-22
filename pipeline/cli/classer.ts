@@ -64,7 +64,10 @@ const dateDesFichiers = (...fichiers: string[]) =>
 const garderPlages = (liste: string[], fournisseur: string) => {
   const bonnes = liste.map((l) => l.trim()).filter((l) => l !== "" && estPlage(l));
   const rejetees = liste.filter((l) => l.trim() !== "").length - bonnes.length;
-  if (rejetees > 0) console.warn(`${fournisseur} : ${rejetees} ligne(s) de la liste officielle écartée(s), sans la forme « adresse/longueur ».`);
+  if (rejetees > 0)
+    console.warn(
+      `${fournisseur} : ${rejetees} ligne(s) de la liste officielle écartée(s), sans la forme « adresse/longueur ».`,
+    );
   return bonnes;
 };
 const lignes = (f: string) => readFileSync(fichierPlages(f), "utf8").split(/\r?\n/);
@@ -170,7 +173,7 @@ for (const d of domaines) {
 }
 const f = sortie.chiffre;
 console.log(
-  `\nChiffre-titre (échantillon : ne pas citer) : au moins ${f.auMoinsPourcent} % des ${f.domaines} domaines « État » dépendent d'une société dont la maison mère est hors de l'UE (${f.horsUEConfirme} confirmés) ; probable : ${f.probablePourcent} % (${f.horsUEProbable}) ; non déterminé : ${f.nonDeterminePourcent} % (${f.nonDetermine}).`,
+  `\nChiffre-titre (échantillon : ne pas citer) : au moins ${f.auMoinsPourcent} % des ${f.domaines} domaines « État » dépendent d'une société qui a son siège, ou dont la maison mère a le sien, hors de l'UE (${f.horsUEConfirme} confirmés) ; probable : ${f.probablePourcent} % (${f.horsUEProbable}) ; non déterminé : ${f.nonDeterminePourcent} % (${f.nonDetermine}).`,
 );
 const g = sortie.sous_chiffre_gouv_fr;
 console.log(

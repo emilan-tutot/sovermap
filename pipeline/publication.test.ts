@@ -8,6 +8,7 @@ import {
   type EnregistrementNom,
   type Etat,
   fragments,
+  index,
   jsonStable,
   journal,
   seau,
@@ -25,7 +26,7 @@ const nom = (n: string, domaine: string, societe: string, horsUE: boolean): Enre
   familleEnEchec: null,
   reseaux: [{ as: horsUE ? 64501 : 64496, plage: null }],
   cdn: null,
-  exploitants: [{ role: "hébergé par", societe, preuve: "AS64496", niveau: "confirmé" }],
+  exploitants: [{ role: "hébergé par", societe, preuve: "AS64496", niveau: "confirmé", niveauSociete: "confirmé" }],
   categorie: horsUE ? "hors d'Europe" : "France",
   horsUE,
   niveau: "confirmé",
@@ -180,6 +181,51 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
     // Its other layer (the addresses) is still compared, and nothing changed: no change, nothing in the journal.
     expect(b.disjoncteur).toEqual({ compares: 10, changes: 0, part: 0 });
     expect(b.changements).toEqual([]);
+  });
+
+  it("files a domain under the farther of its serving company's seat and its parent's (ARRÊT 2)", () => {
+    // d0 is served by an American subsidiary of a French group, d1 by a French subsidiary of an American group, d2 by a
+    // company whose parent is unknown: each thread goes to the farther seat (the company's own when the parent is not).
+    const e = etat(3, 0);
+    for (const [i, societe] of ["filiale-us", "filiale-fr", "relais-il"].entries()) {
+      const n = e.noms.get(`www.d${i}.example`) as EnregistrementNom;
+      e.noms.set(n.nom, { ...n, exploitants: n.exploitants.map((x) => ({ ...x, societe })) });
+    }
+    const fichiers = index(e, {
+      as: new Map(),
+      societes: new Map([
+        [
+          "filiale-us",
+          { nom: "Filiale, Inc.", pays: "US", mere: "groupe-fr", paysMere: "FR", categorie: "hors d'Europe" },
+        ],
+        [
+          "filiale-fr",
+          { nom: "Filiale SAS", pays: "FR", mere: "groupe-us", paysMere: "US", categorie: "hors d'Europe" },
+        ],
+        ["relais-il", { nom: "Relais Ltd", pays: "IL", mere: null, paysMere: null, categorie: "hors d'Europe" }],
+      ]),
+      organismes: new Map(),
+      organismesDe: new Map(),
+    });
+    expect(JSON.parse(fichiers.get("index/pays.json") ?? "{}")).toEqual({
+      IL: { domaines: 1, domainesEtat: 1 },
+      US: { domaines: 2, domainesEtat: 2 },
+    });
+  });
+
+  it("compares a layer whose category is not determined but which depends on a seat outside the EU (rule C2-4)", () => {
+    const hier = etat(10, 0);
+    // Yesterday, d0 was served by a company outside the EU whose parent is unknown: no category, but outside the EU.
+    const n = hier.noms.get("www.d0.example") as EnregistrementNom;
+    hier.noms.set(n.nom, {
+      ...n,
+      exploitants: n.exploitants.map((e) => ({ ...e, societe: "relais-il" })),
+      categorie: "non déterminé",
+      horsUE: true,
+      niveau: "probable",
+    });
+    // Today, a French host serves it: that move is a change, counted by the circuit breaker.
+    expect(bilan(etat(10, 0), hier, hier, false).disjoncteur).toEqual({ compares: 10, changes: 1, part: 0.1 });
   });
 
   it("never compares a reduced record, and never publishes it in place of the published one", () => {

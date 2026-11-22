@@ -88,6 +88,23 @@ export function categorie(pays: string | null): Categorie {
   return "hors d'Europe";
 }
 
+const ELOIGNEMENT: readonly Categorie[] = ["France", "UE hors France", "Europe hors UE", "hors d'Europe"];
+
+/**
+ * The seat that gives a serving company its category and its thread (the owner's decision of ARRÊT 2, plan § 15, with
+ * rule C2-4): the farther of its own seat and its ultimate parent's; on a tie, the parent's. With its parent unknown
+ * (`paysMere` null), a company outside Europe is « hors d'Europe » whatever that parent, and any other is « non
+ * déterminé »; its thread goes to its own seat.
+ */
+export function siegeRetenu(pays: string, paysMere: string | null): { pays: string; categorie: Categorie } {
+  const propre = categorie(pays);
+  if (paysMere === null) return { pays, categorie: propre === "hors d'Europe" ? propre : "non déterminé" };
+  const mere = categorie(paysMere);
+  return ELOIGNEMENT.indexOf(propre) > ELOIGNEMENT.indexOf(mere)
+    ? { pays, categorie: propre }
+    : { pays: paysMere, categorie: mere };
+}
+
 /** Who produced a source: its host name. Two pages of the same producer count once. */
 function producteur(source: Source): string {
   try {
