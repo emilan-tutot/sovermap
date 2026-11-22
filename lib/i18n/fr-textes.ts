@@ -58,7 +58,10 @@ export const aPropos: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            `Chaque jour, Sovermap mesure par le DNS seulement (l’annuaire d’Internet) les sites publics français de la liste officielle des noms de domaine du secteur public, complétée par d’autres sources ouvertes${NBSP}: plus de 40${NBSP}000 domaines enregistrés, dont environ 1${NBSP}900 forment le périmètre «${NBSP}État${NBSP}».`,
+            `Chaque jour, Sovermap mesure par le DNS seulement (l’annuaire d’Internet) les sites publics français de la liste officielle des noms de domaine du secteur public, complétée par d’autres sources ouvertes${NBSP}: des dizaines de milliers de domaines enregistrés, dont une petite part forme le périmètre «${NBSP}État${NBSP}».`,
+            " Leurs nombres du jour sont sur la page ",
+            { lien: "Qualité", vers: "/qualite" },
+            ".",
           ],
         },
         {
@@ -83,9 +86,7 @@ export const aPropos: PageDeTexte = soignee({
     },
   ],
   sources: [
-    [
-      `La méthode de Sovermap, §${NBSP}1 et §${NBSP}3 (41${NBSP}340 domaines enregistrés dans la liste mesurée au 21/11/2026 ; environ 1${NBSP}900 dans le périmètre «${NBSP}État${NBSP}»).`,
-    ],
+    [`La méthode de Sovermap, §${NBSP}1 et §${NBSP}3 ; les nombres du jour, sur la page Qualité.`],
     ["Le registre des sources de Sovermap (la liste officielle des noms de domaine du secteur public)."],
   ],
   revision: REVISION,
@@ -254,7 +255,9 @@ export const glossaire: PageDeTexte = soignee({
             [
               `Périmètre «${NBSP}État${NBSP}» : les domaines en `,
               { valeur: ".gouv.fr" },
-              ", plus ceux des services et établissements de l’État recensés par le Référentiel de l’organisation administrative de l’État (DILA) et l’Observatoire du SIG, plus ceux des opérateurs de l’État. Environ 1 900 domaines.",
+              ", plus ceux des services et établissements de l’État recensés par le Référentiel de l’organisation administrative de l’État (DILA) et l’Observatoire du SIG, plus ceux des opérateurs de l’État. Leur nombre du jour est sur la page ",
+              { lien: "Qualité", vers: "/qualite" },
+              ".",
             ],
             [
               "SecNumCloud : une qualification de l’ANSSI pour des offres de cloud. Qu’une société ait au moins une offre qualifiée ne veut pas dire qu’un site qu’elle sert l’utilise.",
@@ -557,7 +560,7 @@ export const methode: PageDeTexte = soignee({
           paragraphe: [
             "Le chiffre-titre porte sur le périmètre « État » : les domaines en ",
             { valeur: ".gouv.fr" },
-            ", plus ceux des services et établissements de l’État recensés par le Référentiel de la DILA et l’Observatoire du SIG, plus ceux des opérateurs de l’État. Environ 1 900 domaines. Le chiffre limité aux domaines en ",
+            ", plus ceux des services et établissements de l’État recensés par le Référentiel de la DILA et l’Observatoire du SIG, plus ceux des opérateurs de l’État (leur nombre du jour est sur la page Qualité). Le chiffre limité aux domaines en ",
             { valeur: ".gouv.fr" },
             " est publié à côté.",
           ],

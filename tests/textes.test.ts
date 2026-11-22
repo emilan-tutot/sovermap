@@ -42,6 +42,12 @@ describe("the text pages (E.6)", () => {
     }
   });
 
+  it("never writes a count of domains by hand: the day's counts are on the Quality page (point 13, § 7)", () => {
+    for (const p of PAGES_DE_TEXTE) {
+      expect(textesDe(p).join("\n"), p.chemin).not.toMatch(/[0-9][0-9\s\u00a0\u202f]*domaines/);
+    }
+  });
+
   it("lists on the Method page every version of docs/methode.md, with its day", () => {
     const versions = [
       ...readFileSync("docs/methode.md", "utf8").matchAll(/^\| (0\.[^|]+?) \| (\d{2}\/\d{2}\/\d{4}) \|/gm),
