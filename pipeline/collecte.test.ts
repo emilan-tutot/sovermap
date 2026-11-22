@@ -1,7 +1,7 @@
 // Tests of the measurement and of its scheduling: a simulated resolver, a fake clock, documentation names and
 // addresses only (RFC 2606, RFC 5737, RFC 3849).
 import { describe, expect, it } from "vitest";
-import { ClientParZone, collecter, POLITESSE } from "./collecte";
+import { ClientParZone, collecter, PARENT_EN_VOL, POLITESSE } from "./collecte";
 import type { ClientDns, Reponse } from "./dns-bas";
 import type { Horloge } from "./politesse";
 import { Cadence, generateur } from "./politesse";
@@ -847,6 +847,58 @@ describe("the scheduling of a collection", () => {
     await collecter(noms, r, { ...POLITESSE, zoneDe, horloge, parentParSeconde: 0.25 });
     // Four seconds between two new zones under « example »: the collection's own pace.
     expect(horloge.attentes).toContain(4000);
+  });
+
+  it("holds at most eight questions in flight to one registry's servers: the others wait their turn (22/11/2026)", async () => {
+    // The parent's servers answer late: each question waits until the test lets it go, then ends in a TIMEOUT (so its
+    // opening is asked once more, as at the trial of 17:11).
+    const enVol = new Map<string, number>();
+    const maxEnVol = new Map<string, number>();
+    const enAttente: (() => void)[] = [];
+    const registre = (nom: string) => (nom.endsWith(".fr") || nom.endsWith(".re") ? "afnic" : "autre");
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom) => {
+        const g = registre(nom);
+        enVol.set(g, (enVol.get(g) ?? 0) + 1);
+        maxEnVol.set(g, Math.max(maxEnVol.get(g) ?? 0, enVol.get(g) ?? 0));
+        await new Promise<void>((resolve) => enAttente.push(resolve));
+        enVol.set(g, (enVol.get(g) ?? 1) - 1);
+        return { code: "TIMEOUT", ad: false, reponses: [], duree: 5000 };
+      },
+      fermer: () => {},
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, fausseHorloge());
+    const zones = [...Array.from({ length: 12 }, (_, i) => `z${i}.fr`), "a.re", "b.example", "c.example"];
+    const fini = Promise.all(zones.map((z) => client.demander(z, "NS")));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    // Eight of AFNIC's thirteen openings left (fr and re share its servers); another registry's went at once.
+    expect(enVol.get("afnic")).toBe(PARENT_EN_VOL);
+    expect(enVol.get("autre")).toBe(2);
+    // Each answer lets one more go: never more than eight at once, until every opening and its second try ended.
+    let reponses = 0;
+    while (enAttente.length > 0) {
+      enAttente.shift()?.();
+      reponses += 1;
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+    const resultats = await fini;
+    expect(resultats.every((r) => r.code === "TIMEOUT")).toBe(true);
+    expect(reponses).toBe(2 * zones.length);
+    expect(maxEnVol.get("afnic")).toBe(PARENT_EN_VOL);
+    expect(client.attenteParents.questions).toBeGreaterThanOrEqual(5);
+
+    // A collection says how many questions waited for a place (none, when the answers come in time).
+    const lignes: string[] = [];
+    await collecter(noms, new ResolveurSimule(ZONE, zoneDe), {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+      suivi: (ligne) => lignes.push(ligne),
+    });
+    expect(lignes).toContain(
+      "questions aux serveurs parents : 8 en vol au plus par registre ; 0 ont attendu une place (0 s en tout)",
+    );
   });
 
   it("asks again, at the next attempt, a zone that was down", async () => {

@@ -3,8 +3,10 @@
 // MX and TXT, then the addresses of its name servers and mail exchangers (once per host for the whole collection) and
 // its SPF record expanded — and at most 8 domains open per second, so that the servers of a top-level domain (.fr)
 // get at most one referral per new domain. Every single question holds one of the two permits of the zone it goes to
-// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks. A name or a
-// domain that fails is asked again, at most twice, 10 minutes apart; a failure stays a failure, never « no site ».
+// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks; and at most 8
+// questions in flight to the servers of one registry (the openings), so that servers that answer late never get more
+// of the resolver's retries than these. A name or a domain that fails is asked again, at most twice, 10 minutes
+// apart; a failure stays a failure, never « no site ».
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
 import { Cadence, type Horloge, HORLOGE_REELLE, instantCommun, melanger, type Montee, ParZone } from "./politesse";
@@ -144,6 +146,14 @@ const groupeDuParent = (zone: string) => {
 /** Slots a first question may take while the brake holds it, before it goes on its last one. */
 const CRENEAUX_MAX = 5;
 /**
+ * Questions to a parent in flight at once, per group of parent servers (the openings of domains, and the questions of a
+ * zone not known as delegated). When those servers answer late or not at all, the resolver asks each pending question
+ * again on their other servers: their number, more than our pace, then makes the load (the trial of 22/11/2026, from
+ * 17:24 UTC: 22 questions in a second to a server of .fr, five of the resolver's for one of ours). Eight never bind
+ * while the answers come within a second (six openings per second); when they come late, the others wait their turn.
+ */
+export const PARENT_EN_VOL = 8;
+/**
  * Upstream questions one of ours may cost and still keep a server, at our full pace (5 per second), under 8: a zone
  * whose questions cost more takes several instants per question (4 at most).
  */
@@ -157,6 +167,10 @@ export class ClientParZone implements ClientDns {
   readonly #zones: ParZone;
   /** The zones opened in this attempt, each with the end of its opening (its NS question, at its parent's pace). */
   readonly #premieres = new Map<string, Promise<void>>();
+  /** The questions in flight to each group of parent servers (PARENT_EN_VOL at most). */
+  readonly #parentsEnVol = new ParZone(PARENT_EN_VOL);
+  /** The questions that waited for a place among them, and how long in all (milliseconds of the clock). */
+  readonly #attenteParents = { questions: 0, ms: 0 };
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
   /** The pace of each zone's own servers. */
@@ -336,20 +350,33 @@ export class ClientParZone implements ClientDns {
 
   /**
    * One question: the zone's turn (two at a time), then the paces, then the answer, recorded. A question of a zone
-   * not known as delegated takes a slot of its parent's pace while holding the zone's turn: one zone never reserves
-   * more than two slots of its parent. Every question keeps the zone's own pace.
+   * not known as delegated takes a place among the questions in flight to its parent's servers and a slot of its
+   * parent's pace while holding the zone's turn: one zone never reserves more than two of either. Every question keeps
+   * the zone's own pace.
    */
   async #poser(nom: string, zone: string, type: TypeRr, ouverture = false): Promise<Reponse> {
     const avant = this.#sansQuestion(nom, zone, ouverture);
     if (avant !== null) return avant;
     await this.#zones.prendre(zone);
+    /** The group of parent servers whose place the question holds, until its answer. */
+    let auParent: string | null = null;
     try {
       // The zone may have gone down while the question waited for its turn.
       const pendant = this.#sansQuestion(nom, zone, ouverture);
       if (pendant !== null) return pendant;
-      // An opening asks the parent for the delegation, at every attempt too: a slot of the parent's pace.
-      if (ouverture || !this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
-      else if (this.frein) await this.frein(nom, zone, false);
+      // An opening asks the parent for the delegation, at every attempt too: a place among the questions in flight to
+      // the parent's servers (PARENT_EN_VOL), then a slot of the parent's pace.
+      if (ouverture || !this.#deleguees.has(zone)) {
+        const groupe = groupeDuParent(zone);
+        const debut = this.horloge.maintenant();
+        const attendu = await this.#parentsEnVol.prendre(groupe);
+        auParent = groupe;
+        if (attendu) {
+          this.#attenteParents.questions += 1;
+          this.#attenteParents.ms += this.horloge.maintenant() - debut;
+        }
+        await this.#creneauParent(nom, zone);
+      } else if (this.frein) await this.frein(nom, zone, false);
       // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
       // question that costs the servers more than one question takes more: what the logs measured for the zone; four
       // where a question failed (the resolver tries the other servers, and again: up to 5 questions for one of ours);
@@ -431,9 +458,16 @@ export class ClientParZone implements ClientDns {
       }
       return r;
     } finally {
+      if (auParent !== null) this.#parentsEnVol.rendre(auParent);
       this.#zones.rendre(zone);
     }
   }
+
+  /** The questions that waited for a place among those in flight to a parent's servers, and how long in all (ms). */
+  get attenteParents(): Readonly<{ questions: number; ms: number }> {
+    return { ...this.#attenteParents };
+  }
+
   fermer(): void {
     this.base.fermer();
   }
@@ -662,6 +696,11 @@ export async function collecter(
       options.finReprises === undefined ? undefined : { a: options.finReprises, etiquette: `reprise ${reprise}` },
     );
   }
+  const attente = client.attenteParents;
+  options.suivi?.(
+    `questions aux serveurs parents : ${PARENT_EN_VOL} en vol au plus par registre ; ` +
+      `${attente.questions} ont attendu une place (${Math.round(attente.ms / 1000)} s en tout)`,
+  );
   resultat.fin = Date.now();
   return resultat;
 }
