@@ -523,6 +523,8 @@ async function principal(): Promise<number> {
   // The emergency stop brings the controls' deadline to its instant: Quad9 is asked nothing more for a lost day.
   let finControles = minutesDe(finControlesMinutes);
   const finDesControles = () => finControles;
+  /** The confirmations of the failures keep their own deadline: after a stop, a few of them are still asked. */
+  const finConfirmations = minutesDe(finControlesMinutes);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
@@ -576,7 +578,7 @@ async function principal(): Promise<number> {
   // The domains whose MX question alone failed, and Quad9's too (for the guard only: nothing else is published).
   const pannesMx = new Set<string>();
   const confirmer = async () => {
-    for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finControles; d = aConfirmer.shift()) {
+    for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finConfirmations; d = aConfirmer.shift()) {
       const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
       const webEnEchec = mesures.noms.get(d.nomWeb)?.etat === "echec";
       const [nom, type] = zoneEnEchec

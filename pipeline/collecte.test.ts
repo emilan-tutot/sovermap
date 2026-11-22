@@ -987,29 +987,33 @@ describe("the scheduling of a collection", () => {
   /** `n` domains « pN.example », each with its web name « www.pN.example ». */
   const domainesP = (n: number) =>
     new Map(Array.from({ length: n }, (_, i) => [`www.p${i}.example`, `p${i}.example`] as const));
+  const numero = (nom: string) => Number(/p([0-9]+)[.]example$/.exec(nom)?.[1] ?? "-1");
+  /** One task at a time and the list's order kept: the window holds exactly the last domains measured. */
+  const enOrdre = { enVol: 1, aleatoire: () => 0.999_999 };
 
   /**
-   * A collection whose resolver fails each question for which `enPanne` says so (it may look at the log so far), with
-   * a window of 10 domains, a threshold of 50 % and a pause of one minute; it counts the questions asked after the stop.
+   * A collection whose resolver fails each question for which `enPanne` says so (it sees the name, the type and the
+   * log so far), with a window of 10 domains, a threshold of 50 %, pauses of one minute and a stop at the third breach
+   * in a row; it counts the questions asked after the stop, and those asked during a pause.
    */
   async function collecteEnPanne(
     liste: ReadonlyMap<string, string>,
-    enPanne: (nom: string, lignes: readonly string[]) => boolean,
+    enPanne: (nom: string, type: string, lignes: readonly string[]) => boolean,
     autres: Partial<Parameters<typeof collecter>[2]> = {},
   ) {
     const lignes: string[] = [];
     const arrets: string[] = [];
     const horloge = fausseHorloge();
     let apresArret = 0;
-    /** The clock's instant of the pause's start, and of each question asked to the resolver. */
-    let debutPause: number | null = null;
+    /** The clock's instant of each pause's start, and of each question asked to the resolver. */
+    const pauses: number[] = [];
     const instants: number[] = [];
     const base: ClientDns = {
       id: "base",
-      demander: async (nom) => {
+      demander: async (nom, type) => {
         if (arrets.length > 0) apresArret += 1;
         instants.push(horloge.maintenant());
-        return { code: enPanne(nom, lignes) ? "SERVFAIL" : "NOERROR", ad: false, reponses: [], duree: 1 };
+        return { code: enPanne(nom, type, lignes) ? "SERVFAIL" : "NOERROR", ad: false, reponses: [], duree: 1 };
       },
       fermer: () => {},
     };
@@ -1017,82 +1021,174 @@ describe("the scheduling of a collection", () => {
       ...POLITESSE,
       zoneDe,
       horloge,
-      arret: { fenetre: 10, part: 0.5, pauseMs: 60_000 },
+      arret: { fenetre: 10, part: 0.5, pauseMs: 60_000, depassements: 3 },
       nomWebDe: (domaine) => `www.${domaine}`,
       surArret: (raison) => arrets.push(raison),
       suivi: (ligne) => {
-        if (ligne.startsWith("pause d'urgence")) debutPause ??= horloge.maintenant();
+        if (ligne.startsWith("pause d'urgence")) pauses.push(horloge.maintenant());
         lignes.push(ligne);
       },
       ...autres,
     });
-    const debut = debutPause;
-    const pendantPause = debut === null ? 0 : instants.filter((t) => t >= debut && t < debut + 60_000).length;
-    return { r, lignes, arrets, apresArret, pendantPause };
+    const pendantPause = instants.filter((t) => pauses.some((d) => t > d && t < d + 60_000)).length;
+    // The most questions asked in the first second after a pause's end (the names' pace allows 25).
+    const rafaleApresPause = Math.max(
+      0,
+      ...pauses.map((d) => instants.filter((t) => t >= d + 60_000 && t < d + 61_000).length),
+    );
+    return { r, lignes, arrets, apresArret, pendantPause, rafaleApresPause };
   }
 
-  it("pauses at a first breach, stops at a second one, and asks nothing after the stop (22/11/2026)", async () => {
-    // Every question fails, with the 512 tasks of production in flight: a pause, then the stop, and from that instant
-    // not one question reaches the resolver; the retries are skipped.
-    const { r, lignes, arrets, apresArret } = await collecteEnPanne(domainesP(2_000), () => true);
-    const pause = lignes.find((l) => l.startsWith("pause d'urgence de 1 min après "));
-    expect(pause).toMatch(
-      /: 10 des 10 derniers domaines en échec \(seuil : 50 %\) ; la mesure reprend ensuite, et s'arrête si les 10 domaines suivants échouent autant$/,
+  it("pauses at each breach and stops at the third in a row, asking nothing after it (22/11/2026)", async () => {
+    // Every question fails, with the 512 tasks of production in flight: two pauses, then the stop, and from that
+    // instant not one question reaches the resolver; none during a pause either; the retries are skipped.
+    const { r, lignes, arrets, apresArret, pendantPause } = await collecteEnPanne(domainesP(2_000), () => true);
+    const pauses = lignes.filter((l) => l.startsWith("pause d'urgence de 1 min après "));
+    expect(pauses).toHaveLength(2);
+    expect(pauses[0]).toMatch(
+      /\(dépassement 1 sur 3\) : 10 des 10 derniers domaines en échec \(seuil : 50 %\) ; la mesure reprend ensuite, et recompte$/,
     );
+    expect(pauses[1]).toMatch(/\(dépassement 2 sur 3\)/);
     expect(r.arret).toMatch(
-      /^arrêt d'urgence après [0-9]+ domaines : 10 des 10 derniers domaines en échec \(seuil : 50 %\), après une pause de 1 min$/,
+      /^arrêt d'urgence après [0-9]+ domaines : 10 des 10 derniers domaines en échec \(seuil : 50 %\), au dépassement 3 de suite \(une pause de 1 min après chacun des précédents\)$/,
     );
-    expect(lignes.indexOf(pause ?? "")).toBeLessThan(
+    expect(lignes.indexOf(pauses[1] ?? "")).toBeLessThan(
       lignes.indexOf(`${r.arret} ; plus aucune question, le jour ne sera pas publié`),
     );
     expect(arrets).toEqual([r.arret]);
     expect(apresArret).toBe(0);
+    expect(pendantPause).toBe(0);
     expect(lignes).toContain("reprise 1 sautée : arrêt d'urgence");
     expect(r.domaines.size).toBeLessThan(2_000);
   });
 
-  it("only pauses for a short outage: then the collection goes to its end, its retries included", async () => {
-    // The servers fail until the pause starts, then answer: no stop, every domain measured, and the failed ones asked
-    // again by the retries.
-    const { r, lignes, pendantPause } = await collecteEnPanne(domainesP(300), (_nom, lignes) =>
-      lignes.every((l) => !l.startsWith("pause d'urgence")),
+  it("only pauses for a short outage: the alert is lifted, and the collection goes to its end, retries included", async () => {
+    // The servers fail until the first pause starts, then answer: a full count under the threshold lifts the alert,
+    // no stop, every domain measured, and the failed ones asked again by the retries.
+    const { r, lignes, pendantPause, rafaleApresPause } = await collecteEnPanne(
+      domainesP(2_000),
+      (_nom, _type, lignes) => lignes.every((l) => !l.startsWith("pause d'urgence")),
     );
+    // The questions held go out again at the names' pace, never in one burst.
+    expect(rafaleApresPause).toBeGreaterThan(0);
+    expect(rafaleApresPause).toBeLessThanOrEqual(25);
     expect(lignes.filter((l) => l.startsWith("pause d'urgence"))).toHaveLength(1);
+    expect(lignes.filter((l) => l.startsWith("alerte levée après "))).toHaveLength(1);
     // The pause holds every question, those of the domains already open included.
     expect(pendantPause).toBe(0);
     expect(r.arret).toBeNull();
-    expect(r.domaines.size).toBe(300);
+    expect(r.domaines.size).toBe(2_000);
     expect([...r.noms.values()].filter((m) => m.etat === "echec")).toEqual([]);
   });
 
-  it("pauses exactly at the threshold, never under it, counting the web name, the zone and the MX (one domain at a time)", async () => {
-    // One task at a time and the list's order kept: the window holds exactly the last 10 domains measured.
-    const enOrdre = { enVol: 1, aleatoire: () => 0.999_999 };
-    const numero = (nom: string) => Number(/p([0-9]+)[.]example$/.exec(nom)?.[1] ?? "-1");
-    // Four domains in ten fail by their web name only: 40 %, under the threshold of 50 %, never a pause.
+  it("counts a domain as the guard does: its web name, its zone or its MX, never its CAA (one domain at a time)", async () => {
+    const pauseA = (lignes: readonly string[]) => lignes.find((l) => l.startsWith("pause d'urgence"));
+    // Four domains in ten fail by their web name: 40 %, under the threshold of 50 %, never a pause.
     const sous = await collecteEnPanne(domainesP(60), (nom) => nom.startsWith("www.") && numero(nom) % 10 < 4, enOrdre);
-    expect(sous.lignes.some((l) => l.startsWith("pause d'urgence"))).toBe(false);
+    expect(pauseA(sous.lignes)).toBeUndefined();
     expect(sous.r.arret).toBeNull();
-    // Five in ten, by their zone or their web name: 50 %, a pause at the 10th domain, a stop at the 20th after it.
+    // Five in ten, by their zone or their web name: 50 %, pauses at the 10th and 20th domains, the stop at the 30th.
     const au = await collecteEnPanne(
       domainesP(60),
-      (nom) => numero(nom) % 10 < 5 && (nom.startsWith("www.") || numero(nom) % 2 === 0),
+      (nom, type) => numero(nom) % 10 < 5 && (nom.startsWith("www.") || (numero(nom) % 2 === 0 && type === "NS")),
       enOrdre,
     );
-    expect(au.lignes.find((l) => l.startsWith("pause d'urgence"))).toMatch(
-      /^pause d'urgence de 1 min après 10 domaines : 5 des 10/,
+    expect(pauseA(au.lignes)).toMatch(/^pause d'urgence de 1 min après 10 domaines \(dépassement 1 sur 3\) : 5 des 10/);
+    expect(au.r.arret).toMatch(/^arrêt d'urgence après 30 domaines : 5 des 10 derniers domaines en échec/);
+    // Five in ten by their MX question alone: they count.
+    const mx = await collecteEnPanne(domainesP(20), (nom, type) => type === "MX" && numero(nom) % 10 < 5, enOrdre);
+    expect(pauseA(mx.lignes)).toMatch(/^pause d'urgence de 1 min après 10 domaines/);
+    // Five in ten by their CAA question alone (or their TXT): the guard does not count them, nor does the stop.
+    const caa = await collecteEnPanne(
+      domainesP(20),
+      (nom, type) => (type === "CAA" || type === "TXT") && numero(nom) % 10 < 5,
+      enOrdre,
     );
-    expect(au.r.arret).toMatch(/^arrêt d'urgence après 20 domaines : 5 des 10 derniers domaines en échec/);
+    expect(pauseA(caa.lignes)).toBeUndefined();
+  });
+
+  /** A clock moved by hand: a sleep ends only when `avancer` passes its instant. */
+  function horlogeManuelle() {
+    let t = 0;
+    let reveils: { a: number; reveil: () => void }[] = [];
+    const horloge: Horloge = {
+      maintenant: () => t,
+      dormir: (ms) =>
+        new Promise<void>((reveil) => {
+          if (ms <= 0) reveil();
+          else reveils.push({ a: t + ms, reveil });
+        }),
+    };
+    const avancer = async (ms: number) => {
+      t += ms;
+      const prets = reveils.filter((r) => r.a <= t);
+      reveils = reveils.filter((r) => r.a > t);
+      for (const r of prets) r.reveil();
+      for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve));
+    };
+    return { horloge, avancer };
+  }
+
+  /** A resolver that answers at once, and notes each question with the clock's instant. */
+  const baseNotee = (horloge: Horloge) => {
+    const envois: string[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        envois.push(`${horloge.maintenant()} ${nom} ${type}`);
+        return { code: "NOERROR", ad: false, reponses: [], duree: 1 };
+      },
+      fermer: () => {},
+    };
+    return { base, envois };
+  };
+
+  it("never sends during a pause a question that was waiting for its instant: it waits for the end", async () => {
+    const { horloge, avancer } = horlogeManuelle();
+    const { base, envois } = baseNotee(horloge);
+    // One question per second per server: the second question of the zone waits a second for its instant.
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 1);
+    await client.demander("a.example", "NS");
+    const soa = client.demander("a.example", "SOA");
+    await avancer(0);
+    client.pauser(60_000);
+    await avancer(1_000);
+    expect(envois).toEqual(["0 a.example NS"]);
+    await avancer(59_000);
+    await soa;
+    expect(envois).toEqual(["0 a.example NS", "60000 a.example SOA"]);
+  });
+
+  it("lets the questions held by a pause go out one at a time, at the names' pace", async () => {
+    const { horloge, avancer } = horlogeManuelle();
+    const { base, envois } = baseNotee(horloge);
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge);
+    client.pauser(60_000);
+    const questions = Array.from({ length: 5 }, (_, i) => client.demander(`z${i}.example`, "NS"));
+    await avancer(60_000);
+    expect(envois).toHaveLength(1);
+    for (let i = 0; i < 4; i += 1) await avancer(40);
+    await Promise.all(questions);
+    expect(envois.map((e) => Number(e.split(" ")[0]))).toEqual([60_000, 60_040, 60_080, 60_120, 60_160]);
+  });
+
+  it("starts again from the first breach after a lifted alert: two separate outages only pause", async () => {
+    // A first outage until the first pause; the alert is lifted; a second one, until the next pause; then no more.
+    const { r, lignes } = await collecteEnPanne(domainesP(2_000), (_nom, _type, lignes) => {
+      const pauses = lignes.filter((l) => l.startsWith("pause d'urgence")).length;
+      const levees = lignes.filter((l) => l.startsWith("alerte levée")).length;
+      return pauses === 0 || (levees === 1 && pauses === 1);
+    });
+    const pauses = lignes.filter((l) => l.startsWith("pause d'urgence"));
+    expect(pauses).toHaveLength(2);
+    for (const pause of pauses) expect(pause).toMatch(/\(dépassement 1 sur 3\)/);
+    expect(lignes.filter((l) => l.startsWith("alerte levée"))).toHaveLength(2);
+    expect(r.arret).toBeNull();
   });
 
   it("never counts the retries: a retry full of failures never pauses nor stops", async () => {
     // Four domains in ten always fail: under the threshold in the first pass, all of them in each retry.
-    const enOrdre = { enVol: 1, aleatoire: () => 0.999_999 };
-    const { r, lignes } = await collecteEnPanne(
-      domainesP(60),
-      (nom) => Number(/p([0-9]+)[.]example$/.exec(nom)?.[1] ?? "-1") % 10 < 4,
-      enOrdre,
-    );
+    const { r, lignes } = await collecteEnPanne(domainesP(60), (nom) => numero(nom) % 10 < 4, enOrdre);
     expect(lignes.some((l) => l.startsWith("reprise 2 dans "))).toBe(true);
     expect(lignes.some((l) => l.startsWith("pause d'urgence"))).toBe(false);
     expect(r.arret).toBeNull();

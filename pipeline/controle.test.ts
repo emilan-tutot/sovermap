@@ -102,9 +102,11 @@ describe("the controls", () => {
     };
     const r = await controler(simule, ["a.example", "b.example", "c.example"], [], 1, () => echeance);
     expect([...r.noms.keys()]).toEqual(["a.example"]);
+    // The continuous control reads it each time too: built before the deadline moves, it asks one name, then stops.
+    echeance = Number.POSITIVE_INFINITY;
     const continu = new ControleEnContinu(simule, 1, () => echeance);
-    continu.ajouter(["d.example"]);
-    expect((await continu.fermer()).noms.size).toBe(0);
+    continu.ajouter(["d.example", "e.example", "f.example"]);
+    expect([...(await continu.fermer()).noms.keys()]).toEqual(["d.example"]);
   });
 
   it("agrees only when every resolver finds every witness as it is known", () => {
