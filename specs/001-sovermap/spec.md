@@ -128,7 +128,7 @@ Ce qui distingue Sovermap :
   - `/territoires`, puis une région, un département, une commune ou un groupement par son code officiel et son nom (fixées avec la deuxième partie de C.6) ;
   - `/journal` et `/journal/<AAAA-MM-JJ>` ; `/recherche` ; `/qualite` ;
   - les plans du site (D.7) : `/sitemap.xml` (l'index), `/plans/pages.xml` et `/plans/radiographies.xml` ;
-  - les pages de textes (E) : `/methode`, `/donnees`, `/sources`, `/glossaire`, `/pourquoi-ca-compte`, `/corrections`, `/mentions-legales`, `/confidentialite`, `/accessibilite`, `/credits`, `/a-propos`.
+  - les pages de textes (E) : `/methode`, `/donnees`, `/sources`, `/glossaire`, `/pourquoi-ca-compte`, `/corrections`, `/mentions-legales`, `/confidentialite`, `/accessibilite`, `/credits`, `/a-propos`, et `/radiographie-de-sovermap` (Sovermap passé à sa propre radiographie).
 
 ## 5. Critères de succès mesurables
 

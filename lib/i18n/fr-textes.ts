@@ -256,5 +256,409 @@ export const glossaire: PageDeTexte = soignee({
   relu: false,
 });
 
+export const pourquoi: PageDeTexte = soignee({
+  chemin: "/pourquoi-ca-compte",
+  titre: "Pourquoi ça compte",
+  description:
+    "Le pays du siège d’une société peut décider du droit qui s’applique aux données qu’elle détient : les règles des États-Unis, de l’Union et de la France, une source par phrase.",
+  chapo:
+    "Le pays du siège d’une société peut décider du droit qui s’applique aux données qu’elle détient. Voici les règles, une source par phrase. Sovermap décrit des dépendances ; il ne dit jamais qu’un site est en faute.",
+  sections: [
+    {
+      titre: "Le droit des États-Unis",
+      blocs: [
+        {
+          paragraphe: [
+            "Une loi des États-Unis prévoit que les fournisseurs soumis à ce droit communiquent, sur demande légale, les données qu’ils détiennent, même stockées hors des États-Unis (18 U.S.C. § 2713, issu du CLOUD Act de 2018).",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Le droit européen",
+      blocs: [
+        {
+          paragraphe: [
+            "En droit européen, une demande d’un juge ou d’une autorité d’un pays tiers n’est reconnue que si elle repose sur un accord international (RGPD, article 48).",
+          ],
+        },
+        {
+          paragraphe: [
+            "La Cour de justice de l’Union européenne a invalidé en 2020 le précédent cadre de transfert de données entre l’Union et les États-Unis (arrêt du 16 juillet 2020, C-311/18).",
+          ],
+        },
+        {
+          paragraphe: [
+            "Le cadre actuel a fait l’objet d’un recours, rejeté par le Tribunal de l’Union européenne le 3 septembre 2025 ; un pourvoi a été formé devant la Cour de justice (décision d’exécution 2023/1795 ; T-553/23 ; C-703/25 P).",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Le droit français",
+      blocs: [
+        {
+          paragraphe: [
+            "Depuis 2024, quand l’État, ses opérateurs et certains groupements confient à un cloud privé des données d’une sensibilité particulière, ils doivent veiller à leur protection contre tout accès d’autorités d’États tiers non autorisé par le droit européen (loi n° 2024-449, article 31 ; décret n° 2026-272).",
+          ],
+        },
+        {
+          paragraphe: [
+            "Ces règles dépendent de la sensibilité des données, que Sovermap ne voit pas : un site public peut légalement passer par un réseau de diffusion non européen (doctrine « Cloud au centre », règle R9).",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "SecNumCloud",
+      blocs: [
+        {
+          paragraphe: [
+            "Une qualification SecNumCloud de l’ANSSI porte sur un service désigné, pas sur une société ; elle atteste notamment que ce service offre une protection vis-à-vis du droit extra-européen (décision de qualification n° 3395/ANSSI/SDE/NP du 31 juillet 2026, référentiel SecNumCloud 3.2).",
+          ],
+        },
+        {
+          paragraphe: [
+            "C’est pourquoi Sovermap écrit : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l’utilise. »",
+          ],
+        },
+        {
+          paragraphe: [
+            "Héberger un site sur une offre qualifiée n’enlève pas la nécessité de sécuriser le site lui-même (guide de l’ANSSI sur l’hébergement des systèmes d’information sensibles).",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Ce que Sovermap n’en conclut pas",
+      blocs: [
+        {
+          paragraphe: [
+            "Une dépendance n’est pas une faute. Sovermap ne voit ni les données d’un site, ni leur sensibilité, ni les contrats qui le lient à ses prestataires.",
+          ],
+        },
+      ],
+    },
+  ],
+  sources: [
+    ["18 U.S.C. § 2713 (Pub. L. 115-141, division V, 2018), sur uscode.house.gov et govinfo.gov."],
+    [
+      "Règlement (UE) 2016/679 (RGPD), article 48 ; CJUE, 16 juillet 2020, C-311/18 ; décision d’exécution (UE) 2023/1795 ; Tribunal de l’UE, 3 septembre 2025, T-553/23 ; pourvoi C-703/25 P.",
+    ],
+    [
+      "Loi n° 2024-449 du 21 mai 2024, article 31 ; décret n° 2026-272 ; doctrine « Cloud au centre » de la DINUM, règle R9.",
+    ],
+    [
+      "ANSSI : décision de qualification n° 3395/ANSSI/SDE/NP du 31 juillet 2026 ; guide sur l’hébergement des systèmes d’information sensibles.",
+    ],
+    [
+      "Le cadre juridique de Sovermap (docs/juridique.md, § 1), où chaque texte est cité avec son adresse et sa date de lecture.",
+    ],
+  ],
+  revision: REVISION,
+  relu: false,
+});
+
+export const credits: PageDeTexte = soignee({
+  chemin: "/credits",
+  titre: "Crédits",
+  description:
+    "Qui a fait quoi : les textes et le code écrits avec l’aide d’une IA, les polices sous licence libre, les logiciels libres et le fond de carte.",
+  chapo: "Les outils, les polices, les logiciels et les données dont Sovermap est fait.",
+  sections: [
+    {
+      titre: "Les textes",
+      blocs: [
+        {
+          paragraphe: [
+            "Les textes du site ont été rédigés avec l’aide d’une intelligence artificielle, Claude, d’Anthropic. Tant que l’éditeur n’a pas relu un texte, sa page le dit, près du titre. Une fois relu, l’éditeur en assume la responsabilité, et la page le rappelle en une ligne, à son pied.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Le code",
+      blocs: [
+        {
+          paragraphe: [
+            "Le code a été écrit avec l’aide de la même intelligence artificielle. Il est publié sous licence EUPL 1.2.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les polices",
+      blocs: [
+        {
+          paragraphe: [
+            "Servies par le site lui-même, sous licence SIL Open Font License 1.1 ; leurs licences sont servies avec elles.",
+          ],
+        },
+        {
+          liste: [
+            ["Chakra Petch : Copyright 2018 The Chakra Petch Project Authors."],
+            ["Manrope : Copyright 2019 The Manrope Project Authors."],
+            ["IBM Plex Mono : Copyright 2017 IBM Corp."],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les logiciels libres",
+      blocs: [
+        {
+          liste: [
+            ["Next.js et React (licence MIT)."],
+            ["three.js (licence MIT), pour le globe."],
+            ["dns-packet (licence MIT)."],
+            ["Pour la collecte : Knot Resolver, de CZ.NIC (licence GPL)."],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les données",
+      blocs: [
+        { paragraphe: ["Le fond de carte : Natural Earth (domaine public)."] },
+        { paragraphe: ["Les autres sources : le registre des sources de Sovermap, dans son dépôt public."] },
+      ],
+    },
+  ],
+  sources: [
+    ["Les dépendances du site (package.json) et les licences des polices (public/licenses)."],
+    ["Le registre des sources de Sovermap (fiches 12 et 41)."],
+  ],
+  revision: REVISION,
+  relu: false,
+});
+
+export const radiographieDeSovermap: PageDeTexte = soignee({
+  chemin: "/radiographie-de-sovermap",
+  titre: "Sovermap, passé à sa propre radiographie",
+  description:
+    "Sovermap dépend lui aussi de sociétés dont la maison mère a son siège hors de l’Union européenne : son hébergement, ses données, sa collecte.",
+  chapo:
+    "Sovermap dépend lui aussi de sociétés dont la maison mère a son siège hors de l’Union européenne. Il le dit, avec les mêmes mots que pour les sites qu’il mesure.",
+  sections: [
+    {
+      blocs: [
+        {
+          liste: [
+            [
+              "Le site est hébergé et diffusé par Vercel Inc., dont le siège est aux États-Unis (offre gratuite « Hobby »), avec ses fonctions dans la région de Paris (",
+              { valeur: "cdg1" },
+              ").",
+            ],
+            [
+              "Les données sont publiées sur GitHub, qui appartient à Microsoft Corporation, dont le siège est aux États-Unis.",
+            ],
+            ["La collecte tourne sur les serveurs de GitHub Actions (même maison mère)."],
+            [
+              "Dans votre navigateur : rien d’autre que le site lui-même. Aucune police, aucun script, aucune image ne vient d’un autre domaine.",
+            ],
+          ],
+        },
+        {
+          paragraphe: [
+            "Pourquoi ces choix : des offres gratuites, pour un projet sans budget. Ce n’est pas une recommandation.",
+          ],
+        },
+      ],
+    },
+  ],
+  sources: [
+    ["Le plan technique de Sovermap (hébergement, décisions D2 et D6 ; quotas)."],
+    [
+      "La politique de sécurité du site (aucun tiers) et ses tests de bout en bout (aucune requête vers un autre domaine).",
+    ],
+  ],
+  revision: REVISION,
+  relu: false,
+});
+
+export const methode: PageDeTexte = soignee({
+  chemin: "/methode",
+  titre: "La méthode",
+  description:
+    "Comment Sovermap mesure chaque site public par le DNS, couche par couche, avec deux sources pour le « confirmé », et comment refaire chaque mesure à la main.",
+  chapo: "Comment Sovermap mesure chaque site public, couche par couche, et comment refaire chaque mesure à la main.",
+  sections: [
+    {
+      titre: "Ce que Sovermap montre, et ce qu’il ne montre pas",
+      ancre: "ce-que-sovermap-montre",
+      blocs: [
+        { paragraphe: ["Il montre, pour chaque domaine de la liste de référence :"] },
+        {
+          liste: [
+            ["s’il répond, et ses serveurs de noms ;"],
+            [
+              "ses adresses, son réseau, la société qui exploite ce réseau, sa maison mère ultime et le pays du siège de chacune ;",
+            ],
+            ["si un réseau de diffusion (CDN) est placé devant le site ;"],
+            ["si la société a au moins une offre qualifiée SecNumCloud ;"],
+            ["des agrégats, et les changements confirmés jour après jour."],
+          ],
+        },
+        { paragraphe: ["Il ne montre pas :"] },
+        {
+          liste: [
+            ["où se trouvent physiquement les serveurs ;"],
+            ["où sont stockées les données des usagers ;"],
+            ["les systèmes internes de l’État ;"],
+            ["si un site respecte la loi ;"],
+            ["l’hébergeur d’origine caché derrière un CDN (« non observable »)."],
+          ],
+        },
+        {
+          paragraphe: [
+            "Une dépendance n’est pas une faute : un site public peut légalement passer par un CDN étranger. Les règles strictes visent surtout les données sensibles (voir ",
+            { lien: "Pourquoi ça compte", vers: "/pourquoi-ca-compte" },
+            ").",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Ce qui est mesuré",
+      blocs: [
+        {
+          paragraphe: [
+            "La liste officielle des noms de domaine du secteur public (DINUM), complétée par d’autres sources ouvertes. Les noms internes ou techniques (réseau interministériel, préproduction, recette, outils) ne sont ni mesurés ni affichés. Le chiffre compte chaque domaine enregistré une fois, par son nom web : ",
+            { valeur: "www." },
+            " s’il répond, sinon le domaine lui-même.",
+          ],
+        },
+        {
+          paragraphe: [
+            "Le chiffre-titre porte sur le périmètre « État » : les domaines en ",
+            { valeur: ".gouv.fr" },
+            ", plus ceux des services et établissements de l’État recensés par le Référentiel de la DILA et l’Observatoire du SIG, plus ceux des opérateurs de l’État. Environ 1 900 domaines. Le chiffre limité aux domaines en ",
+            { valeur: ".gouv.fr" },
+            " est publié à côté.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "La chaîne des couches",
+      blocs: [
+        {
+          liste: [
+            ["Le domaine."],
+            ["Ses serveurs de noms."],
+            ["Ses adresses, et la chaîne de ses alias."],
+            ["Le réseau qui annonce chaque adresse, établi par deux sources indépendantes."],
+            ["La société qui exploite ce réseau."],
+            ["Sa maison mère ultime (GLEIF, puis un registre officiel ou le rapport annuel du groupe)."],
+            ["Le pays du siège de chacune."],
+            [
+              "SecNumCloud : la société a-t-elle au moins une offre qualifiée ? Cela ne veut pas dire que le site l’utilise.",
+            ],
+            ["Le CDN placé devant le site, reconnu par un alias ou par son réseau."],
+            ["La messagerie du domaine, à part du chiffre-titre."],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les niveaux de confiance",
+      blocs: [
+        {
+          liste: [
+            [
+              "Confirmé : pour chaque couche, au moins deux sources indépendantes concordent. Chaque jour, tous les domaines du périmètre « État » sont reposés à un résolveur européen de contrôle (Quad9).",
+            ],
+            ["Probable : une seule source, cohérente."],
+            [
+              "Non déterminé : les sources manquent ou se contredisent ; le désaccord est montré. Sa part est publiée chaque jour.",
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Avant de publier",
+      blocs: [
+        {
+          liste: [
+            ["Un changement n’est publié qu’après deux collectes successives concordantes."],
+            [
+              "Si une collecte change plus de 2 % des classements, rien n’est publié, et l’état de la veille reste affiché.",
+            ],
+            ["Des domaines témoins, au comportement connu, sont contrôlés à chaque collecte."],
+            ["Au-delà de 2 % de domaines en échec que le résolveur de contrôle ne confirme pas, rien n’est publié."],
+            [
+              "La mesure est polie : un débit limité, 10 questions par seconde au plus vers un même serveur, un agent qui s’identifie, et aucune requête vers les sites mesurés.",
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Refaire une mesure à la main",
+      blocs: [
+        {
+          paragraphe: [
+            "Sous Windows : ",
+            { valeur: "Resolve-DnsName -Name www.impots.gouv.fr -Server 9.9.9.9" },
+            ". Sous macOS ou Linux : ",
+            { valeur: "dig www.impots.gouv.fr @9.9.9.9" },
+            ". Chaque Radiographie donne, en mode expert, les commandes de chacune de ses couches.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Sovermap et l’eGovernment Benchmark 2026",
+      blocs: [
+        {
+          paragraphe: [
+            "La Commission européenne publie, dans l’eGovernment Benchmark 2026, un indicateur pilote : 37,2 % des sites gouvernementaux étaient hébergés sur une infrastructure contrôlée en dernier ressort par une organisation dont le siège est hors de l’Union européenne (relevé de novembre 2025, agrégat européen). Sa chaîne est la même que celle de Sovermap : adresse, réseau, organisation, propriétaire ultime, pays du siège, sans géolocalisation.",
+          ],
+        },
+        {
+          paragraphe: [
+            "Les deux chiffres diffèrent par leur périmètre (les sites gouvernementaux de l’Union, sans chiffre français publié ; ici, les domaines de l’État français), par leur date et leur rythme (un relevé ; ici, chaque jour), et par leur seuil de preuve (ici, deux sources par couche pour le « confirmé »). Ils ne se comparent donc pas directement.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les versions de la méthode",
+      blocs: [
+        {
+          liste: [
+            ["0.1 (18/11/2026) : première rédaction, éprouvée sur 21 noms réels."],
+            [
+              "0.2 (19/11/2026) : les noms internes exclus, l’unité et le périmètre du chiffre, le contrôle de tous les domaines de l’État.",
+            ],
+            [
+              "0.2 (collecte v1) (20/11/2026) : la messagerie mesurée, le domaine enregistré par la Public Suffix List, les témoins et les échecs DNS parmi les garde-fous.",
+            ],
+            [
+              "0.2.1 (21/11/2026) : la règle « sous-zone interne » et ses garde-fous, l’ordre et le rythme de la mesure.",
+            ],
+          ],
+        },
+      ],
+    },
+  ],
+  sources: [
+    ["La méthode de Sovermap, docs/methode.md (§ 1 à § 7, § 10 et § 11), dans son dépôt public."],
+    ["Commission européenne, eGovernment Benchmark 2026 (rapport sous licence CC BY 4.0), lu le 18/11/2026."],
+  ],
+  revision: REVISION,
+  relu: false,
+});
+
 /** Every text page, in the order of the site's footer. */
-export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [aPropos, glossaire, corrections, accessibilite];
+export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [
+  aPropos,
+  methode,
+  pourquoi,
+  glossaire,
+  radiographieDeSovermap,
+  corrections,
+  accessibilite,
+  credits,
+];

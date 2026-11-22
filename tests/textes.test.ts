@@ -1,7 +1,8 @@
 // Tests of the text pages (part E, E.6): each has a real day of revision, at least one source, its own address, links
 // to pages of the site only, a description of about 155 characters, and French typography; and the typography helper.
 import { describe, expect, it } from "vitest";
-import { PAGES_DE_TEXTE, typographie } from "@/lib/i18n/fr-textes";
+import { readFileSync } from "node:fs";
+import { methode, PAGES_DE_TEXTE, typographie } from "@/lib/i18n/fr-textes";
 import { liensDe, type PageDeTexte } from "@/lib/textes";
 
 /** Every sentence of a page, its sources' included. */
@@ -39,6 +40,15 @@ describe("the text pages (E.6)", () => {
     for (const p of PAGES_DE_TEXTE) {
       for (const texte of textesDe(p)) expect(texte, p.chemin).not.toMatch(/ [:;!?»]|« |\d \d{3}\b/);
     }
+  });
+
+  it("lists on the Method page every version of docs/methode.md, with its day", () => {
+    const versions = [
+      ...readFileSync("docs/methode.md", "utf8").matchAll(/^\| (0\.[^|]+?) \| (\d{2}\/\d{2}\/\d{4}) \|/gm),
+    ];
+    expect(versions.length).toBeGreaterThan(0);
+    const texte = textesDe(methode).join("\n");
+    for (const [, version, jour] of versions) expect(texte).toContain(`${version} (${jour})`);
   });
 
   it("sets French typography", () => {
