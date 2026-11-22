@@ -108,6 +108,8 @@ export type ChaineSociete = {
   mere: { cle: string; nom: string; pays: string; controle?: string } | null;
   categorie: Categorie;
   niveau: Niveau;
+  /** The level of the operating company's own seat (its sources, not its parent's link): what rule C2-4 needs alone. */
+  niveauSociete: Niveau;
 };
 
 const niveauNoeud = (s: Societe): Niveau => niveauMin(niveauSources(s.sources), niveauSources(s.sources_mere));
@@ -116,26 +118,34 @@ const niveauNoeud = (s: Societe): Niveau => niveauMin(niveauSources(s.sources), 
 export function chaineDepuisSociete(cle: string | null, societes: ReferentielSocietes): ChaineSociete {
   const s = cle === null ? undefined : societes.societes[cle];
   if (cle === null || s === undefined)
-    return { societe: null, mere: null, categorie: "non déterminé", niveau: "non déterminé" };
+    return {
+      societe: null,
+      mere: null,
+      categorie: "non déterminé",
+      niveau: "non déterminé",
+      niveauSociete: "non déterminé",
+    };
   const exploitante = { cle, nom: s.nom, pays: s.pays };
+  const niveauSociete = niveauSources(s.sources);
   const niveaux: Niveau[] = [niveauNoeud(s)];
   let cleMere = cle;
   let mere = s;
   for (let i = 0; i < 10 && mere.mere !== null; i += 1) {
     const suivante = mere.mere === MERE_INCONNUE ? undefined : societes.societes[mere.mere];
     if (suivante === undefined)
-      return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé" };
+      return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé", niveauSociete };
     cleMere = mere.mere;
     mere = suivante;
     niveaux.push(niveauNoeud(mere));
   }
   if (mere.mere !== null)
-    return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé" };
+    return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé", niveauSociete };
   return {
     societe: exploitante,
     mere: { cle: cleMere, nom: mere.nom, pays: mere.pays, ...(mere.controle ? { controle: mere.controle } : {}) },
     categorie: categorie(mere.pays),
     niveau: niveauMin(...niveaux),
+    niveauSociete,
   };
 }
 

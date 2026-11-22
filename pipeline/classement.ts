@@ -5,6 +5,7 @@ import { detecterCdn, type DetectionCdn, type PlagesOfficielles, type Referentie
 import type { ObservationDns } from "./dns";
 import { coucheReseau, type CoucheReseau, type TableIpToAsn, type TableRis } from "./reseau";
 import {
+  categorie as categorieDuPays,
   chaineDepuisAs,
   chaineDepuisSociete,
   type ChaineSociete,
@@ -26,7 +27,19 @@ export type Contexte = {
   coucheReseau?: typeof coucheReseau;
 };
 
-export type Servant = { role: "diffusé par" | "hébergé par"; chaine: ChaineSociete; preuve: string; niveau: Niveau };
+export type Servant = {
+  role: "diffusé par" | "hébergé par";
+  chaine: ChaineSociete;
+  preuve: string;
+  /** The whole chain's level: the address layer, the link to the company, the company and its parents. */
+  niveau: Niveau;
+  /**
+   * The level of « this company serves the site, and has its seat there »: the address layer, the link to the company
+   * (the CDN, or the AS) and the company's own sources, without its parents: what rule C2-4 needs when the company
+   * alone is outside the EU.
+   */
+  niveauSociete: Niveau;
+};
 
 export type Classement = {
   nom: string;
@@ -61,7 +74,15 @@ function servants(
     return {
       cdn,
       reseau,
-      servants: [{ role: "diffusé par", chaine, preuve: cdn.preuve, niveau: niveauMin(chaine.niveau, cdn.niveau) }],
+      servants: [
+        {
+          role: "diffusé par",
+          chaine,
+          preuve: cdn.preuve,
+          niveau: niveauMin(chaine.niveau, cdn.niveau),
+          niveauSociete: niveauMin(chaine.niveauSociete, cdn.niveau),
+        },
+      ],
     };
   }
   const parSociete = new Map<string, Servant>();
@@ -70,9 +91,10 @@ function servants(
       const chaine = chaineDepuisAs(asn, contexte.tableAs, contexte.societes);
       const cle = chaine.societe?.cle ?? `AS${asn}`;
       const niveau = niveauMin(chaine.niveau, couche.niveau);
+      const niveauSociete = niveauMin(chaine.niveauSociete, chaine.niveauAs, couche.niveau);
       const existant = parSociete.get(cle);
       if (!existant || ORDRE_NIVEAU.indexOf(niveau) < ORDRE_NIVEAU.indexOf(existant.niveau)) {
-        parSociete.set(cle, { role: "hébergé par", chaine, preuve: `AS${asn}`, niveau });
+        parSociete.set(cle, { role: "hébergé par", chaine, preuve: `AS${asn}`, niveau, niveauSociete });
       }
     }
   }
@@ -117,10 +139,21 @@ export function classer(
     accord = { resolveur: controle.resolveur, accord: ok };
     niveauControle = ok ? "confirmé" : "non déterminé";
   }
-  const liste = base.servants.map((s) => ({ ...s, niveau: niveauMin(s.niveau, niveauControle) }));
+  const liste = base.servants.map((s) => ({
+    ...s,
+    niveau: niveauMin(s.niveau, niveauControle),
+    niveauSociete: niveauMin(s.niveauSociete, niveauControle),
+  }));
 
   const determines = liste.filter((s) => s.chaine.categorie !== "non déterminé");
-  const horsUE = liste.filter((s) => HORS_UE.has(s.chaine.categorie));
+  // Rule C2-4 (method 0.3; plan § 15): a servant puts the site outside the EU when its ultimate parent's seat is, or
+  // its own is (the Imperva case: an American subsidiary of a French group), each with the level of what proves it.
+  const horsUE = liste.flatMap((s): Niveau[] => {
+    const preuves: Niveau[] = [];
+    if (HORS_UE.has(s.chaine.categorie)) preuves.push(s.niveau);
+    if (s.chaine.societe !== null && HORS_UE.has(categorieDuPays(s.chaine.societe.pays))) preuves.push(s.niveauSociete);
+    return preuves.length === 0 ? [] : [niveauMax(preuves)];
+  });
   const categorie =
     determines.length === 0
       ? "non déterminé"
@@ -132,7 +165,7 @@ export function classer(
   let niveau: Niveau;
   if (horsUE.length > 0) {
     estHorsUE = true;
-    niveau = niveauMax(horsUE.map((s) => s.niveau));
+    niveau = niveauMax(horsUE);
   } else if (liste.length > 0 && determines.length === liste.length) {
     estHorsUE = false;
     niveau = niveauMin(...liste.map((s) => s.niveau));

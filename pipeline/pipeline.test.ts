@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { detecterCdn, estPlage, type ReferentielCdn } from "./cdn";
 import { chiffreTitre, classer, type Contexte } from "./classement";
+import { niveauMin } from "./types";
 import { observer } from "./dns";
 import { domaineEnregistre, nomWeb, raisonExclusion } from "./noms";
 import { adresseEnEntier, coucheReseau, TableIpToAsn, TableRis } from "./reseau";
@@ -362,6 +363,49 @@ describe("observation et classement", () => {
     expect(c.niveau).toBe("confirmé");
     // Without the control resolver, the address layer is at best « probable ».
     expect(classer(o, null, "État", contexte).niveau).toBe("probable");
+  });
+
+  it("counts a site outside the EU when the company that serves it is, though its parent is not (rule C2-4)", async () => {
+    // The Imperva case: a security relay whose own seat is in the United States, owned by a French group.
+    const avecRelais = (sourcesRelais: typeof deux): Contexte => ({
+      ...contexte,
+      societes: {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "groupe-fr": { nom: "Groupe Exemple SA", pays: "FR", mere: null, sources: deux, sources_mere: deux },
+          "relais-us": {
+            nom: "Relais Exemple, Inc.",
+            pays: "US",
+            mere: "groupe-fr",
+            sources: sourcesRelais,
+            sources_mere: deux,
+          },
+        },
+      },
+      cdn: {
+        ...cdn,
+        fournisseurs: [
+          ...cdn.fournisseurs,
+          {
+            id: "relais-exemple",
+            nom: "Relais Exemple",
+            societe: "relais-us",
+            suffixes: [{ suffixe: ".relais.example", source: "https://relais.example/doc", lu_le: "2026-11-19" }],
+            as: [],
+          },
+        ],
+      },
+    });
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), chaineCname: ["site.relais.example"] };
+    const c = classer(o, o, "État", avecRelais(deux));
+    expect(c.cdn?.id).toBe("relais-exemple");
+    // The parent's seat stays the category shown; the company's own seat puts the site outside the EU.
+    expect(c.categorie).toBe("France");
+    expect(c.horsUE).toBe(true);
+    expect(c.niveau).toBe(niveauMin(c.servants[0]?.niveauSociete ?? "non déterminé", "confirmé"));
+    // Its level is the one of what proves it: one source for the company's seat makes it « probable » at best.
+    expect(classer(o, o, "État", avecRelais(une)).niveau).toBe("probable");
   });
 
   it("reads the headline figure as « au moins X % », with the probable and undetermined shares beside it", async () => {

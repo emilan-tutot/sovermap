@@ -120,7 +120,7 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
 
 ### Couche 7 — Les pays des sièges
 - **Valeur** : le pays du siège de la société exploitante et celui de la maison mère.
-- **Classement** : il suit la **maison mère ultime**, car c'est elle qui peut exposer à des lois extraterritoriales. Catégories :
+- **Classement** : la catégorie affichée suit la **maison mère ultime**, car c'est elle qui peut exposer à des lois extraterritoriales. Mais un site compte comme **dépendant d'un siège hors de l'Union européenne** quand la société qui le sert **ou** sa maison mère ultime y a son siège (règle C2-4, méthode 0.3 : le cas Imperva, filiale américaine d'un groupe français). Quand seule la société qui sert est hors de l'UE, le niveau de confiance est celui de ce qui le prouve : la couche des adresses, le lien vers la société (le CDN ou l'AS) et les sources du pays de la société, sans sa chaîne de propriété. Catégories :
   - France ;
   - Union européenne hors France ;
   - Europe hors UE (Royaume-Uni, Suisse, Norvège…) ;
@@ -188,7 +188,8 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
   - **Le problème.** Les CDN répondent selon la position du résolveur (géolocalisation par le DNS, option EDNS Client Subnet, RFC 7871). Les adresses servies à une machine aux États-Unis peuvent donc différer de celles servies en France. Elles peuvent même appartenir à un autre réseau.
   - **La parade.** Chaque réponse garde le nom du résolveur et le lieu connu de la machine qui mesure. Un résolveur public européen sert de contrôle. Le classement d'un site derrière un CDN repose sur le CDN, que la position du résolveur ne change pas.
   - Le choix du résolveur principal est décrit dans `specs/001-sovermap/plan.md`.
-- **Filiale européenne d'un groupe non européen** : les deux sièges sont affichés, et le classement suit la maison mère ultime.
+- **Filiale européenne d'un groupe non européen** : les deux sièges sont affichés, et le site compte comme dépendant d'un siège hors de l'UE (par sa maison mère).
+- **Filiale non européenne d'un groupe européen** (le cas Imperva) : les deux sièges sont affichés ; la catégorie affichée reste celle de la maison mère, mais le site compte comme dépendant d'un siège hors de l'UE (par la société qui le sert, règle C2-4).
 - **Ancien bloc d'adresses** : le nom historique d'un bloc ne dit pas qui l'exploite aujourd'hui. On suit le titulaire actuel de l'AS d'origine.
 
 ## 7. Garde-fous de publication
@@ -327,3 +328,4 @@ Vérifiés le 18/11/2026. Ces travaux sont cités pour situer Sovermap, pas copi
 | 0.2.3 | 22/11/2026 | La règle « outil technique » n'écarte jamais un site que l'Observatoire du SIG recense (§ 3, point 09 du chantier 2) : 2 noms de plus mesurés. |
 | 0.2.4 | 22/11/2026 | Politesse (§ 7) : le résolveur ne minimise plus les noms qu'il demande (`minimize: false`, dans une vue de Knot Resolver) ; le poids d'un nom intermédiaire nouveau reste, par marge. Sans effet sur la règle du chiffre. Publication (§ 7) : la provenance d'un nom venu du Référentiel de la DILA ne porte plus le fichier du jour (« dila » seulement ; le fichier est dans etat.json) : chaque fiche de la DILA est réécrite une fois. |
 | 0.2.5 | 22/11/2026 | Couche 8 (C.4) : un service qualifié SecNumCloud n'est lié à une société que par sa décision de qualification, lue sur messervices.cyber.gouv.fr (le SIREN qu'elle écrit, s'il est valide ; sinon sa raison sociale et sa ville, comparés au répertoire Sirene) ; seules comptent les qualifications en cours. Couche 6 : le sommet d'une chaîne écrit (aucune société ne le consolide ; ni une personne physique ni ses sociétés de détention ne sont des maillons). |
+| 0.3 | 22/11/2026 | Couche 7 et chiffre-titre (règle C2-4, plan § 15) : un site compte comme dépendant d'un siège hors de l'Union européenne quand la société qui le sert **ou** sa maison mère ultime y a son siège ; la catégorie affichée reste celle de la maison mère ; quand seule la société qui sert est hors de l'UE, le niveau est celui de ce qui le prouve (couche des adresses, lien vers la société, sources de son pays). Effet mesuré sur l'état publié du jour 2 : sur 1 424 noms web « État » qui répondent, 33 de plus (+2,3 points, de 8,6 à 10,9 %), dont 31 servis par Incapsula Inc (États-Unis, filiale d'Imperva) et 2 par Radware (Israël). Un changement de règles : rien n'entre au journal le lendemain. |
