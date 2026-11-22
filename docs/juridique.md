@@ -127,6 +127,8 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
 - **Registre des traitements** : les journaux sont produits en continu, ce qui n'est pas « occasionnel » (art. 30, § 5). Il faut donc tenir un registre très court : journaux, e-mails, issues.
 
 ### 2.2 Cookies et traceurs
+- **La protection contre les robots de Vercel** (documentation de Vercel, « Firewall concepts », lue par Context7 le 22/11/2026) : après un défi réussi, une « session de défi » est créée dans le navigateur, valable une heure, liée à ce navigateur. Elle vient de l'hébergeur, pas de Sovermap ; la page Confidentialité le dit (point 13 du chantier 2, § 7).
+- **Page de la CNIL « Cookies et autres traceurs : que dit la loi ? »** (lue le 22/11/2026) : parmi les traceurs non soumis au consentement, « les traceurs destinés à l'authentification auprès d'un service, y compris ceux visant à assurer la sécurité du mécanisme d'authentification, par exemple en limitant les tentatives d'accès robotisées ou inattendues ». Sovermap n'en conclut rien pour la session de défi de Vercel, qui ne sert pas à une authentification.
 - **Article 82 de la loi n° 78-17** : le consentement est exigé pour lire ou écrire dans le terminal, sauf si cela « a pour finalité exclusive de permettre ou faciliter la communication par voie électronique » ou « est strictement nécessaire à la fourniture d'un service de communication en ligne à la demande expresse de l'utilisateur ».
 - **Lignes directrices de la CNIL** (délibération n° 2020-091 du 17 septembre 2020, lue dans la base CNIL de la DILA) :
   - le stockage local du navigateur (« local storage ») est un traceur au sens de l'article 82 ;

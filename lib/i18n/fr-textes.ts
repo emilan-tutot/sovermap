@@ -76,7 +76,7 @@ export const aPropos: PageDeTexte = soignee({
             " le montre, commande par commande.",
           ],
         },
-        { paragraphe: ["Le site n’a ni compte, ni cookie, ni traceur, ni publicité."] },
+        { paragraphe: ["Le site n’a ni compte ni publicité, et ne dépose lui-même aucun cookie ni traceur."] },
       ],
     },
   ],
@@ -680,16 +680,26 @@ export const confidentialite: PageDeTexte = soignee({
   court: "Confidentialité",
   titre: "Confidentialité",
   description:
-    "Ce que Sovermap sait de ses visiteurs : aucun cookie, aucun traceur ; les journaux techniques de son hébergeur, gardés peu de temps ; vos droits.",
+    "Ce que Sovermap sait de ses visiteurs : aucun cookie ni traceur de sa part ; parfois, la session de défi de son hébergeur ; ses journaux techniques ; vos droits.",
   chapo:
-    "Sovermap n’a ni compte, ni cookie, ni traceur. Il ne reste que ce que tout site produit : les journaux techniques de son hébergeur.",
+    "Sovermap n’a ni compte, ni cookie, ni traceur. Il ne reste que ce que tout site produit : les journaux techniques de son hébergeur, et parfois sa protection contre les robots.",
   sections: [
     {
       titre: "Aucun cookie, aucun traceur",
       blocs: [
         {
           paragraphe: [
-            "Le site ne dépose aucun cookie et n’écrit rien dans votre navigateur. Il ne charge rien d’un autre domaine : ni police, ni script, ni image, ni mesure d’audience. Il n’y a donc aucun bandeau à accepter.",
+            "Sovermap ne dépose lui-même aucun cookie et n’écrit rien dans votre navigateur. Il ne charge rien d’un autre domaine : ni police, ni script, ni image, ni mesure d’audience. Il n’y a donc aucun bandeau à accepter.",
+          ],
+        },
+        {
+          paragraphe: [
+            "Une exception vient de son hébergeur, Vercel : sa protection contre les robots peut soumettre un navigateur à un défi, rarement celui d’un visiteur ordinaire. Après un défi réussi, Vercel garde dans ce navigateur une « session de défi », valable une heure (documentation de Vercel, « Firewall concepts », lue le 22/11/2026).",
+          ],
+        },
+        {
+          paragraphe: [
+            "La règle qui s’applique est l’article 82 de la loi Informatique et Libertés : il exempte de consentement ce qui est strictement nécessaire à un service de communication en ligne expressément demandé par l’utilisateur. Parmi ses exemples, la CNIL cite les traceurs qui assurent la sécurité d’un mécanisme d’authentification, « par exemple en limitant les tentatives d’accès robotisées » (page « Cookies et autres traceurs : que dit la loi ? », lue le 22/11/2026).",
           ],
         },
       ],
