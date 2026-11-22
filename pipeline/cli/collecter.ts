@@ -32,7 +32,7 @@ import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
 import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
-import { donneesPersonnelles } from "../personnelles";
+import { ajouterEcarts, donneesPersonnelles, type Ecarts, garderTexteLibre } from "../personnelles";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -721,6 +721,8 @@ async function principal(): Promise<number> {
           asVus,
         )
       : new Map();
+  // The free text of the AS kept (P13), counted with the Référentiel's in etat.json.
+  const ecartsAs: Ecarts = {};
   const descriptions = new Map<number, string | null>();
   for (const a of asVus) {
     descriptions.set(a, contexte.iptoasn.descriptionAs(a));
@@ -765,9 +767,15 @@ async function principal(): Promise<number> {
           {
             // A description or a holder's name may name a person (an AS held by an individual): both are published
             // only for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data).
-            description: ref.tableAs.as[String(a)] === undefined ? null : (descriptions.get(a) ?? null),
+            description:
+              ref.tableAs.as[String(a)] === undefined
+                ? null
+                : garderTexteLibre(descriptions.get(a) ?? null, "iptoasn", ecartsAs),
             paysEnregistrement: contexte.paysAs.get(a) ?? null,
-            titulaire: ref.tableAs.as[String(a)] === undefined ? null : (ripe.get(a)?.orgName ?? null),
+            titulaire:
+              ref.tableAs.as[String(a)] === undefined
+                ? null
+                : garderTexteLibre(ripe.get(a)?.orgName ?? null, "ripe", ecartsAs),
           },
         ]),
       ),
@@ -945,6 +953,8 @@ async function principal(): Promise<number> {
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
       enregistrementsReduits: rapportJour.reduits,
       nomsDilaNeutralises: dila?.neutralises ?? 0,
+      // The free text left out because it held an e-mail address, a phone or a person's name (P13), by source.
+      texteLibreEcarte: ajouterEcarts(dila?.ecarts ?? {}, ecartsAs),
       enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,
