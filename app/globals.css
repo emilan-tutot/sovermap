@@ -187,7 +187,12 @@
     text-decoration: underline;
   }
 
+  /* A touch target of 44 px at least, like the navigation's links (DESIGN.md): on a phone, the wrapped navigation sits
+     right under it. */
   .logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     font-family: var(--font-titre);
     font-weight: 600;
     font-size: 1.05rem;
