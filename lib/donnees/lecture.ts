@@ -16,6 +16,8 @@
 // error; that file only otherwise). Behind the closed production door, nothing is read at all (lib/porte.ts).
 import "server-only";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { unstable_cache } from "next/cache";
 import paquet from "@/package.json";
 import { agentUtilisateur } from "@/pipeline/sources";
@@ -423,9 +425,35 @@ export class LecteurDonnees {
   }
 }
 
+/**
+ * A fetch that reads a local folder of published data instead of GitHub, for the end-to-end tests of the full site
+ * (D.8; the folder written by scripts/donnees-essai.ts): only the path after « /donnees/ » of the address the reader
+ * builds, never a path that leaves the folder; an absent file answers 404. Never used on Vercel (VERCEL is always set
+ * there), whatever the variable says.
+ */
+export function fetchLocal(dossier: string): typeof fetch {
+  const racine = path.resolve(dossier);
+  return async (entree) => {
+    const adresse = new URL(String(entree instanceof Request ? entree.url : entree));
+    const chemin = decodeURIComponent(adresse.pathname).split("/sovermap/donnees/")[1] ?? "";
+    const fichier = path.resolve(racine, chemin);
+    if (!MOTIF_CHEMIN.test(chemin) || !fichier.startsWith(`${racine}${path.sep}`))
+      return new Response(null, { status: 404 });
+    try {
+      return new Response(await readFile(fichier, "utf8"), { status: 200 });
+    } catch {
+      return new Response(null, { status: 404 });
+    }
+  };
+}
+
+const DONNEES_LOCALES = process.env["VERCEL"]
+  ? undefined
+  : process.env["SOVERMAP_DONNEES_LOCALES"]?.trim() || undefined;
+
 /** The server's reader: one per function instance, in front of Next's data cache. */
 export const lecteur = new LecteurDonnees({
-  fetch: (entree, init) => fetch(entree, init),
+  fetch: DONNEES_LOCALES === undefined ? (entree, init) => fetch(entree, init) : fetchLocal(DONNEES_LOCALES),
   maintenant: () => Date.now(),
   env: process.env,
   journal: (ligne) => console.warn(ligne),

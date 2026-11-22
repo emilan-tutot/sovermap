@@ -188,3 +188,7 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 52. **Les essais des PR passent l'un après l'autre, pas l'essai lancé à la main** (21/11/2026) : la mesure d'un essai de PR est dans le groupe de concurrence `collecte-mesure-essai` (l'un après l'autre) ; un essai lancé à la main (`workflow_dispatch`, comme celui du disjoncteur) est dans `collecte-mesure-jour`, celui de la collecte quotidienne, et peut tourner en même temps qu'un essai de PR : deux fois la charge sur les mêmes serveurs. Le lancer seulement quand aucun essai de PR ne tourne ni n'attend.
 
 53. **Sous Windows, Python écrit des fins de ligne CRLF en mode texte** (21/11/2026) : un script de mutation qui restaure un fichier avec `write_text` y met des CRLF (vu par git avant l'enregistrement). Restaurer en octets (`read_bytes`, puis `write_bytes`), ou ouvrir avec `newline=""`, puis vérifier l'égalité à l'octet près.
+
+## Site (chantier 2, partie D)
+
+54. **Le cache de données de Next.js survit au build** (22/11/2026) : `next build` vide `.next`, sauf `.next/cache`, où `next start` garde les lectures de `unstable_cache` (`.next/cache/fetch-cache`). Le lecteur y garde `etat.json` une heure sous le nom du compte : au deuxième essai des tests du site complet, le serveur lisait encore l'état inventé du premier, sans l'historique ajouté entre-temps (le curseur du temps manquait). `npm run e2e:site` vide ce dossier avant de construire ; pour toute mesure locale avec des données qui changent, faire de même.

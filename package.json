@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
+    "e2e:site": "playwright test --config playwright.site.config.ts",
     "check": "npm run lint && npm run typecheck && npm run test && npm run scan:prive",
     "scan:prive": "tsx scripts/scan-prive.ts",
     "scan:build": "tsx scripts/scan-build.ts",
