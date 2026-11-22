@@ -13,6 +13,8 @@ import {
   type SocieteVue,
   type SourcesRadiographie,
 } from "@/lib/donnees/radiographie";
+import { slugMinistere } from "@/lib/donnees/ministeres";
+import { slugDuCode } from "@/lib/donnees/pays";
 import { dateFr } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 
@@ -22,6 +24,27 @@ export type Mode = "simple" | "expert";
 const pays = (code: string | null) => (code === null ? t.nonDetermine : (nomPays(code) ?? code));
 const categorie = (c: Categorie) => t.categories[c];
 const niveau = (n: Niveau) => t.niveaux[n];
+/** A company's name leading to its page (every company of the day's index has one). */
+function LienSociete({ cle, children }: { cle: string; children: ReactNode }) {
+  return (
+    <Link href={`/societes/${cle}`} prefetch={false}>
+      {children}
+    </Link>
+  );
+}
+
+/** A country's name leading to its page, when the countries' table knows it. */
+function LienPays({ code, children }: { code: string | null; children: ReactNode }) {
+  const slug = code === null ? null : slugDuCode(code);
+  return slug === null ? (
+    <>{children}</>
+  ) : (
+    <Link href={`/pays/${slug}`} prefetch={false}>
+      {children}
+    </Link>
+  );
+}
+
 /** The distinct companies of a list of operators, in their order. */
 const societes = (exploitants: readonly ExploitantVu[]): SocieteVue[] => [
   ...new Map(exploitants.flatMap((e) => (e.societe === null ? [] : [[e.societe.cle, e.societe] as const]))).values(),
@@ -160,7 +183,21 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
                   ),
                 )}
               </p>
-              {r.ministeres.length > 0 ? <p>{t.liste(r.ministeres)}</p> : null}
+              {r.ministeres.length > 0 ? (
+                <ul className="couche-liste">
+                  {r.ministeres.map((m) => (
+                    <li key={m}>
+                      {/^[0-9a-f-]{36}$/.test(m) ? (
+                        m
+                      ) : (
+                        <Link href={`/ministeres/${slugMinistere(m)}`} prefetch={false}>
+                          {m}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               {expert ? <p className="valeur">{t.champ(t.domaine.nomWeb, r.nomWeb)}</p> : null}
               {expert && r.autresNoms > 0 ? <p>{t.domaine.autresNoms(r.autresNoms)}</p> : null}
             </Couche>
@@ -251,10 +288,14 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
                 <ul className="couche-liste">
                   {exploitants.map((e, i) => (
                     <li key={`${e.role}-${e.societe?.cle ?? i}`}>
-                      <p>
-                        {t.role(
-                          t.exploitant.role[e.role],
-                          e.societe === null ? t.nonDetermine : t.societe(e.societe.nom, pays(e.societe.pays)),
+                      <p className="ligne-role">
+                        <span>{t.exploitant.role[e.role]}</span>
+                        {e.societe === null ? (
+                          <span>{t.nonDetermine}</span>
+                        ) : (
+                          <LienSociete cle={e.societe.cle}>
+                            {t.societe(e.societe.nom, pays(e.societe.pays))}
+                          </LienSociete>
                         )}
                       </p>
                       <p className="releve-note">{t.champ(t.niveau, niveau(e.niveau))}</p>
@@ -277,11 +318,15 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
                 <ul className="couche-liste">
                   {meres.map(({ so, mere }) => (
                     <li key={so.cle}>
-                      {mere === null
-                        ? t.nonDetermine
-                        : mere === "sommet"
-                          ? t.mere.sommet(so.nom)
-                          : t.societe(mere.nom ?? t.mere.nomNonPublie, pays(mere.pays))}
+                      {mere === null ? (
+                        t.nonDetermine
+                      ) : mere === "sommet" ? (
+                        <LienSociete cle={so.cle}>{t.mere.sommet(so.nom)}</LienSociete>
+                      ) : mere.page && mere.nom !== null ? (
+                        <LienSociete cle={mere.cle}>{t.societe(mere.nom, pays(mere.pays))}</LienSociete>
+                      ) : (
+                        t.societe(mere.nom ?? t.mere.nomNonPublie, pays(mere.pays))
+                      )}
                       {expert && so.maillons.length > 0 ? (
                         <p className="releve-note">{t.mere.chaine([so.nom, ...so.maillons.map((m) => m.nom)])}</p>
                       ) : null}
@@ -303,9 +348,13 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
                 <ul className="couche-liste">
                   {meres.map(({ so, mere }) => (
                     <li key={so.cle}>
-                      {mere === null
-                        ? t.nonDetermine
-                        : t.pays.valeur(pays(mere === "sommet" ? so.pays : mere.pays), categorie(so.categorie))}
+                      {mere === null ? (
+                        t.nonDetermine
+                      ) : (
+                        <LienPays code={mere === "sommet" ? so.pays : mere.pays}>
+                          {t.pays.valeur(pays(mere === "sommet" ? so.pays : mere.pays), categorie(so.categorie))}
+                        </LienPays>
+                      )}
                     </li>
                   ))}
                 </ul>

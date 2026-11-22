@@ -77,9 +77,13 @@ export default async function SocietePage({ params, searchParams }: Props) {
           <ol className="chaine">
             {s.maillons.map((m) => (
               <li key={m.cle}>
-                <Link href={`/societes/${m.cle}`} prefetch={false}>
-                  {m.nom}
-                </Link>
+                {index?.has(m.cle) ? (
+                  <Link href={`/societes/${m.cle}`} prefetch={false}>
+                    {m.nom}
+                  </Link>
+                ) : (
+                  <span>{m.nom}</span>
+                )}
                 <span>{nomPays(m.pays) ?? m.pays}</span>
               </li>
             ))}

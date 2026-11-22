@@ -1,7 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { fr } from "@/lib/i18n/fr";
-import { servedVersion } from "@/lib/site";
+import { servedVersion, sitePublic } from "@/lib/site";
+
+const NAVIGATION = [
+  { href: "/", texte: fr.coque.navigation.atlas },
+  { href: "/ministeres", texte: fr.coque.navigation.ministeres },
+  { href: "/societes", texte: fr.coque.navigation.societes },
+  { href: "/journal", texte: fr.coque.navigation.journal },
+] as const;
 
 /**
  * The shell of every page (DESIGN.md §9): a skip link, the header with the wordmark, the content, the footer with the
@@ -18,6 +25,15 @@ export function Coque({ children, large = false }: { children: ReactNode; large?
         <Link className="logo" href="/" aria-label={fr.coque.logo} prefetch={false}>
           {fr.site.name}
         </Link>
+        {sitePublic() ? (
+          <nav className="navigation" aria-label={fr.coque.navigation.libelle}>
+            {NAVIGATION.map((n) => (
+              <Link key={n.href} href={n.href} prefetch={false}>
+                {n.texte}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
       </header>
       <main id="contenu" className={large ? "contenu contenu-large" : "contenu"}>
         {children}

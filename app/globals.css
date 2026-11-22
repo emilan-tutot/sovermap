@@ -120,10 +120,30 @@
 
   .entete {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.5rem;
     align-items: center;
     min-height: 3.5rem;
     padding: 0.5rem var(--marge);
     border-bottom: 1px solid var(--color-trait);
+  }
+
+  .navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.25rem;
+    margin-left: auto;
+  }
+
+  .navigation a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .navigation a:hover {
+    text-decoration: underline;
   }
 
   .logo {
@@ -438,6 +458,12 @@
     gap: 0.25rem;
     padding: 0;
     list-style: none;
+  }
+
+  .ligne-role {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.4em;
   }
 
   .couche-meta {

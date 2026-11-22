@@ -133,16 +133,26 @@ describe("the Radiographie of a domain (D.2)", () => {
   it("names a company, its ultimate parent, or says it is the top of its chain or unknown", () => {
     const index = societes ?? new Map();
     expect(societeVue("hebergeur-fr", index)?.mere).toBe("sommet");
-    expect(societeVue("filiale-us", index)?.mere).toEqual({ cle: "groupe-us", nom: "Groupe Exemple", pays: "US" });
+    expect(societeVue("filiale-us", index)?.mere).toEqual({
+      cle: "groupe-us",
+      nom: "Groupe Exemple",
+      pays: "US",
+      page: true,
+    });
     expect(societeVue("sans-mere", index)?.mere).toBeNull();
     expect(societeVue("filiale-groupe", index)).toMatchObject({
-      mere: { cle: "groupe-fr", nom: "Groupe Français Exemple", pays: "FR" },
+      mere: { cle: "groupe-fr", nom: "Groupe Français Exemple", pays: "FR", page: false },
       maillons: [
         { cle: "holding-fr", nom: "Holding Exemple", pays: "FR" },
         { cle: "groupe-fr", nom: "Groupe Français Exemple", pays: "FR" },
       ],
     });
-    expect(societeVue("filiale-ancienne", index)?.mere).toEqual({ cle: "groupe-fr", nom: null, pays: "FR" });
+    expect(societeVue("filiale-ancienne", index)?.mere).toEqual({
+      cle: "groupe-fr",
+      nom: null,
+      pays: "FR",
+      page: false,
+    });
     expect(societeVue("inconnue", index)).toBeNull();
     expect(societeVue(null, index)).toBeNull();
     expect(nomPays("US")).toBe("États-Unis");

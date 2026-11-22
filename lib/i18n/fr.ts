@@ -18,6 +18,14 @@ export const fr = {
   coque: {
     evitement: "Aller au contenu",
     logo: "Sovermap, accueil",
+    /** The navigation of the full site (DESIGN.md §9), behind an open door only. */
+    navigation: {
+      libelle: "Navigation principale",
+      atlas: "Atlas",
+      ministeres: "Ministères",
+      societes: "Sociétés",
+      journal: "Journal",
+    },
   },
   attente: {
     title: "En préparation",

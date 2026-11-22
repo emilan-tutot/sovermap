@@ -113,7 +113,7 @@ export const nomPays = (code: string | null): string | null => (code === null ? 
 const NOMS_CDN = new Map<string, string>(cdn.fournisseurs.map((f) => [f.id, f.nom]));
 
 /** The ultimate parent: its name is null when the day's index does not publish it (before 23/11/2026). */
-export type MereVue = { cle: string; nom: string | null; pays: string | null } | "sommet" | null;
+export type MereVue = { cle: string; nom: string | null; pays: string | null; page: boolean } | "sommet" | null;
 export type SocieteVue = {
   cle: string;
   nom: string;
@@ -216,8 +216,13 @@ export function societeVue(cle: string | null, societes: IndexSocietes): Societe
   if (s === undefined) return null;
   const sommet = s.maillons.at(-1);
   const nomMere = sommet?.cle === s.mere ? sommet.nom : (societes.get(s.mere ?? "")?.nom ?? null);
+  // The parent has a page only when the day's index lists it (a company that serves sites itself).
   const mere: MereVue =
-    s.mere === null ? null : s.mere === cle ? "sommet" : { cle: s.mere, nom: nomMere, pays: s.paysMere };
+    s.mere === null
+      ? null
+      : s.mere === cle
+        ? "sommet"
+        : { cle: s.mere, nom: nomMere, pays: s.paysMere, page: societes.has(s.mere) };
   return { cle, nom: s.nom, pays: s.pays, mere, categorie: s.categorie, maillons: s.maillons };
 }
 
