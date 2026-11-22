@@ -1,6 +1,6 @@
 {
-  "version": "0.2",
-  "date": "2026-11-21",
+  "version": "0.3",
+  "date": "2026-11-22",
   "statut": "Provisoire : les sociétés vues dans l'échantillon du chantier T1. La table complète est établie en T3.",
   "regle": "« sources » établit l'identité et le pays du siège ; « sources_mere » établit le lien vers la maison mère, ou le fait qu'il n'y en a pas au-dessus. Deux producteurs différents : « confirmé » ; un seul : « probable » ; aucun : « non déterminé ». « non-determinee » marque une maison mère inconnue.",
   "societes": {
@@ -73,7 +73,7 @@
         }
       ],
       "sources_mere": [],
-      "note": "Maison mère attendue : Akamai Technologies, Inc. (États-Unis). Aucune source primaire lisible : les sites d'Akamai répondent « Access Denied » aux robots, même pour robots.txt, et EDGAR exige une adresse e-mail. Une lecture humaine de l'annexe 21.1 du 10-K suffirait."
+      "note": "Maison mère attendue : Akamai Technologies, Inc. (États-Unis). Aucune source primaire lisible : les sites d'Akamai répondent « Access Denied » aux robots, même pour robots.txt, et EDGAR exige une adresse e-mail. Une lecture humaine de l'annexe 21.1 du 10-K suffirait. GLEIF (22/11/2026) n'a aucune fiche pour Akamai International B.V. : les seules entités proches, Akamai Technologies Netherlands B.V. (Amsterdam, LEI 9845002E1BS2D43DH296) et Akamai Technologies International AG (Zoug, LEI 984500BBEB3EMC3A8197), ne sont pas le titulaire de l'AS."
     },
     "akamai-technologies-inc": {
       "nom": "Akamai Technologies, Inc.",
@@ -577,7 +577,7 @@
         }
       ],
       "sources_mere": [],
-      "note": "Maison mère non établie par une source permise (21/11/2026). GLEIF : aucune entité française parmi les six résultats « Eurofiber » ; Eurofiber Nederland B.V. a pour parent ultime ANTIN ELEPHANT BIDCO B.V. (Pays-Bas, LEI 213800G9QN7P1DCM3137), mais aucune source ne relie Eurofiber France à ces sociétés. Le robots.txt d'eurofiber.com ferme le site aux agents d'IA : une page du groupe y avait été lue le 19/11/2026 (partie B) ; elle n'est plus citée (écart corrigé le 21/11/2026)."
+      "note": "Maison mère non établie par une source permise (22/11/2026). GLEIF : aucune entité française parmi les résultats « Eurofiber », et aucun LEI pour le SIREN 530018639 (écrit avec ou sans espaces). ANTIN ELEPHANT BIDCO B.V. (Pays-Bas, LEI 213800G9QN7P1DCM3137), parent ultime d'Eurofiber Nederland B.V., n'a dans GLEIF que trois filiales, toutes néerlandaises (Eurofiber Cloud Infra B.V., Eurofiber Nederland B.V., Eurofiber Holding B.V.) : aucune source ne relie Eurofiber France à ces sociétés. Fichier de délégation du RIPE (21/11/2026) : un même titulaire pour sept AS (24935, 35625, 39405, 50960, 60001, 198682, 200780). Le robots.txt d'eurofiber.com ferme le site aux agents d'IA : une page du groupe y avait été lue le 19/11/2026 (partie B) ; elle n'est plus citée (écart corrigé le 21/11/2026)."
     },
     "cegedim-cloud": {
       "nom": "Cegedim.cloud",
@@ -688,9 +688,14 @@
       "lei": "549300CJMQNCA0U4TS33",
       "sources": [
         {
-          "titre": "GLEIF : WORLDLINE, siège en France",
+          "titre": "GLEIF : WORLDLINE, siège à Puteaux (France)",
           "url": "https://search.gleif.org/#/record/549300CJMQNCA0U4TS33",
-          "lu_le": "2026-11-19"
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : WORLDLINE, société anonyme, SIREN 378901946, siège à Puteaux, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/378901946",
+          "lu_le": "2026-11-22"
         }
       ],
       "sources_mere": [
@@ -699,7 +704,8 @@
           "url": "https://search.gleif.org/#/record/549300CJMQNCA0U4TS33",
           "lu_le": "2026-11-19"
         }
-      ]
+      ],
+      "note": "Seconde source du sommet non lue : le document d'enregistrement universel 2025 est servi par investors.worldline.com, non consulté dans cette passe."
     },
     "france-travail": {
       "nom": "France Travail",
@@ -772,9 +778,15 @@
       "nom": "DRI SAS",
       "pays": "FR",
       "mere": "non-determinee",
-      "sources": [],
+      "sources": [
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 20/11/2026 (fiche 22) : AS6738 DRI, organisation ORG-DRIS1-RIPE, « DRI SAS », LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
       "sources_mere": [],
-      "note": "Seul le registre de l'AS est connu ; plusieurs sociétés « DRI » existent dans Sirene."
+      "note": "Société non identifiée (22/11/2026) : le fichier public du RIPE ne donne que le nom « DRI SAS » (son adresse y est factice). Dans Sirene, la recherche « DRI » parmi les SAS donne 88 résultats ; les 7 du secteur « information et communication » ont été créés entre 2017 et 2026, alors que l'AS est enregistré au RIPE depuis le 21/06/2006 (fichier de délégation). Aucune société n'est retenue sans preuve."
     },
     "hcl": {
       "nom": "Hospices civils de Lyon",
@@ -869,7 +881,7 @@
         {
           "titre": "Sirene : GANDI, SAS, SIREN 423093459, siège à Paris, active",
           "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/423093459",
-          "lu_le": "2026-11-21"
+          "lu_le": "2026-11-22"
         },
         {
           "titre": "GLEIF : GANDI, SAS, siège à Paris (France)",
@@ -884,7 +896,7 @@
           "lu_le": "2026-11-21"
         }
       ],
-      "note": "Un parent existe selon GLEIF, mais son nom n'est pas publié ; aucune source permise ne l'établit (pas de rapport annuel du groupe lu)."
+      "note": "Un parent existe selon GLEIF, mais son nom n'est pas publié ; aucune source permise ne l'établit (22/11/2026, pas de rapport annuel du groupe lu). GLEIF connaît un groupe Your.Online aux Pays-Bas (Your.Online B.V., Zwolle ; Your.Online Trust B.V. et Total Webhosting Solutions B.V., Amsterdam ; parent ultime de ces deux dernières : une société de participations de Blaricum, Pays-Bas, en exception « NATURAL_PERSONS ») ; aucune relation de GLEIF ne le relie à Gandi. Le fichier de délégation du RIPE (21/11/2026) donne un même titulaire pour AS29169, AS203476 et AS209453."
     },
     "outscale": {
       "nom": "Outscale (3DS Outscale)",
@@ -1142,6 +1154,548 @@
         }
       ],
       "note": "Aucune seconde source permise : Hetzner ne publie pas de rapport annuel parmi les sources du registre, et le registre du commerce allemand n'y figure pas."
+    },
+    "alter-way": {
+      "nom": "Alter Way",
+      "pays": "FR",
+      "mere": "smile",
+      "lei": "969500BKTLB31TVA9907",
+      "sources": [
+        {
+          "titre": "Sirene : ALTER WAY, SAS, SIREN 490932308, siège à Asnières-sur-Seine, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/490932308",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : ALTER WAY, siège à Asnières-sur-Seine (France)",
+          "url": "https://search.gleif.org/#/record/969500BKTLB31TVA9907",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime SMILE (LEI 96950091WTS363BYOH83)",
+          "url": "https://search.gleif.org/#/record/969500BKTLB31TVA9907",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Sirene : les six autres sociétés « Alter Way » (dont ALTER WAY HOSTING, SIREN 423995224) sont cessées. Seconde source du lien non trouvée : aucun rapport annuel de Smile n'a été lu."
+    },
+    "smile": {
+      "nom": "Smile",
+      "pays": "FR",
+      "mere": null,
+      "controle": "personnes physiques, selon GLEIF",
+      "lei": "96950091WTS363BYOH83",
+      "sources": [
+        {
+          "titre": "Sirene : SMILE, SAS, SIREN 378615363, siège à Asnières-sur-Seine, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/378615363",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : SMILE, siège à Asnières-sur-Seine (France)",
+          "url": "https://search.gleif.org/#/record/96950091WTS363BYOH83",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NATURAL_PERSONS »",
+          "url": "https://search.gleif.org/#/record/96950091WTS363BYOH83",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "actimage-consulting": {
+      "nom": "Actimage Consulting",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "lei": "969500P0EVM4RAK2Y078",
+      "sources": [
+        {
+          "titre": "Sirene : ACTIMAGE CONSULTING SAS, SAS, SIREN 479557894, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/479557894",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : ACTIMAGE CONSULTING SAS, siège à Paris (France) ; LEI non renouvelé depuis le 07/01/2021",
+          "url": "https://search.gleif.org/#/record/969500P0EVM4RAK2Y078",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_LEI » (un parent sans LEI existerait ; fiche non renouvelée depuis 2021)",
+          "url": "https://search.gleif.org/#/record/969500P0EVM4RAK2Y078",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Un parent existe selon GLEIF, sans LEI et sans nom ; aucune source permise ne le nomme (22/11/2026)."
+    },
+    "infomaniak-network": {
+      "nom": "Infomaniak Network SA",
+      "pays": "CH",
+      "mere": "infomaniak-group",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS29222 Infomaniak-AS, titulaire Infomaniak Network SA, pays d'enregistrement CH",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Infomaniak Group SA, rapport financier du 1er semestre 2026 (consolidation au 30/06/2026), § 1.1 : Infomaniak Network SA, Genève, société du groupe ; aucun LEI trouvé dans GLEIF",
+          "url": "https://www.infomaniak.com/documents/financial/rapport-financier-semestriel-30-06-2026.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Infomaniak Group SA, rapport financier du 1er semestre 2026, § 1.1 « Group companies » : Infomaniak Network SA détenue à 100 % (capital et droits de vote) au 30/06/2026 comme au 31/12/2025, dans le groupe consolidé par Infomaniak Group SA",
+          "url": "https://www.infomaniak.com/documents/financial/rapport-financier-semestriel-30-06-2026.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "infomaniak-group": {
+      "nom": "Infomaniak Group SA",
+      "pays": "CH",
+      "mere": null,
+      "controle": "fondation : la Fondation Infomaniak détient la majorité des droits de vote (rapport du 1er semestre 2026)",
+      "sources": [
+        {
+          "titre": "Infomaniak Group SA, rapport financier du 1er semestre 2026 : société de tête du groupe (« Infomaniak Group SA and its subsidiaries »), société suisse indépendante ; aucun LEI trouvé dans GLEIF",
+          "url": "https://www.infomaniak.com/documents/financial/rapport-financier-semestriel-30-06-2026.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Infomaniak Group SA, rapport financier du 1er semestre 2026, § 1.1 : société de tête du groupe consolidé ; la Fondation Infomaniak détient la majorité des droits de vote",
+          "url": "https://www.infomaniak.com/documents/financial/rapport-financier-semestriel-30-06-2026.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Situation au 30/06/2026. GLEIF (fiche mise à jour le 09/10/2026) connaît aussi Infomaniak SA (ancien nom Perrot Duval Holding SA, Les Acacias, LEI 529900ZII23DTVHP9E90, exception « NATURAL_PERSONS »), à l'adresse d'Infomaniak Network SA ; le rapport mentionne des frais de cotation du groupe ; aucune source permise ne relie encore Infomaniak SA à Infomaniak Group SA. Le pays reste la Suisse dans les deux lectures."
+    },
+    "odigo": {
+      "nom": "Odigo",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "lei": "549300HZV4CQ560BAK81",
+      "sources": [
+        {
+          "titre": "Sirene : ODIGO, SAS, SIREN 529038978, siège à Boulogne-Billancourt, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/529038978",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : ODIGO, siège à Boulogne-Billancourt (France)",
+          "url": "https://search.gleif.org/#/record/549300HZV4CQ560BAK81",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NON_PUBLIC » (les informations sur le parent ne sont pas publiques)",
+          "url": "https://search.gleif.org/#/record/549300HZV4CQ560BAK81",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Un parent existe selon GLEIF, mais son nom n'est pas publié ; aucune source permise ne l'établit (22/11/2026)."
+    },
+    "o2switch": {
+      "nom": "O2switch",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : O2SWITCH, SAS, SIREN 510909807, siège à Clermont-Ferrand, active ; aucun LEI trouvé dans GLEIF",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/510909807",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Aucune source permise sur l'actionnariat (22/11/2026) : pas de LEI, aucun rapport annuel lu."
+    },
+    "aqua-ray": {
+      "nom": "Aqua Ray",
+      "pays": "FR",
+      "mere": null,
+      "controle": "personnes physiques, selon GLEIF",
+      "lei": "894500RUTNNGR1OW3C49",
+      "sources": [
+        {
+          "titre": "Sirene : AQUA RAY, SAS, SIREN 447997099, siège à Ivry-sur-Seine, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/447997099",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : AQUA RAY, siège à Ivry-sur-Seine (France)",
+          "url": "https://search.gleif.org/#/record/894500RUTNNGR1OW3C49",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NATURAL_PERSONS »",
+          "url": "https://search.gleif.org/#/record/894500RUTNNGR1OW3C49",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "bouygues-telecom": {
+      "nom": "Bouygues Telecom",
+      "pays": "FR",
+      "mere": "bouygues",
+      "lei": "9695007Q9M1S87XUJV47",
+      "sources": [
+        {
+          "titre": "Sirene : BOUYGUES TELECOM, société anonyme, SIREN 397480930, siège à Meudon, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/397480930",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : BOUYGUES TELECOM, siège à Meudon (France)",
+          "url": "https://search.gleif.org/#/record/9695007Q9M1S87XUJV47",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime BOUYGUES (LEI 969500MOCLNQFNZN0D63)",
+          "url": "https://search.gleif.org/#/record/9695007Q9M1S87XUJV47",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source du lien non lue : www.bouygues.com répond « Access Denied » aux robots, même pour robots.txt (22/11/2026)."
+    },
+    "bouygues": {
+      "nom": "Bouygues",
+      "pays": "FR",
+      "mere": null,
+      "lei": "969500MOCLNQFNZN0D63",
+      "sources": [
+        {
+          "titre": "Sirene : BOUYGUES, société anonyme, SIREN 572015246, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/572015246",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : BOUYGUES, siège à Paris (France)",
+          "url": "https://search.gleif.org/#/record/969500MOCLNQFNZN0D63",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/969500MOCLNQFNZN0D63",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source du sommet non lue : www.bouygues.com répond « Access Denied » aux robots, même pour robots.txt (22/11/2026)."
+    },
+    "microsoft-corporation": {
+      "nom": "Microsoft Corporation",
+      "pays": "US",
+      "mere": null,
+      "controle": "société cotée (Nasdaq, MSFT)",
+      "lei": "INR2EJN1ERAN0W5ZP974",
+      "sources": [
+        {
+          "titre": "GLEIF : MICROSOFT CORPORATION, société de l'État de Washington, bureaux à Redmond (États-Unis)",
+          "url": "https://search.gleif.org/#/record/INR2EJN1ERAN0W5ZP974",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Microsoft, rapport annuel 2026 (exercice clos le 30/06/2026, rapport d'audit du 29/07/2026) : Microsoft Corporation, Redmond (Washington)",
+          "url": "https://www.microsoft.com/investor/reports/ar26/index.html",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NON_CONSOLIDATING »",
+          "url": "https://search.gleif.org/#/record/INR2EJN1ERAN0W5ZP974",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Microsoft, rapport annuel 2026 : actions ordinaires cotées au Nasdaq (MSFT) ; comptes de Microsoft Corporation et de ses filiales ; aucune société au-dessus",
+          "url": "https://www.microsoft.com/investor/reports/ar26/index.html",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "ecritel": {
+      "nom": "Ecritel",
+      "pays": "FR",
+      "mere": "ecritel-group",
+      "lei": "8945003DBP5R6EXQIY81",
+      "sources": [
+        {
+          "titre": "Sirene : ECRITEL, SAS, SIREN 332484021, siège à Arradon, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/332484021",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : ECRITEL, siège à Arradon (France)",
+          "url": "https://search.gleif.org/#/record/8945003DBP5R6EXQIY81",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime ECRITEL GROUP (LEI 894500K9Z3G1QDER1X57)",
+          "url": "https://search.gleif.org/#/record/8945003DBP5R6EXQIY81",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "ecritel-group": {
+      "nom": "Ecritel Group",
+      "pays": "FR",
+      "mere": null,
+      "lei": "894500K9Z3G1QDER1X57",
+      "sources": [
+        {
+          "titre": "Sirene : ECRITEL GROUP, SAS, SIREN 987414711, siège à Arradon, créée le 08/03/2024, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/987414711",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : ECRITEL GROUP, siège à Arradon (France)",
+          "url": "https://search.gleif.org/#/record/894500K9Z3G1QDER1X57",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/894500K9Z3G1QDER1X57",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "free-pro": {
+      "nom": "Free Pro",
+      "pays": "FR",
+      "mere": "iliad",
+      "lei": "96950014V5ADQ4Z9C179",
+      "sources": [
+        {
+          "titre": "Sirene : FREE PRO (JAGUAR NETWORK), SAS, SIREN 439099656, siège à Marseille, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/439099656",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : FREE PRO (autre nom JAGUAR NETWORK), siège à Marseille (France)",
+          "url": "https://search.gleif.org/#/record/96950014V5ADQ4Z9C179",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Iliad, schéma de la structure du groupe au 31/03/2026 (rubrique investisseurs) : Free Pro, sous iliad, en France, dans le périmètre restreint du groupe",
+          "url": "https://www.iliad.fr/assets/images/investors/group-structure/schema-fr.png",
+          "lu_le": "2026-11-21"
+        }
+      ],
+      "note": "Une seule source pour le lien : GLEIF déclare pour le parent ultime de Free Pro l'exception « NON_PUBLIC » (22/11/2026), qui ne nomme pas le parent sans contredire le schéma."
+    },
+    "hostinger-operations": {
+      "nom": "Hostinger Operations, UAB",
+      "pays": "LT",
+      "mere": "hostinger-uab",
+      "lei": "894500QM0U6LWXLTOR14",
+      "sources": [
+        {
+          "titre": "GLEIF : HOSTINGER operations, UAB, siège à Vilnius (Lituanie), registre 306308157 ; LEI non renouvelé depuis le 23/09/2025",
+          "url": "https://search.gleif.org/#/record/894500QM0U6LWXLTOR14",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Base du RIPE, fichier « organisation » du 20/11/2026 (fiche 22) : ORG-HOU2-RIPE, Hostinger Operations UAB, LT, LIR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime Hostinger, UAB (LEI 254900RUFNPSZGPS5402), d'après une fiche non renouvelée depuis le 23/09/2025",
+          "url": "https://search.gleif.org/#/record/894500QM0U6LWXLTOR14",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "IPtoASN (fichier daté du 01/11/2026) donne encore pour AS47583 « Hostinger International Limited », Chypre (LEI 984500CFD8VBCE9X4266, échu) ; le RIPE (fichiers du 20/11/2026 et délégation du 21/11/2026) donne Hostinger Operations UAB, Lituanie : le titulaire actuel du registre est retenu."
+    },
+    "hostinger-uab": {
+      "nom": "Hostinger, UAB",
+      "pays": "LT",
+      "mere": null,
+      "lei": "254900RUFNPSZGPS5402",
+      "sources": [
+        {
+          "titre": "GLEIF : Hostinger, UAB, siège à Vilnius (Lituanie), registre 302710386",
+          "url": "https://search.gleif.org/#/record/254900RUFNPSZGPS5402",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/254900RUFNPSZGPS5402",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Aucune seconde source permise : Hostinger ne publie pas de rapport annuel parmi les sources du registre, et le registre lituanien n'y figure pas."
+    },
+    "ionos-se": {
+      "nom": "IONOS SE",
+      "pays": "DE",
+      "mere": "united-internet",
+      "lei": "54930038KPLOYRDHV375",
+      "sources": [
+        {
+          "titre": "GLEIF : IONOS SE, siège à Montabaur (Allemagne), HRB 24498",
+          "url": "https://search.gleif.org/#/record/54930038KPLOYRDHV375",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "United Internet, comptes consolidés de l'exercice 2025 (établis à Montabaur le 17/03/2026), note 49 : IONOS SE, Montabaur",
+          "url": "https://www.united-internet.de/fileadmin/user_upload/Konzernabschluss_2025_ENG.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime United Internet AG (LEI 3VEKWPJHTD4NKMBVG947), relation déclarée depuis le 23/06/2026",
+          "url": "https://search.gleif.org/#/record/54930038KPLOYRDHV375",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "United Internet, comptes consolidés de l'exercice 2025, note 49 (filiales dont United Internet AG détient directement ou indirectement la majorité, au 31/12/2025) : IONOS SE, Montabaur, à 100 % dans le sous-groupe d'IONOS Group SE, elle-même détenue à 63,84 %",
+          "url": "https://www.united-internet.de/fileadmin/user_upload/Konzernabschluss_2025_ENG.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Les holdings intermédiaires IONOS Holding SE (LEI 391200QJ00EAEOKU9J47) et IONOS Group SE (LEI 391200NQNTF0AP2MP438, cotée) ne sont pas des maillons : GLEIF relie IONOS SE directement à United Internet AG."
+    },
+    "united-internet": {
+      "nom": "United Internet AG",
+      "pays": "DE",
+      "mere": null,
+      "controle": "une personne physique, par des sociétés qu'elle contrôle : 54,37 % des droits de vote au 31/12/2025 (comptes consolidés 2025)",
+      "lei": "3VEKWPJHTD4NKMBVG947",
+      "sources": [
+        {
+          "titre": "GLEIF : United Internet AG, siège à Montabaur (Allemagne), HRB 5762",
+          "url": "https://search.gleif.org/#/record/3VEKWPJHTD4NKMBVG947",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "United Internet, comptes consolidés de l'exercice 2025 (17/03/2026), « Group structure » : United Internet AG, Montabaur (Allemagne), société mère du groupe",
+          "url": "https://www.united-internet.de/fileadmin/user_upload/Konzernabschluss_2025_ENG.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/3VEKWPJHTD4NKMBVG947",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "United Internet, comptes consolidés de l'exercice 2025 : société mère du groupe ; actionnariat au 31/12/2025 : des sociétés contrôlées par une personne physique détiennent 54,37 % des droits de vote",
+          "url": "https://www.united-internet.de/fileadmin/user_upload/Konzernabschluss_2025_ENG.pdf",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Les sociétés de détention de cette personne ne sont pas des maillons : elles portent son nom, et GLEIF ne déclare aucune société qui consolide United Internet AG."
+    },
+    "eyona": {
+      "nom": "Eyona",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : EYONA, SAS, SIREN 790645865, siège à Cognac, active ; aucun LEI trouvé dans GLEIF",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/790645865",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Aucune source permise sur l'actionnariat (22/11/2026). Sirene donne l'activité principale 58.14Z (édition de revues et périodiques), sans rapport apparent avec le réseau : seule société « Eyona », elle est retenue sur le nom."
+    },
+    "alwaysdata": {
+      "nom": "alwaysdata",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : ALWAYSDATA, SARL, SIREN 492893490, siège à Paris, active ; aucun LEI trouvé dans GLEIF",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/492893490",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Aucune source permise sur l'actionnariat (22/11/2026)."
+    },
+    "evolix": {
+      "nom": "Evolix",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : EVOLIX, SARL, SIREN 451952295, siège à Marseille, active ; aucun LEI trouvé dans GLEIF",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/451952295",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Aucune source permise sur l'actionnariat (22/11/2026)."
+    },
+    "google-llc": {
+      "nom": "Google LLC",
+      "pays": "US",
+      "mere": "alphabet-inc",
+      "lei": "7ZW8QJWVPR4P1J1KQY45",
+      "sources": [
+        {
+          "titre": "GLEIF : GOOGLE LLC, société du Delaware (États-Unis)",
+          "url": "https://search.gleif.org/#/record/7ZW8QJWVPR4P1J1KQY45",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime ALPHABET INC. (LEI 5493006MHB84DD0ZWV18)",
+          "url": "https://search.gleif.org/#/record/7ZW8QJWVPR4P1J1KQY45",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source non lue : le formulaire 10-K d'Alphabet est servi par s206.q4cdn.com, dont le robots.txt répond 403 (22/11/2026), et EDGAR exige une adresse e-mail (fiche 36)."
+    },
+    "alphabet-inc": {
+      "nom": "Alphabet Inc.",
+      "pays": "US",
+      "mere": null,
+      "lei": "5493006MHB84DD0ZWV18",
+      "sources": [
+        {
+          "titre": "GLEIF : ALPHABET INC., société du Delaware, bureaux à Mountain View (États-Unis)",
+          "url": "https://search.gleif.org/#/record/5493006MHB84DD0ZWV18",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/5493006MHB84DD0ZWV18",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source non lue : voir google-llc."
     }
   }
 }
