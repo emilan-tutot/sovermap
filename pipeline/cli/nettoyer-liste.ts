@@ -15,9 +15,9 @@ if (sortie === undefined || !sortie.endsWith(".csv")) {
 const morceaux: Buffer[] = [];
 process.stdin.on("data", (m: Buffer) => morceaux.push(m));
 process.stdin.on("end", () => {
-  const { csv, lignes, noms, types } = nettoyerListe(Buffer.concat(morceaux).toString("utf8"));
+  const { csv, lignes, noms, types, typesInconnus } = nettoyerListe(Buffer.concat(morceaux).toString("utf8"));
   writeFileSync(sortie, csv, "utf8");
   console.log(
-    `nettoyer-liste : ${lignes} lignes lues, ${noms} noms gardés (name, type), ${Object.keys(types).length} types.`,
+    `nettoyer-liste : ${lignes} lignes lues, ${noms} noms gardés (name, type), ${Object.keys(types).length} types ; ${typesInconnus} types inconnus vidés (à relire à la main dans la liste d'origine, jamais recopiés).`,
   );
 });
