@@ -873,7 +873,7 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
   - **Les copies datées** : 33. Une en août 2025, en un seul fichier de 614 888 247 octets ; puis 32 en deux fichiers, du 24/10/2025 au 30/10/2026. Depuis le 06/03/2026, une copie tous les 14 jours, deux fois 21 jours. Le dossier `-latest` est réécrit à chaque copie ; la copie du 14/11/2026 n'a pas encore son dossier daté. Le dépôt pèse 19 856 696 429 octets en tout.
   - **La fraîcheur** : la colonne `modification_date` du second fichier va du 2023-08-09 au **2026-11-12**. La copie reprend donc un fichier de la DILA du 12/11/2026 au plus tôt (le premier fichier n'a pas été lu).
   - **Les 24 colonnes**, lues dans le pied de page (dans l'ordre du fichier) : `chunk_id`, `doc_id`, `chunk_xxh64`, `types`, `name`, `mission_description`, `addresses`, `phone_numbers` (liste), `mails` (liste), `urls` (liste), `social_medias` (liste), `mobile_applications` (liste), `opening_hours`, `contact_forms` (liste), `additional_information`, `modification_date`, `siret`, `siren`, `people_in_charge`, `organizational_chart` (liste), `hierarchy`, `directory_url`, `chunk_text`, `embeddings_bge-m3`. Toutes les valeurs sont du texte UTF-8, seules ou en listes, et peuvent être vides.
-  - **Les colonnes utiles** (brief) : `name`, `types`, `urls`, `siren`, `siret`, `addresses` (pour la commune et le code postal), `hierarchy`, `modification_date`. Elles pèsent 1,2 % des octets (voir « Lecture des colonnes utiles »).
+  - **Les colonnes utiles** (brief) : `name`, `types`, `urls`, `siren`, `siret`, `addresses` (pour la commune et le code postal), `hierarchy`, `modification_date`. Elles pèsent 1,2 % des octets (voir « Lecture des colonnes utiles »). Le lecteur (`pipeline/annuaire-local.ts`) en lit sept : `hierarchy` n'est pas lue, car elle ne servirait qu'avec `chunk_id` (voir plus bas).
   - **Essai sur le second fichier** :
     - `types` : 228 valeurs distinctes, aucune vide ; les plus fréquentes : `mairie` 14 938, `ccas` 5 056, `police_municipale` 1 507, `france_services` 1 299, `gendarmerie` 1 282, `epci` 528 ; aussi `cg (Collectivité locale)` 45 et `cr (Collectivité locale)` 12. Les valeurs mêlent un code (`mairie`) et, parfois, une catégorie entre parenthèses ;
     - `hierarchy` : 35 856 lignes sur 36 201 sans lien ; 345 lignes avec des liens `{type_hierarchie, service}` : « Service Fils » 1 396 liens, « Autre hiérarchie » 125.
@@ -904,7 +904,7 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
   - plages sur le CDN : HTTP 206, `content-range` exact, `accept-ranges: bytes` ; pieds de page des deux fichiers et trois colonnes utiles du second (`types` 22 727 octets, `hierarchy` 38 908, `modification_date` 44 654), décodées.
 - **Pièges** :
   - le README annonce `addresses`, `hierarchy` et `people_in_charge` en listes de dictionnaires ; dans le Parquet, ce sont **des chaînes JSON**. On ne peut donc pas lire seulement la commune et le code postal : il faut lire toute la colonne `addresses` (adresse, code postal, commune, pays, longitude, latitude des guichets), puis n'en garder que la commune et le code postal ;
-  - **le pied de page contient des données personnelles** : ses statistiques min/max gardent une valeur de chaque colonne (jusqu'à 256 octets), y compris de `mails`, `phone_numbers` et `people_in_charge`. Des adresses e-mail y ont été trouvées. Le lecteur doit sauter ces statistiques sans les décoder ni les écrire ;
+  - **le pied de page contient des données personnelles** : ses statistiques min/max gardent une valeur de chaque colonne (jusqu'à 256 octets), y compris de `mails`, `phone_numbers` et `people_in_charge`. Des adresses e-mail y ont été trouvées. Le lecteur les écarte dès la lecture du pied (la bibliothèque hyparquet les décode alors en mémoire, le temps de cette lecture), sans jamais les garder ni les écrire ;
   - toujours lire par le commit (`resolve/<commit>/…`), jamais par `main` : les positions des colonnes ne valent que pour un fichier donné ;
   - l'adresse signée du CDN expire (durée non mesurée) : la demander juste avant les plages ;
   - fichiers écrits par DuckDB 1.3.2 : compression ZSTD, un seul groupe de lignes par fichier, pas d'index de pages, pages de données « v1 », encodage par dictionnaire pour les colonnes répétitives ;
@@ -922,8 +922,8 @@ Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque
 1. **Repérer une nouvelle copie** : `GET https://huggingface.co/api/datasets/AgentPublic/local-administrations-directory/tree/main/data/local-administrations-directory-latest?expand=true` donne, pour chaque fichier, sa taille, son SHA-256 (`lfs.oid`) et son commit (`lastCommit.id`, `lastCommit.date`). SHA-256 inchangés : on s'arrête là.
 2. **Ouvrir chaque fichier par son commit** : `GET …/resolve/<commit>/<fichier>` répond 302 vers `us.aws.cdn.hf.co` (adresse signée) ; `X-Linked-Size` donne la taille.
 3. **Lire la longueur du pied** : `Range: bytes=<taille-8>-<taille-1>`, soit 8 octets : la longueur sur 4 octets, puis `PAR1`.
-4. **Lire exactement le pied** : 8 451 octets pour le premier fichier, 8 531 pour le second. Il donne le schéma, le nombre de lignes, et pour chaque colonne sa position (`dictionary_page_offset` ou `data_page_offset`) et sa taille (`total_compressed_size`). Sauter les statistiques sans les décoder.
-5. **Lire seulement les colonnes utiles**, une plage par suite de colonnes voisines, jamais à cheval sur une colonne exclue :
+4. **Lire exactement le pied** : 8 451 octets pour le premier fichier, 8 531 pour le second. Il donne le schéma, le nombre de lignes, et pour chaque colonne sa position (`dictionary_page_offset` ou `data_page_offset`) et sa taille (`total_compressed_size`). Écarter aussitôt les statistiques.
+5. **Lire seulement les colonnes utiles** : le lecteur demande une plage par colonne et par groupe de lignes, jamais à cheval sur une autre colonne ; le pied n'est pas cru, et une plage utile qui chevaucherait une autre colonne est refusée. Le tableau suivant, relevé pendant l'étude, regroupait les colonnes voisines et comptait `hierarchy` :
 
    | Fichier | Plage (octets) | Taille | Colonnes |
    |---|---|---|---|
@@ -940,7 +940,7 @@ Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque
 
 6. **Décoder** : pages ZSTD (Node 26 : `zlib.zstdDecompressSync`), encodage par dictionnaire ou simple ; `addresses` et `hierarchy` sont du JSON à analyser ; ne garder de `addresses` que `commune` et `code_postal`.
 
-- **Bilan** : 10 plages et **5 424 713 octets** au lieu de 449 549 373, soit 1,21 % ; environ 17 requêtes par copie (1 liste, puis par fichier : 1 redirection, 2 pour le pied, 5 plages).
+- **Bilan de l'étude** : 10 plages et **5 424 713 octets** au lieu de 449 549 373, soit 1,21 % ; environ 17 requêtes par copie (1 liste, puis par fichier : 1 redirection, 2 pour le pied, 5 plages). Le lecteur, sans `hierarchy` et une plage par colonne, en fait un peu plus, pour un peu moins d'octets.
 - Les colonnes exclues pèsent 435 911 120 octets (96,97 %), dont 432 809 548 pour les seuls vecteurs.
 - Avec `chunk_id` en plus (pour suivre `hierarchy`) : 12 plages, 7 057 818 octets (1,57 %).
 - **Prouvé** : `types`, `hierarchy` et `modification_date` du second fichier, lus par plage et décodés (pages « v1 », dictionnaire, aucune valeur vide).
@@ -1007,7 +1007,7 @@ Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque
 - **Pièges** :
   - un même fichier mêle communes, arrondissements municipaux (Paris, Lyon, Marseille), communes déléguées et associées : filtrer par `TYPECOM` ;
   - l'outre-mer hors DROM est dans deux fichiers à part ;
-  - la taille de page maximale de l'API tabulaire n'est pas vérifiée : 34 875 lignes par pages de 50 feraient environ 700 requêtes. Le COG change une fois par an : une copie épinglée dans `referentiels/`, mise à jour par PR comme la PSL (fiche 42), est plus simple.
+  - des pages de 200 lignes ont été acceptées par l'API tabulaire (lecture du 21/11/2026, `referentiels/cog/LISEZMOI.md`), soit environ 175 requêtes pour les 34 875 lignes des communes. Le COG change une fois par an : une copie épinglée dans `referentiels/`, mise à jour par PR comme la PSL (fiche 42), est plus simple.
 - **Données personnelles** : aucune.
 - **Attribution à afficher** : « Source : Insee, Code officiel géographique au 01/01/2026 (communes, départements, régions), Licence Ouverte ».
 - **Décision : retenue** : codes et noms officiels, base de tout rattachement territorial ; copie annuelle épinglée.

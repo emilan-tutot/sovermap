@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   type CopieAnnuaire,
   copieCourante,
+  dateEtat,
   ecartVolume,
   fichierParPlages,
   type Guichet,
@@ -92,6 +93,18 @@ describe("the local directory, read by ranges (C.6)", () => {
     expect(demandes).toEqual([
       "https://huggingface.co/api/datasets/AgentPublic/local-administrations-directory/tree/main/data/local-administrations-directory-latest?expand=true",
     ]);
+    // A date that is not an exact ISO time (it would go into a commit message) refuses the whole copy.
+    const avecDate =
+      (date: unknown): Obtenir =>
+      async (adresse) => ({
+        url: adresse,
+        statut: 200,
+        entetes: new Headers(),
+        corps: Buffer.from(JSON.stringify([{ ...liste[0], lastCommit: { id: COMMIT, date } }])),
+      });
+    await expect(copieCourante(avecDate("2026-11-14T00:38:54Z\nx"))).rejects.toThrow("date ou taille illisible");
+    await expect(copieCourante(avecDate("$(date)"))).rejects.toThrow("date ou taille illisible");
+    await expect(copieCourante(avecDate(20261114))).rejects.toThrow("date ou taille illisible");
   });
 
   it("drops the footer's statistics, which hold values of every column", () => {
@@ -120,6 +133,10 @@ describe("the local directory, read by ranges (C.6)", () => {
     expect(lues).toEqual(["300-400"]);
     // A footer without one of the useful columns is refused.
     expect(() => plagesPermises(meta(UTILES.slice(1)))).toThrow("colonne absente : types");
+    // A footer that would point a useful column at another column's bytes (people's names) is refused.
+    expect(() => plagesPermises(meta([...UTILES, ["people_in_charge", 160, 20]]))).toThrow(
+      "colonne name : sa plage chevauche celle d'une autre colonne",
+    );
   });
 
   it("keeps the host names of an office's websites", () => {
@@ -191,6 +208,7 @@ describe("the publication of a copy of the local directory (C.6)", () => {
   const publiee: CopieAnnuaire = {
     fichiers: [fichier("data/a.parquet", SHA), fichier("data/b.parquet", "c".repeat(64))],
     guichets: 1000,
+    etat: "2026-11-13",
     lue: "2026-11-15T13:23:00.000Z",
   };
 
@@ -203,6 +221,8 @@ describe("the publication of a copy of the local directory (C.6)", () => {
 
   it("reads the published copy's description back, checked: an unreadable one counts as none", () => {
     expect(lireCopieAnnuaire(JSON.stringify(publiee))).toEqual(publiee);
+    expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, etat: undefined }))).toEqual({ ...publiee, etat: null });
+    expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, etat: "le 13 novembre" }))).toBeNull();
     expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, guichets: "1000" }))).toBeNull();
     expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, fichiers: [{ chemin: "x", sha256: "court" }] }))).toBeNull();
     expect(lireCopieAnnuaire("pas du JSON")).toBeNull();
@@ -216,6 +236,21 @@ describe("the publication of a copy of the local directory (C.6)", () => {
     expect(ecartVolume(500, publiee)).toMatch(/500 guichets contre 1000/);
     expect(ecartVolume(0, null)).toBe("aucun guichet lu");
     expect(ecartVolume(85865, null)).toBeNull();
+  });
+
+  it("dates the directory's state by its offices' most recent change", () => {
+    const g = (modification: string | null): Guichet => ({
+      nom: "Mairie",
+      type: "mairie",
+      hotes: [],
+      siren: null,
+      siret: null,
+      commune: null,
+      codePostal: null,
+      modification,
+    });
+    expect(dateEtat([g("2026-11-02"), g(null), g("2026-11-13"), g("2025-01-01")])).toBe("2026-11-13");
+    expect(dateEtat([g(null)])).toBeNull();
   });
 
   it("writes one office per line, sorted, so that a new copy changes only its changed lines", () => {

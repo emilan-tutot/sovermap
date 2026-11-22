@@ -2,7 +2,7 @@
 
 **Ne pas citer.** Ces données sont en préparation : le site Sovermap n'est pas encore ouvert, la méthode est provisoire et les chiffres peuvent changer sans préavis. Elles deviendront citables à l'ouverture du site, avec une référence prête à copier.
 
-Cette branche est écrite chaque jour par la collecte automatique de Sovermap (GitHub Actions, workflow « Collecte »). Personne ne la modifie à la main, et son historique ne se réécrit jamais.
+Cette branche est écrite par les workflows de Sovermap sur GitHub Actions : chaque jour par la collecte automatique (workflow « Collecte »), et au plus une fois par semaine, pour `territoires/annuaire/` seulement, par le workflow « Annuaire local ». Personne ne la modifie à la main, et son historique ne se réécrit jamais.
 
 ## Ce qu'elle contient
 
@@ -12,6 +12,7 @@ Cette branche est écrite chaque jour par la collecte automatique de Sovermap (G
 - `index/` : les numéros d'AS, les exploitants, les pays, les organismes et les ministères.
 - `agregats/chiffres.json` : les chiffres, provisoires (« en préparation »).
 - `journal/` : les changements d'hébergement confirmés par deux collectes concordantes, jour par jour. Un changement de liste, de référentiel ou de méthode n'y entre jamais.
+- `territoires/annuaire/` : l'annuaire local de l'administration (DILA), tel que Sovermap le garde : `guichets.jsonl`, un guichet par ligne (nom, type, noms d'hôte de ses sites, SIREN, SIRET, commune, code postal, date de sa dernière modification ; rien sur les personnes), et `copie.json` (les fichiers de la copie lue, avec leurs sommes SHA-256, leurs commits et leurs dates, le nombre de guichets, la date de l'état de l'annuaire, l'heure de lecture).
 - `schemas/` : les schémas JSON des fragments et du journal.
 
 Le fragment d'un nom est `noms/<aa>/<bb>.json`, où `aabb` sont les quatre premiers chiffres hexadécimaux de l'empreinte SHA-256 du nom (de même pour `domaines/`). Un fragment qui dépasserait 8 Ko est découpé en parties : `<bb>.json`, puis `<bb>.1.json`, `<bb>.2.json`…, la première disant combien il y en a (`parties`). Chaque dossier a ses sommes de contrôle (`sommes.json`). Les heures, les durées de vie (TTL) et les adresses exactes ne sont pas ici : elles iront dans les archives mensuelles (Releases `donnees-AAAA-MM`).
@@ -26,3 +27,4 @@ Voir `docs/methode.md` sur la branche `main`. La mesure ne pose que des question
 
 - Données : Licence Ouverte 2.0 (Etalab), titulaire « Les contributeurs de Sovermap », sauf les noms d'organisations tirés de la base du RIPE NCC, qui restent soumis aux RIPE Database Terms and Conditions.
 - Attributions : DINUM (liste des noms de domaine des organismes publics), DILA (Référentiel de l'organisation administrative de l'État), RIPE NCC (base du RIPE), registres Internet régionaux, IPtoASN (PDDL 1.0), Public Suffix List (MPL 2.0) ; le texte exact et les dates des fichiers : `docs/sources.md` sur la branche `main`, et `etat.json`.
+- Annuaire local (`territoires/annuaire/`) : « Source : Service-Public.gouv.fr / DILA — Annuaire de l'administration, Base de données locales, fichier all_latest.tar.bz2 (https://lecomarquage.service-public.gouv.fr/donnees_locales_v4/all_latest.tar.bz2) dans son état du `etat`, repris dans la copie retraitée par la DINUM (https://huggingface.co/datasets/AgentPublic/local-administrations-directory, fichiers `local_administrations_directory_part_0.parquet` et `…_part_1.parquet` à leur `commit`, copie du `date`) — Licence Ouverte 2.0. » La date de l'état (`etat`), les commits et les dates de la copie sont dans `territoires/annuaire/copie.json`.

@@ -5,7 +5,7 @@
 // footer is parsed, and never printed or written. Every request goes through the collection's polite downloader
 // (robots.txt of every host and every hop, one second at least between two requests to one host).
 import { parquetMetadata, parquetReadObjects } from "hyparquet";
-import type { AsyncBuffer, FileMetaData } from "hyparquet";
+import type { AsyncBuffer, ColumnMetaData, FileMetaData } from "hyparquet";
 import { zstdDecompressSync } from "node:zlib";
 import type { Reponse } from "./sources";
 
@@ -85,25 +85,42 @@ export function sansStatistiques(meta: FileMetaData): FileMetaData {
   return meta;
 }
 
-/** The byte range of each useful column, in every row group: the only ranges that may be asked. */
+/** A column chunk's byte range, where hyparquet reads it: from its dictionary page when it has one, else its data. */
+function plageDe(m: ColumnMetaData): [number, number] {
+  const debut = Number(m.dictionary_page_offset || m.data_page_offset);
+  const fin = debut + Number(m.total_compressed_size);
+  if (!Number.isSafeInteger(debut) || !Number.isSafeInteger(fin) || debut < 4 || fin <= debut) {
+    throw new Error(`colonne ${m.path_in_schema[0] ?? "?"} : position illisible`);
+  }
+  return [debut, fin];
+}
+
+/**
+ * The byte range of each useful column, in every row group: the only ranges that may be asked. The footer is not
+ * trusted: a useful column's range that overlaps any other column's is refused, since it could hold that column's
+ * values (people's names, e-mails).
+ */
 export function plagesPermises(meta: FileMetaData): Map<Colonne, [number, number][]> {
   const plages = new Map<Colonne, [number, number][]>();
+  const autres: [number, number][] = [];
   for (const groupe of meta.row_groups) {
     for (const morceau of groupe.columns) {
       const m = morceau.meta_data;
-      const nom = m?.path_in_schema[0];
-      if (m === undefined || !(COLONNES as readonly string[]).includes(nom ?? "")) continue;
-      const debut = Number(m.dictionary_page_offset ?? m.data_page_offset);
-      const fin = debut + Number(m.total_compressed_size);
-      if (!Number.isSafeInteger(debut) || !Number.isSafeInteger(fin) || debut < 4 || fin <= debut) {
-        throw new Error(`colonne ${nom ?? "?"} : position illisible`);
+      if (m === undefined) continue;
+      const nom = m.path_in_schema[0] ?? "";
+      if (!(COLONNES as readonly string[]).includes(nom)) {
+        autres.push(plageDe(m));
+        continue;
       }
-      const liste = plages.get(nom as Colonne) ?? [];
-      liste.push([debut, fin]);
-      plages.set(nom as Colonne, liste);
+      plages.set(nom as Colonne, [...(plages.get(nom as Colonne) ?? []), plageDe(m)]);
     }
   }
   for (const colonne of COLONNES) if (!plages.has(colonne)) throw new Error(`colonne absente : ${colonne}`);
+  for (const [colonne, liste] of plages) {
+    if (liste.some(([a, b]) => autres.some(([c, d]) => a < d && c < b))) {
+      throw new Error(`colonne ${colonne} : sa plage chevauche celle d'une autre colonne`);
+    }
+  }
   return plages;
 }
 
@@ -227,8 +244,19 @@ export async function lireFichier(obtenir: Obtenir, fichier: FichierCopie): Prom
   return guichets;
 }
 
-/** What the « donnees » branch keeps of a copy: its files, its number of offices, and when it was read. */
-export type CopieAnnuaire = { fichiers: FichierCopie[]; guichets: number; lue: string };
+/**
+ * What the « donnees » branch keeps of a copy: its files, its number of offices, the date of its state (its offices'
+ * most recent change, which the attribution of card 50 names), and when it was read.
+ */
+export type CopieAnnuaire = { fichiers: FichierCopie[]; guichets: number; etat: string | null; lue: string };
+
+/** The date of the directory's state: its offices' most recent change (YYYY-MM-DD), or null. */
+export function dateEtat(guichets: readonly Guichet[]): string | null {
+  let etat: string | null = null;
+  for (const g of guichets)
+    if (g.modification !== null && (etat === null || g.modification > etat)) etat = g.modification;
+  return etat;
+}
 
 /** The published copy's description, read back from « donnees » and checked at the border: null when it is not one. */
 export function lireCopieAnnuaire(texte: string): CopieAnnuaire | null {
@@ -240,9 +268,11 @@ export function lireCopieAnnuaire(texte: string): CopieAnnuaire | null {
   }
   if (typeof brut !== "object" || brut === null || Array.isArray(brut)) return null;
   const o = brut as Record<string, unknown>;
-  const { fichiers, guichets, lue } = o;
+  const { fichiers, guichets, etat, lue } = o;
   if (!Array.isArray(fichiers) || typeof lue !== "string") return null;
   if (typeof guichets !== "number" || !Number.isSafeInteger(guichets) || guichets < 0) return null;
+  if (etat !== undefined && etat !== null && (typeof etat !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(etat)))
+    return null;
   const lus: FichierCopie[] = [];
   for (const f of fichiers) {
     if (typeof f !== "object" || f === null) return null;
@@ -251,7 +281,7 @@ export function lireCopieAnnuaire(texte: string): CopieAnnuaire | null {
     if (typeof commit !== "string" || typeof date !== "string" || typeof taille !== "number") return null;
     lus.push({ chemin, taille, sha256, commit, date });
   }
-  return { fichiers: lus, guichets, lue };
+  return { fichiers: lus, guichets, etat: typeof etat === "string" ? etat : null, lue };
 }
 
 /** Is it the copy already published: the same files, with the same SHA-256? */
