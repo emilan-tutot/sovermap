@@ -849,7 +849,7 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
 - **Licence** : Licence Ouverte 2.0 (champ `license` du jeu : « lov2 »).
 - **Fichiers** : une édition par trimestre, en ODS, une seule feuille (`T_VDE`).
   - Dernière édition : « Observatoire 2 - édition 15 (octobre-2026) », publiée le 20/10/2026, 43 521 octets.
-  - Précédente : édition 14 (juillet-2026), publiée le 28/09/2026, 43 045 octets ; 245 démarches.
+  - Précédente : édition 14 (juillet-2026), publiée le 28/09/2026, 43 045 octets ; 243 démarches (compte du 22/11/2026, ligne par ligne ; « 245 », écrit ici le 21/11/2026, était faux).
 - **Téléchargement automatique testé** : **non**, et il ne se fera pas.
   - Le `robots.txt` de static.data.gouv.fr (le même que celui de www.data.gouv.fr, lu le 21/11/2026) ferme `/resources` à tous les robots.
   - L'API (`/api/1/datasets/`) reste ouverte, sauf `/api/1/datasets/r/` (les redirections vers les fichiers) : elle sert seulement à connaître la dernière édition et sa date.
@@ -859,6 +859,7 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
 - **Pièges** : des volumétries vides ou « À venir » ; des adresses sur des noms absents de la liste de la DINUM (les mesurer est un changement de liste, B.7 bis, jamais un déménagement).
 - **Attribution à afficher** : « Source : DINUM, Observatoire de la qualité des démarches en ligne, édition <n> (<mois année>), Licence Ouverte 2.0 ».
 - **Décision : retenue (relevé manuel daté, par édition)** ; en attente de l'édition 15.
+- **Versé** (22/11/2026, C.8) : l'édition 14, déposée le 20/11/2026, lue par `pipeline/cli/observatoire.ts` (sans bibliothèque XML : une déclaration de type ou d'entité est refusée), dans `referentiels/demarches.json` : 243 démarches, dont 234 avec une adresse, sur 67 domaines. 66 de ces domaines sont déjà dans la liste mesurée (jour 1) ; seul `monespacesante.fr` n'y est pas (le mesurer serait un changement de liste, B.7 bis). Les notes des démarches ne sont pas reprises. À chaque nouvelle édition déposée : relancer l'outil, puis le test `tests/referentiels-demarches.test.ts`.
 
 ## Attributions à afficher sur la page Données
 
