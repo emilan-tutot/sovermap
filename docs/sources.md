@@ -853,13 +853,13 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
 - **Téléchargement automatique testé** : **non**, et il ne se fera pas.
   - Le `robots.txt` de static.data.gouv.fr (le même que celui de www.data.gouv.fr, lu le 21/11/2026) ferme `/resources` à tous les robots.
   - L'API (`/api/1/datasets/`) reste ouverte, sauf `/api/1/datasets/r/` (les redirections vers les fichiers) : elle sert seulement à connaître la dernière édition et sa date.
-- **Relevé manuel daté** : le propriétaire dépose le fichier de chaque édition. Le 20/11/2026, il a déposé l'édition 14, alors que l'édition 15 existait : celle-ci reste à déposer.
+- **Relevé manuel daté** : le propriétaire dépose le fichier de chaque édition. Le 20/11/2026, il a déposé l'édition 14 ; le 22/11/2026, l'édition 15 (43 521 octets, la taille annoncée par data.gouv.fr).
 - **Ce qu'on en tire** : pour chaque démarche, son nom, son identifiant, son périmètre ministériel, son administration, sa volumétrie (totale et en ligne) et son adresse (« URL Démarche »), pour relier la démarche au nom mesuré qui la sert.
   - Les colonnes de notes (satisfaction, accessibilité, clarté du langage, autonomie, DLNUF) ne sont pas reprises : Sovermap décrit des dépendances, pas la qualité d'une démarche.
 - **Pièges** : des volumétries vides ou « À venir » ; des adresses sur des noms absents de la liste de la DINUM (les mesurer est un changement de liste, B.7 bis, jamais un déménagement).
 - **Attribution à afficher** : « Source : DINUM, Observatoire de la qualité des démarches en ligne, édition <n> (<mois année>), Licence Ouverte 2.0 ».
-- **Décision : retenue (relevé manuel daté, par édition)** ; en attente de l'édition 15.
-- **Versé** (22/11/2026, C.8) : l'édition 14, déposée le 20/11/2026, lue par `pipeline/cli/observatoire.ts` (sans bibliothèque XML : une déclaration de type ou d'entité est refusée), dans `referentiels/demarches.json` : 243 démarches, dont 234 avec une adresse, sur 67 domaines. 66 de ces domaines sont déjà dans la liste mesurée (jour 1) ; seul `monespacesante.fr` n'y est pas (le mesurer serait un changement de liste, B.7 bis). Les notes des démarches ne sont pas reprises. À chaque nouvelle édition déposée : relancer l'outil, puis le test `tests/referentiels-demarches.test.ts`.
+- **Décision : retenue (relevé manuel daté, par édition)**.
+- **Versé** (22/11/2026, C.8) : l'édition 15 (octobre 2026, publiée le 20/10/2026), déposée le 22/11/2026, à la place de l'édition 14 (les mêmes démarches ; des volumes mis à jour), lue par `pipeline/cli/observatoire.ts` (sans bibliothèque XML : une déclaration de type ou d'entité est refusée), dans `referentiels/demarches.json` : 243 démarches, dont 234 avec une adresse, sur 67 domaines. 66 de ces domaines sont déjà dans la liste mesurée (jour 1) ; seul `monespacesante.fr` n'y est pas (le mesurer serait un changement de liste, B.7 bis). Les notes des démarches ne sont pas reprises. À chaque nouvelle édition déposée : relancer l'outil, puis le test `tests/referentiels-demarches.test.ts`.
 
 ## Attributions à afficher sur la page Données
 

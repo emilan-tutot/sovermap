@@ -1,12 +1,12 @@
 {
-  "version": "2026-09-28",
+  "version": "2026-10-20",
   "source": {
     "fiche": 55,
-    "document": "DINUM, Observatoire de la qualité des démarches en ligne, édition 14 (juillet 2026)",
-    "edition": 14,
-    "periode": "juillet 2026",
-    "publiee": "2026-09-28",
-    "releve": "relevé manuel : fichier déposé par le propriétaire le 2026-11-20, lu le 2026-11-22"
+    "document": "DINUM, Observatoire de la qualité des démarches en ligne, édition 15 (octobre 2026)",
+    "edition": 15,
+    "periode": "octobre 2026",
+    "publiee": "2026-10-20",
+    "releve": "relevé manuel : fichier déposé par le propriétaire le 2026-11-22, lu le 2026-11-22"
   },
   "note": "Pour chaque démarche : son nom, son identifiant, son périmètre ministériel, son administration, ses volumes (null quand l'édition n'en donne pas) et le nom de son adresse avec son domaine enregistré. Les notes de la démarche (satisfaction, accessibilité, clarté…) ne sont jamais reprises : Sovermap décrit des dépendances, pas la qualité d'une démarche.",
   "demarches": [
@@ -347,7 +347,7 @@
       "administration": "DGM",
       "volumeTotal": null,
       "volumeEnLigne": null,
-      "hote": "pastel.diplomatie.gouv.fr",
+      "hote": "etudesenfrance.diplomatie.gouv.fr",
       "domaine": "diplomatie.gouv.fr"
     },
     {
@@ -917,8 +917,8 @@
       "administration": "DMATES",
       "volumeTotal": null,
       "volumeEnLigne": null,
-      "hote": "www.service-public.gouv.fr",
-      "domaine": "service-public.gouv.fr"
+      "hote": "www.elections.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
     },
     {
       "id": "1775",
@@ -1796,7 +1796,7 @@
       "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
       "administration": "DGESIP",
       "volumeTotal": null,
-      "volumeEnLigne": null,
+      "volumeEnLigne": 256000,
       "hote": "candidature.monmaster.gouv.fr",
       "domaine": "monmaster.gouv.fr"
     },
@@ -2085,8 +2085,8 @@
       "nom": "S’inscrire à une formation au CNED",
       "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
       "administration": "CNED",
-      "volumeTotal": null,
-      "volumeEnLigne": null,
+      "volumeTotal": 149599,
+      "volumeEnLigne": 119003,
       "hote": "www.cned.fr",
       "domaine": "cned.fr"
     },
@@ -2176,7 +2176,7 @@
       "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
       "administration": "DGESIP",
       "volumeTotal": null,
-      "volumeEnLigne": null,
+      "volumeEnLigne": 980000,
       "hote": "www.parcoursup.gouv.fr",
       "domaine": "parcoursup.gouv.fr"
     },
