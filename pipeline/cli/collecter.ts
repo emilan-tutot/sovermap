@@ -102,6 +102,26 @@ const { values: o } = parseArgs({
   },
 });
 
+/**
+ * The time limits, in whole minutes, checked as soon as they are read (the review of PR 20): a wrong value stops the
+ * run before any download, any question and the mark « measurement started ».
+ */
+const LIMITES = ((): readonly [number, number, number] => {
+  const [echeance = 0, finReprises = 0, finControles = 0] = (
+    ["echeance-minutes", "fin-reprises-minutes", "fin-controles-minutes"] as const
+  ).map((nom) => {
+    const minutes = Number(o[nom]);
+    if (!Number.isInteger(minutes) || minutes < 1) {
+      throw new Error(`--${nom} : un nombre entier de minutes, au moins 1 (reçu « ${o[nom] ?? ""} »)`);
+    }
+    return minutes;
+  });
+  if (!(echeance <= finReprises && finReprises <= finControles)) {
+    throw new Error("--echeance-minutes, --fin-reprises-minutes et --fin-controles-minutes doivent aller croissant");
+  }
+  return [echeance, finReprises, finControles];
+})();
+
 const lire = (...morceaux: string[]) => readFileSync(path.join(...morceaux), "utf8");
 const json = <T>(...morceaux: string[]) => JSON.parse(lire(...morceaux)) as T;
 const adresseEtPort = (valeur: string): [string, number] => {
@@ -493,18 +513,9 @@ async function principal(): Promise<number> {
   // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
   // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
   // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them. A
-  // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end).
-  const limites = (["echeance-minutes", "fin-reprises-minutes", "fin-controles-minutes"] as const).map((nom) => {
-    const minutes = Number(o[nom]);
-    if (!Number.isInteger(minutes) || minutes < 1) {
-      throw new Error(`--${nom} : un nombre entier de minutes, au moins 1 (reçu « ${o[nom] ?? ""} »)`);
-    }
-    return minutes;
-  });
-  const [echeanceMinutes = 255, finReprisesMinutes = 290, finControlesMinutes = 300] = limites;
-  if (!(echeanceMinutes <= finReprisesMinutes && finReprisesMinutes <= finControlesMinutes)) {
-    throw new Error("--echeance-minutes, --fin-reprises-minutes et --fin-controles-minutes doivent aller croissant");
-  }
+  // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end); the
+  // options were checked as soon as they were read (LIMITES).
+  const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
   const minutesDe = (minutes: number) => maintenant.getTime() + minutes * 60_000;
   const finControles = minutesDe(finControlesMinutes);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
