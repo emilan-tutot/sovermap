@@ -1,4 +1,5 @@
 import { lecteur } from "@/lib/donnees/lecture";
+import { PAGES_DE_TEXTE } from "@/lib/i18n/fr-textes";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
 import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
 import { lireIndexSocietes } from "@/lib/donnees/radiographie";
@@ -36,6 +37,7 @@ export async function GET(): Promise<Response> {
     }),
     { chemin: "/journal" },
     { chemin: "/qualite" },
+    ...PAGES_DE_TEXTE.map((p) => ({ chemin: p.chemin })),
   ];
   return new Response(plan(origineDuSite(), adresses), {
     headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": CACHE_PLANS },

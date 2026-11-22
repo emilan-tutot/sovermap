@@ -73,6 +73,16 @@ export function partageDe(type: TypePartage, titre: string, description: string)
   };
 }
 
+/** The metadata of a text page (part E): its title, its description, its canonical address and the Atlas's image. */
+export function metadonneesTexte(page: { chemin: string; titre: string; description: string }): Metadata {
+  return {
+    title: page.titre,
+    description: page.description,
+    alternates: { canonical: page.chemin },
+    openGraph: partageDe("accueil", fr.meta.titre(page.titre), page.description),
+  };
+}
+
 /**
  * The site's structured data (schema.org WebSite: its name and its home page, which Google reads on the home page for
  * the site's name), as the text of a script that is never executed: JSON whose « < » can never close the script.

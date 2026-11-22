@@ -67,6 +67,14 @@ export const fr = {
     },
     alt: (etiquette: string, question: string) => `Sovermap · ${etiquette}${NBSP}: ${question}`,
   },
+  /** The text pages (part E): their shared words. Each page's own words: lib/i18n/fr-textes.ts. */
+  textes: {
+    sources: "Les sources",
+    revision: (date: string) => `Révisé le ${date}.`,
+    iaNonRelu: `Ce texte a été rédigé avec l’aide d’une intelligence artificielle${NBSP}; l’éditeur ne l’a pas encore relu.`,
+    iaRelu: "Textes rédigés avec l’aide d’une IA.",
+    voirCredits: "Voir les Crédits.",
+  },
   footer: {
     version: `Version servie${NBSP}:`,
     independent: "Site indépendant, sans lien avec l’État.",

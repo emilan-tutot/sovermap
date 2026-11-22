@@ -3,6 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { dateFr } from "../lib/i18n/format";
 import { fr } from "../lib/i18n/fr";
 import { erreur } from "../lib/i18n/fr-erreur";
+import { PAGES_DE_TEXTE } from "../lib/i18n/fr-textes";
 
 // Every kind of page of the full site (D.8), door and indexing open, on the made-up published state of
 // scripts/donnees-essai.ts: its status, its title, no request to another domain, no console error, no serious or
@@ -22,7 +23,19 @@ const PAGES: [string, string][] = [
   ["/journal/2026-11-21", fr.journal.jour("21/11/2026")],
   ["/pays/etats-unis", "États-Unis"],
   ["/qualite", fr.qualite.titre],
+  ...PAGES_DE_TEXTE.map((p): [string, string] => [p.chemin, p.titre]),
 ];
+
+// The text pages (E.6): their sources, the day of their revision, and the AI notice by the title until the publisher
+// has read them again.
+for (const p of PAGES_DE_TEXTE) {
+  test(`texte : ${p.chemin} donne ses sources et sa date de révision`, async ({ page }) => {
+    await page.goto(p.chemin);
+    await expect(page.locator(".texte-sources li")).toHaveCount(p.sources.length);
+    await expect(page.locator(".texte-revision")).toContainText(dateFr(p.revision));
+    await expect(page.locator(".texte-ia")).toHaveCount(p.relu ? 0 : 1);
+  });
+}
 
 /** The robots rule of the indexing policy (docs/referencement.md), indexing open. */
 const ROBOTS: [string, string][] = [
