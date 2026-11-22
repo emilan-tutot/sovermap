@@ -663,6 +663,15 @@ export const methode: PageDeTexte = soignee({
             [
               "0.2.1 (21/11/2026) : la règle « sous-zone interne » et ses garde-fous, l’ordre et le rythme de la mesure.",
             ],
+            [
+              "0.2.2 (21/11/2026) : le périmètre « État » élargi aux sites que recense l’Observatoire du SIG et aux établissements publics d’enseignement supérieur, avec les raisons de chaque domaine.",
+            ],
+            [
+              "0.2.3 (22/11/2026) : la règle « outil technique » n’écarte jamais un site que recense l’Observatoire du SIG.",
+            ],
+            [
+              "0.2.4 (22/11/2026) : le résolveur demande les noms entiers (plus de minimisation), ce qui lui fait poser moins de questions ; sans effet sur le chiffre.",
+            ],
           ],
         },
       ],
