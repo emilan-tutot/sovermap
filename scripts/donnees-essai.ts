@@ -25,7 +25,8 @@ const DATE_ESSAI = "2026-11-21";
 const MINISTERE = "00000000-0000-4000-8000-000000000001";
 
 /** The AS of each made-up company: the CDN's, the relay's (an American subsidiary of a French group), the host's. */
-const asDe = (societe: string | null) => (societe === "cdn-us" ? 64500 : societe === "relais-us" ? 64501 : 64496);
+const AS_DE: Readonly<Record<string, number>> = { "cdn-us": 64500, "relais-us": 64501, "bouclier-il": 64502 };
+const asDe = (societe: string | null) => (societe === null ? 64496 : (AS_DE[societe] ?? 64496));
 
 const nom = (
   n: string,
@@ -80,6 +81,7 @@ const etat: Etat = {
     ["nuage.example", domaine("nuage.example", "État", [MINISTERE])],
     ["relais.example", domaine("relais.example", "État", [MINISTERE])],
     ["mairie.example", domaine("mairie.example", "hors État", [])],
+    ["bouclier.example", domaine("bouclier.example", "hors État", [])],
     ["panne.example", domaine("panne.example", "hors État", [])],
     ["nompanne.example", domaine("nompanne.example", "hors État", [])],
   ]),
@@ -89,6 +91,11 @@ const etat: Etat = {
     // The Imperva case (rule C2-4): served by an American subsidiary of a French group, « hors d'Europe » by its seat.
     ["www.relais.example", nom("www.relais.example", "relais.example", "relais-us", "hébergé par", "hors d'Europe")],
     ["www.mairie.example", nom("www.mairie.example", "mairie.example", null, "hébergé par", "non déterminé")],
+    // A company outside Europe whose parent is unknown: « hors d'Europe » whatever that parent, but no retained seat.
+    [
+      "www.bouclier.example",
+      nom("www.bouclier.example", "bouclier.example", "bouclier-il", "hébergé par", "hors d'Europe"),
+    ],
     ["www.panne.example", nom("www.panne.example", "panne.example", null, "hébergé par", "non déterminé")],
     ["www.nompanne.example", nom("www.nompanne.example", "nompanne.example", null, "hébergé par", "non déterminé")],
   ]),
@@ -118,6 +125,7 @@ const fichiers = new Map<string, string>([
       [64496, { description: "EXEMPLE-HEBERGEUR", paysEnregistrement: "FR", titulaire: "Hébergeur Exemple SAS" }],
       [64500, { description: "EXEMPLE-CDN", paysEnregistrement: "US", titulaire: "CDN Exemple, Inc." }],
       [64501, { description: "EXEMPLE-RELAIS", paysEnregistrement: "US", titulaire: "Relais Exemple, Inc." }],
+      [64502, { description: "EXEMPLE-BOUCLIER", paysEnregistrement: "IL", titulaire: "Bouclier Exemple Ltd" }],
     ]),
     societes: new Map([
       [
@@ -150,6 +158,17 @@ const fichiers = new Map<string, string>([
           mere: "groupe-fr",
           paysMere: "FR",
           paysRetenu: "US",
+          categorie: "hors d'Europe",
+        },
+      ],
+      [
+        "bouclier-il",
+        {
+          nom: "Bouclier Exemple Ltd",
+          pays: "IL",
+          mere: null,
+          paysMere: null,
+          paysRetenu: null,
           categorie: "hors d'Europe",
         },
       ],

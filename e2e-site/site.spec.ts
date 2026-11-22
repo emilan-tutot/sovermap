@@ -217,6 +217,12 @@ test("site complet : un site servi par la filiale américaine d'un groupe franç
     page.getByText(pays.valeur("États-Unis", fr.radiographie.categories["hors d'Europe"])).first(),
   ).toBeVisible();
   await expect(page.getByText(pays.deuxSieges("États-Unis", "France"))).toBeVisible();
+  // A company outside Europe whose parent is unknown: no retained seat, so no country, but its category stays.
+  await page.goto("/radiographie/bouclier.example");
+  const couche = page.locator("#couche-7");
+  await expect(couche).toContainText(fr.radiographie.categories["hors d'Europe"]);
+  await expect(couche).toContainText(pays.sansMere);
+  await expect(couche.locator("a")).toHaveCount(0);
   // The country's page files it under the United States, the farther seat.
   await page.goto("/pays/etats-unis");
   await expect(page.locator("main")).toContainText("Relais Exemple, Inc.");
