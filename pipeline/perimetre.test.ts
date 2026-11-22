@@ -151,6 +151,38 @@ describe("the reference list", () => {
     expect(avecPerimetre.domaines.get("mairie.example")?.perimetre).toBe("hors État");
   });
 
+  it("never sets aside a site the SIG lists as a technical tool, and only for that rule (point 09, Q3)", () => {
+    const avecSig = construireListe(
+      [{ date: "2026-11-19", csv: "name,type\nmx.ambassade.example,\nmx.mairie.example,Commune\n" }],
+      null,
+      suffixes,
+      plateformes,
+      ".gouv.example",
+      undefined,
+      [
+        {
+          source: "sig",
+          date: "2026-11-01",
+          sites: ["mx.ambassade.example", "pop.patrimoine.gouv.example", "recette.agence.example"],
+          empreinte: "000000000001",
+        },
+        { source: "mesr", date: "2026-11-21", sites: ["mail.universite.example"], empreinte: "000000000002" },
+      ],
+    );
+    // Listed by the SIG: measured, with the official list's provenance too, and never counted as set aside.
+    expect(avecSig.noms.get("mx.ambassade.example")?.provenances).toEqual(["dinum:2026-11-19", "sig:2026-11-01"]);
+    expect(avecSig.noms.has("pop.patrimoine.gouv.example")).toBe(true);
+    // The same rule still sets aside a name the SIG does not list (the MESR's list waives nothing).
+    expect([...(avecSig.ecartes.get("outil technique") ?? [])].sort()).toEqual([
+      "mail.universite.example",
+      "mx.mairie.example",
+    ]);
+    expect(avecSig.exclus.get("outil technique")).toBe(2);
+    // The other rules still apply to a site the SIG lists.
+    expect(avecSig.noms.has("recette.agence.example")).toBe(false);
+    expect(avecSig.exclus.get("environnement")).toBe(1);
+  });
+
   it("reads a dated copy, checks it, and gives it a fingerprint that changes with its text", () => {
     const UUID = "ac1a7fdb-50f4-4599-b306-ec06b7250965";
     const sig = lireCopiePerimetre(

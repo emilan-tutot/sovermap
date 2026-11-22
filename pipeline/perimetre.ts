@@ -121,6 +121,14 @@ export function construireListe(
   const ecartes = new Map<Exclusion, Set<string>>();
   const exclure = (raison: Exclusion, nom: string) =>
     ecartes.set(raison, (ecartes.get(raison) ?? new Set<string>()).add(nom));
+  // A site the SIG lists as public is never set aside as a technical tool (point 09 of chantier 2, Q3): its first label
+  // may be a country's code (`mx.`) or a public service's name (`pop.`). The other rules still apply to it.
+  const sitesSig = new Set(
+    perimetre
+      .filter((copie) => copie.source === "sig")
+      .flatMap((copie) => copie.sites.map((site) => nomValide(site)))
+      .filter((nom): nom is string => nom !== null),
+  );
   const ajouter = (brut: string, provenance: string, type: string | null, organisme: string | null) => {
     const nom = nomValide(brut);
     if (nom === null) return;
@@ -135,7 +143,7 @@ export function construireListe(
     if (domaine === null) return void exclure("suffixe public", nom);
     if (plateformes.has(nom)) return void exclure("plateforme tierce sans nom propre", nom);
     const raison = raisonExclusion(nom, domaineEnregistrable(nom, suffixes) ?? domaine, regles);
-    if (raison !== null) return void exclure(raison, nom);
+    if (raison !== null && !(raison === "outil technique" && sitesSig.has(nom))) return void exclure(raison, nom);
     noms.set(nom, {
       nom,
       domaine,
