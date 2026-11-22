@@ -829,13 +829,9 @@
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS50954 Eyona, titulaire Eyona SAS, pays d'enregistrement FR",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-22"
-        },
-        {
-          "titre": "Sirene : EYONA, SAS, SIREN 790645865, siège à Cognac, active (seule société « Eyona »)",
-          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/790645865",
-          "lu_le": "2026-11-22"
         }
-      ]
+      ],
+      "note": "Lien « probable » : le titulaire du registre, « Eyona SAS », n'est rapproché d'une société de Sirene que par son nom (une seule « Eyona », d'activité principale sans rapport apparent avec un réseau) ; ce rapprochement n'est pas une seconde source."
     },
     "60362": {
       "societe": "alwaysdata",
