@@ -22,10 +22,13 @@ export function societesTriees(index: ReadonlyMap<string, SocieteIndex>): [strin
   return [...index].sort(([, a], [, b]) => ordre.compare(a.nom, b.nom));
 }
 
-/** A list's form, provisional until the owner chooses (point 11): « a » the table, « b » the groups, « c » the index. */
+/**
+ * A list's form, provisional until the owner chooses (point 11, Q2): the table (A, recommended) by default; « b » the
+ * groups, « c » the index, « liste » the former list. The forms not chosen are then removed, with this parameter.
+ */
 export type FormeListe = "actuelle" | "a" | "b" | "c";
 export const formeDeListe = (v: string | string[] | undefined): FormeListe =>
-  v === "a" || v === "b" || v === "c" ? v : "actuelle";
+  v === "b" || v === "c" ? v : v === "liste" ? "actuelle" : "a";
 
 /** A list cut by the first letter of each element's name, accents left out (« # » for a digit), in the list's order. */
 export function parLettre<T>(liste: readonly T[], nom: (e: T) => string): [string, T[]][] {

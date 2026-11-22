@@ -37,7 +37,8 @@ const GROUPES: Categorie[] = ["France", "UE hors France", "Europe hors UE", "hor
 // The companies (D.2, R9): those that host or deliver the measured sites that day, in alphabetical order (a list,
 // never a ranking), each with the country of its ultimate parent's seat and the number of domains it serves. Behind a
 // closed door, no data is read: the page answers « not found ». Its form is provisional until the owner chooses
-// (point 11): the current list by default; « ?forme=a » the table, « b » the groups, « c » the index.
+// (point 11, Q2): the table (A, recommended) by default; « ?forme=b » the groups, « c » the index, « liste » the former
+// list.
 export default async function SocietesPage({ searchParams }: Props) {
   // Behind a closed door, never rendered (« not found »); behind an open door, rendered on demand with the day's data,
   // never frozen at build time (its caching: D.4).
