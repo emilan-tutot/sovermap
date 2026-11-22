@@ -112,6 +112,8 @@ export function raisonExclusion(
   name: string,
   registrable = domaineEnregistre(name),
   regles: ReglesExclusion = REGLES_EXCLUSION,
+  /** A site the SIG lists: the « outil technique » rule alone does not apply (point 09, Q3). */
+  sansOutils = false,
 ): RaisonExclusion | null {
   const n = normaliser(name);
   if (ZONES_INTERNES.some((zone) => n === zone || n.endsWith(`.${zone}`))) return "zone interne";
@@ -119,7 +121,7 @@ export function raisonExclusion(
   const morceaux = sousDomaine.flatMap((label) => label.split(/[-_]/));
   if (morceaux.some((m) => ENVIRONNEMENTS.has(m))) return "environnement";
   const premier = sousDomaine[0]?.split(/[-_0-9]/)[0] ?? "";
-  if (premier !== "" && OUTILS.has(premier)) return "outil technique";
+  if (!sansOutils && premier !== "" && OUTILS.has(premier)) return "outil technique";
   // An inner label « in » (never the first one) marks an internal sub-zone (`x.in.phm.education.gouv.fr`); a first
   // label « in » may be a country's code (`in.ambafrance.org`), and stays.
   if (regles.sousZoneInterne && sousDomaine.slice(1).includes("in")) return "sous-zone interne";
