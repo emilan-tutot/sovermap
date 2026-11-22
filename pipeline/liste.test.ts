@@ -80,6 +80,14 @@ describe("the official lists (C.5)", () => {
     expect(csv).toBe("name,type\nwww.mairie.example,Commune\nxn--t-9fab.example,Commune\n");
     expect(csv).not.toContain("Personne");
   });
+  it("keeps only the list's known types: anything else in the type column, a person's name above all, is dropped", () => {
+    const brut =
+      "name,type\nwww.mairie.example,Commune\nwww.ajout.example,Ajout Manuel Personne Exemple\nwww.etat.example,Gouvernement\n";
+    const { csv, types } = nettoyerListe(brut);
+    expect(csv).toBe("name,type\nwww.ajout.example,\nwww.etat.example,Gouvernement\nwww.mairie.example,Commune\n");
+    expect(csv).not.toContain("Personne");
+    expect(types).toEqual({ "": 1, Gouvernement: 1, Commune: 1 });
+  });
   it("refuses a list without its name or type column", () => {
     expect(() => nettoyerListe("domaine,genre\na.example,x\n")).toThrow();
   });

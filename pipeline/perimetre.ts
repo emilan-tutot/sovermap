@@ -6,7 +6,7 @@
 // « hors État » otherwise.
 import { createHash } from "node:crypto";
 import type { ReferentielDila } from "./dila";
-import { lignesCsv, nomValide } from "./liste";
+import { lignesCsv, nomValide, typeConnu } from "./liste";
 import { REGLES_EXCLUSION, type RaisonExclusion, type ReglesExclusion, raisonExclusion } from "./noms";
 import { domaineEnregistrable, type ListeSuffixes } from "./psl";
 
@@ -161,7 +161,7 @@ export function construireListe(
     if (iNom < 0 || iType < 0) throw new Error(`liste du ${copie.date} : colonnes « name » et « type » attendues`);
     for (const ligne of lignes) {
       const nom = ligne[iNom];
-      if (nom !== undefined && nom !== "") ajouter(nom, `dinum:${copie.date}`, ligne[iType]?.trim() || null, null);
+      if (nom !== undefined && nom !== "") ajouter(nom, `dinum:${copie.date}`, typeConnu(ligne[iType]) || null, null);
     }
   }
   const ministereDe = new Map<string, string>();

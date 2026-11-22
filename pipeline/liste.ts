@@ -48,8 +48,41 @@ export function nomValide(brut: string): string | null {
 }
 
 /**
+ * The types of the DINUM's list (its « type » column), as both dated copies give them. Any other value is dropped as it
+ * is read: the column once held « Ajout Manuel » followed by a contributor's name, and Sovermap never keeps the name of
+ * a contributor (brief § 0.2).
+ */
+export const TYPES_LISTE: ReadonlySet<string> = new Set([
+  "APHP",
+  "Académie",
+  "Ambassade",
+  "Bibliothèque",
+  "Centre de gestion",
+  "Collectivité",
+  "Commune",
+  "Conseil départemental",
+  "Conseil régional",
+  "EPCI",
+  "Gouvernement",
+  "Hôpital",
+  "MDPH ou MDA",
+  "Ministère",
+  "Préfécture",
+  "Santé",
+  "Université",
+  "Établissement scolaire",
+]);
+
+/** A type of the list, or "" for anything else (TYPES_LISTE). */
+export const typeConnu = (brut: string | undefined): string => {
+  const type = (brut ?? "").trim();
+  return TYPES_LISTE.has(type) ? type : "";
+};
+
+/**
  * The clean copy of an official list: only `name` and `type` (both columns must exist), names normalised, sorted,
- * without duplicates. Every other column is dropped as it is read — the « sources » column above all.
+ * without duplicates, and only the known types (TYPES_LISTE). Every other column is dropped as it is read — the
+ * « sources » column above all.
  */
 export function nettoyerListe(texte: string): {
   csv: string;
@@ -69,7 +102,7 @@ export function nettoyerListe(texte: string): {
     lignes += 1;
     const nom = nomValide(ligne[iNom] ?? "");
     if (nom === null) continue;
-    const type = (ligne[iType] ?? "").trim().slice(0, 80);
+    const type = typeConnu(ligne[iType]);
     if ((parNom.get(nom) ?? "") === "") parNom.set(nom, type);
   }
   const noms = [...parNom.keys()].sort();

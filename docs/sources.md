@@ -118,6 +118,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Producteur** : Direction interministérielle du numérique (DINUM).
 - **Adresse** : https://gitlab.adullact.net/dinum/noms-de-domaine-organismes-secteur-public
 - **Ce qu'on en tire** : la liste de référence à jour (nom, type, provenance).
+  - **Piège** (22/11/2026) : la colonne `type` a contenu, pour une ligne, « Ajout Manuel » suivi du nom d'un contributeur. Seuls les 18 types connus sont gardés (`TYPES_LISTE`, `pipeline/liste.ts`) ; toute autre valeur est vidée à la lecture.
 - **Licence ou conditions** :
   - etalab-2.0, d'après la forge, vue par le propriétaire dans un navigateur le 18/11/2026. Non relue par un robot.
   - L'ancienne copie porte la Licence Ouverte 2.0 (fiche 2).
