@@ -26,6 +26,14 @@ export type DebitServeurs = {
     max: number;
     coupes: number;
     zones: number;
+    /**
+     * In that worst second: the distinct names asked, and the questions asked to a parent of their zone (its DS or its
+     * delegation, asked again and again: what the zone's own pace does not weigh).
+     */
+    noms: number;
+    auParent: number;
+    /** The units of the list among the registered zones of that second (5 at most, sorted): the summary names them. */
+    zonesVues: string[];
     parType: Record<string, number>;
   }[];
   /**
@@ -83,7 +91,17 @@ export const sous = (nom: string, coupe: string) => coupe === "" || nom === coup
 
 export class CompteurServeurs {
   /** `zoneDe`: the registered zone of a name, the same as the collection's (its questions are held by zone). */
-  constructor(private readonly zoneDe: (nom: string) => string = (nom) => nom) {}
+  /**
+   * `estSuffixe` tells a public suffix of several labels of the ICANN section of the Public Suffix List (such as
+   * gouv.fr), never of its private section (companies' platforms): a server is named by the public suffixes it answers
+   * for, top-level domains and those (public infrastructure, never a company).
+   */
+  constructor(
+    private readonly zoneDe: (nom: string) => string = (nom) => nom,
+    private readonly estSuffixe: (zone: string) => boolean = () => false,
+    /** A unit of the list (a public body's domain, published anyway): the only zones a busy second keeps by name. */
+    private readonly estUnite: (zone: string) => boolean = () => true,
+  ) {}
 
   #questions = 0;
   #depassements = 0;
@@ -113,9 +131,21 @@ export class CompteurServeurs {
   /** Within the current second, per address: the registered zones of the names asked, and the question types. */
   #zonesParAdresse = new Map<string, Set<string>>();
   #typesParAdresse = new Map<string, Map<string, number>>();
+  /** Within the current second, per address: the distinct names asked, and the questions to a parent of their zone. */
+  #nomsParAdresse = new Map<string, Set<string>>();
+  #auParentParAdresse = new Map<string, number>();
   #auDela = new Map<
     string,
-    { secondes: number; max: number; coupes: number; zones: number; parType: Map<string, number> }
+    {
+      secondes: number;
+      max: number;
+      coupes: number;
+      zones: number;
+      noms: number;
+      auParent: number;
+      zonesVues: string[];
+      parType: Map<string, number>;
+    }
   >();
 
   /** One line of `docker logs --timestamps` (its timestamp, then Knot's line). */
@@ -130,6 +160,8 @@ export class CompteurServeurs {
       this.#coupesParAdresse = new Map();
       this.#zonesParAdresse = new Map();
       this.#typesParAdresse = new Map();
+      this.#nomsParAdresse = new Map();
+      this.#auParentParAdresse = new Map();
       this.#courante = seconde;
       this.#chargeCourante = 0;
     }
@@ -185,7 +217,7 @@ export class CompteurServeurs {
     };
     if (question[3] !== undefined) {
       const coupe = coupeNormale(question[3]);
-      if (coupe !== "" && !coupe.includes(".")) total.tlds.add(coupe);
+      if (coupe !== "" && (!coupe.includes(".") || this.estSuffixe(coupe))) total.tlds.add(coupe);
     }
     total.questions += 1;
     const type = question[5] ?? "?";
@@ -199,6 +231,10 @@ export class CompteurServeurs {
       const auParent =
         coupe !== null && coupe !== zone && sous(zone, coupe) && (question[5] === "NS" || question[5] === "DS");
       if (!auParent) noter(this.#zonesRecentes, question[2], zone, t);
+      else this.#auParentParAdresse.set(question[2], (this.#auParentParAdresse.get(question[2]) ?? 0) + 1);
+      const noms = this.#nomsParAdresse.get(question[2]) ?? new Set<string>();
+      noms.add(coupeNormale(question[4]));
+      this.#nomsParAdresse.set(question[2], noms);
     }
     if (t - this.#oubli >= 10) {
       this.#oubli = t;
@@ -299,6 +335,9 @@ export class CompteurServeurs {
           max: 0,
           coupes: 0,
           zones: 0,
+          noms: 0,
+          auParent: 0,
+          zonesVues: [],
           parType: new Map<string, number>(),
         };
         s.secondes += 1;
@@ -306,6 +345,13 @@ export class CompteurServeurs {
           s.max = n;
           s.coupes = this.#coupesParAdresse.get(adresse)?.size ?? 0;
           s.zones = this.#zonesParAdresse.get(adresse)?.size ?? 0;
+          s.noms = this.#nomsParAdresse.get(adresse)?.size ?? 0;
+          s.auParent = this.#auParentParAdresse.get(adresse) ?? 0;
+          // The units of the list first, then the cut: a unit never falls behind a third party's zone.
+          s.zonesVues = [...(this.#zonesParAdresse.get(adresse) ?? [])]
+            .filter((z) => this.estUnite(z))
+            .sort()
+            .slice(0, 5);
           s.parType = new Map(this.#typesParAdresse.get(adresse) ?? []);
         }
         this.#auDela.set(adresse, s);
@@ -324,6 +370,8 @@ export class CompteurServeurs {
     this.#coupesParAdresse = new Map();
     this.#zonesParAdresse = new Map();
     this.#typesParAdresse = new Map();
+    this.#nomsParAdresse = new Map();
+    this.#auParentParAdresse = new Map();
     const coupesChaudes = [...this.#secondesChaudes]
       .sort(([a, x], [b, y]) => y - x || (a < b ? -1 : 1))
       .slice(0, 5)
@@ -351,6 +399,9 @@ export class CompteurServeurs {
           max: s.max,
           coupes: s.coupes,
           zones: s.zones,
+          noms: s.noms,
+          auParent: s.auParent,
+          zonesVues: s.zonesVues,
           parType: Object.fromEntries([...s.parType].sort(([, x], [, y]) => y - x)),
         })),
       max: this.#max,

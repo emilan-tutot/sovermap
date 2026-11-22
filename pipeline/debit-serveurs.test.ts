@@ -13,6 +13,22 @@ const ligne = (
   `2026-11-21T03:17:${seconde}.123456789Z [resolv] [12345.01] => id: '12345' querying: '${serveur}'@'${adresse}' zone cut: '${coupe}' qname: '${qname}' qtype: '${qtype}' proto: 'udp'`;
 
 describe("the pace towards each authoritative server", () => {
+  it("names a server by the public suffixes it answers for, those of several labels included", () => {
+    const c = new CompteurServeurs(
+      (nom) => nom.split(".").slice(-2).join("."),
+      (zone) => zone === "gouv.exemple",
+    );
+    for (const l of [
+      ligne("05", "192.0.2.53", "gouv.exemple.", "www.site.gouv.exemple.", "DS"),
+      ligne("05", "192.0.2.53", "exemple.", "gouv.exemple.", "NS"),
+      ligne("05", "192.0.2.53", "site.exemple.", "www.site.exemple.", "A"),
+    ]) {
+      c.lire(l);
+    }
+    // gouv.exemple is a public suffix, exemple a top-level domain; site.exemple is neither, and is never named.
+    expect(c.resultat().adressesChargees[0]?.tlds).toEqual(["exemple", "gouv.exemple"]);
+  });
+
   it("keeps the highest count of questions to one address within one second", () => {
     const c = new CompteurServeurs();
     for (const l of [
@@ -72,8 +88,79 @@ describe("the pace towards each authoritative server", () => {
     const r = c.resultat();
     // Two seconds with questions (10 and 19): the waits between them are not seconds of the measurement.
     expect(r).toMatchObject({ depassements: 2, secondesAuDela: 1, secondes: 2 });
-    // The shared server: eleven zone cuts and eleven registered zones in its worst second.
-    expect(r.auDela).toContainEqual({ tlds: [], secondes: 1, max: 11, coupes: 11, zones: 11, parType: { A: 11 } });
+    // The shared server: eleven zone cuts, eleven registered zones and eleven names in its worst second.
+    expect(r.auDela).toContainEqual({
+      tlds: [],
+      secondes: 1,
+      max: 11,
+      coupes: 11,
+      zones: 11,
+      noms: 11,
+      auParent: 0,
+      zonesVues: ["z0.exemple", "z1.exemple", "z10.exemple", "z2.exemple", "z3.exemple"],
+      parType: { A: 11 },
+    });
+  });
+
+  it("starts a second's counts again at each second, and keeps the units of the list before the cut", () => {
+    const zoneDe = (nom: string) =>
+      nom
+        .split(".")
+        .slice(nom.endsWith("gouv.exemple") ? -3 : -2)
+        .join(".");
+    const unites = new Set(["site.gouv.exemple", "mairie.exemple"]);
+    const c = new CompteurServeurs(
+      zoneDe,
+      (zone) => zone === "gouv.exemple",
+      (zone) => unites.has(zone),
+    );
+    // A shared server: eleven third parties' zones, then a unit of the list, last in alphabetical order.
+    for (let i = 0; i < 11; i += 1) c.lire(ligne("40", "198.51.100.53", `a${i}.exemple.`, `www.a${i}.exemple.`));
+    c.lire(ligne("40", "198.51.100.53", "mairie.exemple.", "www.mairie.exemple."));
+    // A server of gouv.exemple: twelve new zones' DS in one second, then its worst, one zone's DS thirteen times.
+    for (let i = 0; i < 12; i += 1) c.lire(ligne("40", "192.0.2.53", "gouv.exemple.", `b${i}.gouv.exemple.`, "DS"));
+    for (let i = 0; i < 13; i += 1) c.lire(ligne("41", "192.0.2.53", "gouv.exemple.", "site.gouv.exemple.", "DS"));
+    const r = c.resultat();
+    expect(r.auDela).toContainEqual(
+      expect.objectContaining({ max: 12, zones: 12, noms: 12, zonesVues: ["mairie.exemple"] }),
+    );
+    expect(r.auDela).toContainEqual(
+      expect.objectContaining({
+        secondes: 2,
+        max: 13,
+        zones: 1,
+        noms: 1,
+        auParent: 13,
+        zonesVues: ["site.gouv.exemple"],
+      }),
+    );
+  });
+
+  it("tells a zone's DS asked again and again at its parent from a burst of its sub-zones", () => {
+    const zoneDe = (nom: string) =>
+      nom
+        .split(".")
+        .slice(nom.endsWith("gouv.exemple") ? -3 : -2)
+        .join(".");
+    const c = new CompteurServeurs(zoneDe, (zone) => zone === "gouv.exemple");
+    // One zone's DS, twelve times in one second, at a server of its parent gouv.exemple.
+    for (let i = 0; i < 12; i += 1) c.lire(ligne("30", "192.0.2.53", "gouv.exemple.", "site.gouv.exemple.", "DS"));
+    // Eleven sub-zones of one zone, each with its DS at that zone's server.
+    for (let i = 0; i < 11; i += 1) c.lire(ligne("30", "198.51.100.53", "site.exemple.", `s${i}.site.exemple.`, "DS"));
+    const r = c.resultat();
+    expect(r.auDela).toContainEqual(
+      expect.objectContaining({
+        max: 12,
+        coupes: 1,
+        zones: 1,
+        noms: 1,
+        auParent: 12,
+        zonesVues: ["site.gouv.exemple"],
+      }),
+    );
+    expect(r.auDela).toContainEqual(
+      expect.objectContaining({ max: 11, coupes: 1, zones: 1, noms: 11, auParent: 0, zonesVues: ["site.exemple"] }),
+    );
   });
 
   it("tells the addresses of a name server, and what our questions to a zone cost its servers", () => {

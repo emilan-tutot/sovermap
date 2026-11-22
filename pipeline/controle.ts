@@ -97,6 +97,70 @@ export async function controler(
   return resultat;
 }
 
+/**
+ * A control fed as the measurement goes (the hosts of the « État » domains, as soon as each domain is measured): every
+ * name added is asked once, at the client's pace, while the measurement still runs; the result comes when it is closed
+ * and everything added has been asked, or when the deadline has passed (what is left keeps its level, « probable »).
+ */
+export class ControleEnContinu {
+  readonly #client: ClientDns;
+  readonly #echeance: number;
+  readonly #file: string[] = [];
+  readonly #vus = new Set<string>();
+  readonly #attentes: (() => void)[] = [];
+  readonly #resultat: ResultatControle;
+  readonly #fin: Promise<ResultatControle>;
+  #ferme = false;
+
+  constructor(client: ClientDns, enVol = 8, echeance = Number.POSITIVE_INFINITY) {
+    this.#client = client;
+    this.#echeance = echeance;
+    this.#resultat = { resolveur: client.id, noms: new Map(), mx: new Map() };
+    this.#fin = Promise.all(Array.from({ length: enVol }, () => this.#ouvrier())).then(() => this.#resultat);
+    // Handled here at once (awaited by fermer() much later): a failure is never an unhandled rejection in between.
+    this.#fin.catch(() => {});
+  }
+
+  /** Names to ask, each one once (a name added twice is asked once). */
+  ajouter(noms: Iterable<string>): void {
+    for (const nom of noms) {
+      if (this.#vus.has(nom)) continue;
+      this.#vus.add(nom);
+      this.#file.push(nom);
+    }
+    this.#reveiller();
+  }
+
+  /** Every name added so far. */
+  get noms(): string[] {
+    return [...this.#vus].sort();
+  }
+
+  /** No more names: the result comes once every name added has been asked (or the deadline has passed). */
+  fermer(): Promise<ResultatControle> {
+    this.#ferme = true;
+    this.#reveiller();
+    return this.#fin;
+  }
+
+  #reveiller() {
+    for (const reveil of this.#attentes.splice(0)) reveil();
+  }
+
+  async #ouvrier(): Promise<void> {
+    for (;;) {
+      if (Date.now() >= this.#echeance) return;
+      const nom = this.#file.shift();
+      if (nom !== undefined) {
+        this.#resultat.noms.set(nom, await mesurerNom(nom, this.#client));
+        continue;
+      }
+      if (this.#ferme) return;
+      await new Promise<void>((reveil) => this.#attentes.push(reveil));
+    }
+  }
+}
+
 export type VerdictTemoin = {
   nom: string;
   resolveur: string;
