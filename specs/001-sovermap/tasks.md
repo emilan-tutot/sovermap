@@ -165,7 +165,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 ### Partie F — T6, les données ouvertes (`feat/c2-donnees-ouvertes`)
 - [ ] F.1 La page Données (CSV, JSON, schéma, licences, attributions, sommes de contrôle).
 - [ ] F.2 Les archives mensuelles (pre-release jusqu'à l'ouverture).
-- [ ] F.3 Les contrôles (schéma, aucune donnée personnelle, rien d'une source « en contrôle seulement »).
+- [x] F.3 Les contrôles (schéma, aucune donnée personnelle, rien d'une source « en contrôle seulement »). Preuves (22/11/2026) : le schéma, garde-fou « schémas valides » (B.6) ; les données personnelles, garde-fou « aucune donnée personnelle » (`pipeline/personnelles.ts`) sur tous les fichiers publiés et les fichiers ouverts, avant l'envoi : rouge, il arrête la publication, et aucun fichier de données n'entre dans l'artefact public de l'exécution ; passé sur la branche `donnees` du jour 1 (7e68089 : 82 876 fichiers, 118 Mo de texte) : 0 trouvaille ; les sources « en contrôle seulement », `pipeline/controle-seulement.test.ts` (des téléchargements, seules les deux tables du RIS le sont ; un résolveur de contrôle ne laisse que son nom et son accord, le schéma refuse le reste ; aucune adresse de RIPEstat, des RDAP ni de Team Cymru dans le code, prouvé par une mutation) et le canari du RIS de `pipeline/couches.test.ts`.
 - [ ] F.4 Preuves.
 
 ### Parties G et H — Vérifications et fin

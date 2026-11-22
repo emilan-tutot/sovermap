@@ -31,6 +31,7 @@ import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verif
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { fichiersOuverts } from "../ouvertes";
 import { construireListe, type CopieListe } from "../perimetre";
+import { donneesPersonnelles } from "../personnelles";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -727,6 +728,21 @@ async function principal(): Promise<number> {
     return schema === null ? [] : valider(JSON.parse(texte), schema).map((e) => `${chemin} ${e.chemin} : ${e.attendu}`);
   });
 
+  // The open files of the day (brief F.1), made here so that the guards see them: the publishing job puts them in the
+  // « donnees-courant » release, never into the history of the « donnees » branch.
+  const ouvertes = fichiersOuverts(
+    b.etat,
+    { societes, organismes, jours },
+    {
+      date,
+      methode: METHODE,
+      sources: sources.map((s) => ({ id: s.id, fiche: s.fiche, etat: s.etat, date: s.date })),
+    },
+  );
+  // No personal data in anything published (brief F.3): the state's files and the open files (etat.json, written
+  // below, holds only the run's counters and these guards).
+  const personnelles = donneesPersonnelles([...fichiers, ...ouvertes]);
+
   const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
   const gardes: Garde[] = [
     {
@@ -774,6 +790,14 @@ async function principal(): Promise<number> {
       detail: `${rapportJour.reduits + rapportJour.erreurs} sur ${jour.noms.size + jour.domaines.size} (schéma refusé : ${rapportJour.reduits} ; erreur : ${rapportJour.erreurs})`,
     },
     { nom: "schémas valides", ok: erreursSchema.length === 0, detail: erreursSchema.slice(0, 5).join(" ; ") },
+    {
+      nom: "aucune donnée personnelle",
+      ok: personnelles.length === 0,
+      detail: personnelles
+        .slice(0, 5)
+        .map((p) => `${p.fichier} : ${p.extrait}`)
+        .join(" ; "),
+    },
   ];
   const publiable = gardes.every((g) => g.ok);
   // A trustworthy measurement (every guard green but, maybe, those that compare with yesterday: the circuit breaker,
@@ -878,25 +902,17 @@ async function principal(): Promise<number> {
   };
   fichiers.set("etat.json", `${JSON.stringify(etatJson, null, 2)}\n`);
 
-  for (const [chemin, texte] of fichiers) {
-    const cible = path.join(travail, "sortie", chemin);
-    mkdirSync(path.dirname(cible), { recursive: true });
-    writeFileSync(cible, texte);
-  }
-  // The open files of the day (brief F.1), beside the published state, never in it: the publishing job puts them in
-  // the « donnees-courant » release, never into the history of the « donnees » branch.
+  // The run's artifact is public, like the repository: when a personal datum is found, neither the state nor the open
+  // files are written, and the report alone says where, masked.
   rmSync(path.join(travail, "ouvertes"), { recursive: true, force: true });
   mkdirSync(path.join(travail, "ouvertes"), { recursive: true });
-  for (const [nom, texte] of fichiersOuverts(
-    b.etat,
-    { societes, organismes, jours },
-    {
-      date,
-      methode: METHODE,
-      sources: sources.map((s) => ({ id: s.id, fiche: s.fiche, etat: s.etat, date: s.date })),
-    },
-  )) {
-    writeFileSync(path.join(travail, "ouvertes", nom), texte);
+  if (personnelles.length === 0) {
+    for (const [chemin, texte] of fichiers) {
+      const cible = path.join(travail, "sortie", chemin);
+      mkdirSync(path.dirname(cible), { recursive: true });
+      writeFileSync(cible, texte);
+    }
+    for (const [nom, texte] of ouvertes) writeFileSync(path.join(travail, "ouvertes", nom), texte);
   }
   // The registered zones of a busy second that are units of the list (public bodies' domains, published anyway): named;
   // never a third party's.
