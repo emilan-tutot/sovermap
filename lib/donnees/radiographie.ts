@@ -17,8 +17,11 @@ export type SocieteIndex = {
   pays: string;
   mere: string | null;
   paysMere: string | null;
-  /** The seat that gives the category and the thread, published by the collection (before 23/11/2026: the parent's). */
-  paysRetenu: string;
+  /**
+   * The seat that gives the category and the thread, published by the collection (before method 0.3: the parent's);
+   * null when it is not established (the parent unknown), though the category may be known.
+   */
+  paysRetenu: string | null;
   categorie: Categorie;
   /** The companies above it, from its direct parent up (published from 23/11/2026; none before). */
   maillons: Maillon[];
@@ -75,7 +78,7 @@ export function lireIndexSocietes(valeur: unknown): IndexSocietes | null {
       pays: paysSociete,
       mere,
       paysMere: codePays(e["paysMere"]),
-      paysRetenu: codePays(e["paysRetenu"]) ?? codePays(e["paysMere"]) ?? paysSociete,
+      paysRetenu: "paysRetenu" in e ? codePays(e["paysRetenu"]) : codePays(e["paysMere"]),
       categorie,
       maillons,
       controle: texte(e["controle"], 300),
@@ -121,7 +124,7 @@ export type SocieteVue = {
   cle: string;
   nom: string;
   pays: string;
-  paysRetenu: string;
+  paysRetenu: string | null;
   mere: MereVue;
   categorie: Categorie;
   maillons: Maillon[];

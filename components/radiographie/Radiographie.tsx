@@ -165,9 +165,7 @@ export function VueRadiographie({
   const meres = lesSocietes.map((so) => ({ so, mere: so.mere }));
   // The chain, from the site to the country of a seat (its forms: Chaine.tsx): each company's retained seat, the farther
   // of its own and its ultimate parent's (ARRÊT 2), as the collection published it.
-  const paysRetenus = [
-    ...new Set(lesSocietes.flatMap((so) => (so.categorie === "non déterminé" ? [] : [pays(so.paysRetenu)]))),
-  ];
+  const paysRetenus = [...new Set(lesSocietes.flatMap((so) => (so.paysRetenu === null ? [] : [pays(so.paysRetenu)])))];
   const etapes: Etape[] = [
     { couche: 1, libelle: t.site, valeur: r.nomWeb, brute: true, horsUE: null },
     {
@@ -426,6 +424,8 @@ export function VueRadiographie({
                           when they differ, or the parent left undetermined. */}
                       {so.categorie === "non déterminé" ? (
                         t.nonDetermine
+                      ) : so.paysRetenu === null ? (
+                        categorie(so.categorie)
                       ) : (
                         <LienPays code={so.paysRetenu}>
                           {t.pays.valeur(pays(so.paysRetenu), categorie(so.categorie))}

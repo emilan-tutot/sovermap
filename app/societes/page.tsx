@@ -26,7 +26,10 @@ const t = fr.societes;
 const siegeDe = (s: SocieteIndex) =>
   s.categorie === "non déterminé"
     ? t.siegeInconnu
-    : t.siegeCourt(nomPays(s.paysRetenu) ?? s.paysRetenu, fr.radiographie.categories[s.categorie]);
+    : t.siegeCourt(
+        (s.paysRetenu === null ? null : nomPays(s.paysRetenu)) ?? fr.radiographie.categories[s.categorie],
+        fr.radiographie.categories[s.categorie],
+      );
 
 // The companies (D.2, R9): those that host or deliver the measured sites that day, in alphabetical order (a list,
 // never a ranking), each with its retained seat (ARRÊT 2: the farther of its own and its ultimate parent's) and the number of domains it serves, in a

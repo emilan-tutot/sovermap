@@ -143,9 +143,9 @@ export default async function MinisterePage({ params }: Props) {
             </h3>
             {g.societe === null ? null : (
               <p className="releve-note">
-                {g.categorie !== "non déterminé" && societes.get(g.societe)?.paysRetenu
+                {g.categorie !== "non déterminé"
                   ? fr.radiographie.pays.valeur(
-                      nomPays(societes.get(g.societe)?.paysRetenu ?? null) ?? fr.radiographie.nonDetermine,
+                      nomPays(societes.get(g.societe)?.paysRetenu ?? null) ?? fr.radiographie.categories[g.categorie],
                       fr.radiographie.categories[g.categorie],
                     )
                   : fr.societes.siegeInconnu}
