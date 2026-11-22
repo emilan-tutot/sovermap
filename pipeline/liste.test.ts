@@ -83,10 +83,12 @@ describe("the official lists (C.5)", () => {
   it("keeps only the list's known types: anything else in the type column, a person's name above all, is dropped", () => {
     const brut =
       "name,type\nwww.mairie.example,Commune\nwww.ajout.example,Ajout Manuel Personne Exemple\nwww.etat.example,Gouvernement\n";
-    const { csv, types } = nettoyerListe(brut);
+    const { csv, types, typesInconnus } = nettoyerListe(brut);
     expect(csv).toBe("name,type\nwww.ajout.example,\nwww.etat.example,Gouvernement\nwww.mairie.example,Commune\n");
     expect(csv).not.toContain("Personne");
     expect(types).toEqual({ "": 1, Gouvernement: 1, Commune: 1 });
+    // Counted apart from the empty types: a new list may bring a legitimate one, to be read by hand.
+    expect(typesInconnus).toBe(1);
   });
   it("refuses a list without its name or type column", () => {
     expect(() => nettoyerListe("domaine,genre\na.example,x\n")).toThrow();

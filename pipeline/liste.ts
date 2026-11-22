@@ -89,6 +89,8 @@ export function nettoyerListe(texte: string): {
   lignes: number;
   noms: number;
   types: Record<string, number>;
+  /** Rows whose type was not empty but unknown, and was emptied: a new list may bring a legitimate one (read it by hand). */
+  typesInconnus: number;
 } {
   const iter = lignesCsv(texte.replace(/^﻿/, ""));
   const entete = iter.next().value ?? [];
@@ -97,12 +99,14 @@ export function nettoyerListe(texte: string): {
   if (iNom < 0 || iType < 0) throw new Error("colonnes « name » et « type » attendues");
   const parNom = new Map<string, string>();
   let lignes = 0;
+  let typesInconnus = 0;
   for (const ligne of iter) {
     if (ligne.length === 1 && ligne[0] === "") continue;
     lignes += 1;
     const nom = nomValide(ligne[iNom] ?? "");
     if (nom === null) continue;
     const type = typeConnu(ligne[iType]);
+    if (type === "" && (ligne[iType] ?? "").trim() !== "") typesInconnus += 1;
     if ((parNom.get(nom) ?? "") === "") parNom.set(nom, type);
   }
   const noms = [...parNom.keys()].sort();
@@ -113,5 +117,5 @@ export function nettoyerListe(texte: string): {
   }
   const champ = (v: string) => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   const csv = `name,type\n${noms.map((n) => `${n},${champ(parNom.get(n) ?? "")}`).join("\n")}\n`;
-  return { csv, lignes, noms: noms.length, types };
+  return { csv, lignes, noms: noms.length, types, typesInconnus };
 }

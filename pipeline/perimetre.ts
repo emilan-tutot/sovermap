@@ -132,7 +132,7 @@ export function construireListe(
   const ecartes = new Map<Exclusion, Set<string>>();
   const exclure = (raison: Exclusion, nom: string) =>
     ecartes.set(raison, (ecartes.get(raison) ?? new Set<string>()).add(nom));
-  // A site the SIG lists as public is never set aside as a technical tool (point 09 of chantier 2, Q3): its first label
+  // A site the SIG's Observatoire lists is never set aside as a technical tool (point 09 of chantier 2, Q3): its first label
   // may be a country's code (`mx.`) or a public service's name (`pop.`). The other rules still apply to it.
   const sitesSig = new Set(
     perimetre
