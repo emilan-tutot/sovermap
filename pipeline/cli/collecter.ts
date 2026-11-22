@@ -13,13 +13,13 @@ import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { estPlage, type PlagesOfficielles, type ReferentielCdn } from "../cdn";
-import { collecter, type OptionsCollecte, POLITESSE, type ResultatCollecte } from "../collecte";
+import { collecter, type OptionsCollecte, POLITESSE } from "../collecte";
 import {
   ClientCadence,
+  ControleEnContinu,
   controler,
   planDeControle,
   type ReferentielTemoins,
-  type ResultatControle,
   verifierTemoins,
 } from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
@@ -28,7 +28,7 @@ import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
-import { type MesureNom, mesurerNom } from "../mesure";
+import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { construireListe, type CopieListe } from "../perimetre";
 import {
   controleDu,
@@ -260,6 +260,8 @@ type Attentes = { ouvertures: number; questions: number; secondes: number };
 function suivreDebit(
   conteneur: string | undefined,
   zoneDe: (nom: string) => string,
+  estSuffixe: (zone: string) => boolean,
+  estUnite: (zone: string) => boolean,
 ): {
   frein: OptionsCollecte["frein"];
   journal: OptionsCollecte["journal"];
@@ -269,7 +271,7 @@ function suivreDebit(
   if (conteneur === undefined) {
     return { frein: undefined, journal: undefined, arreter: () => ({ debit: null, attentes }) };
   }
-  const compteur = new CompteurServeurs(zoneDe);
+  const compteur = new CompteurServeurs(zoneDe, estSuffixe, estUnite);
   const enfant = spawn("docker", ["logs", "-f", "--timestamps", "--since", "1s", conteneur], {
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -430,34 +432,25 @@ async function principal(): Promise<number> {
   const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
   const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
   const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
-  const debit = suivreDebit(o.conteneur, zoneDe);
+  // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
+  // companies' platforms. Only the units of the list name a busy second's zones.
+  const debit = suivreDebit(
+    o.conteneur,
+    zoneDe,
+    (zone) => ref.psl.icann?.has(zone) === true,
+    (zone) => liste.domaines.has(zone),
+  );
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
   // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),
   // and the job always has time to build and keep the day (it stops at 240 minutes).
   const finControles = maintenant.getTime() + 210 * 60_000;
-  // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as the first pass has
-  // measured them: during the attempts, which mostly wait.
-  const hotesEtatDe = (m: ResultatCollecte) =>
-    [
-      ...new Set(
-        domainesMesures
-          .filter((d) => d.perimetre === "État")
-          .flatMap((d) => {
-            const z = m.domaines.get(d.domaine);
-            return z === undefined ? [] : [...z.ns.slice(0, 13), ...z.mx.slice(0, 10).map((x) => x.hote)];
-          }),
-      ),
-    ].sort();
-  const hotes: { liste: string[]; controle: Promise<ResultatControle> | null } = { liste: [], controle: null };
-  const lancerControleHotes = (m: ResultatCollecte): Promise<ResultatControle> => {
-    hotes.liste = hotesEtatDe(m);
-    suivi(`première passe finie à ${minutes()} min ; contrôle de ${hotes.liste.length} hôtes de l'État lancé`);
-    hotes.controle = controler(quad9, hotes.liste, [], 8, finControles);
-    // Handled here at once (awaited much later): a failure is never an unhandled rejection in between.
-    hotes.controle.catch(() => {});
-    return hotes.controle;
-  };
+  // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
+  // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
+  // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
+  const domainesEtat = new Set(domainesMesures.filter((d) => d.perimetre === "État").map((d) => d.domaine));
+  const controleHotesEnCours = new ControleEnContinu(quad9, 8, finControles);
+  const hotesDeZone = (zone: MesureZone) => [...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((x) => x.hote)];
   const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
     collecter(noms, knot, {
       ...POLITESSE,
@@ -466,7 +459,13 @@ async function principal(): Promise<number> {
       echeance: maintenant.getTime() + 165 * 60_000,
       zoneDe,
       suivi,
-      apresPremierePasse: (m) => void lancerControleHotes(m),
+      apresDomaine: (domaine, zone) => {
+        if (domainesEtat.has(domaine)) controleHotesEnCours.ajouter(hotesDeZone(zone));
+      },
+      apresPremierePasse: () =>
+        suivi(
+          `première passe finie à ${minutes()} min ; ${controleHotesEnCours.noms.length} hôtes de l'État au contrôle`,
+        ),
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
       ...(debit.journal === undefined ? {} : { journal: debit.journal }),
     }),
@@ -474,16 +473,10 @@ async function principal(): Promise<number> {
     controler(cloudflare, nomsTemoins, []),
   ]);
   suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
-  const controleHotes = await (hotes.controle ?? lancerControleHotes(mesures));
-  // The hosts of the « État » domains measured only by an attempt are controlled too.
-  const deja = new Set(hotes.liste);
-  const enPlus = hotesEtatDe(mesures).filter((h) => !deja.has(h));
-  if (enPlus.length > 0) {
-    const complement = await controler(quad9, enPlus, [], 8, finControles);
-    for (const [nom, m] of complement.noms) controleHotes.noms.set(nom, m);
-    hotes.liste = [...hotes.liste, ...enPlus];
-  }
-  suivi(`contrôle de ${hotes.liste.length} hôtes de l'État fini à ${minutes()} min`);
+  // Every « État » domain was announced by the measurement (first pass and attempts): nothing more is added.
+  const controleHotes = await controleHotesEnCours.fermer();
+  const hotesControles = controleHotesEnCours.noms;
+  suivi(`contrôle de ${hotesControles.length} hôtes de l'État fini à ${minutes()} min`);
   const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
   // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
   // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
@@ -805,7 +798,7 @@ async function principal(): Promise<number> {
         concordants: temoins.concordants,
         ecarts: temoins.verdicts.filter((v) => !v.ok).map((v) => `${v.nom} (${v.resolveur})`),
       },
-      controle: { resolveur: "quad9", noms: plan.noms.length + hotes.liste.length, mx: plan.mx.length },
+      controle: { resolveur: "quad9", noms: plan.noms.length + hotesControles.length, mx: plan.mx.length },
       debitMaxParServeur:
         debitServeurs === null
           ? null
@@ -843,6 +836,12 @@ async function principal(): Promise<number> {
     mkdirSync(path.dirname(cible), { recursive: true });
     writeFileSync(cible, texte);
   }
+  // The registered zones of a busy second that are units of the list (public bodies' domains, published anyway): named;
+  // never a third party's.
+  const dontListe = (zones: readonly string[]) => {
+    const nommees = zones.filter((z) => liste.domaines.has(z));
+    return nommees.length === 0 ? "" : `, dont ${nommees.map((z) => `« ${z} »`).join(", ")}`;
+  };
   const resume = [
     `## Collecte du ${date}${o.essai ? " (essai)" : ""}`,
     "",
@@ -871,12 +870,14 @@ async function principal(): Promise<number> {
           }`
     }.`,
     // The servers above 10, by the top-level zones they serve, never by their address: in their worst second, how many
-    // zone cuts and registered zones they were asked about, and which questions (what tells a shared server apart).
+    // zone cuts and registered zones they were asked about (the units of the list named), how many distinct names, how
+    // many questions to a parent of their zone (a DS asked again and again), and which questions: what tells a shared
+    // server, a zone's retries and a burst of sub-zones apart.
     `- Au-delà de 10, par serveur : ${
       (debitServeurs?.auDela ?? [])
         .map(
           (s) =>
-            `${s.tlds.length > 0 ? `un serveur de « ${s.tlds.join(", ")} »` : "un serveur d'une autre zone"} : ${s.secondes} s, au plus ${s.max} (pire seconde : ${s.coupes} coupures de zone, ${s.zones} zones, ${Object.entries(
+            `${s.tlds.length > 0 ? `un serveur de « ${s.tlds.join(", ")} »` : "un serveur d'une autre zone"} : ${s.secondes} s, au plus ${s.max} (pire seconde : ${s.coupes} coupures de zone, ${s.zones} zones${dontListe(s.zonesVues)}, ${s.noms} noms distincts, ${s.auParent} au parent de leur zone, ${Object.entries(
               s.parType,
             )
               .map(([type, n]) => `${type} ${n}`)

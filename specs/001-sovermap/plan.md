@@ -121,6 +121,11 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
 
 ## 5. Durée d'une collecte complète
 
+**Mesuré au jour 1 (21/11/2026, B.11)** :
+- 101 827 noms mesurés (la quatrième règle en écarte 3 901), 41 720 domaines. Première passe finie à 151 min ; une reprise (1 133 noms, après 10 min d'attente), la seconde abandonnée par l'heure limite ; mesure et reprises finies à 173 min ; contrôle des hôtes de l'État (2 053 hôtes, lancé après la première passe) fini à 185 min ; confirmation de 284 pannes à 188 min : **189 min en tout**, au-delà de la cible de 3 h.
+- **Le goulot** : la politesse envers les serveurs des domaines de premier niveau (6 ouvertures par seconde par registre, et non 8 comme dans le calcul ci-dessous) : 41 720 ouvertures prennent au moins 116 min. Découper la collecte en tâches parallèles (B.8) n'y ferait rien gagner, puisque ces serveurs sont partagés : chaque tâche devrait se partager le même rythme.
+- **Le remède** (21/11/2026) : le contrôle des hôtes de l'État part dès qu'un domaine de l'État est mesuré, pendant la première passe, au même rythme de Quad9 (2 questions par seconde, partagées avec le contrôle du plan, qui finit vers 102 min). La queue de 34 min disparaît : durée attendue, environ 177 min. La marge reste mince ; si une collecte dépasse encore 3 h, l'heure limite des reprises se revoit, jamais la politesse.
+
 **Recalculé le 20/11/2026 (chantier 2, partie B), avec la messagerie (C2-1)** :
 - **Noms mesurés** : 105 728 (les deux listes réunies, 122 209 noms distincts, moins 30 157 noms internes ou techniques, plus les sites du Référentiel de la DILA et 507 noms web ajoutés), dans **41 720 unités** (domaines enregistrés, ou noms d'une plateforme tierce), dont 1 903 dans le périmètre « État ».
 - **Requêtes au résolveur** : A et AAAA par nom (≈ 212 000) ; NS, SOA, DS, CAA, MX et TXT par domaine (≈ 250 000) ; A et AAAA de chaque serveur de noms et de messagerie, une fois par hôte (**hypothèse** : 15 000 hôtes, ≈ 30 000) ; les recherches SPF, 10 au plus par domaine (**hypothèse** : ≈ 20 000). Total : **≈ 510 000 requêtes**.

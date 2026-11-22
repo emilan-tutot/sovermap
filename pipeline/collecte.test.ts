@@ -107,6 +107,25 @@ describe("the scheduling of a collection", () => {
     ["sansmail.example", "sansmail.example"],
   ]);
 
+  it("announces each domain as soon as its zone is measured, before the first pass ends", async () => {
+    const r = new ResolveurSimule(ZONE, zoneDe);
+    const annonces: string[] = [];
+    let finPremierePasse = -1;
+    await collecter(noms, r, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+      aleatoire: generateur(1),
+      apresDomaine: (domaine, zone) => annonces.push(`${domaine} ${zone.ns.length > 0 ? "ns" : "sans ns"}`),
+      apresPremierePasse: () => {
+        finPremierePasse = annonces.length;
+      },
+    });
+    expect([...annonces].sort()).toEqual(["mairie.example ns", "sansmail.example ns"]);
+    // Both domains were announced while the first pass was still running.
+    expect(finPremierePasse).toBe(2);
+  });
+
   it("measures every name, opens each domain once, asks each host once, and expands SPF", async () => {
     const r = new ResolveurSimule(ZONE, zoneDe);
     const resultat = await collecter(noms, r, {

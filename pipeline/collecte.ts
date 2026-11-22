@@ -44,6 +44,8 @@ export type OptionsCollecte = {
   nomsParDomaine: number;
   /** Called once the first pass has ended (every domain measured), before the attempts: the controls may start. */
   apresPremierePasse?: (resultat: ResultatCollecte) => void;
+  /** Called each time a domain's zone is measured (first pass and attempts): a control may take its hosts at once. */
+  apresDomaine?: (domaine: string, zone: MesureZone) => void;
   /**
    * Domains in flight at once in the first pass (each one waits for its opening, then for its name servers' pace):
    * enough that the domains of a busy shared server never hold all the places.
@@ -538,6 +540,7 @@ export async function collecter(
     essai(domaine);
     const zone = await mesurerZone(domaine, client);
     resultat.domaines.set(domaine, zone);
+    options.apresDomaine?.(domaine, zone);
     // At most 13 name servers and 10 mail exchangers per domain are asked: a domain that names hundreds of slow hosts
     // can never hold the collection (the records keep as many).
     await Promise.all([...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((m) => m.hote)].map(mesurerHote));
