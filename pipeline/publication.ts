@@ -323,6 +323,11 @@ export type Societe = {
   categorie: Categorie;
   /** The companies above it, from its direct parent up, with their names and countries (societes.ts, maillonsDe). */
   maillons: { cle: string; nom: string; pays: string }[];
+  /**
+   * Who controls the top of its chain, as the referential writes it (« société cotée », « personnes physiques », never
+   * a person's name; for a public body, its nature): null when the referential says nothing or the top is unknown.
+   */
+  controle: string | null;
 };
 export type Organisme = { nom: string; sigle: string | null; ministere: string | null };
 

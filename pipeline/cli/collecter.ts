@@ -652,6 +652,7 @@ async function principal(): Promise<number> {
           paysMere: chaine.mere?.pays ?? null,
           categorie: chaine.categorie,
           maillons: maillonsDe(cle, ref.societes),
+          controle: chaine.mere?.controle ?? null,
         },
       ] as const;
     }),
