@@ -2,7 +2,7 @@
 
 **Ne pas citer.** Ces données sont en préparation : le site Sovermap n'est pas encore ouvert, la méthode est provisoire et les chiffres peuvent changer sans préavis. Elles deviendront citables à l'ouverture du site, avec une référence prête à copier.
 
-Cette branche est écrite par les workflows de Sovermap sur GitHub Actions : chaque jour par la collecte automatique (workflow « Collecte »), et au plus une fois par semaine, pour `territoires/annuaire/` seulement, par le workflow « Annuaire local ». Personne ne la modifie à la main, et son historique ne se réécrit jamais.
+Cette branche est écrite par les workflows de Sovermap sur GitHub Actions : chaque jour par la collecte automatique (workflow « Collecte »), et chaque semaine (ou lors d'une relance à la main), pour `territoires/annuaire/` seulement, par le workflow « Annuaire local ». Personne ne la modifie à la main, et son historique ne se réécrit jamais.
 
 ## Ce qu'elle contient
 

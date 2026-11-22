@@ -36,6 +36,8 @@ describe("the territory of a domain (C.6)", () => {
     expect(normaliserCommune("St Exemple")).toBe(normaliserCommune("Saint-Exemple"));
     expect(normaliserCommune("Ste-Exemple")).toBe("sainte exemple");
     expect(normaliserCommune("Œuvre-la-Ville")).toBe("oeuvre la ville");
+    expect(normaliserCommune("Exemple-sur-Mer Cedex 2")).toBe("exemple sur mer");
+    expect(normaliserCommune("Cedexville")).toBe("cedexville");
   });
 
   it("narrows a postcode to its département, Corsica and overseas included", () => {
@@ -65,7 +67,9 @@ describe("the territory of a domain (C.6)", () => {
     expect(communeDe("Exemple-Bas", "99100", index)?.code).toBe("99001");
     expect(communeDe("Exemple-Haut", "96200", index)?.code).toBe("96002");
     expect(communeDe("Exemple-sur-Mer 1er Arrondissement", "99101", index)?.code).toBe("99001");
-    // Never a commune of the same name in another département, an overseas collectivity, or no postcode: none.
+    // Never a commune of the same name in another département (even a name unique in France), an overseas
+    // collectivity, or no postcode: none.
+    expect(communeDe("Exemple-sur-Mer", "96000", index)).toBeNull();
     expect(communeDe("Exemple-Haut", "99200", index)).toBeNull();
     expect(communeDe("Saint-Exemple", "98714", index)).toBeNull();
     expect(communeDe("Saint-Exemple", null, index)).toBeNull();

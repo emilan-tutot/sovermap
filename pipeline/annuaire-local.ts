@@ -58,11 +58,13 @@ export async function copieCourante(obtenir: Obtenir): Promise<FichierCopie[]> {
     const taille = o["size"];
     if (typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) throw new Error(`${chemin} : somme illisible`);
     if (typeof id !== "string" || !/^[0-9a-f]{40}$/.test(id)) throw new Error(`${chemin} : commit illisible`);
-    // The date goes into a commit message and a summary: an exact ISO time, or the copy is refused.
+    // The date goes into a commit message and a summary: an exact ISO time, never in the future (a copy dated ahead
+    // would make every later copy look older to the publishing job), or the copy is refused.
     const dateLisible =
       typeof date === "string" &&
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(date) &&
-      !Number.isNaN(Date.parse(date));
+      !Number.isNaN(Date.parse(date)) &&
+      Date.parse(date) <= Date.now() + 24 * 3600 * 1000;
     if (!dateLisible || typeof taille !== "number" || !Number.isSafeInteger(taille) || taille < 12) {
       throw new Error(`${chemin} : date ou taille illisible`);
     }

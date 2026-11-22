@@ -105,6 +105,7 @@ describe("the local directory, read by ranges (C.6)", () => {
     await expect(copieCourante(avecDate("2026-11-14T00:38:54Z\nx"))).rejects.toThrow("date ou taille illisible");
     await expect(copieCourante(avecDate("$(date)"))).rejects.toThrow("date ou taille illisible");
     await expect(copieCourante(avecDate(20261114))).rejects.toThrow("date ou taille illisible");
+    await expect(copieCourante(avecDate("2999-01-01T00:00:00.000Z"))).rejects.toThrow("date ou taille illisible");
   });
 
   it("drops the footer's statistics, which hold values of every column", () => {
@@ -133,6 +134,16 @@ describe("the local directory, read by ranges (C.6)", () => {
     expect(lues).toEqual(["300-400"]);
     // A footer without one of the useful columns is refused.
     expect(() => plagesPermises(meta(UTILES.slice(1)))).toThrow("colonne absente : types");
+    // A column chunk starts at its dictionary page when it has one (hyparquet's placement), at its data otherwise.
+    const avecDictionnaire = meta(UTILES);
+    const types = avecDictionnaire.row_groups[0]?.columns[0]?.meta_data;
+    const noms = avecDictionnaire.row_groups[0]?.columns[1]?.meta_data;
+    if (types === undefined || noms === undefined) throw new Error("pied d'essai incomplet");
+    types.dictionary_page_offset = 0n;
+    noms.dictionary_page_offset = 140n;
+    noms.total_compressed_size = 60n;
+    expect(plagesPermises(avecDictionnaire).get("types")).toEqual([[100, 150]]);
+    expect(plagesPermises(avecDictionnaire).get("name")).toEqual([[140, 200]]);
     // A footer that would point a useful column at another column's bytes (people's names) is refused.
     expect(() => plagesPermises(meta([...UTILES, ["people_in_charge", 160, 20]]))).toThrow(
       "colonne name : sa plage chevauche celle d'une autre colonne",

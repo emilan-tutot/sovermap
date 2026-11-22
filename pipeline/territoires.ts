@@ -1,8 +1,9 @@
 // The territory of a domain (brief C.6): a local office's town, as the local directory writes it (its name and its
 // postcode), found among the INSEE's official communes (referentiels/cog/, card 52), with its département and région.
-// The postcode only narrows the candidates to its département: it is not an INSEE code. A commune whose postcode is a
-// neighbouring département's, or an office of an overseas collectivity (absent from the communes' file), stays without
-// a commune (« non déterminé »): never a commune of the same name elsewhere.
+// The postcode only narrows the candidates to its département: it is not an INSEE code. A name unique in France is
+// never taken outside that département. A commune whose postcode is a neighbouring département's, or an office of an
+// overseas collectivity (absent from the communes' file), stays without a commune (« non déterminé »), unless that
+// département has a commune of the same name, which is then taken (a rare case, not measured: no postcode file).
 import type { Guichet } from "./annuaire-local";
 import { lignesCsv } from "./liste";
 
@@ -10,7 +11,10 @@ export type Commune = { code: string; nom: string; dep: string; reg: string };
 /** By comparable name, the communes that name may designate. */
 export type IndexCommunes = Map<string, Commune[]>;
 
-/** A commune's name, comparable: no accents, no case, œ and æ spelt out, hyphens and apostrophes as spaces, « St ». */
+/**
+ * A commune's name, comparable: no accents, no case, œ and æ spelt out, hyphens and apostrophes as spaces, « St », and
+ * without the « Cedex » of a postal address (« Evry Cedex 1 »).
+ */
 export function normaliserCommune(nom: string): string {
   return nom
     .normalize("NFD")
@@ -21,6 +25,7 @@ export function normaliserCommune(nom: string): string {
     .replace(/[-'’]/g, " ")
     .replace(/\bste\b/g, "sainte")
     .replace(/\bst\b/g, "saint")
+    .replace(/\bcedex(\s+\d{1,3})?$/, "")
     .replace(/\s+/g, " ")
     .trim();
 }
