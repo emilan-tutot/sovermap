@@ -50,11 +50,11 @@ export async function GET(): Promise<Response> {
       [...societes.keys()].map((cle) => lecteur.fichier(`index/exploitants/${cle}.json`)),
     );
     if (listes.some((lu) => lu.statut !== "ok" && lu.statut !== "absent")) return indisponibleSansCache();
-    const tous = new Set(
-      listes.flatMap((lu, i) =>
-        lu.statut === "ok" ? (lireDomainesSociete(lu.donnees, [...societes.keys()][i] ?? "") ?? []) : [],
-      ),
+    const parSociete = listes.map((lu, i) =>
+      lu.statut === "ok" ? lireDomainesSociete(lu.donnees, [...societes.keys()][i] ?? "") : [],
     );
+    if (parSociete.some((l) => l === null)) return indisponibleSansCache();
+    const tous = new Set(parSociete.flatMap((l) => l ?? []));
     for (const d of desMinisteres) tous.add(d);
     domaines = [...tous].sort().map((d) => [d, d.endsWith(".gouv.fr") || desMinisteres.has(d) ? 1 : 0]);
   }

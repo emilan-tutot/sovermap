@@ -48,7 +48,7 @@ export default async function SocietesPage() {
   const societes = societesTriees(index);
   return (
     <Coque large>
-      <FilAriane miettes={[{ nom: fr.coque.navigation.societes, chemin: "/societes" }]} />
+      <FilAriane miettes={[{ nom: fr.societes.miette, chemin: "/societes" }]} />
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
       <p className="releve-note">{t.entete(nombre(societes.length))}</p>

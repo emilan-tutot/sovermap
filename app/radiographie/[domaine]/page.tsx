@@ -68,13 +68,13 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
   const { mode } = await searchParams;
   const vue: Mode = mode === "expert" ? "expert" : "simple";
   const lire = (chemin: string) => lecteur.fichier(chemin);
-  const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine) : etat;
+  const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine, etat.donnees.date) : etat;
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
   if (lu.statut !== "ok" || etat.statut !== "ok") indisponible();
   // The records were checked against their schemas (lib/donnees/fiches.ts); the indexes are checked here.
   const enregistrement = lu.donnees as unknown as EnregistrementDomaine;
   const [web, societes, as, ministeres] = await Promise.all([
-    fiche(lire, "noms", enregistrement.nomWeb),
+    fiche(lire, "noms", enregistrement.nomWeb, etat.donnees.date),
     lire("index/exploitants.json"),
     lire("index/as.json"),
     lire("index/ministeres.json"),

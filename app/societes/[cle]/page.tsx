@@ -61,7 +61,7 @@ export default async function SocietePage({ params, searchParams }: Props) {
     <Coque>
       <FilAriane
         miettes={[
-          { nom: fr.coque.navigation.societes, chemin: "/societes" },
+          { nom: fr.societes.miette, chemin: "/societes" },
           { nom: s.nom, chemin: `/societes/${cle}` },
         ]}
       />

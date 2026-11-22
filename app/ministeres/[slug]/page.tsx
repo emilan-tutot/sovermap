@@ -89,11 +89,11 @@ export default async function MinisterePage({ params }: Props) {
   // stays « non déterminé » (the review of PR 22).
   const luSocietes = await lire("index/exploitants.json");
   const servis = await parLots(m.domaines, async (d): Promise<DomaineServi | null> => {
-    const lu = await fiche(lire, "domaines", d);
+    const lu = await fiche(lire, "domaines", d, etat.donnees.date);
     if (lu.statut === "absent") return servi(d, null);
     if (lu.statut !== "ok") return null;
     const nomWeb = (lu.donnees as unknown as EnregistrementDomaine).nomWeb;
-    const web = await fiche(lire, "noms", nomWeb);
+    const web = await fiche(lire, "noms", nomWeb, etat.donnees.date);
     if (web.statut !== "ok" && web.statut !== "absent") return null;
     return servi(d, web.statut === "ok" ? (web.donnees as unknown as EnregistrementNom) : null);
   });

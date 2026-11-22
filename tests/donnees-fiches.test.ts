@@ -100,6 +100,17 @@ describe("the records for the pages (part D)", () => {
     });
     // Not published: « absent » (a page answers « not found »).
     expect(await fiche(lire, "noms", "www.inconnu.example")).toEqual({ statut: "absent" });
+    expect(await fiche(lire, "noms", "www.inconnu.example", "2026-11-22")).toEqual({ statut: "absent" });
+    // Missing from the day before's part, read when today's could not be (a name added today): never « absent », which a
+    // page would keep as « not found » (the review of PR 22).
+    const veille = lecteur(fichiers, "2026-11-21").lire;
+    const ajoutee = memeSeau(3).find((n) => n !== "www.d0.example" && n !== "www.d1.example") ?? "";
+    expect(await fiche(lire, "noms", ajoutee, "2026-11-22")).toEqual({ statut: "absent" });
+    expect(await fiche(veille, "noms", ajoutee, "2026-11-22")).toEqual({ statut: "indisponible" });
+    expect(await fiche(veille, "noms", "www.d1.example", "2026-11-22")).toMatchObject({
+      statut: "ok",
+      date: "2026-11-21",
+    });
   });
 
   it("looks for a key in the numbered parts of its bucket, and stops where it is found", async () => {
@@ -124,7 +135,7 @@ describe("the records for the pages (part D)", () => {
     const chemin = cheminSeau("noms", "www.d0.example");
     const journal: string[] = [];
     const casse = new Map([[chemin, JSON.stringify({ noms: [{ nom: "www.d0.example" }] })]]);
-    expect(await fiche(lecteur(casse).lire, "noms", "www.d0.example", (l) => journal.push(l))).toEqual({
+    expect(await fiche(lecteur(casse).lire, "noms", "www.d0.example", null, (l) => journal.push(l))).toEqual({
       statut: "indisponible",
     });
     expect(journal).toHaveLength(1);

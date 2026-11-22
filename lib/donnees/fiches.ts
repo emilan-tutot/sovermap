@@ -21,20 +21,25 @@ export function cheminSeau(dossier: Dossier, cle: string, partie = 0): string {
 
 /**
  * The record of a key: « absent » when the day's state does not publish it (a page answers « not found »), « indisponible »
- * when a part cannot be read or does not match its schema (logged; a page is never cached with it).
+ * when a part cannot be read or does not match its schema (logged; a page is never cached with it). `jour`, the day of
+ * the state: a key missing from a part of another day (the day before's, read when today's could not be) is
+ * « indisponible », never « absent » (a domain added today; the review of PR 22).
  */
 export async function fiche(
   lire: LireFichier,
   dossier: Dossier,
   cle: string,
+  jour: string | null = null,
   journal: (ligne: string) => void = (ligne) => console.warn(ligne),
 ): Promise<Lecture<Record<string, unknown>>> {
   const champ = dossier === "noms" ? "nom" : "domaine";
   let parties = 1;
+  let dUnAutreJour = false;
   for (let partie = 0; partie < parties; partie += 1) {
     const chemin = cheminSeau(dossier, cle, partie);
     const lu = await lire(chemin);
     if (lu.statut !== "ok") return lu;
+    if (jour !== null && lu.date !== jour) dUnAutreJour = true;
     const schema = schemaDe(chemin);
     const erreurs = schema === null ? [{ chemin: "$", attendu: "un schéma" }] : valider(lu.donnees, schema);
     if (erreurs.length > 0) {
@@ -47,5 +52,5 @@ export async function fiche(
     const trouvee = liste.find((e) => e[champ] === cle);
     if (trouvee !== undefined) return { statut: "ok", donnees: trouvee, date: lu.date };
   }
-  return { statut: "absent" };
+  return dUnAutreJour ? { statut: "indisponible" } : { statut: "absent" };
 }

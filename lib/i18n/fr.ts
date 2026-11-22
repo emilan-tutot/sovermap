@@ -335,6 +335,8 @@ export const fr = {
   /** The companies (D.2, R9): who hosts or delivers the measured sites, who owns whom. */
   societes: {
     titre: "Les sociétés et organismes",
+    /** The breadcrumb of the list and of each operator's page (the navigation keeps « Sociétés », DESIGN.md §8). */
+    miette: "Sociétés et organismes",
     description: `Les sociétés et organismes publics qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et le pays du siège de leur maison mère.`,
     chapo:
       "Les sociétés et les organismes publics qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public n’y est jamais appelé société.",

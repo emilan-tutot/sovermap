@@ -62,7 +62,7 @@ export const aPropos: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            "Pour chacun, il donne la société qui le sert et le pays du siège de sa maison mère, couche par couche, avec la source et la date de chaque couche.",
+            "Pour chacun, il donne la société ou l’organisme qui le sert et le pays du siège de sa maison mère, couche par couche, avec la source et la date de chaque couche.",
           ],
         },
         {
@@ -190,7 +190,7 @@ export const accessibilite: PageDeTexte = soignee({
         {
           liste: [
             ["Le globe en trois dimensions de l’Atlas : le tableau des pays, sous le globe, donne les mêmes chiffres."],
-            ["La constellation d’un ministère : la liste de ses domaines, par société, sur la même page."],
+            ["La constellation d’un ministère : la liste de ses domaines, par exploitant, sur la même page."],
           ],
         },
       ],
@@ -234,13 +234,13 @@ export const glossaire: PageDeTexte = soignee({
               { valeur: "AS16276" },
               ". Chaque adresse appartient au réseau qui l’annonce.",
             ],
-            ["Société exploitante : la société, ou l’organisme, qui exploite ce réseau."],
+            ["Exploitant : la société, ou l’organisme public, qui exploite ce réseau."],
             ["Maison mère ultime : la société qui contrôle la société exploitante, en haut de la chaîne de propriété."],
             ["Pays du siège : le pays où la maison mère a son siège. Ce n’est jamais l’emplacement des serveurs."],
             [
               "CDN (réseau de diffusion) : un réseau placé devant un site, qui le sert aux visiteurs depuis ses propres serveurs.",
             ],
-            ["Hébergé par : la société dont le réseau sert le site quand aucun CDN ne s’interpose."],
+            ["Hébergé par : l’exploitant dont le réseau sert le site quand aucun CDN ne s’interpose."],
             [
               "Diffusé par : la société dont le CDN sert le site aux visiteurs. Derrière un CDN, l’hébergeur d’origine n’est pas observable depuis l’extérieur.",
             ],
@@ -517,7 +517,7 @@ export const methode: PageDeTexte = soignee({
           liste: [
             ["s’il répond, et ses serveurs de noms ;"],
             [
-              "ses adresses, son réseau, la société qui exploite ce réseau, sa maison mère ultime et le pays du siège de chacune ;",
+              "ses adresses, son réseau, l’exploitant de ce réseau (une société ou un organisme public), sa maison mère ultime et le pays du siège de chacun ;",
             ],
             ["si un réseau de diffusion (CDN) est placé devant le site ;"],
             ["si la société a au moins une offre qualifiée SecNumCloud ;"],
@@ -573,7 +573,7 @@ export const methode: PageDeTexte = soignee({
             ["Ses serveurs de noms."],
             ["Ses adresses, et la chaîne de ses alias."],
             ["Le réseau qui annonce chaque adresse, établi par deux sources indépendantes."],
-            ["La société qui exploite ce réseau."],
+            ["L’exploitant de ce réseau, société ou organisme public."],
             ["Sa maison mère ultime (GLEIF, puis un registre officiel ou le rapport annuel du groupe)."],
             ["Le pays du siège de chacune."],
             [
