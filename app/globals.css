@@ -799,19 +799,49 @@
     color: var(--color-discret);
   }
 
+  /* A country's panel (DESIGN.md §9): on the side at the computer, the whole height under the header on a phone. The
+     globe's labels, which it would cover, fade while it is open: its edge never cuts a word. */
   .atlas-panneau {
+    position: fixed;
+    z-index: 20;
+    top: 3.5rem;
+    right: 0;
+    bottom: 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    align-items: center;
-    padding: 0.75rem;
-    border: 1px solid var(--color-trait-fort);
-    border-radius: var(--radius-trait);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    width: min(24rem, 100%);
+    padding: 1.5rem max(1.5rem, env(safe-area-inset-right)) calc(1.5rem + env(safe-area-inset-bottom)) 1.5rem;
+    overflow-y: auto;
     background: var(--color-surface);
+    border-left: 1px solid var(--color-trait-fort);
+  }
+
+  .atlas-panneau h2 {
+    margin: 0;
+    font-family: var(--font-titre);
+    font-size: var(--text-2xl);
   }
 
   .atlas-panneau p {
     margin: 0;
+  }
+
+  .atlas-globe[data-panneau="ouvert"] .etiquettes,
+  .atlas-globe[data-panneau="ouvert"] .filets,
+  .atlas-globe[data-panneau="ouvert"] .scene-outils,
+  .atlas-globe-bloc:has(.atlas-globe[data-panneau="ouvert"]) > .releve-note {
+    visibility: hidden;
+  }
+
+  @media (max-width: 61.99rem) {
+    .atlas-panneau {
+      left: 0;
+      width: auto;
+      border-left: none;
+      border-top: 1px solid var(--color-trait-fort);
+    }
   }
 
   /* The accent says « outside the European Union », everywhere (DESIGN.md §1). */

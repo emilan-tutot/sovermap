@@ -398,7 +398,7 @@ export const fr = {
     },
     horsUE: "hors UE",
     dansUE: "dans l’UE",
-    panneau: (nom: string, n: string) => `${nom}${NBSP}: ${n}${NBSP}domaines du périmètre «${NBSP}État${NBSP}»`,
+    panneau: (n: string) => `${n}${NBSP}domaines du périmètre «${NBSP}État${NBSP}» servis depuis ce pays du siège`,
     voirPays: "Voir la page du pays",
     fermer: "Fermer",
   },
