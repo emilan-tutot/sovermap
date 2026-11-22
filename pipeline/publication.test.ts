@@ -9,8 +9,11 @@ import {
   type EnregistrementNom,
   type Etat,
   fragments,
+  historique,
+  historiqueRelu,
   index,
   jsonStable,
+  joursDeChangement,
   journal,
   seau,
 } from "./publication";
@@ -204,6 +207,8 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
             paysMere: "FR",
             paysRetenu: siegeRetenu("US", "FR").pays,
             categorie: "hors d'Europe",
+            maillons: [],
+            controle: null,
           },
         ],
         [
@@ -215,6 +220,8 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
             paysMere: "US",
             paysRetenu: siegeRetenu("FR", "US").pays,
             categorie: "hors d'Europe",
+            maillons: [],
+            controle: null,
           },
         ],
         [
@@ -226,6 +233,8 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
             paysMere: null,
             paysRetenu: siegeRetenu("IL", null).pays,
             categorie: "hors d'Europe",
+            maillons: [],
+            controle: null,
           },
         ],
       ]),
@@ -289,5 +298,171 @@ describe("the figures", () => {
     const c = chiffres(e, "0.2") as { statut: string; chiffreTitre: { domaines: number; auMoinsPourcent: number } };
     expect(c.statut).toBe("preparation");
     expect(c.chiffreTitre).toMatchObject({ domaines: 10, auMoinsPourcent: 20 });
+  });
+});
+
+describe("the indexes", () => {
+  it("counts a country only for an established seat of an ultimate parent, and names each company's owners", () => {
+    const e = etat(3, 1);
+    // A third company whose parent is not established: never counted in its own country.
+    const web = e.noms.get("www.d2.example");
+    if (web === undefined) throw new Error("état d'essai incomplet");
+    e.noms.set("www.d2.example", {
+      ...web,
+      exploitants: [{ ...web.exploitants[0], societe: "filiale-inconnue" } as EnregistrementNom["exploitants"][number]],
+    });
+    const societe = (nom: string, pays: string, mere: string | null, paysMere: string | null) => ({
+      nom,
+      pays,
+      mere,
+      paysMere,
+      // The retained seat and its category (method 0.3): the parent's here, or none when the parent is unknown.
+      paysRetenu: siegeRetenu(pays, paysMere).pays,
+      categorie: siegeRetenu(pays, paysMere).categorie,
+      maillons: mere === null || mere === nom ? [] : [{ cle: mere, nom: "Groupe Exemple, Inc.", pays: paysMere ?? "" }],
+      controle: null,
+    });
+    const fichiers = index(e, {
+      as: new Map(),
+      societes: new Map([
+        ["cloud-us", societe("Cloud Exemple Europe", "IE", "groupe-us", "US")],
+        ["hebergeur-fr", societe("Hébergeur Exemple", "FR", "hebergeur-fr", "FR")],
+        ["filiale-inconnue", societe("Filiale Exemple", "NL", null, null)],
+      ]),
+      organismes: new Map(),
+      organismesDe: new Map(),
+    });
+    expect(JSON.parse(fichiers.get("index/pays.json") ?? "{}")).toEqual({
+      FR: { domaines: 1, domainesEtat: 1 },
+      US: { domaines: 1, domainesEtat: 1 },
+    });
+    const exploitants = JSON.parse(fichiers.get("index/exploitants.json") ?? "{}") as Record<
+      string,
+      { maillons: unknown[] }
+    >;
+    expect(exploitants["cloud-us"]?.maillons).toEqual([{ cle: "groupe-us", nom: "Groupe Exemple, Inc.", pays: "US" }]);
+    expect(exploitants["filiale-inconnue"]?.maillons).toEqual([]);
+    // Every registered domain, sorted, with 1 for the « État » perimeter (the site's search).
+    expect(JSON.parse(fichiers.get("index/domaines.json") ?? "{}")).toEqual({
+      domaines: [
+        ["d0.example", 1],
+        ["d1.example", 1],
+        ["d2.example", 1],
+      ],
+    });
+  });
+});
+
+describe("the day of each domain's last change (D.7)", () => {
+  it("is today for a new or changed domain, otherwise yesterday's, and the day of yesterday's state the first time", () => {
+    const hier = etat(4, 1);
+    const aujourdhui = etat(5, 1);
+    aujourdhui.domaines.set("d1.example", { ...domaine("d1.example"), noms: 3 });
+    const web = aujourdhui.noms.get("www.d2.example");
+    if (web !== undefined) aujourdhui.noms.set("www.d2.example", { ...web, dnssec: true });
+    const indexHier = {
+      domaines: [
+        ["d0.example", 1, "2026-11-20"],
+        ["d1.example", 1, "2026-11-20"],
+        ["d2.example", 1],
+        ["d3.example", 1],
+      ],
+    };
+    expect(Object.fromEntries(joursDeChangement(aujourdhui, hier, "2026-11-22", indexHier, "2026-11-21"))).toEqual({
+      "d0.example": "2026-11-20",
+      "d1.example": "2026-11-22",
+      "d2.example": "2026-11-22",
+      "d3.example": "2026-11-21",
+      "d4.example": "2026-11-22",
+    });
+    expect(joursDeChangement(aujourdhui, null, "2026-11-22", null, null).get("d0.example")).toBe("2026-11-22");
+  });
+
+  it("is published as the third value of each domain's line, when it is known", () => {
+    const fichiers = index(etat(2, 0), {
+      as: new Map(),
+      societes: new Map(),
+      organismes: new Map(),
+      organismesDe: new Map(),
+      jours: new Map([["d0.example", "2026-11-20"]]),
+    });
+    expect(JSON.parse(fichiers.get("index/domaines.json") ?? "{}")).toEqual({
+      domaines: [
+        ["d0.example", 1, "2026-11-20"],
+        ["d1.example", 1],
+      ],
+    });
+  });
+});
+
+describe("the figures' history", () => {
+  const figures = (pourcent: number) => ({
+    statut: "preparation",
+    methode: "0.2.1",
+    chiffreTitre: { perimetre: "État", auMoinsPourcent: pourcent, domaines: 1000 },
+    messagerie: { perimetre: "État", auMoinsPourcent: 0.3, domaines: 900 },
+  });
+  const lire = (texte: string) => JSON.parse(texte) as { jours: Record<string, unknown>[] };
+
+  it("tells a published history that reads again from one that does not (the collection holds the day then)", () => {
+    expect(historiqueRelu(lire(historique(null, "2026-11-22", "0.2.3", false, figures(4.9))))).toBe(true);
+    expect(historiqueRelu(null)).toBe(false);
+    expect(historiqueRelu("pas un objet")).toBe(false);
+    expect(historiqueRelu({ jours: [{ date: "pas une date" }] })).toBe(false);
+    // Only in full: one unreadable day, or none at all, holds the day.
+    const jour = { date: "2026-11-21", methode: "0.2.1", reglesChangees: false };
+    expect(historiqueRelu({ jours: [jour, { date: "pas une date" }] })).toBe(false);
+    expect(historiqueRelu({ jours: [] })).toBe(false);
+    // A history frozen in the format published since 22/11/2026: if the reading ever asks for more, the CI says so
+    // before the guard turns red on the day after a merge.
+    expect(
+      historiqueRelu({
+        jours: [
+          {
+            ...jour,
+            chiffreTitre: { perimetre: "État", auMoinsPourcent: 5.3, domaines: 1424, nonDeterminePourcent: 41.4 },
+            messagerie: { perimetre: "État", auMoinsPourcent: 0.3, domaines: 1218 },
+          },
+          { date: "2026-11-22", methode: "0.2.3", reglesChangees: true },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it("starts from the day before, taken from the published figures, so that two days show from the first run", () => {
+    const h = lire(
+      historique(
+        { historique: null, chiffres: figures(5.3), etat: { date: "2026-11-21", journal: { reglesChangees: false } } },
+        "2026-11-22",
+        "0.2.2",
+        true,
+        figures(5.1),
+      ),
+    );
+    expect(h.jours.map((j) => [j["date"], j["methode"], j["reglesChangees"]])).toEqual([
+      ["2026-11-21", "0.2.1", false],
+      ["2026-11-22", "0.2.2", true],
+    ]);
+    expect(h.jours[1]?.["chiffreTitre"]).toEqual({ perimetre: "État", auMoinsPourcent: 5.1, domaines: 1000 });
+  });
+
+  it("adds a day to the published history, replaces the same day run again, keeps the date order, drops what is not a day", () => {
+    const publie = {
+      historique: {
+        jours: [
+          { date: "2026-11-22", methode: "0.2.2", reglesChangees: true, chiffreTitre: { auMoinsPourcent: 5.1 } },
+          { date: "2026-11-21", methode: "0.2.1", reglesChangees: false },
+          { date: "hier", methode: "x", reglesChangees: false },
+        ],
+      },
+      chiffres: null,
+      etat: null,
+    };
+    const h = lire(historique(publie, "2026-11-22", "0.2.3", false, figures(4.9)));
+    expect(h.jours.map((j) => [j["date"], j["methode"]])).toEqual([
+      ["2026-11-21", "0.2.1"],
+      ["2026-11-22", "0.2.3"],
+    ]);
+    expect(lire(historique(null, "2026-11-23", "0.2.3", false, figures(4.9))).jours).toHaveLength(1);
   });
 });

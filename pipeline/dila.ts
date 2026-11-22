@@ -18,7 +18,12 @@ export type ServiceDila = {
   hotes: string[];
 };
 
-export type ReferentielDila = { fichier: string; services: Map<string, ServiceDila> };
+export type ReferentielDila = {
+  fichier: string;
+  services: Map<string, ServiceDila>;
+  /** The names made plain text for a spreadsheet (nomNeutre), counted in etat.json. */
+  neutralises: number;
+};
 
 const objet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const texte = (v: unknown): string | null => (typeof v === "string" && v.trim() !== "" ? v.trim().slice(0, 300) : null);
@@ -41,6 +46,23 @@ export function hoteDuSite(adresse: string): string | null {
 
 const ID_VALIDE = /^[A-Za-z0-9-]{1,64}$/;
 
+/** The signs that make a spreadsheet read a cell as a formula, and the spaces and straight quotes before them. */
+const FORMULE = /^[\s"=+\-@]+/;
+
+/**
+ * A name as plain text for a spreadsheet: tabs and line breaks become spaces; the signs « = + - @ », and the spaces and
+ * straight quotes before them, are removed at the start of the name and of each part after « ; » (a French spreadsheet
+ * cuts a CSV line at « ; », and reads « ""=1+1 » as a formula).
+ */
+export function nomNeutre(nom: string): string {
+  return nom
+    .replace(/[\t\r\n]+/g, " ")
+    .split(";")
+    .map((partie, i) => (/^[\s"]*[=+\-@]/.test(partie) ? (i === 0 ? "" : " ") + partie.replace(FORMULE, "") : partie))
+    .join(";")
+    .trim();
+}
+
 /** Reads the JSON file of the Référentiel (`{ "service": [...] }`); `fichier` is its dated name, kept for attribution. */
 export function lireDila(json: string, fichierBrut: string): ReferentielDila {
   // The name comes from the archive: only its last part, and only a plain file name, is kept (it is published).
@@ -49,12 +71,20 @@ export function lireDila(json: string, fichierBrut: string): ReferentielDila {
   const brut: unknown = JSON.parse(json);
   if (!objet(brut) || !Array.isArray(brut.service)) throw new Error(`${fichier} : liste « service » attendue`);
   const lus = new Map<string, Omit<ServiceDila, "parent" | "ministere"> & { enfants: string[] }>();
+  let neutralises = 0;
   for (const s of brut.service) {
     if (!objet(s)) continue;
     const id = texte(s.id);
-    const nom = texte(s.nom);
+    const nomBrut = texte(s.nom);
+    // A name reaches the open CSV files: one a spreadsheet would read as a formula is made plain text, and counted
+    // (none, 22/11/2026).
+    const nomNet = nomBrut === null ? "" : nomNeutre(nomBrut);
+    if (nomBrut !== null && nomNet !== nomBrut) neutralises += 1;
     // Identifiers are short codes (UUIDs today): anything else is left out, so no record ever carries a long or odd one.
-    if (id === null || nom === null || !ID_VALIDE.test(id)) continue;
+    if (id === null || !ID_VALIDE.test(id)) continue;
+    // A service keeps its place (its websites, its children) whatever its name: without one, its acronym or its
+    // identifier names it.
+    const nom = nomNet || nomNeutre(texte(s.sigle) ?? "") || id;
     const enfants = (Array.isArray(s.hierarchie) ? s.hierarchie : []).flatMap((h) =>
       objet(h) && h.type_hierarchie === "Service Fils" && texte(h.service) !== null ? [texte(h.service) as string] : [],
     );
@@ -103,5 +133,5 @@ export function lireDila(json: string, fichierBrut: string): ReferentielDila {
       hotes: s.hotes,
     });
   }
-  return { fichier, services };
+  return { fichier, services, neutralises };
 }

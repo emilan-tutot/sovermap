@@ -167,6 +167,24 @@ export function chaineDepuisSociete(cle: string | null, societes: ReferentielSoc
   };
 }
 
+/**
+ * The companies above a company, from its direct parent up to its ultimate parent (10 at most), as far as the
+ * referential knows them: none at the top of a chain; the known part when a parent is not established. What the pages
+ * show as « qui possède qui » (D.2, R9).
+ */
+export function maillonsDe(cle: string, societes: ReferentielSocietes): { cle: string; nom: string; pays: string }[] {
+  const maillons: { cle: string; nom: string; pays: string }[] = [];
+  let s = societes.societes[cle];
+  for (let i = 0; i < 10 && s !== undefined && s.mere !== null && s.mere !== MERE_INCONNUE; i += 1) {
+    const cleMere: string = s.mere;
+    const mere = societes.societes[cleMere];
+    if (mere === undefined) break;
+    maillons.push({ cle: cleMere, nom: mere.nom, pays: mere.pays });
+    s = mere;
+  }
+  return maillons;
+}
+
 /** From an AS to its operating company and ultimate parent. */
 export function chaineDepuisAs(
   asn: number,

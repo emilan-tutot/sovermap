@@ -1,6 +1,6 @@
 // Tests of the DILA reader: a made-up Référentiel, documentation names only (RFC 2606).
 import { describe, expect, it } from "vitest";
-import { hoteDuSite, lireDila } from "./dila";
+import { hoteDuSite, lireDila, nomNeutre } from "./dila";
 
 const service = (id: string, nom: string, sites: string[], enfants: string[] = [], extra: object = {}) => ({
   id,
@@ -13,6 +13,38 @@ const service = (id: string, nom: string, sites: string[], enfants: string[] = [
 });
 
 describe("the DILA Référentiel", () => {
+  it("makes a name plain text for a spreadsheet, counts it, and keeps its service (open CSV files)", () => {
+    const noms = [
+      "=Exemple",
+      "+Exemple",
+      "-Exemple",
+      " @=Exemple",
+      "Nom\tExemple",
+      "Nom\r\nExemple",
+      "Nom; =Exemple",
+      "Service; Exemple",
+      'A;"=1+1;',
+      "=",
+    ];
+    const json = JSON.stringify({ service: noms.map((n, i) => service(`s${i}`, n, [`https://s${i}.example`])) });
+    const ref = lireDila(json, "f");
+    expect([...ref.services.values()].map((s) => [s.nom, s.hotes])).toEqual([
+      ["Exemple", ["s0.example"]],
+      ["Exemple", ["s1.example"]],
+      ["Exemple", ["s2.example"]],
+      ["Exemple", ["s3.example"]],
+      ["Nom Exemple", ["s4.example"]],
+      ["Nom Exemple", ["s5.example"]],
+      ["Nom; Exemple", ["s6.example"]],
+      ["Service; Exemple", ["s7.example"]],
+      ["A; 1+1;", ["s8.example"]],
+      // A name of signs only is no name: the service keeps its place, named by its identifier (it has no acronym).
+      ["s9", ["s9.example"]],
+    ]);
+    expect(ref.neutralises).toBe(9);
+    expect(nomNeutre("A; -B; C")).toBe("A; B; C");
+  });
+
   it("keeps the hosts of the websites and finds each service's ministry", () => {
     const json = JSON.stringify({
       service: [
