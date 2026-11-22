@@ -477,7 +477,8 @@ export function VueRadiographie({
         <h2 id="titre-verifier">{t.verifier.titre}</h2>
         <p>{t.verifier.chapo}</p>
         <h3 className="etiquette-capitales">{t.verifier.windows}</h3>
-        <pre className="commande valeur">
+        {/* A block of commands may scroll sideways on a phone: it is reachable from the keyboard (WCAG 2.1.1). */}
+        <pre className="commande valeur" tabIndex={0} aria-label={t.verifier.windows}>
           {[
             t.verifier.commandeWindows("A", r.nomWeb),
             t.verifier.commandeWindows("NS", r.domaine),
@@ -485,7 +486,7 @@ export function VueRadiographie({
           ].join("\n")}
         </pre>
         <h3 className="etiquette-capitales">{t.verifier.macLinux}</h3>
-        <pre className="commande valeur">
+        <pre className="commande valeur" tabIndex={0} aria-label={t.verifier.macLinux}>
           {[
             t.verifier.commandeDig("A", r.nomWeb),
             t.verifier.commandeDig("NS", r.domaine),
