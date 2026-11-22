@@ -208,7 +208,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Attribution à afficher** : « Source : projet de loi de finances pour 2026, annexe « Opérateurs de l'État », via data.gouv.fr — Licence Ouverte 2.0. »
 - **Téléchargement automatique testé** : oui, par l'API tabulaire (`meta.total` = 431).
 - **Décision : retenue en contrôle seulement.** Elle délimite le périmètre « opérateurs » (D1). Les domaines viennent d'un rapprochement par nom et par SIREN, à la main, sourcé (T3).
-- **Rapprochement** (21/11/2026) : 431 opérateurs lus par l'API tabulaire (9 pages). Par le nom, le sigle et le nom complet : 87 trouvés parmi les établissements du MESR (fiche 8) et 148 au Référentiel de la DILA avec un site (fiche 4) ; 195 restent à rattacher à leur domaine, à la main, avec une source pour chacun (certains sont déjà dans le périmètre par leur site, comme `ademe.fr` au SIG).
+- **Rapprochement** (21/11/2026) : 431 opérateurs lus par l'API tabulaire (9 pages). Par le nom, le sigle et le nom complet : 87 trouvés parmi les établissements du MESR (fiche 8), 148 au Référentiel de la DILA avec un site et 1 sans site (fiche 4) ; 195 restent à rattacher à leur domaine, à la main, avec une source pour chacun (certains sont déjà dans le périmètre par leur site, comme `ademe.fr` au SIG).
 
 ### 7. Relevés d'août 2026 sur 3 581 domaines publics
 - **Producteur** : un compte individuel sur data.gouv.fr. Son nom n'est pas reproduit ici.
@@ -229,7 +229,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Licence ou conditions** : « Licence Ouverte / Open Licence » (`fr-lo`). Version 1 ou 2.0, l'obligation est la même : citer la source et la date.
 - **Téléchargement automatique testé** : oui, par l'API tabulaire (le portail d'origine est fermé aux robots).
 - **Décision : retenue** (filtre « enseignement supérieur » ; domaines des universités, qui sont des opérateurs de l'État).
-- **Copie datée** (C.5, 21/11/2026) : le fichier CSV du 21/11/2026, lu par l'API tabulaire (5 pages de 50 lignes) : 245 établissements ; les 160 établissements publics qui ont un site, dans `referentiels/perimetre/mesr-2026-11-21.csv` (site, nom, SIREN, type) ; les 85 établissements privés sont écartés ; aucune autre colonne n'est gardée (ni téléphone, ni adresse, ni compte de réseau social).
+- **Copie datée** (C.5, 21/11/2026) : le fichier CSV du 21/11/2026, lu par l'API tabulaire (5 pages de 50 lignes) : 245 établissements ; les 153 établissements publics de l'État qui ont un site, dans `referentiels/perimetre/mesr-2026-11-21.csv` (site, nom, SIREN, type) ; les 85 établissements privés et 7 établissements publics locaux (écoles d'art en établissements publics de coopération culturelle, SIREN en 2…) sont écartés ; aucune autre colonne n'est gardée (ni téléphone, ni adresse, ni compte de réseau social).
 
 ### 9. Établissements des premier et second degrés (Éducation nationale)
 - **Producteur** : ministère de l'Éducation nationale.

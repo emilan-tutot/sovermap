@@ -28,10 +28,9 @@ import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
-import { lignesCsv } from "../liste";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
-import { construireListe, type CopieListe, type CopiePerimetre } from "../perimetre";
+import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -116,8 +115,8 @@ function referentiels() {
       return date === undefined ? [] : [{ date, csv: lire(RACINE, "referentiels/listes", f) }];
     })
     .sort((a, b) => (a.date < b.date ? -1 : 1));
-  // The dated copies of the « État » perimeter's open lists (brief C.5): the latest of each source, its sites and,
-  // for the SIG, each site's ministry (the DILA Référentiel's identifier).
+  // The dated copies of the « État » perimeter's open lists (brief C.5): the latest of each source, read and checked
+  // (pipeline/perimetre.ts, lireCopiePerimetre).
   const FICHIERS_PERIMETRE = {
     sig: /^sig-(\d{4}-\d{2}-\d{2})\.csv$/,
     mesr: /^mesr-(\d{4}-\d{2}-\d{2})\.csv$/,
@@ -130,21 +129,7 @@ function referentiels() {
       .at(-1);
     const date = fichier === undefined ? undefined : FICHIERS_PERIMETRE[source].exec(fichier)?.[1];
     if (fichier === undefined || date === undefined) return [];
-    const lignes = lignesCsv(lire(RACINE, "referentiels/perimetre", fichier));
-    const entete = lignes.next().value ?? [];
-    const iSite = entete.indexOf("site");
-    const iMinistere = entete.indexOf("ministere");
-    if (iSite < 0) throw new Error(`referentiels/perimetre/${fichier} : colonne « site » attendue`);
-    const sites: string[] = [];
-    const ministeres = new Map<string, string>();
-    for (const ligne of lignes) {
-      const site = ligne[iSite];
-      if (!site) continue;
-      sites.push(site);
-      const ministere = iMinistere < 0 ? undefined : ligne[iMinistere];
-      if (ministere) ministeres.set(site, ministere);
-    }
-    return [{ source, date, sites, ministeres }];
+    return [lireCopiePerimetre(source, date, lire(RACINE, "referentiels/perimetre", fichier))];
   });
   const fichierPsl = readdirSync(path.join(RACINE, "referentiels/psl"))
     .filter((f) => /^public_suffix_list-\d{4}-\d{2}-\d{2}\.dat$/.test(f))
@@ -161,7 +146,7 @@ function referentiels() {
   if (erreurs.length > 0) throw new Error(`référentiels invalides :\n- ${erreurs.join("\n- ")}`);
   const regles = {
     listes: copies.map((c) => c.date),
-    perimetre: perimetre.map((c) => `${c.source}:${c.date}`),
+    perimetre: perimetre.map((c) => `${c.source}:${c.date}:${c.empreinte}`),
     psl: psl.version,
     plateformes: plateformes.version,
     cdn: cdn.version,

@@ -4,6 +4,7 @@
 // (methode § 3). Each unit gets its web name (« www. » if listed, else the apex) and its perimeter: « État » for
 // .gouv.fr, the DILA's websites, the SIG's sites and the MESR's public institutions (decision D1, a2; brief C.5),
 // « hors État » otherwise.
+import { createHash } from "node:crypto";
 import type { ReferentielDila } from "./dila";
 import { lignesCsv, nomValide } from "./liste";
 import { REGLES_EXCLUSION, type RaisonExclusion, type ReglesExclusion, raisonExclusion } from "./noms";
@@ -58,7 +59,40 @@ export type CopiePerimetre = {
   date: string;
   sites: readonly string[];
   ministeres?: ReadonlyMap<string, string>;
+  /** The first 12 hex digits of the SHA-256 of its text: in the day's rules, so that a copy edited in place changes them. */
+  empreinte: string;
 };
+
+/** A ministry identifier of the SIG: a UUID (the DILA Référentiel's own identifiers). */
+const MINISTERE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/**
+ * A dated copy, read from its CSV text (referentiels/perimetre/): its sites and, for the SIG, each site's ministry. A
+ * copy without its columns, or with a ministry that is not a UUID, is refused (the copy is the repository's: an error
+ * is a mistake to fix, never a value to publish).
+ */
+export function lireCopiePerimetre(source: CopiePerimetre["source"], date: string, csv: string): CopiePerimetre {
+  const lignes = lignesCsv(csv);
+  const entete = lignes.next().value ?? [];
+  const iSite = entete.indexOf("site");
+  const iMinistere = entete.indexOf("ministere");
+  if (iSite < 0) throw new Error(`copie ${source} du ${date} : colonne « site » attendue`);
+  if (source === "sig" && iMinistere < 0) throw new Error(`copie sig du ${date} : colonne « ministere » attendue`);
+  const sites: string[] = [];
+  const ministeres = new Map<string, string>();
+  for (const ligne of lignes) {
+    const site = ligne[iSite];
+    if (!site) continue;
+    sites.push(site);
+    if (source !== "sig") continue;
+    const ministere = ligne[iMinistere] ?? "";
+    if (!MINISTERE.test(ministere))
+      throw new Error(`copie sig du ${date} : ministère illisible (${site.slice(0, 80)})`);
+    ministeres.set(site, ministere);
+  }
+  const empreinte = createHash("sha256").update(csv).digest("hex").slice(0, 12);
+  return { source, date, sites, ministeres, empreinte };
+}
 
 const trie = (valeurs: Iterable<string>) => [...new Set(valeurs)].sort();
 

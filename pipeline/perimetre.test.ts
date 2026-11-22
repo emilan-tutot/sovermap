@@ -2,7 +2,7 @@
 // made-up suffix list in which « gouv.example » plays .gouv.fr's part.
 import { describe, expect, it } from "vitest";
 import type { ReferentielDila } from "./dila";
-import { construireListe, uniteDe } from "./perimetre";
+import { construireListe, lireCopiePerimetre, uniteDe } from "./perimetre";
 import { lireListeSuffixes } from "./psl";
 
 const suffixes = lireListeSuffixes(
@@ -117,8 +117,14 @@ describe("the reference list", () => {
             ["agence.example", "m2"],
             ["Bureau.Agence.example", "m3"],
           ]),
+          empreinte: "000000000001",
         },
-        { source: "mesr", date: "2026-11-21", sites: ["www.universite.example", "recette.ecole.example"] },
+        {
+          source: "mesr",
+          date: "2026-11-21",
+          sites: ["www.universite.example", "recette.ecole.example"],
+          empreinte: "000000000002",
+        },
       ],
     );
     // A site that is not in the list enters it, with its provenance; its unit is « État ».
@@ -143,5 +149,33 @@ describe("the reference list", () => {
     });
     expect(avecPerimetre.noms.has("recette.ecole.example")).toBe(false);
     expect(avecPerimetre.domaines.get("mairie.example")?.perimetre).toBe("hors État");
+  });
+
+  it("reads a dated copy, checks it, and gives it a fingerprint that changes with its text", () => {
+    const UUID = "ac1a7fdb-50f4-4599-b306-ec06b7250965";
+    const sig = lireCopiePerimetre(
+      "sig",
+      "2026-11-01",
+      `site,ministere,type\nagence.example,${UUID},vitrine\n,${UUID},x\n`,
+    );
+    expect(sig).toMatchObject({ source: "sig", date: "2026-11-01", sites: ["agence.example"] });
+    expect(sig.ministeres?.get("agence.example")).toBe(UUID);
+    expect(sig.empreinte).toMatch(/^[0-9a-f]{12}$/);
+    // One more line: another fingerprint, so another rule of the day.
+    const autre = lireCopiePerimetre(
+      "sig",
+      "2026-11-01",
+      `site,ministere,type\nagence.example,${UUID},vitrine\nb.example,${UUID},x\n`,
+    );
+    expect(autre.empreinte).not.toBe(sig.empreinte);
+    // The MESR's copy has no ministry; a copy without its columns, or with a malformed ministry, is refused.
+    expect(
+      lireCopiePerimetre("mesr", "2026-11-21", "site,nom,siren,type\nwww.universite.example,U,1,Université\n").sites,
+    ).toEqual(["www.universite.example"]);
+    expect(() => lireCopiePerimetre("mesr", "2026-11-21", "nom\nU\n")).toThrow(/colonne « site »/);
+    expect(() => lireCopiePerimetre("sig", "2026-11-01", "site,type\na.example,x\n")).toThrow(/colonne « ministere »/);
+    expect(() => lireCopiePerimetre("sig", "2026-11-01", "site,ministere\na.example,<b>\n")).toThrow(
+      /ministère illisible/,
+    );
   });
 });
