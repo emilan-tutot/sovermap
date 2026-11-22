@@ -688,6 +688,74 @@
       max-height: calc(100svh - 10rem);
       margin: 0 auto;
     }
+
+    /* The search under the figures, on the left; the globe on the right (on a phone: the search after the globe). */
+    .atlas-haut {
+      grid-template-areas: "texte globe" "recherche globe";
+    }
+
+    .atlas-texte {
+      grid-area: texte;
+    }
+
+    .atlas-globe-bloc {
+      grid-area: globe;
+    }
+
+    .atlas-recherche {
+      grid-area: recherche;
+      align-self: start;
+    }
+  }
+
+  /* The search (D.2): a field, its state said aloud, its results with their categories. */
+  .recherche {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recherche label {
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .recherche input {
+    min-height: 44px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--color-controle);
+    border-radius: var(--radius-trait);
+    background: var(--color-surface);
+    color: var(--color-encre);
+    font: inherit;
+  }
+
+  .recherche-etat {
+    margin: 0;
+    min-height: 1.25rem;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .recherche-resultats {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-trait);
+  }
+
+  .recherche-resultats li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .recherche-resultats span {
+    font-size: var(--text-sm);
+    color: var(--color-discret);
   }
 
   .atlas-panneau {

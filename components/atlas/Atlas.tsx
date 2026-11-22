@@ -7,6 +7,7 @@ import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
 import { dateFr, nombre, pourcent } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { Recherche } from "@/components/recherche/Recherche";
 import { GlobeAtlas } from "./GlobeAtlas";
 
 const t = fr.atlas;
@@ -79,9 +80,12 @@ export async function Atlas() {
           <h1 className="question">{fr.site.question}</h1>
           <ChiffreTitre c={chiffres} date={etat.donnees.date} />
         </div>
-        <div>
+        <div className="atlas-globe-bloc">
           <GlobeAtlas fils={fils} origine={origineDe(index)} liens={liens} />
           <p className="releve-note">{fr.globe.honnetete}</p>
+        </div>
+        <div className="atlas-recherche">
+          <Recherche />
         </div>
       </div>
       <section className="releve" aria-labelledby="atlas-tableau">

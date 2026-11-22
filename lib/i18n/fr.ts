@@ -387,6 +387,16 @@ export const fr = {
     voirPays: "Voir la page du pays",
     fermer: "Fermer",
   },
+  /** The search (D.2, R4). */
+  recherche: {
+    libelle: "Chercher un site, un ministère, une société ou un pays",
+    exemple: "impots.gouv.fr, Culture, OVH, États-Unis…",
+    chargement: "Chargement de l’index…",
+    erreur: "La recherche n’a pas pu se charger. Réessayez plus tard.",
+    nombre: (n: number) => (n === 0 ? "Aucun résultat" : n === 1 ? "1 résultat" : `${n}${NBSP}résultats`),
+    categories: { d: "Domaine", s: "Exploitant", m: "Ministère ou service de l’État", p: "Pays du siège" },
+    categorieEtat: `Domaine, périmètre «${NBSP}État${NBSP}»`,
+  },
 } as const;
 
 export type Dictionary = typeof fr;
