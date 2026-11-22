@@ -133,6 +133,20 @@ export function parseMotifs(content: string): string[] {
     .filter((line) => line !== "" && !line.startsWith("#"));
 }
 
+/**
+ * Closed by default (the owner's answer to point 13): on the owner's PC, the scan refuses to pass when its private
+ * patterns are missing or empty (null: no file); in the CI, where the list never is, it passes and says so plainly.
+ */
+export function etatMotifs(motifs: readonly string[] | null, enCI: boolean): { ok: boolean; texte: string } {
+  if (motifs !== null && motifs.length > 0) return { ok: true, texte: `${motifs.length} motif(s) privé(s)` };
+  if (enCI)
+    return { ok: true, texte: "motifs privés : absents en CI, où la liste n'existe pas (contrôle mené sans elle)" };
+  return {
+    ok: false,
+    texte: `motifs privés : liste ${motifs === null ? "absente" : "vide"} (.git/info/motifs-prives.txt) : contrôle fermé`,
+  };
+}
+
 /** The account name from the `origin` remote address, or null. */
 export function ownerFromRemote(url: string): string | null {
   const match = url.trim().match(/github\.com[/:]([^/]+)\/sovermap(?:\.git)?\/?$/i);
