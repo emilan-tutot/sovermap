@@ -55,7 +55,6 @@ import {
   sha256,
   VERSION_SCHEMA,
 } from "../publication";
-import { indexCommunes, lireGuichetsPublies, territoiresDesDomaines } from "../territoires";
 import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
 import { fichiersSchemas, schemaDe, valider } from "../schemas";
@@ -63,6 +62,7 @@ import { chaineDepuisSociete, type ReferentielAs, type ReferentielSocietes, vali
 import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
+import { indexCommunes, lireGuichetsPublies, territoiresDesDomaines } from "../territoires";
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
 
