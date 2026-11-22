@@ -157,10 +157,11 @@ describe("sociétés et pays", () => {
     expect(siegeRetenu("CH", "GB")).toEqual({ pays: "GB", categorie: "Europe hors UE" });
     // A company at the top of its chain is its own parent.
     expect(siegeRetenu("FR", "FR")).toEqual({ pays: "FR", categorie: "France" });
-    // The parent unknown: outside Europe is outside Europe whatever it is; anything else is not determined.
-    expect(siegeRetenu("IL", null)).toEqual({ pays: "IL", categorie: "hors d'Europe" });
-    expect(siegeRetenu("GB", null)).toEqual({ pays: "GB", categorie: "non déterminé" });
-    expect(siegeRetenu("FR", null)).toEqual({ pays: "FR", categorie: "non déterminé" });
+    // The parent unknown: no established seat, so no thread; outside Europe is outside Europe whatever that parent,
+    // anything else is not determined.
+    expect(siegeRetenu("IL", null)).toEqual({ pays: null, categorie: "hors d'Europe" });
+    expect(siegeRetenu("GB", null)).toEqual({ pays: null, categorie: "non déterminé" });
+    expect(siegeRetenu("FR", null)).toEqual({ pays: null, categorie: "non déterminé" });
   });
   it("follows the chain to the ultimate parent and classifies its country", () => {
     const chaine = chaineDepuisAs(64500, tableAs, societes);

@@ -185,8 +185,8 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
   });
 
   it("files a domain under the farther of its serving company's seat and its parent's (ARRÊT 2)", () => {
-    // d0 is served by an American subsidiary of a French group, d1 by a French subsidiary of an American group, d2 by a
-    // company whose parent is unknown: each thread goes to the farther seat (the company's own when the parent is not).
+    // d0 is served by an American subsidiary of a French group, d1 by a French subsidiary of an American group: each
+    // thread goes to the farther seat. d2's company has no established parent: no thread at all.
     const e = etat(3, 0);
     for (const [i, societe] of ["filiale-us", "filiale-fr", "relais-il"].entries()) {
       const n = e.noms.get(`www.d${i}.example`) as EnregistrementNom;
@@ -232,10 +232,7 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
       organismes: new Map(),
       organismesDe: new Map(),
     });
-    expect(JSON.parse(fichiers.get("index/pays.json") ?? "{}")).toEqual({
-      IL: { domaines: 1, domainesEtat: 1 },
-      US: { domaines: 2, domainesEtat: 2 },
-    });
+    expect(JSON.parse(fichiers.get("index/pays.json") ?? "{}")).toEqual({ US: { domaines: 2, domainesEtat: 2 } });
   });
 
   it("compares a layer whose category is not determined but which depends on a seat outside the EU (rule C2-4)", () => {

@@ -341,8 +341,11 @@ export type Societe = {
   pays: string;
   mere: string | null;
   paysMere: string | null;
-  /** The seat that gives the category and the thread: the farther of its own and its parent's (ARRÊT 2). */
-  paysRetenu: string;
+  /**
+   * The seat that gives the category and the thread: the farther of its own and its parent's (ARRÊT 2); null when it
+   * is not established (its parent unknown): no thread, though its category may be known.
+   */
+  paysRetenu: string | null;
   categorie: Categorie;
 };
 export type Organisme = { nom: string; sigle: string | null; ministere: string | null };

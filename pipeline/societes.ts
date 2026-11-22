@@ -93,12 +93,13 @@ const ELOIGNEMENT: readonly Categorie[] = ["France", "UE hors France", "Europe h
 /**
  * The seat that gives a serving company its category and its thread (the owner's decision of ARRÊT 2, plan § 15, with
  * rule C2-4): the farther of its own seat and its ultimate parent's; on a tie, the parent's. With its parent unknown
- * (`paysMere` null), a company outside Europe is « hors d'Europe » whatever that parent, and any other is « non
- * déterminé »; its thread goes to its own seat.
+ * (`paysMere` null), the retained seat is not established, so no thread is drawn (a country is counted only for an
+ * established seat, PR 19); its category is still « hors d'Europe » for a company outside Europe, whatever that
+ * parent, and « non déterminé » for any other.
  */
-export function siegeRetenu(pays: string, paysMere: string | null): { pays: string; categorie: Categorie } {
+export function siegeRetenu(pays: string, paysMere: string | null): { pays: string | null; categorie: Categorie } {
   const propre = categorie(pays);
-  if (paysMere === null) return { pays, categorie: propre === "hors d'Europe" ? propre : "non déterminé" };
+  if (paysMere === null) return { pays: null, categorie: propre === "hors d'Europe" ? propre : "non déterminé" };
   const mere = categorie(paysMere);
   return ELOIGNEMENT.indexOf(propre) > ELOIGNEMENT.indexOf(mere)
     ? { pays, categorie: propre }
