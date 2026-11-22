@@ -126,6 +126,152 @@ export const fr = {
       colonnes: { controle: "Contrôle", valeur: "Valeur", limite: "Limite", resultat: "Résultat" },
     },
   },
+  /** The Radiographie of a domain (D.2; spec R2, R3, R5): its layers, from the site to the country of a seat. */
+  radiographie: {
+    titre: (domaine: string) => `${domaine}${NBSP}: qui héberge ce site${NBSP}?`,
+    description: (domaine: string) =>
+      `Radiographie de ${domaine}${NBSP}: serveurs de noms, adresses, réseau, société exploitante, maison mère et pays du siège, chacun avec sa source, sa date et son niveau de confiance.`,
+    surtitre: "Radiographie",
+    chapo:
+      "Les couches du site, de son nom au pays du siège de la société qui le sert. Chaque couche donne sa source, sa date et son niveau de confiance.",
+    indisponible: "Les données de ce domaine n’ont pas pu être lues. Réessayez plus tard.",
+    modes: { libelle: "Affichage", simple: "Simple", expert: "Expert" },
+    collecte: (date: string) => `Collecte du ${date}`,
+    couches: "Les couches",
+    chaine: "La chaîne, du site au pays du siège",
+    source: "Source",
+    date: "Date",
+    niveau: "Niveau",
+    nonDetermine: "non déterminé",
+    partiel: "Fiche partielle ce jour-là (listes raccourcies ou fiche réduite).",
+    categories: {
+      France: "France",
+      "UE hors France": "UE hors France",
+      "Europe hors UE": "Europe hors UE",
+      "hors d'Europe": "hors d’Europe",
+      "non déterminé": "non déterminé",
+    },
+    niveaux: { confirmé: "confirmé", probable: "probable", "non déterminé": "non déterminé" },
+    /** A company and its country: « Celeste · France ». */
+    societe: (nom: string, pays: string) => `${nom} · ${pays}`,
+    /** An AS: « AS34177 », and its holder when the day's index publishes it. */
+    as: (numero: number, titulaire: string | null) =>
+      titulaire === null ? `AS${numero}` : `AS${numero} · ${titulaire}`,
+    liste: (valeurs: readonly string[]) => valeurs.join(", "),
+    /** A list whose items hold commas. */
+    listeLongue: (valeurs: readonly string[]) => valeurs.join(`${NBSP}; `),
+    site: "Le site",
+    resolveurs: { quad9: "Quad9", cloudflare: "Cloudflare" },
+    /** « Niveau : probable », « Preuve : AS34177 ». */
+    champ: (libelle: string, valeur: string) => `${libelle}${NBSP}: ${valeur}`,
+    /** « Périmètre « État » (domaine en .gouv.fr, Référentiel de la DILA) ». */
+    avecRaisons: (perimetre: string, raisons: readonly string[]) =>
+      raisons.length === 0 ? perimetre : `${perimetre} (${raisons.join(", ")})`,
+    /** « Hébergé par Celeste · France ». */
+    role: (role: string, societe: string) => `${role} ${societe}`,
+    domaine: {
+      titre: "Le domaine",
+      nomWeb: "Nom web",
+      etat: `Périmètre «${NBSP}État${NBSP}»`,
+      horsEtat: `Hors du périmètre «${NBSP}État${NBSP}»`,
+      raisons: {
+        "gouv.fr": "domaine en .gouv.fr",
+        dila: "Référentiel de la DILA",
+        sig: "Observatoire du SIG",
+        mesr: "MESR",
+      },
+      ministeres: "Ministères",
+      autresNoms: (n: number) => (n === 1 ? "1 autre nom mesuré" : `${n} autres noms mesurés`),
+      provenances: {
+        dinum: "Liste des noms de domaine des organismes publics (DINUM)",
+        dila: "Référentiel de l’organisation administrative de l’État (DILA)",
+        sig: "Observatoire de l’écosystème numérique de l’État, sites internet (SIG)",
+        mesr: "Principaux établissements d’enseignement supérieur (MESR)",
+        domaine: "Ajouté comme nom web de son domaine",
+      },
+      copies: (source: string, dates: readonly string[]) =>
+        dates.length === 0
+          ? source
+          : dates.length === 1
+            ? `${source}, copie du ${dates[0]}`
+            : `${source}, copies du ${dates.slice(0, -1).join(", du ")} et du ${dates.at(-1)}`,
+    },
+    serveurs: {
+      titre: "Les serveurs de noms",
+      valeur: (n: number) => (n === 1 ? "1 serveur de noms" : `${n} serveurs de noms`),
+      dnssec: "DNSSEC",
+      dnssecOui: "réponses validées",
+      dnssecNon: "réponses non validées",
+      source: "DNS, résolveur de la collecte",
+    },
+    adresses: {
+      titre: "Les adresses",
+      ok: "Le nom web répond",
+      nxdomain: "Le nom web n’existe pas (NXDOMAIN)",
+      nodata: "Le nom web existe, sans adresse (NODATA)",
+      echec: (code: string) => `Question en échec (${code})`,
+      echecConfirme: (code: string, par: string) => `Question en échec (${code}), confirmé par ${par}`,
+      familleEnEchec: (famille: string) => `Adresses ${famille}${NBSP}: question en échec, inconnues`,
+      cname: "Chaîne CNAME",
+      plages: "Plages d’adresses",
+      plage: (debut: string, fin: string) => `${debut} à ${fin}`,
+      controle: (resolveur: string, accord: boolean) =>
+        accord
+          ? `Contrôle par ${resolveur}${NBSP}: même réponse`
+          : `Contrôle par ${resolveur}${NBSP}: réponse différente`,
+      source: "DNS, résolveur de la collecte, et résolveur de contrôle",
+    },
+    reseau: {
+      titre: "Le réseau",
+      aucun: "Aucun réseau",
+      enregistre: (pays: string) => `enregistré${NBSP}: ${pays}`,
+      source: (iptoasn: string, ris: string) =>
+        `IPtoASN, relevé du ${iptoasn}${NBSP}; RIS du RIPE${NBSP}NCC, du ${ris}`,
+    },
+    exploitant: {
+      titre: "La société exploitante",
+      role: { "hébergé par": "Hébergé par", "diffusé par": "Diffusé par" },
+      preuve: "Preuve",
+      aucune: "Aucune société établie",
+      source: (version: string) =>
+        `Référentiels de Sovermap, version ${version} (sources de chaque ligne dans le registre)`,
+    },
+    mere: {
+      titre: "La maison mère",
+      sommet: (nom: string) => `${nom}, au sommet de sa chaîne`,
+    },
+    pays: {
+      titre: "Le pays du siège",
+      valeur: (pays: string, categorie: string) => `${pays} · ${categorie}`,
+    },
+    cdn: {
+      titre: "Le CDN",
+      aucun: "Aucun CDN reconnu",
+      methode: { cname: "reconnu par son CNAME", plage: "reconnu par sa plage d’adresses", as: "reconnu par son AS" },
+      source: (version: string) =>
+        `Référentiel des CDN de Sovermap, version ${version}, et listes officielles des fournisseurs`,
+    },
+    secnumcloud: {
+      titre: "Les offres SecNumCloud",
+      valeur: "Pas encore reliées aux sociétés (chantier en cours)",
+      source: "Catalogue des services qualifiés de l’ANSSI",
+    },
+    messagerie: {
+      titre: "La messagerie",
+      aucun: "Aucun serveur de messagerie",
+      nul: "Messagerie refusée (MX nul)",
+      echec: "Question en échec",
+    },
+    verifier: {
+      titre: "Vérifier vous-même",
+      chapo: "Les mêmes questions DNS, posées depuis votre ordinateur au résolveur public Quad9.",
+      windows: "Windows (PowerShell)",
+      macLinux: "macOS et Linux",
+      /** The commands: values, never translated. */
+      commandeWindows: (type: string, nom: string) => `Resolve-DnsName -Name ${nom} -Type ${type} -Server 9.9.9.9`,
+      commandeDig: (type: string, nom: string) => `dig ${type} ${nom} @9.9.9.9`,
+    },
+  },
 } as const;
 
 export type Dictionary = typeof fr;

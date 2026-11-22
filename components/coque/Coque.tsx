@@ -8,7 +8,7 @@ import { servedVersion } from "@/lib/site";
  * served version. The navigation of the site (Atlas, Ministères, Sociétés, Journal, Méthode, Données, FR · EN) joins
  * the header when its pages exist: until the launch, production shows only the waiting page.
  */
-export function Coque({ children }: { children: ReactNode }) {
+export function Coque({ children, large = false }: { children: ReactNode; large?: boolean }) {
   return (
     <div className="coque">
       <a className="evitement" href="#contenu">
@@ -19,7 +19,7 @@ export function Coque({ children }: { children: ReactNode }) {
           {fr.site.name}
         </Link>
       </header>
-      <main id="contenu" className="contenu">
+      <main id="contenu" className={large ? "contenu contenu-large" : "contenu"}>
         {children}
       </main>
       <footer className="pied">

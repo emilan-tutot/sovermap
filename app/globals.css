@@ -320,4 +320,163 @@
   .reglette-point {
     fill: var(--color-encre);
   }
+
+  /* A page wider than a column of text: the Radiographie. */
+  .contenu-large {
+    max-width: 72rem;
+    justify-content: flex-start;
+  }
+
+  /* The Radiographie (DESIGN.md §5 and §8): numbered layers, each with its source, its date and its level; at the
+     computer, two columns, the layers on the left and the chain on the right, which stays in view. The layer reached
+     from the chain lights up (surface-2, « couche lue »). */
+  .radiographie {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .radiographie-modes {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .radiographie-modes a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 1rem;
+    border: 1px solid var(--color-controle);
+    border-radius: var(--radius-trait);
+    text-decoration: none;
+  }
+
+  .radiographie-modes a[aria-current="page"] {
+    background: var(--color-encre);
+    color: var(--color-fond);
+  }
+
+  .radiographie-colonnes {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  .radiographie-colonnes > * {
+    min-width: 0;
+  }
+
+  .radiographie-colonnes h2 {
+    margin: 0 0 0.75rem;
+  }
+
+  .couches {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-trait-fort);
+  }
+
+  .couche {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid var(--color-trait);
+    scroll-margin-top: 1rem;
+  }
+
+  .couche:target {
+    background: var(--color-surface-2);
+  }
+
+  .couche-titre {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    margin: 0;
+    font-family: var(--font-titre);
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .couche-numero {
+    min-width: 1.5rem;
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  .couche-valeur,
+  .couche-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 2.25rem;
+  }
+
+  .couche-valeur {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .couche-valeur p,
+  .couche-meta p,
+  .couche-liste {
+    margin: 0;
+  }
+
+  .couche-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .couche-meta {
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .chaine {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chaine li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.5rem 0 0.5rem 1rem;
+    border-left: 1px solid var(--color-trait-fort);
+  }
+
+  .chaine a {
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  .commande {
+    margin: 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-trait);
+    border-radius: var(--radius-trait);
+    font-size: var(--text-sm);
+    white-space: pre;
+  }
+
+  @media (min-width: 62rem) {
+    .radiographie-colonnes {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      align-items: start;
+    }
+
+    .radiographie-chaine {
+      position: sticky;
+      top: 1.5rem;
+    }
+  }
 }

@@ -90,6 +90,8 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/page-qui-n-existe-pas", famille: "pages", attendu: "introuvable" },
   { chemin: "/qualite", famille: "pages de données", attendu: "introuvable" },
   { chemin: "/qualite", famille: "page de données, navigation interne", attendu: "introuvable", entetes: RSC },
+  { chemin: "/radiographie/impots.gouv.fr", famille: "fiches des domaines", attendu: "introuvable" },
+  { chemin: "/radiographie/impots.gouv.fr", famille: "fiche d'un domaine, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas", famille: "navigation interne de Next.js", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas", famille: "préchargement", attendu: "introuvable", entetes: PRECHARGEMENT },
   {

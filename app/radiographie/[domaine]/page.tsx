@@ -1,0 +1,91 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Coque } from "@/components/coque/Coque";
+import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
+import { Valeur } from "@/components/texte/Valeur";
+import { fiche } from "@/lib/donnees/fiches";
+import { lecteur } from "@/lib/donnees/lecture";
+import {
+  lireIndexAs,
+  lireIndexMinisteres,
+  lireIndexSocietes,
+  radiographieDe,
+  sourcesDe,
+} from "@/lib/donnees/radiographie";
+import { dateFr } from "@/lib/i18n/format";
+import { fr } from "@/lib/i18n/fr";
+import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
+import { estNomDns } from "@/pipeline/schemas";
+
+type Props = {
+  params: Promise<{ domaine: string }>;
+  searchParams: Promise<{ mode?: string | string[] }>;
+};
+
+/** The domain of the address, lower case, if it is a DNS name; null otherwise (the page answers « not found »). */
+function domaineDe(brut: string): string | null {
+  let d: string;
+  try {
+    d = decodeURIComponent(brut).toLowerCase();
+  } catch {
+    return null;
+  }
+  return estNomDns(d) ? d : null;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const domaine = domaineDe((await params).domaine);
+  return domaine === null
+    ? {}
+    : { title: fr.radiographie.titre(domaine), description: fr.radiographie.description(domaine) };
+}
+
+// The Radiographie of a domain (D.2; spec R2, R3, R5): its layers from the site to the country of a seat, each with
+// its source, its date and its level. Behind a closed door, no data is read: the page answers « not found » (the door's
+// rewrite already sends the address there in production). A domain the day's state does not publish: « not found ».
+export default async function RadiographiePage({ params, searchParams }: Props) {
+  const domaine = domaineDe((await params).domaine);
+  if (domaine === null) notFound();
+  const etat = await lecteur.etat();
+  if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
+  const { mode } = await searchParams;
+  const vue: Mode = mode === "expert" ? "expert" : "simple";
+  const lire = (chemin: string) => lecteur.fichier(chemin);
+  const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine) : etat;
+  if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
+  if (lu.statut !== "ok" || etat.statut !== "ok") {
+    return (
+      <Coque large>
+        <h1 className="titre-page radiographie-titre">
+          <Valeur texte={domaine} />
+        </h1>
+        <p className="note">{fr.radiographie.indisponible}</p>
+      </Coque>
+    );
+  }
+  // The records were checked against their schemas (lib/donnees/fiches.ts); the indexes are checked here.
+  const enregistrement = lu.donnees as unknown as EnregistrementDomaine;
+  const [web, societes, as, ministeres] = await Promise.all([
+    fiche(lire, "noms", enregistrement.nomWeb),
+    lire("index/exploitants.json"),
+    lire("index/as.json"),
+    lire("index/ministeres.json"),
+  ]);
+  const r = radiographieDe(enregistrement, web.statut === "ok" ? (web.donnees as unknown as EnregistrementNom) : null, {
+    societes: (societes.statut === "ok" ? lireIndexSocietes(societes.donnees) : null) ?? new Map(),
+    as: (as.statut === "ok" ? lireIndexAs(as.donnees) : null) ?? new Map(),
+    ministeres: (ministeres.statut === "ok" ? lireIndexMinisteres(ministeres.donnees) : null) ?? new Map(),
+  });
+  const s = sourcesDe(etat.donnees);
+  return (
+    <Coque large>
+      <p className="etiquette-capitales">{fr.radiographie.surtitre}</p>
+      <h1 className="titre-page radiographie-titre">
+        <Valeur texte={r.domaine} />
+      </h1>
+      <p className="chapo">{fr.radiographie.chapo}</p>
+      <p className="releve-note">{fr.radiographie.collecte(dateFr(s.collecte))}</p>
+      <VueRadiographie r={r} s={s} mode={vue} />
+    </Coque>
+  );
+}
