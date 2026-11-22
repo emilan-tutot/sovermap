@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
-import type { FormeChaine } from "@/components/radiographie/Chaine";
 import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
@@ -22,7 +21,7 @@ import { estNomDns } from "@/pipeline/schemas";
 
 type Props = {
   params: Promise<{ domaine: string }>;
-  searchParams: Promise<{ mode?: string | string[]; chaine?: string | string[] }>;
+  searchParams: Promise<{ mode?: string | string[] }>;
 };
 
 /** The domain of the address, lower case, if it is a DNS name; null otherwise (the page answers « not found »). */
@@ -65,11 +64,8 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
   if (domaine === null) notFound();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
-  const { mode, chaine } = await searchParams;
+  const { mode } = await searchParams;
   const vue: Mode = mode === "expert" ? "expert" : "simple";
-  // The chain's form, provisional until the owner chooses (point 10, Q2): B, recommended, by default; « ?chaine=a » or
-  // « ?chaine=c » for the others.
-  const forme: FormeChaine = chaine === "a" ? "a" : chaine === "c" ? "c" : "b";
   const lire = (chemin: string) => lecteur.fichier(chemin);
   const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine) : etat;
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
@@ -96,7 +92,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
         <Valeur texte={r.domaine} />
       </h1>
       <p className="chapo">{fr.radiographie.chapo}</p>
-      <VueRadiographie r={r} s={s} mode={vue} forme={forme} />
+      <VueRadiographie r={r} s={s} mode={vue} />
     </Coque>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Valeur } from "@/components/texte/Valeur";
-import { Chaine, type Etape, type FormeChaine } from "./Chaine";
+import { Chaine, type Etape } from "./Chaine";
 import { CoucheLue } from "./CoucheLue";
 import {
   type Categorie,
@@ -137,17 +137,7 @@ function etatAdresses(r: NonNullable<Radiographie["web"]>): string {
 const niveauAdresses = (r: NonNullable<Radiographie["web"]>): Niveau =>
   r.controle === null ? "probable" : r.controle.accord ? "confirmé" : "non déterminé";
 
-export function VueRadiographie({
-  r,
-  s,
-  mode,
-  forme = "b",
-}: {
-  r: Radiographie;
-  s: SourcesRadiographie;
-  mode: Mode;
-  forme?: FormeChaine;
-}) {
+export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRadiographie; mode: Mode }) {
   const web = r.web;
   const expert = mode === "expert";
   const exploitants = web?.exploitants ?? [];
@@ -451,7 +441,7 @@ export function VueRadiographie({
           <h2 id="titre-chaine" className="etiquette-capitales">
             {t.chaine}
           </h2>
-          <Chaine etapes={etapes} forme={forme} />
+          <Chaine etapes={etapes} />
         </aside>
         <CoucheLue />
       </div>

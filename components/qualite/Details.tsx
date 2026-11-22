@@ -1,8 +1,6 @@
-import type { Fraicheur } from "@/lib/donnees/fraicheur";
 import type { Qualite } from "@/lib/donnees/qualite";
 import { heureUtc, minutes, nombre, pourcent } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
-import { EnTete, Sources } from "./Commun";
 
 const t = fr.qualite;
 const nd = (v: string | null) => v ?? t.nonPublie;
@@ -18,7 +16,7 @@ function Ligne({ terme, valeur }: { terme: string; valeur: string | null }) {
   );
 }
 
-/** The figures of the day's collection as term-value rows (its run, coverage, failures, controls): proposals A and B. */
+/** The figures of the day's collection as term-value rows (its run, coverage, failures, controls), under the scales. */
 export function Details({ q }: { q: Qualite }) {
   const fin = q.collecte.fin;
   return (
@@ -93,38 +91,6 @@ export function Details({ q }: { q: Qualite }) {
           />
         </dl>
       </section>
-    </>
-  );
-}
-
-/** Proposal A, « le bulletin »: one reading column, sections of term-value lists, the sources in a table. */
-export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
-  return (
-    <>
-      <EnTete q={q} f={f} />
-      <Details q={q} />
-
-      <section className="releve" aria-labelledby="q-debit">
-        <h2 id="q-debit">{t.sections.debit}</h2>
-        <dl>
-          <Ligne terme={t.debit.maximum} valeur={q.debit?.max == null ? null : nombre(q.debit.max)} />
-          <Ligne
-            terme={t.debit.auDela}
-            valeur={
-              q.debit?.secondesAuDela == null || q.debit.secondes === null || q.debit.pourcent === null
-                ? null
-                : t.debit.surSecondes(
-                    nombre(q.debit.secondesAuDela),
-                    nombre(q.debit.secondes),
-                    pourcent(q.debit.pourcent, 3),
-                  )
-            }
-          />
-        </dl>
-        <p className="releve-note">{t.debit.tolerance}</p>
-      </section>
-
-      <Sources q={q} />
     </>
   );
 }
