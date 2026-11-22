@@ -47,6 +47,7 @@ import {
   type Etat,
   type Fichiers,
   fragments,
+  historique,
   index,
   journal,
   jsonStable,
@@ -105,6 +106,16 @@ const { values: o } = parseArgs({
 
 const lire = (...morceaux: string[]) => readFileSync(path.join(...morceaux), "utf8");
 const json = <T>(...morceaux: string[]) => JSON.parse(lire(...morceaux)) as T;
+/** A published file of the « donnees » branch, parsed; null when it is absent or unreadable (checked by its user). */
+const lireJsonPublie = (donnees: string, chemin: string): unknown => {
+  const p = path.join(donnees, chemin);
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8")) as unknown;
+  } catch {
+    return null;
+  }
+};
 const adresseEtPort = (valeur: string): [string, number] => {
   const [hote, port] = valeur.split(":");
   return [hote ?? valeur, port === undefined ? 53 : Number(port)];
@@ -657,6 +668,7 @@ async function principal(): Promise<number> {
       ] as const;
     }),
   );
+  const figures = chiffres(b.etat, METHODE);
   const fichiers: Fichiers = new Map([
     ...fragments("noms", b.etat.noms),
     ...fragments("domaines", b.etat.domaines),
@@ -677,7 +689,23 @@ async function principal(): Promise<number> {
       organismes,
       organismesDe: new Map([...liste.domaines].map(([cle, d]) => [cle, d.organismes])),
     }),
-    ["agregats/chiffres.json", `${jsonStable(chiffres(b.etat, METHODE))}\n`],
+    ["agregats/chiffres.json", `${jsonStable(figures)}\n`],
+    [
+      "agregats/historique.json",
+      historique(
+        o.donnees === undefined
+          ? null
+          : {
+              historique: lireJsonPublie(o.donnees, "agregats/historique.json"),
+              chiffres: lireJsonPublie(o.donnees, "agregats/chiffres.json"),
+              etat: lireJsonPublie(o.donnees, "etat.json"),
+            },
+        date,
+        METHODE,
+        b.reglesChangees,
+        figures,
+      ),
+    ],
     [`journal/${date.slice(0, 4)}/${date.slice(5, 7)}/${date}.json`, journal(date, b)],
     ...fichiersSchemas(),
     ["README.md", readFileSync(path.join(RACINE, "pipeline/donnees/README.md"), "utf8")],

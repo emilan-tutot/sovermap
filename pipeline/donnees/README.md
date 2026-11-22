@@ -10,7 +10,7 @@ Cette branche est écrite chaque jour par la collecte automatique de Sovermap (G
 - `noms/` : un enregistrement par nom mesuré (état DNS, chaîne CNAME, réseaux, CDN, exploitants, catégorie, niveau de confiance), en fragments de 8 Ko au plus.
 - `domaines/` : un enregistrement par domaine enregistré (nom web, périmètre, zone, serveurs de noms, messagerie), en fragments de 8 Ko au plus.
 - `index/` : les numéros d'AS, les exploitants (avec leur chaîne de propriété et le contrôle du sommet), les pays des sièges, les organismes, les ministères et la liste des domaines enregistrés (`index/domaines.json`, 1 pour le périmètre « État »).
-- `agregats/chiffres.json` : les chiffres, provisoires (« en préparation »).
+- `agregats/chiffres.json` : les chiffres, provisoires (« en préparation ») ; `agregats/historique.json` : les mêmes chiffres jour après jour, avec la version de la méthode et les jours de règles nouvelles.
 - `journal/` : les changements d'hébergement confirmés par deux collectes concordantes, jour par jour. Un changement de liste, de référentiel ou de méthode n'y entre jamais.
 - `schemas/` : les schémas JSON des fragments et du journal.
 

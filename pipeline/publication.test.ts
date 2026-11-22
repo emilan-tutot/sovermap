@@ -8,6 +8,7 @@ import {
   type EnregistrementNom,
   type Etat,
   fragments,
+  historique,
   index,
   jsonStable,
   journal,
@@ -277,5 +278,52 @@ describe("the indexes", () => {
         ["d2.example", 1],
       ],
     });
+  });
+});
+
+describe("the figures' history", () => {
+  const figures = (pourcent: number) => ({
+    statut: "preparation",
+    methode: "0.2.1",
+    chiffreTitre: { perimetre: "État", auMoinsPourcent: pourcent, domaines: 1000 },
+    messagerie: { perimetre: "État", auMoinsPourcent: 0.3, domaines: 900 },
+  });
+  const lire = (texte: string) => JSON.parse(texte) as { jours: Record<string, unknown>[] };
+
+  it("starts from the day before, taken from the published figures, so that two days show from the first run", () => {
+    const h = lire(
+      historique(
+        { historique: null, chiffres: figures(5.3), etat: { date: "2026-11-21", journal: { reglesChangees: false } } },
+        "2026-11-22",
+        "0.2.2",
+        true,
+        figures(5.1),
+      ),
+    );
+    expect(h.jours.map((j) => [j["date"], j["methode"], j["reglesChangees"]])).toEqual([
+      ["2026-11-21", "0.2.1", false],
+      ["2026-11-22", "0.2.2", true],
+    ]);
+    expect(h.jours[1]?.["chiffreTitre"]).toEqual({ perimetre: "État", auMoinsPourcent: 5.1, domaines: 1000 });
+  });
+
+  it("adds a day to the published history, replaces the same day run again, keeps the date order, drops what is not a day", () => {
+    const publie = {
+      historique: {
+        jours: [
+          { date: "2026-11-22", methode: "0.2.2", reglesChangees: true, chiffreTitre: { auMoinsPourcent: 5.1 } },
+          { date: "2026-11-21", methode: "0.2.1", reglesChangees: false },
+          { date: "hier", methode: "x", reglesChangees: false },
+        ],
+      },
+      chiffres: null,
+      etat: null,
+    };
+    const h = lire(historique(publie, "2026-11-22", "0.2.3", false, figures(4.9)));
+    expect(h.jours.map((j) => [j["date"], j["methode"]])).toEqual([
+      ["2026-11-21", "0.2.1"],
+      ["2026-11-22", "0.2.3"],
+    ]);
+    expect(lire(historique(null, "2026-11-23", "0.2.3", false, figures(4.9))).jours).toHaveLength(1);
   });
 });

@@ -473,6 +473,67 @@ export function chiffres(etat: Etat, methode: string): Record<string, unknown> {
   };
 }
 
+/** The four figures of a day, as chiffres() gives them, kept in the history. */
+const FIGURES = ["chiffreTitre", "sousChiffreGouvFr", "serveursDeNoms", "messagerie"] as const;
+/** At most this many days are kept in the history (about ten years). */
+export const JOURS_HISTORIQUE_MAX = 4000;
+
+/** One day of the figures' history: its date, its method, whether its rules changed, and its four figures. */
+export type JourHistorique = { date: string; methode: string; reglesChangees: boolean } & Partial<
+  Record<(typeof FIGURES)[number], Record<string, unknown>>
+>;
+
+const estObjet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const estDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** A day of the history, read back and checked: only its known fields; null when it is not one. */
+function jourHistorique(v: unknown): JourHistorique | null {
+  if (
+    !estObjet(v) ||
+    !estDate(v["date"]) ||
+    typeof v["methode"] !== "string" ||
+    typeof v["reglesChangees"] !== "boolean"
+  )
+    return null;
+  const jour: JourHistorique = {
+    date: v["date"],
+    methode: v["methode"].slice(0, 20),
+    reglesChangees: v["reglesChangees"],
+  };
+  for (const f of FIGURES) {
+    const figure = v[f];
+    if (estObjet(figure)) jour[f] = figure;
+  }
+  return jour;
+}
+
+/**
+ * The figures' history (agregats/historique.json; D.2, the Atlas's time slider): the published history read back and
+ * checked, the day added (or replaced, when the same day runs again), in date order. When no history was published
+ * yet, the day before is taken from the published figures and state, so that two days show from the first run.
+ */
+export function historique(
+  publie: { historique: unknown; chiffres: unknown; etat: unknown } | null,
+  date: string,
+  methode: string,
+  reglesChangees: boolean,
+  figures: Record<string, unknown>,
+): string {
+  const lus =
+    estObjet(publie?.historique) && Array.isArray(publie.historique["jours"]) ? publie.historique["jours"] : [];
+  const jours = lus.flatMap((j) => jourHistorique(j) ?? []);
+  if (jours.length === 0 && estObjet(publie?.chiffres) && estObjet(publie?.etat) && estDate(publie.etat["date"])) {
+    const regles = estObjet(publie.etat["journal"]) ? publie.etat["journal"]["reglesChangees"] === true : false;
+    const veille = jourHistorique({ ...publie.chiffres, date: publie.etat["date"], reglesChangees: regles });
+    if (veille !== null) jours.push(veille);
+  }
+  const jour = jourHistorique({ ...figures, date, methode, reglesChangees });
+  const tous = [...jours.filter((j) => j.date !== date), ...(jour === null ? [] : [jour])]
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .slice(-JOURS_HISTORIQUE_MAX);
+  return `${jsonStable({ jours: tous })}\n`;
+}
+
 /** The journal of the day (brief B.6): the confirmed changes; on the first day, the initial state only. */
 export function journal(date: string, b: Bilan): string {
   return `${jsonStable({
