@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { Valeur } from "@/components/texte/Valeur";
 import { type Chiffres, filsDe, lireChiffres, origineDe } from "@/lib/donnees/atlas";
@@ -48,6 +49,8 @@ function ChiffreTitre({ c, date }: { c: Chiffres; date: string }) {
  * the search and the time slider come next.
  */
 export async function Atlas() {
+  // Rendered on demand with the day's data, never frozen at build time (its caching: D.4).
+  await connection();
   const etat = await lecteur.etat();
   const [luChiffres, luPays] =
     etat.statut === "ok"

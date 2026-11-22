@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = { title: fr.ministeres.titre, description: fr.ministeres.description };
 
@@ -14,6 +16,10 @@ const t = fr.ministeres;
 // The ministries (D.2, R8): those to which the DILA's Référentiel links measured sites, in alphabetical order (a list,
 // never a ranking), each with its number of domains. Behind a closed door, no data is read: « not found ».
 export default async function MinisteresPage() {
+  // Behind a closed door, never rendered (« not found »); behind an open door, rendered on demand with the day's data,
+  // never frozen at build time (its caching: D.4).
+  if (!sitePublic()) notFound();
+  await connection();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
   const lu = etat.statut === "ok" ? await lecteur.fichier("index/ministeres.json") : etat;

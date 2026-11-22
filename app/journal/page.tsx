@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { cheminJour, joursPublies, lireJour } from "@/lib/donnees/journal";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = { title: fr.journal.titre, description: fr.journal.description };
 
@@ -14,6 +16,10 @@ const t = fr.journal;
 // The journal (D.2, R10): every published day, the latest first, with its number of confirmed changes, or why it has
 // none (the first day; a day of new rules). Behind a closed door, no data is read: « not found ».
 export default async function JournalPage() {
+  // Behind a closed door, never rendered (« not found »); behind an open door, rendered on demand with the day's data,
+  // never frozen at build time (its caching: D.4).
+  if (!sitePublic()) notFound();
+  await connection();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
   if (etat.statut !== "ok") {

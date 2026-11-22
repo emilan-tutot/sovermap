@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
 import { societesTriees } from "@/lib/donnees/societes";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = { title: fr.societes.titre, description: fr.societes.description };
 
@@ -16,6 +18,10 @@ const t = fr.societes;
 // never a ranking), each with the country of its ultimate parent's seat and the number of domains it serves. Behind a
 // closed door, no data is read: the page answers « not found ».
 export default async function SocietesPage() {
+  // Behind a closed door, never rendered (« not found »); behind an open door, rendered on demand with the day's data,
+  // never frozen at build time (its caching: D.4).
+  if (!sitePublic()) notFound();
+  await connection();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
   const lu = etat.statut === "ok" ? await lecteur.fichier("index/exploitants.json") : etat;
