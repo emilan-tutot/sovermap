@@ -1,0 +1,57 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Coque } from "@/components/coque/Coque";
+import { cheminJour, joursPublies, lireJour } from "@/lib/donnees/journal";
+import { lecteur } from "@/lib/donnees/lecture";
+import { dateFr, nombre } from "@/lib/i18n/format";
+import { fr } from "@/lib/i18n/fr";
+
+export const metadata: Metadata = { title: fr.journal.titre, description: fr.journal.description };
+
+const t = fr.journal;
+
+// The journal (D.2, R10): every published day, the latest first, with its number of confirmed changes, or why it has
+// none (the first day; a day of new rules). Behind a closed door, no data is read: « not found ».
+export default async function JournalPage() {
+  const etat = await lecteur.etat();
+  if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
+  if (etat.statut !== "ok") {
+    return (
+      <Coque>
+        <h1 className="titre-page">{t.titre}</h1>
+        <p className="note">{fr.radiographie.indisponible}</p>
+      </Coque>
+    );
+  }
+  const jours = await Promise.all(
+    joursPublies(etat.donnees).map(async (date) => {
+      const lu = await lecteur.fichier(cheminJour(date));
+      return { date, jour: lu.statut === "ok" ? lireJour(lu.donnees) : null };
+    }),
+  );
+  return (
+    <Coque>
+      <h1 className="titre-page">{t.titre}</h1>
+      <p className="chapo">{t.chapo}</p>
+      <ul className="liste-societes">
+        {jours.map(({ date, jour }) => (
+          <li key={date}>
+            <Link href={`/journal/${date}`} prefetch={false}>
+              {t.jour(dateFr(date))}
+            </Link>
+            <p>
+              {jour === null
+                ? fr.radiographie.indisponible
+                : jour.etatInitial
+                  ? t.etatInitial
+                  : jour.reglesChangees
+                    ? t.reglesChangees
+                    : t.changements(jour.changements.length, nombre(jour.changements.length))}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Coque>
+  );
+}

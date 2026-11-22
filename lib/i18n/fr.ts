@@ -324,6 +324,23 @@ export const fr = {
     ligne: (categorie: string, n: string) => `${categorie}${NBSP}: ${n}`,
     source: `Source${NBSP}: Référentiel de l’organisation administrative de l’État (DILA), et collecte du jour.`,
   },
+  /** The journal (D.2, R10): the changes of hosting confirmed by two successive collections, day by day. */
+  journal: {
+    titre: "Le journal",
+    description: `Les changements d’hébergement des sites publics confirmés par deux collectes successives, jour par jour.`,
+    chapo:
+      "Les changements d’hébergement confirmés par deux collectes successives, jour par jour. Un changement de liste, de référentiel ou de méthode n’y entre jamais.",
+    etatInitial: `État initial${NBSP}: le premier jour publié, rien à comparer.`,
+    reglesChangees: `Règles nouvelles ce jour-là${NBSP}: la veille a été reclassée, rien n’entre au journal.`,
+    changements: (n: number, texte: string) =>
+      n === 0 ? "Aucun changement confirmé" : n === 1 ? "1 changement confirmé" : `${texte} changements confirmés`,
+    jour: (date: string) => `Le ${date}`,
+    titreJour: (date: string) => `Le journal du ${date}`,
+    descriptionJour: (date: string) => `Les changements d’hébergement des sites publics confirmés le ${date}.`,
+    couches: { adresses: "Les adresses", serveursDeNoms: "Les serveurs de noms", messagerie: "La messagerie" },
+    avantApres: (avant: string, apres: string) => `${avant} → ${apres}`,
+    retour: "Tous les jours",
+  },
 } as const;
 
 export type Dictionary = typeof fr;
