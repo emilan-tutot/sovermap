@@ -324,11 +324,27 @@ Sources :
   - la charge RSC d'une navigation interne : de 7 à 86 Ko brut ; l'index de recherche : 757 Ko brut (161 compressés).
 - **Décision** : aucune page en ISR (zéro écriture). Les pages de données restent rendues à la demande, et `Vercel-CDN-Cache-Control` (`lib/cache.ts`, porte ouverte seulement) les fait garder par le CDN : une fiche (Radiographie, jour du journal) un jour, puis servie périmée une semaine pendant sa relecture ; une page agrégée une heure, puis un jour. Cela remplace l'ISR d'une heure prévu ci-dessus pour les pages agrégées : même fraîcheur, aucune écriture. L'index de recherche est gardé 6 heures (au lieu d'une) : les données ne changent qu'une fois par jour.
 - **À vérifier dans la préversion** : `x-vercel-cache` (MISS, puis HIT), en HTML et en RSC. Si le CDN ne garde pas ces pages (Next.js leur met `Cache-Control: private`), repli : les pages agrégées en ISR d'une heure (≈ 60 000 écritures, sous la cible).
-- **Projection** (hypothèses du § 3 : 130 000 visites et 100 000 requêtes de robots par mois ; sur Vercel, 30 ms et 35 Ko par rendu, en comptant large) :
+- **Projection** (hypothèses du § 3 : 130 000 requêtes de visites, soit 5 000 visites de 4 pages, et 100 000 requêtes de robots par mois ; sur Vercel, 30 ms et 35 Ko par rendu, en comptant large) :
   - sans le cache du CDN (chaque requête rendue) : 230 000 invocations (cible ≤ 439 000), 1 h 55 de CPU actif (cible ≤ 1 h 29 : **dépassée**), 7,7 Go de Fast Origin Transfer (cible ≤ 4,49 Go : **dépassée**) ;
   - avec le cache du CDN, une requête sur deux rendue (115 000, l'estimation du tableau) : 58 min de CPU actif, 3,8 Go de Fast Origin Transfer : sous les cibles ;
   - l'index de recherche, gardé 6 heures : 4 rendus par jour et par région au plus, ≈ 0,2 Go par mois (≈ 1 Go s'il était gardé une heure).
 - **Conclusion** : le cache du CDN est nécessaire pour tenir le Fast Origin Transfer, le quota le plus tendu. La mesure réelle, sur 30 jours, se fera après l'ouverture.
+
+### Plan de capacité (22/11/2026, consigne du propriétaire au point 13, § 8)
+
+- **Les requêtes d'une visite, mesurées** (build de production local du site complet, données inventées, cache froid, Edge, ordinateur et téléphone) :
+  - une première vue : 15 à 19 requêtes (la page, 8 à 10 scripts, 1 à 2 feuilles de style, 4 à 5 polices, 1 à 2 autres), de 225 à 246 Ko, et 483 Ko pour l'Atlas, avec le globe ;
+  - une navigation interne : 2 à 3 requêtes (la charge RSC de la page, parfois un script) ;
+  - aucun préchargement de liens, ni au chargement ni au survol (listes, barre de navigation, pied de page) ;
+  - un visiteur revenu : ses fichiers statiques restent dans son navigateur (`immutable`) ; seules la page et ses charges RSC repartent vers le CDN.
+- **Une visite** (hypothèse du § 3 : 4 pages) : environ 24 requêtes au CDN pour un nouveau visiteur (16, puis 3 × 2,5), environ 9 pour un visiteur revenu. Les 130 000 requêtes de visites du tableau (5 000 visites × 26) tiennent.
+- **Ce que la cible permet** (357 000 requêtes par mois, dont 100 000 de robots) : environ 10 700 visites par mois, soit 360 par jour.
+- **Le pic d'un article de presse** : 10 000 visites en un jour coûtent environ 240 000 requêtes, les deux tiers de la cible du mois. La limite dure (1 000 000 pour l'équipe, dont 285 000 pour l'autre projet) serait atteinte vers 25 000 visites dans le mois, et **mettrait les deux sites en pause** (voir « Surveillance » ci-dessus).
+- **Le plan, qui se défait** :
+  1. avant l'ouverture (chantier 3) : alléger la première vue, à 10 requêtes au plus (moins de fichiers de police et de morceaux de script) ;
+  2. après l'ouverture : relever la page Usage chaque semaine, et chaque jour pendant un pic ;
+  3. à 70 % de la cible du mois : proposer au propriétaire de refermer la porte jusqu'au mois suivant (`SITE_PUBLIC`), ou une offre payante, annoncée comme payante et jamais choisie sans son accord.
+- **Les robots** (politique à décider au chantier 3 avec ces chiffres) : un passage complet d'un moteur sur le plan du site, environ 2 300 pages ; un robot qui suit tous les liens peut demander les 41 720 radiographies, environ 45 000 requêtes par passage (13 % de la cible). Les robots d'entraînement sont donc à écarter des radiographies au moins (`robots.txt`) ; un robot bloqué par le pare-feu de Vercel compte quand même dans les requêtes.
 
 ## 12. Données lues par le serveur, jamais par le navigateur (zéro tiers)
 
