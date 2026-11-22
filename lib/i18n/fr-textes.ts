@@ -1,6 +1,7 @@
 // The words of the text pages (part E), page by page: the one source of what they say, with their sources and the day
 // of their last revision. Not read again by the publisher yet (relu: false), until the review of brief E.5. French
 // typography: a non-breaking space before « : ; ! ? » and inside « » (DESIGN.md §6).
+import { type Editeur, HEBERGEUR } from "@/lib/editeur";
 import type { PageDeTexte, Segment } from "@/lib/textes";
 
 const NBSP = " ";
@@ -827,6 +828,71 @@ export const sources: PageDeTexte = soignee({
   relu: false,
 });
 
+/**
+ * The legal notices (brief E.4; the owner's answer to point 11, Q6): built from the publisher the Production variables
+ * give (lib/editeur.ts), option A by default; B and C stay here until a lawyer checks them in chantier 3.
+ */
+export function mentionsLegales(editeur: Editeur): PageDeTexte {
+  const contact: Segment[] =
+    editeur.contact === null
+      ? ["L’adresse de contact du site sera donnée ici à son ouverture."]
+      : ["Contact : ", { valeur: editeur.contact }, "."];
+  const lEditeur: Segment[] =
+    editeur.mode === "anonyme"
+      ? [
+          "Sovermap est édité à titre non professionnel, par une personne qui ne publie pas son identité, comme le permet l’article 1-1, II, de la loi pour la confiance dans l’économie numérique ; le site donne le nom et l’adresse de son hébergeur.",
+        ]
+      : editeur.mode === "identite"
+        ? [
+            `Éditeur et directeur de la publication : ${editeur.prenoms} ${editeur.nom}, domicilié ${editeur.domicile}, téléphone `,
+            { valeur: editeur.telephone },
+            ".",
+          ]
+        : [`Éditeur et directeur de la publication : ${editeur.nom}.`];
+  return soignee({
+    chemin: "/mentions-legales",
+    court: "Mentions légales",
+    titre: "Mentions légales",
+    description:
+      "L’éditeur de Sovermap, son hébergeur et le contact du site, selon l’article 1-1 de la loi pour la confiance dans l’économie numérique.",
+    chapo: "Qui édite Sovermap, qui l’héberge, et comment écrire au site.",
+    sections: [
+      { titre: "L’éditeur", blocs: [{ paragraphe: lEditeur }, { paragraphe: contact }] },
+      {
+        titre: "L’hébergeur",
+        blocs: [
+          {
+            paragraphe: [
+              `${HEBERGEUR.nom}, ${HEBERGEUR.adresse}. Vercel ne publie pas de numéro de téléphone dans sa politique de confidentialité ni dans ses conditions (lues le 22/11/2026).`,
+            ],
+          },
+        ],
+      },
+      {
+        titre: "Les textes",
+        blocs: [
+          {
+            paragraphe: [
+              "Les textes du site ont été rédigés avec l’aide d’une intelligence artificielle (voir ",
+              { lien: "Crédits", vers: "/credits" },
+              ").",
+            ],
+          },
+        ],
+      },
+    ],
+    sources: [
+      ["Loi n° 2004-575 du 21 juin 2004 pour la confiance dans l’économie numérique, articles 1-1 et 1-2."],
+      ["Vercel, politique de confidentialité et conditions d’utilisation, lues le 22/11/2026."],
+    ],
+    revision: REVISION,
+    relu: false,
+  });
+}
+
+/** The legal notices with the default option (A): the footer, the plans of the site and the tests read this one. */
+export const mentionsLegalesParDefaut = mentionsLegales({ mode: "anonyme", contact: null });
+
 export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [
   aPropos,
   methode,
@@ -838,4 +904,5 @@ export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [
   accessibilite,
   confidentialite,
   credits,
+  mentionsLegalesParDefaut,
 ];
