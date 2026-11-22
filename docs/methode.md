@@ -127,6 +127,7 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
 - **Valeur** : la société a-t-elle au moins une offre qualifiée SecNumCloud ?
 - **Source** : la liste officielle de l'ANSSI. Le site cyber.gouv.fr est protégé contre les robots (constat du 18/11/2026). La liste est donc relevée à la main par une personne, avec sa date. Aucun relevé n'est automatique.
 - **Phrase obligatoire** : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise. »
+- **Rapprochement** : un service du catalogue n'est lié à une société du référentiel que par sa décision de qualification, lue sur le site de l'ANSSI. Le SIREN qu'elle écrit, s'il est valide, est celui de la société au répertoire Sirene ; sinon, sa raison sociale et sa ville. Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse. Seules comptent les qualifications en cours le jour de la mesure, entre leurs dates de début et de fin.
 
 ### Couche 9 — Le CDN
 - **Valeur** : le CDN placé devant le site, s'il y en a un.
