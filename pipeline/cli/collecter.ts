@@ -90,6 +90,10 @@ const { values: o } = parseArgs({
     "noms-par-seconde": { type: "string", default: "25" },
     // A local trial may wait less between two attempts (the collection on the runners keeps 10 minutes).
     "delai-reprise-minutes": { type: "string", default: "10" },
+    // The time limits of the day's job (330 minutes); a trial, capped at 60 minutes, passes shorter ones (collecte.yml).
+    "echeance-minutes": { type: "string", default: "255" },
+    "fin-reprises-minutes": { type: "string", default: "290" },
+    "fin-controles-minutes": { type: "string", default: "300" },
     // IPtoASN, surveyed by hand (docs/sources.md, card 18): its files are closed to robots, never downloaded here.
     iptoasn: { type: "string" },
     essai: { type: "boolean", default: false },
@@ -488,8 +492,10 @@ async function principal(): Promise<number> {
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
   // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
   // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
-  // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them.
-  const finControles = maintenant.getTime() + 300 * 60_000;
+  // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them. A
+  // retry starts until 255 minutes, and none of its tasks starts after 290.
+  const minutesDe = (option: string | undefined) => maintenant.getTime() + Number(option) * 60_000;
+  const finControles = minutesDe(o["fin-controles-minutes"]);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
@@ -501,7 +507,8 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: maintenant.getTime() + 255 * 60_000,
+      echeance: minutesDe(o["echeance-minutes"]),
+      finReprises: minutesDe(o["fin-reprises-minutes"]),
       zoneDe,
       suivi,
       apresDomaine: (domaine, zone) => {
@@ -514,7 +521,7 @@ async function principal(): Promise<number> {
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
       ...(debit.journal === undefined ? {} : { journal: debit.journal }),
     }),
-    controler(quad9, plan.noms, plan.mx),
+    controler(quad9, plan.noms, plan.mx, 8, finControles),
     controler(cloudflare, nomsTemoins, []),
   ]);
   suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);

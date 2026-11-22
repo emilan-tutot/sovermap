@@ -178,7 +178,9 @@ export function construireListe(
   const ministereDe = new Map<string, string>();
   if (dila) {
     for (const service of dila.services.values()) {
-      for (const hote of service.hotes) ajouter(hote, `dila:${dila.fichier}`, null, service.id);
+      // « dila » without its file: the Référentiel's file is dated each day, and a date in a name's provenance rewrote
+      // almost every fragment of « donnees » every day (6.3 MB on day 2, brief B.6); its file is in etat.json.
+      for (const hote of service.hotes) ajouter(hote, "dila", null, service.id);
       if (service.ministere !== null) ministereDe.set(service.id, service.ministere);
     }
   }

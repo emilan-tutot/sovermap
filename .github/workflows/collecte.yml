@@ -80,7 +80,11 @@ jobs:
           # measurement, never by the run of 09:47 (brief B.7). A failed publication is redone by « Re-run failed jobs ».
           gardees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-veille-$DATE-" --json key --jq 'length')
           echo "Mesures du jour gardées pour demain : ${gardees:-0}"
-          if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
+          # A day is measured once (the owner's rule, point 13, § 8): a measurement that started today, even one a guard
+          # stopped or a time limit cut, also ends the day.
+          commencees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-commencee-$DATE-" --json key --jq 'length')
+          echo "Mesures du jour commencées : ${commencees:-0}"
+          if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ] || [ "${commencees:-0}" -gt 0 ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
 
   mesurer:
     needs: jour
@@ -184,6 +188,26 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download sources-iptoasn --repo "$GITHUB_REPOSITORY" --pattern 'ip2asn-combined-*.tsv.gz' --dir releves || true
+      # A day is measured once (the owner's rule, point 13, § 8): the mark « measurement started » is saved before the
+      # first question, so that neither the run of 09:47 nor a re-run of this job asks the servers again that day, even
+      # after a guard blocked the publication or a time limit cut the job. An error of GitHub's API stops here.
+      - if: env.ESSAI != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATE: ${{ needs.jour.outputs.date }}
+        run: |
+          commencees=$(gh cache list --repo "$GITHUB_REPOSITORY" --ref refs/heads/main --key "collecte-commencee-$DATE-" --json key --jq 'length')
+          if [ "${commencees:-0}" -gt 0 ]; then
+            echo "mesurer : la mesure du $DATE a déjà commencé une fois ; rien n'est remesuré (une seule interrogation des serveurs par jour)." >&2
+            exit 1
+          fi
+          mkdir -p commencee
+          echo "$DATE" > commencee/date
+      - if: env.ESSAI != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: commencee
+          key: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}
       - id: collecte
         env:
           # The day the « jour » job checked, never the clock's: a re-run after midnight measures the same day.
@@ -193,7 +217,7 @@ jobs:
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
-          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 35 --fin-reprises-minutes 45 --fin-controles-minutes 48); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"

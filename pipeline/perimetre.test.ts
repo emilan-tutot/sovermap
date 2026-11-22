@@ -93,6 +93,8 @@ describe("the reference list", () => {
     });
     expect(liste.domaines.get("mairie.example")?.perimetre).toBe("hors État");
     expect(liste.domaines.get("page.createur.example")).toMatchObject({ perimetre: "hors État", plateforme: true });
+    // The provenance « dila » never carries the day's file: a date in it would rewrite every fragment every day.
+    expect(liste.noms.get("www.service.example")?.provenances).toEqual(["dila"]);
   });
 
   it("makes each name on a third-party platform its own unit", () => {

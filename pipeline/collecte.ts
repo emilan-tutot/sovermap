@@ -64,6 +64,11 @@ export type OptionsCollecte = {
    * day still fit in the job's time limit (collecter.ts).
    */
   echeance?: number;
+  /**
+   * No task of a retry pass starts after this moment: what is left keeps its failure, and the job always ends in time
+   * (the review of 22/11/2026: a retry that started late had no end).
+   */
+  finReprises?: number;
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -554,12 +559,20 @@ export async function collecter(
     resultat.noms.set(nom, await mesurerNom(nom, client));
   };
 
-  const passe = async (taches: readonly (() => Promise<void>)[]) => {
+  const passe = async (taches: readonly (() => Promise<void>)[], fin?: { a: number; etiquette: string }) => {
     const file = [...taches];
     const debut = horloge.maintenant();
     let faites = 0;
+    let coupee = false;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
+        if (fin !== undefined && horloge.maintenant() >= fin.a) {
+          if (!coupee)
+            options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${file.length + 1} tâches non reprises`);
+          coupee = true;
+          file.length = 0;
+          break;
+        }
         await tache();
         faites += 1;
         if (faites % 2_000 === 0) {
@@ -628,21 +641,24 @@ export async function collecter(
     await horloge.dormir(options.delaiRepriseMs);
     client.oublierZonesMortes();
     for (const hote of hotesEchoues) hotesEnCours.delete(hote);
-    await passe([
-      ...melanger(domainesEchoues, options.aleatoire).map((d) => async () => {
-        await cadenceDomaines.attendre();
-        await options.frein?.(d, options.zoneDe(d), true);
-        await mesurerDomaine(d);
-      }),
-      ...melanger(hotesEchoues, options.aleatoire).map((h) => async () => {
-        await cadenceNoms.attendre();
-        await mesurerHote(h);
-      }),
-      ...melanger(nomsEchoues, options.aleatoire).map((n) => async () => {
-        await cadenceNoms.attendre();
-        await mesurerUnNom(n);
-      }),
-    ]);
+    await passe(
+      [
+        ...melanger(domainesEchoues, options.aleatoire).map((d) => async () => {
+          await cadenceDomaines.attendre();
+          await options.frein?.(d, options.zoneDe(d), true);
+          await mesurerDomaine(d);
+        }),
+        ...melanger(hotesEchoues, options.aleatoire).map((h) => async () => {
+          await cadenceNoms.attendre();
+          await mesurerHote(h);
+        }),
+        ...melanger(nomsEchoues, options.aleatoire).map((n) => async () => {
+          await cadenceNoms.attendre();
+          await mesurerUnNom(n);
+        }),
+      ],
+      options.finReprises === undefined ? undefined : { a: options.finReprises, etiquette: `reprise ${reprise}` },
+    );
   }
   resultat.fin = Date.now();
   return resultat;

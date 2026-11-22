@@ -91,33 +91,58 @@ describe("the collection's workflow", () => {
     // The resolver listens where the collection asks.
     expect(config).toContain("interface: 127.0.0.1@5300");
     expect(tache("mesurer")).toContain("attendre-resolveur.ts 127.0.0.1:5300");
-    // The « views » section, to the next top-level key; each view opens with « - » at two spaces, its keys at four.
-    const section = /\nviews:\n((?:(?: {2}.*)?\n)*)/.exec(config)?.[1] ?? "";
+    // The « views » section, to the next top-level key (comment lines left out); each view opens with « - » at two
+    // spaces, its keys at four.
+    const lignes = config.split("\n").filter((l) => !/^\s*#/.test(l));
+    const debut = lignes.indexOf("views:");
+    expect(debut).toBeGreaterThan(-1);
+    const fin = lignes.findIndex((l, i) => i > debut && /^\S/.test(l));
+    const section = lignes.slice(debut + 1, fin === -1 ? undefined : fin).join("\n");
     const vues = section
       .split(/^ {2}- /m)
       .slice(1)
       .map((v) => `    ${v}`);
     expect(vues.length).toBeGreaterThan(0);
+    // An IPv4 subnet holds the address; any other (IPv6) never does.
     const dans = (sousReseau: string, adresse: string) => {
       const [reseau = "", longueur = "32"] = sousReseau.trim().split("/");
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(reseau)) return false;
       const entier = (ip: string) => ip.split(".").reduce((n, octet) => n * 256 + Number(octet), 0);
       const masque = 2 ** 32 - 2 ** (32 - Number(longueur));
       return (entier(reseau) & masque) >>> 0 === (entier(adresse) & masque) >>> 0;
     };
+    expect([dans("::1/128", "127.0.0.1"), dans("127.0.0.0/8", "127.0.0.1"), dans("10.0.0.0/8", "127.0.0.1")]).toEqual([
+      false,
+      true,
+      false,
+    ]);
     for (const vue of vues) {
       const cles = [...vue.matchAll(/^ {4}([a-z-]+):/gm)].map((m) => m[1]);
-      // Exactly one of « answer » and « tags »: 6.5.1 refuses the whole configuration otherwise.
+      // Exactly one of « answer » and « tags »: 6.5.1 refuses the whole configuration otherwise; and the answer lets
+      // the questions through (« refused » would refuse them all).
       expect(
         cles.filter((c) => c === "answer" || c === "tags"),
         vue,
       ).toHaveLength(1);
+      expect(vue, vue).toMatch(/^ {4}answer: allow$/m);
       const sousReseaux = /^ {4}subnets: \[(.*)\]$/m.exec(vue)?.[1]?.split(",") ?? [];
       expect(
         sousReseaux.some((s) => dans(s, "127.0.0.1")),
         vue,
       ).toBe(true);
     }
-    // The measured names are asked whole (method 0.2.5).
+    // The measured names are asked whole (method 0.2.4).
     expect(vues.some((v) => /^ {4}options:\n {6}minimize: false$/m.test(v))).toBe(true);
+  });
+
+  it("measures a day once: the mark « measurement started » is saved before the collection, and both jobs read it", () => {
+    const mesurer = tache("mesurer");
+    const marque = mesurer.indexOf("key: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}");
+    expect(marque).toBeGreaterThan(-1);
+    expect(marque).toBeLessThan(mesurer.indexOf("- id: collecte"));
+    expect(mesurer).toContain('--key "collecte-commencee-$DATE-"');
+    expect(mesurer).toContain('if [ "${commencees:-0}" -gt 0 ]; then');
+    expect(tache("jour")).toContain('--key "collecte-commencee-$DATE-"');
+    expect(tache("jour")).toContain('[ "${commencees:-0}" -gt 0 ]');
   });
 });
