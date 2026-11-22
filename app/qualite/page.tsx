@@ -7,6 +7,7 @@ import { EnTete, Sources } from "@/components/qualite/Commun";
 import { Reglettes } from "@/components/qualite/Reglettes";
 import { TableauControles } from "@/components/qualite/TableauControles";
 import { fraicheurDe } from "@/lib/donnees/fraicheur";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { maintenant } from "@/lib/donnees/maintenant";
 import { qualiteDe } from "@/lib/donnees/qualite";
@@ -27,6 +28,9 @@ export const metadata: Metadata = {
 export default async function QualitePage({ searchParams }: { searchParams: Promise<{ forme?: string | string[] }> }) {
   const lu = await lecteur.etat();
   if (lu.statut === "porte fermée") notFound();
+  // Unreadable today (and no copy of the day before): an error, never kept by the CDN; « not published » is only for
+  // a state that does not exist yet.
+  if (lu.statut === "indisponible") indisponible();
   const heure = await maintenant();
   const { forme } = await searchParams;
   const q = lu.statut === "ok" ? qualiteDe(lu.donnees) : null;
