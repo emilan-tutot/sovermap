@@ -341,6 +341,18 @@ export const fr = {
     avantApres: (avant: string, apres: string) => `${avant} → ${apres}`,
     retour: "Tous les jours",
   },
+  /** A country (D.2, R7): the companies whose ultimate parent has its seat there. */
+  pays: {
+    surtitre: "Pays du siège",
+    titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis depuis ses sociétés`,
+    descriptionPage: (nom: string) =>
+      `${nom}${NBSP}: les sociétés dont la maison mère y a son siège, et les domaines des sites publics qu’elles servent.`,
+    honnetete: "Le pays du siège de la maison mère, pas l’emplacement des serveurs.",
+    domaines: (n: string, etat: string) =>
+      `${n}${NBSP}domaines servis, dont ${etat}${NBSP}du périmètre «${NBSP}État${NBSP}»`,
+    societes: "Les sociétés",
+    aucune: "Aucune société dont la maison mère a son siège dans ce pays, ce jour-là.",
+  },
 } as const;
 
 export type Dictionary = typeof fr;
