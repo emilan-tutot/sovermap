@@ -85,4 +85,39 @@ describe("the collection's workflow", () => {
       }
     }
   });
+
+  it("gives the resolver views Knot Resolver 6.5.1 accepts, over the collection's own address (the review of 96f0218)", () => {
+    const config = readFileSync("pipeline/knot/config.yaml", "utf8");
+    // The resolver listens where the collection asks.
+    expect(config).toContain("interface: 127.0.0.1@5300");
+    expect(tache("mesurer")).toContain("attendre-resolveur.ts 127.0.0.1:5300");
+    // The « views » section, to the next top-level key; each view opens with « - » at two spaces, its keys at four.
+    const section = /\nviews:\n((?:(?: {2}.*)?\n)*)/.exec(config)?.[1] ?? "";
+    const vues = section
+      .split(/^ {2}- /m)
+      .slice(1)
+      .map((v) => `    ${v}`);
+    expect(vues.length).toBeGreaterThan(0);
+    const dans = (sousReseau: string, adresse: string) => {
+      const [reseau = "", longueur = "32"] = sousReseau.trim().split("/");
+      const entier = (ip: string) => ip.split(".").reduce((n, octet) => n * 256 + Number(octet), 0);
+      const masque = 2 ** 32 - 2 ** (32 - Number(longueur));
+      return (entier(reseau) & masque) >>> 0 === (entier(adresse) & masque) >>> 0;
+    };
+    for (const vue of vues) {
+      const cles = [...vue.matchAll(/^ {4}([a-z-]+):/gm)].map((m) => m[1]);
+      // Exactly one of « answer » and « tags »: 6.5.1 refuses the whole configuration otherwise.
+      expect(
+        cles.filter((c) => c === "answer" || c === "tags"),
+        vue,
+      ).toHaveLength(1);
+      const sousReseaux = /^ {4}subnets: \[(.*)\]$/m.exec(vue)?.[1]?.split(",") ?? [];
+      expect(
+        sousReseaux.some((s) => dans(s, "127.0.0.1")),
+        vue,
+      ).toBe(true);
+    }
+    // The measured names are asked whole (method 0.2.5).
+    expect(vues.some((v) => /^ {4}options:\n {6}minimize: false$/m.test(v))).toBe(true);
+  });
 });
