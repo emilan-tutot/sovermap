@@ -1726,6 +1726,362 @@
         }
       ],
       "note": "Seconde source non lue : voir google-llc."
+    },
+    "planethoster": {
+      "nom": "PlanetHoster",
+      "pays": "CA",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS53589, titulaire PlanetHoster (forme juridique non indiquée), pays d'enregistrement CA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Identité et pays : le seul titulaire inscrit à l'ARIN, lu dans IPtoASN ; le pays est celui de l'enregistrement de l'AS (CA, aussi dans le fichier de délégation), pas un siège vérifié. Aucun LEI dans GLEIF (recherche « PlanetHoster » du 22/11/2026, passe précédente). Aucun registre d'entreprises canadien ne figure au registre des sources. Aucune source permise sur l'actionnariat (22/11/2026)."
+    },
+    "alfa-safety": {
+      "nom": "Alfa-Safety SARL",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS20529 AS1_ALFA-SAFETY, organisation ORG-CISP1-RIPE, « Alfa-Safety SARL », LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Société non identifiée dans un registre d'entreprises (22/11/2026) : Sirene ne donne aucune unité légale, active ou cessée, pour « Alfa Safety » ni pour « Alfa-Safety » (passe précédente, 22/11/2026) ; GLEIF ne connaît qu'une société espagnole sans lien, BLUE ALFA SAFETY SL (passe précédente). Le pays est celui de l'organisation au RIPE. Aucune source permise sur l'actionnariat."
+    },
+    "colt-technology-services-group-limited": {
+      "nom": "COLT Technology Services Group Limited",
+      "pays": "GB",
+      "mere": "non-determinee",
+      "lei": "213800PIMH7Q7M27DB82",
+      "sources": [
+        {
+          "titre": "GLEIF : COLT TECHNOLOGY SERVICES GROUP LIMITED, siège à Londres (Royaume-Uni), Companies House 03232904 ; LEI non renouvelé depuis le 10/10/2016",
+          "url": "https://search.gleif.org/#/record/213800PIMH7Q7M27DB82",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS8220 COLT, organisation ORG-CI9-RIPE, « COLT Technology Services Group Limited », LIR, GB",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "GLEIF déclare pour le parent direct et pour le parent ultime l'exception « NO_KNOWN_PERSON » (aucune personne connue ne la contrôlerait), mais sur une fiche non renouvelée depuis le 10/10/2016 et mise à jour pour la dernière fois le 16/01/2019 : déclaration trop ancienne pour établir l'absence de maison mère ; elle n'est pas retenue. Aucune autre source permise sur l'actionnariat (22/11/2026)."
+    },
+    "digitalocean-llc": {
+      "nom": "DigitalOcean, LLC",
+      "pays": "US",
+      "mere": "digitalocean-holdings-inc",
+      "lei": "549300EDRXGWOG3MUL20",
+      "sources": [
+        {
+          "titre": "GLEIF : DigitalOcean, LLC, société du Delaware (n° 5118787), bureaux à New York (États-Unis)",
+          "url": "https://search.gleif.org/#/record/549300EDRXGWOG3MUL20",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime DIGITALOCEAN HOLDINGS, INC. (LEI 549300EPISPY3RE3DL21), relation active depuis le 05/03/2012, déclarée par l'entité sans recoupement",
+          "url": "https://search.gleif.org/#/record/549300EDRXGWOG3MUL20",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source non lue : EDGAR exige une adresse e-mail (fiche 36) ; aucun rapport annuel du groupe lu (22/11/2026)."
+    },
+    "digitalocean-holdings-inc": {
+      "nom": "DigitalOcean Holdings, Inc.",
+      "pays": "US",
+      "mere": null,
+      "lei": "549300EPISPY3RE3DL21",
+      "sources": [
+        {
+          "titre": "GLEIF : DIGITALOCEAN HOLDINGS, INC., société du Delaware (n° 6032173), bureaux à New York (États-Unis)",
+          "url": "https://search.gleif.org/#/record/549300EPISPY3RE3DL21",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
+          "url": "https://search.gleif.org/#/record/549300EPISPY3RE3DL21",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source non lue : voir digitalocean-llc."
+    },
+    "equinix-emea-acquisition-enterprises-bv": {
+      "nom": "Equinix (EMEA) Acquisition Enterprises B.V.",
+      "pays": "NL",
+      "mere": "equinix-inc",
+      "lei": "549300PYU1L7U0OHTS42",
+      "sources": [
+        {
+          "titre": "GLEIF : Equinix (EMEA) Acquisition Enterprises B.V., fiche de catégorie succursale (« BRANCH »), adresse légale à Amsterdam (Pays-Bas), registre 63332248 ; LEI non renouvelé depuis le 22/09/2018",
+          "url": "https://search.gleif.org/#/record/549300PYU1L7U0OHTS42",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS15830 Equinix, organisation ORG-TP3-RIPE, « Equinix (EMEA) Acquisition Enterprises B.V. », LIR, NL",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : siège (« head office ») de cette succursale EQUINIX, INC. (LEI 549300EVUN2BTLJ3GT74) ; fiche non renouvelée depuis le 22/09/2018, dernière mise à jour le 04/08/2023",
+          "url": "https://search.gleif.org/#/record/549300PYU1L7U0OHTS42",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "GLEIF ne connaît sous ce nom qu'une fiche de succursale (juridiction US-DE, bureaux à Redwood City), rattachée à EQUINIX, INC. ; aucune fiche d'entité de ce nom aux Pays-Bas (recherche du 22/11/2026). Seconde source du lien non lue : EDGAR (fiche 36) exige une adresse e-mail ; aucun rapport annuel d'Equinix lu."
+    },
+    "equinix-inc": {
+      "nom": "Equinix, Inc.",
+      "pays": "US",
+      "mere": null,
+      "controle": "aucun parent qui la consolide, selon GLEIF",
+      "lei": "549300EVUN2BTLJ3GT74",
+      "sources": [
+        {
+          "titre": "GLEIF : EQUINIX, INC., société du Delaware (n° 2911438), bureaux à Redwood City (États-Unis)",
+          "url": "https://search.gleif.org/#/record/549300EVUN2BTLJ3GT74",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NON_CONSOLIDATING »",
+          "url": "https://search.gleif.org/#/record/549300EVUN2BTLJ3GT74",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source non lue : voir equinix-emea-acquisition-enterprises-bv."
+    },
+    "cirso": {
+      "nom": "Centre informatique recouvrement Sud-Ouest (CIRSO)",
+      "pays": "FR",
+      "mere": null,
+      "controle": "organisme du régime général de la sécurité sociale",
+      "sources": [
+        {
+          "titre": "Sirene : CTRE INFORMATIQUE RECOUVREMENT SUD OUEST (CIRSO), organisme du régime général de la sécurité sociale, SIREN 776901142, siège à Toulouse, actif",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/776901142",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS48613 Cirsonet, organisation ORG-CIRS1-RIPE, « Ctre Informatique Recouvrement Sud Ouest », OTHER, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "Sirene : catégorie juridique 8110 « Régime général de la sécurité sociale », activité 84.30A (activités générales de sécurité sociale)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/776901142",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Organisme du régime général de la sécurité sociale, pas une société. Le nom de Sirene est identique à celui de l'organisation du RIPE. Aucun LEI dans GLEIF (recherche par SIREN, avec et sans espaces, 22/11/2026). Aucune source permise ne le rattache à un autre organisme ; le pays (France) n'en dépend pas."
+    },
+    "octopuce": {
+      "nom": "Octopuce s.a.r.l.",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS28855 OCTOPUCE-AS, organisation ORG-OS113-RIPE, « Octopuce s.a.r.l. », LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Société non identifiée avec certitude (22/11/2026). Sirene donne deux SARL actives nommées OCTOPUCE : SIREN 480189067 (siège à Paris, créée le 03/01/2005, activité principale 70.22Z, conseil pour les affaires et autres conseils de gestion ; LEI 969500AESU8W36TYI473, exception « NATURAL_PERSONS » pour le parent ultime) et SIREN 411605777 (créée le 05/04/1997, siège à Saint-André-lez-Lille fermé, code d'activité de l'ancienne nomenclature 52.4Z). Aucune n'est retenue : la première, seule au siège actif, est née après l'attribution de l'AS (18/03/2003) et son activité principale est sans rapport apparent avec un réseau ; ce rapprochement par le nom n'est pas une source. Aucune source permise sur l'actionnariat."
+    },
+    "xneelo-pty-ltd": {
+      "nom": "Xneelo (Pty) Ltd",
+      "pays": "ZA",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS37153, titulaire Xneelo (Pty) Ltd, pays d'enregistrement ZA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Identité et pays : le seul titulaire inscrit à l'AFRINIC, lu dans IPtoASN ; le pays est celui de l'enregistrement de l'AS (ZA, aussi dans le fichier de délégation), pas un siège vérifié. Aucun LEI dans GLEIF (recherche « xneelo », 22/11/2026). Aucun registre d'entreprises sud-africain ne figure au registre des sources ; le RDAP de l'AFRINIC ne sert qu'au contrôle (fiche 23). Aucune source permise sur l'actionnariat."
+    },
+    "atos-france": {
+      "nom": "Atos France",
+      "pays": "FR",
+      "mere": "atos-group",
+      "lei": "549300ED3CTVUO9NLV84",
+      "sources": [
+        {
+          "titre": "Sirene : ATOS FRANCE, SAS, SIREN 408024719, siège à Bezons, active (l'autre « ATOS FRANCE » de Sirene, SIREN 534714175, est une SARL d'une autre activité)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/408024719",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : ATOS FRANCE, siège à Bezons (France)",
+          "url": "https://search.gleif.org/#/record/549300ED3CTVUO9NLV84",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct et parent ultime Atos Group (autre nom ATOS SE, LEI 5493001EZOOA66PTBR68), relation active depuis le 04/10/2023, validée sur des comptes déposés",
+          "url": "https://search.gleif.org/#/record/549300ED3CTVUO9NLV84",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source du lien non lue : aucun document d'Atos lu (22/11/2026)."
+    },
+    "atos-group": {
+      "nom": "Atos Group",
+      "pays": "FR",
+      "mere": null,
+      "controle": "aucun parent qui la consolide, selon GLEIF",
+      "lei": "5493001EZOOA66PTBR68",
+      "sources": [
+        {
+          "titre": "Sirene : ATOS GROUP, société européenne, SIREN 323623603, siège à Bezons, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/323623603",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : Atos Group (autre nom ATOS SE), siège à Bezons (France)",
+          "url": "https://search.gleif.org/#/record/5493001EZOOA66PTBR68",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NON_CONSOLIDATING »",
+          "url": "https://search.gleif.org/#/record/5493001EZOOA66PTBR68",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Seconde source du sommet non lue : document d'enregistrement universel d'Atos (fiche 39), non lu (22/11/2026)."
+    },
+    "axess-online": {
+      "nom": "Axess Online",
+      "pays": "FR",
+      "mere": "axess-groupe",
+      "lei": "969500C6UTB0OJN1AL97",
+      "sources": [
+        {
+          "titre": "Sirene : AXESS ONLINE (AXESS NETWORK - AXESS TELECOM), SARL, SIREN 489548065, siège à Valence, active (seul résultat pour « Axess Online »)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/489548065",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : AXESS ONLINE, siège à Valence (France) ; LEI non renouvelé depuis le 30/07/2026",
+          "url": "https://search.gleif.org/#/record/969500C6UTB0OJN1AL97",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : parent direct AXESS GROUPE (LEI 969500TZQIMFM4X4EV91), relation déclarée par l'entité sans recoupement, sur une fiche non renouvelée ; pour le parent ultime, exception « NON_PUBLIC »",
+          "url": "https://search.gleif.org/#/record/969500C6UTB0OJN1AL97",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "GLEIF fait commencer la relation le 30/06/2007, alors que Sirene date la création d'Axess Groupe du 02/07/2009 : déclaration de l'entité, non recoupée."
+    },
+    "axess-groupe": {
+      "nom": "Axess Groupe",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "lei": "969500TZQIMFM4X4EV91",
+      "sources": [
+        {
+          "titre": "Sirene : AXESS GROUPE, SAS, SIREN 513969345, siège à Valence, active, activité 70.10Z (activités des sièges sociaux)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/513969345",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : AXESS GROUPE, siège à Valence (France)",
+          "url": "https://search.gleif.org/#/record/969500TZQIMFM4X4EV91",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exception de déclaration du parent ultime « NON_PUBLIC » (les informations sur le parent ne sont pas publiques)",
+          "url": "https://search.gleif.org/#/record/969500TZQIMFM4X4EV91",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "GLEIF déclare aussi un parent direct d'Axess Groupe, une SAS de Valence (SIREN 914993795, LEI 969500549L761VB1JW50, fiche non renouvelée depuis le 13/10/2026 ; relation active depuis le 20/07/2022, déclarée par l'entité), elle-même en exception « NON_CONSOLIDATING » pour son parent ultime. Ces déclarations ne s'accordent pas avec l'exception « NON_PUBLIC » d'Axess Online et d'Axess Groupe : le sommet n'est pas retenu. Le nom de cette SAS n'est pas recopié, par prudence (il pourrait reprendre un prénom)."
+    },
+    "datacamp-limited": {
+      "nom": "DataCamp Limited",
+      "pays": "GB",
+      "mere": "non-determinee",
+      "lei": "315700H7VY11ZEYPCG73",
+      "sources": [
+        {
+          "titre": "GLEIF : DataCamp Limited, siège à Londres (Royaume-Uni), Companies House 07489096",
+          "url": "https://search.gleif.org/#/record/315700H7VY11ZEYPCG73",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS60068 CDN77, organisation ORG-DL201-RIPE, « Datacamp Limited », LIR, GB",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "GLEIF : exceptions de déclaration du parent direct et du parent ultime « NO_LEI » (un parent sans LEI existerait)",
+          "url": "https://search.gleif.org/#/record/315700H7VY11ZEYPCG73",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Un parent existe selon GLEIF, sans LEI et sans nom ; aucune source permise ne le nomme (22/11/2026). Le rapprochement avec le titulaire du RIPE repose sur le nom et le pays : GLEIF n'a qu'une « DataCamp Limited » au Royaume-Uni."
+    },
+    "boscop": {
+      "nom": "Boscop",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS197562 BOSCOP, organisation ORG-VTS4-RIPE, « Boscop SC », LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Coopérative identifiée par le seul registre (« Boscop SC », base du RIPE) : plusieurs homonymes existent dans Sirene, et aucun écrit ne relie l'AS à l'un d'eux ; aucun SIREN n'est donc retenu (lecture stricte, 22/11/2026). Maison mère inconnue."
+    },
+    "ikoula-net": {
+      "nom": "Ikoula Net",
+      "pays": "FR",
+      "mere": "non-determinee",
+      "sources": [
+        {
+          "titre": "Sirene : IKOULA NET (IKOULA), SAS, SIREN 417680618, siège à Paris, active, activité 63.11Z (traitement de données, hébergement et activités connexes) ; seule société de ce nom",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/417680618",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS21409 IKOULA, organisation ORG-WH1-RIPE, « Ikoula Net SAS », LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "sources_mere": [],
+      "note": "Aucun LEI dans GLEIF (recherche par SIREN, avec et sans espaces, et par le nom « Ikoula », 22/11/2026). Aucune source permise sur l'actionnariat."
     }
   }
 }

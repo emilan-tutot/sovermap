@@ -1,5 +1,5 @@
 {
-  "version": "0.3",
+  "version": "0.4",
   "date": "2026-11-22",
   "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents), puis dans la collecte du jour 1 (version 0.3). La table complète est établie en T3.",
   "regle": "Une ligne relie un AS à la société qui l'exploite. Première source : le titulaire inscrit au registre régional (lu dans IPtoASN, vérifiable par le RDAP du registre). Seconde source : l'identité de la société dans un registre d'entreprises (Sirene, GLEIF) ou une liste officielle. Les deux concordent : « confirmé ». Une seule : « probable ».",
@@ -877,6 +877,248 @@
         {
           "titre": "Sirene : EVOLIX, SARL, SIREN 451952295, siège à Marseille, active",
           "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/451952295",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "53589": {
+      "societe": "planethoster",
+      "titulaire_registre": "PlanetHoster",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS53589 PLANETHOSTER-8, titulaire PlanetHoster, pays d'enregistrement CA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation de l'ARIN du 21/11/2026 (fiche 21) : AS53589 attribué le 30/06/2010, pays d'enregistrement CA ; son titulaire (identifiant du fichier) détient aussi 3 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "20529": {
+      "societe": "alfa-safety",
+      "titulaire_registre": "Alfa-Safety SARL",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS20529 AS1_ALFA-SAFETY, titulaire Alfa-Safety SARL, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS20529 attribué le 23/03/2001, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 1 bloc IPv4 et 1 bloc IPv6, et aucun autre AS",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "8220": {
+      "societe": "colt-technology-services-group-limited",
+      "titulaire_registre": "COLT Technology Services Group Limited",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS8220 COLT, titulaire COLT Technology Services Group Limited, pays d'enregistrement GB",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS8220 attribué le 24/02/1997, pays d'enregistrement GB ; son titulaire (identifiant du fichier) détient aussi 8 autres AS (AS6675, AS8372, AS9126, AS12640, AS12755, AS12761, AS12878, AS15404), 72 blocs IPv4 et 1 bloc IPv6",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "14061": {
+      "societe": "digitalocean-llc",
+      "titulaire_registre": "DigitalOcean, LLC",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS14061 DIGITALOCEAN-ASN, titulaire DigitalOcean, LLC, pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation de l'ARIN du 21/11/2026 (fiche 21) : AS14061 attribué le 25/09/2012, pays d'enregistrement US ; son titulaire (identifiant du fichier) détient aussi 4 autres AS (AS46652, AS62567, AS393406, AS394362), 68 blocs IPv4 et 1 bloc IPv6",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "15169": {
+      "societe": "google-llc",
+      "titulaire_registre": "Google LLC",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS15169 GOOGLE, titulaire Google LLC, pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation de l'ARIN du 21/11/2026 (fiche 21) : AS15169 attribué le 30/03/2000, pays d'enregistrement US ; son titulaire (identifiant du fichier) détient aussi 8 autres AS (AS13949, AS19425, AS22577, AS22859, AS26684, AS36039, AS36040, AS40873), 28 blocs IPv4 et 5 blocs IPv6",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Le fichier de l'ARIN donne à AS396982 (déjà relié à google-llc) un autre identifiant de titulaire : le rattachement repose sur le nom du titulaire, Google LLC, identique à la fiche GLEIF de la société."
+    },
+    "15830": {
+      "societe": "equinix-emea-acquisition-enterprises-bv",
+      "titulaire_registre": "Equinix (EMEA) Acquisition Enterprises B.V.",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS15830 Equinix, titulaire Equinix (EMEA) Acquisition Enterprises B.V., pays d'enregistrement NL",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS15830 attribué le 20/10/2000, pays d'enregistrement NL ; son titulaire (identifiant du fichier) détient aussi 7 autres AS (AS5562, AS12600, AS13100, AS24938, AS28744, AS39003, AS39757), 47 blocs IPv4 et 4 blocs IPv6",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "48613": {
+      "societe": "cirso",
+      "titulaire_registre": "Ctre Informatique Recouvrement Sud Ouest",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS48613 Cirsonet, titulaire Ctre Informatique Recouvrement Sud Ouest, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS48613 attribué le 18/12/2008, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 1 bloc IPv4, et aucun autre AS",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "28855": {
+      "societe": "octopuce",
+      "titulaire_registre": "Octopuce s.a.r.l.",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS28855 OCTOPUCE-AS, titulaire Octopuce s.a.r.l., pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS28855 attribué le 18/03/2003, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 2 autres AS (AS51243, AS210770), 7 blocs IPv4 et 5 blocs IPv6",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "37153": {
+      "societe": "xneelo-pty-ltd",
+      "titulaire_registre": "Xneelo (Pty) Ltd",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS37153, titulaire Xneelo (Pty) Ltd, pays d'enregistrement ZA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation de l'AFRINIC du 22/11/2026 (fiche 21) : AS37153 attribué le 26/10/2009, pays d'enregistrement ZA ; son titulaire (identifiant du fichier) détient aussi 13 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
+          "url": "https://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "21000": {
+      "societe": "atos-france",
+      "titulaire_registre": "Atos France SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS21000 ATOS-AS, titulaire Atos France SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS21000 attribué le 24/07/2001, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 4 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "50812": {
+      "societe": "axess-online",
+      "titulaire_registre": "Axess OnLine SARL",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS50812 AXESS-ONLINE, titulaire Axess OnLine SARL, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS50812 attribué le 29/03/2010, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 2 autres AS (AS39072, AS201516), 7 blocs IPv4 et 1 bloc IPv6",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "60068": {
+      "societe": "datacamp-limited",
+      "titulaire_registre": "Datacamp Limited",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS60068 CDN77, titulaire Datacamp Limited, pays d'enregistrement GB",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS60068 attribué le 04/06/2014, pays d'enregistrement GB ; son titulaire (identifiant du fichier) détient aussi 3 autres AS (AS211612, AS212238, AS215989), 38 blocs IPv4 et 2 blocs IPv6",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "1945": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS1945 FR-LyRES, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS1945 attribué le 01/09/1993, pays d'enregistrement EU ; identifiant de titulaire propre à cet AS, comme pour chacun des autres AS de Renater attribués le même jour (AS2060, AS2200, AS2202, AS2259)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS1945 FR-LyRES a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS2060, AS2200, AS2202 et AS2259, déjà reliés à renater."
+    },
+    "197562": {
+      "societe": "boscop",
+      "titulaire_registre": "Boscop SC",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS197562 BOSCOP, titulaire Boscop SC, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS197562 attribué le 09/02/2011, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 2 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "21409": {
+      "societe": "ikoula-net",
+      "titulaire_registre": "Ikoula Net SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS21409 IKOULA, titulaire Ikoula Net SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS21409 attribué le 30/11/2001, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 8 blocs IPv4 et 2 blocs IPv6, et aucun autre AS",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
           "lu_le": "2026-11-22"
         }
       ]
