@@ -4,7 +4,6 @@
 // of the SHA-256 of the name, so a record never moves — in folders of 256 entries at most. A record changes only when
 // two collections in a row agree on its new content (hysteresis); a change of hosting then enters the journal, never a
 // change of rules or of the list; on the first day the initial state is published, without changes.
-import { siegeRetenu } from "./societes";
 import { createHash } from "node:crypto";
 import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
 import type { Categorie, Niveau } from "./types";
@@ -337,7 +336,15 @@ export function fragments<T>(
   return fichiers;
 }
 
-export type Societe = { nom: string; pays: string; mere: string | null; paysMere: string | null; categorie: Categorie };
+export type Societe = {
+  nom: string;
+  pays: string;
+  mere: string | null;
+  paysMere: string | null;
+  /** The seat that gives the category and the thread: the farther of its own and its parent's (ARRÊT 2). */
+  paysRetenu: string;
+  categorie: Categorie;
+};
 export type Organisme = { nom: string; sigle: string | null; ministere: string | null };
 
 /** The indexes (brief B.6): by AS, company, country, ministry and body. */
@@ -375,8 +382,7 @@ export function index(
       noter(parSociete, e.societe, d.domaine);
       // The thread goes to the farther of the company's seat and its parent's (ARRÊT 2): an American subsidiary of a
       // French group is filed under the United States.
-      const societe = details.societes.get(e.societe);
-      const pays = societe === undefined ? undefined : siegeRetenu(societe.pays, societe.paysMere).pays;
+      const pays = details.societes.get(e.societe)?.paysRetenu;
       if (pays) {
         const p = parPays.get(pays) ?? { domaines: new Set(), etat: new Set() };
         p.domaines.add(d.domaine);

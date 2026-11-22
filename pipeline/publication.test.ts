@@ -1,6 +1,7 @@
 // Tests of the publication: fragments, hysteresis, journal, circuit breaker and figures. Made-up records, documentation
 // names and AS numbers only (RFC 2606, RFC 5398).
 import { describe, expect, it } from "vitest";
+import { siegeRetenu } from "./societes";
 import {
   bilan,
   chiffres,
@@ -196,13 +197,37 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
       societes: new Map([
         [
           "filiale-us",
-          { nom: "Filiale, Inc.", pays: "US", mere: "groupe-fr", paysMere: "FR", categorie: "hors d'Europe" },
+          {
+            nom: "Filiale, Inc.",
+            pays: "US",
+            mere: "groupe-fr",
+            paysMere: "FR",
+            paysRetenu: siegeRetenu("US", "FR").pays,
+            categorie: "hors d'Europe",
+          },
         ],
         [
           "filiale-fr",
-          { nom: "Filiale SAS", pays: "FR", mere: "groupe-us", paysMere: "US", categorie: "hors d'Europe" },
+          {
+            nom: "Filiale SAS",
+            pays: "FR",
+            mere: "groupe-us",
+            paysMere: "US",
+            paysRetenu: siegeRetenu("FR", "US").pays,
+            categorie: "hors d'Europe",
+          },
         ],
-        ["relais-il", { nom: "Relais Ltd", pays: "IL", mere: null, paysMere: null, categorie: "hors d'Europe" }],
+        [
+          "relais-il",
+          {
+            nom: "Relais Ltd",
+            pays: "IL",
+            mere: null,
+            paysMere: null,
+            paysRetenu: siegeRetenu("IL", null).pays,
+            categorie: "hors d'Europe",
+          },
+        ],
       ]),
       organismes: new Map(),
       organismesDe: new Map(),

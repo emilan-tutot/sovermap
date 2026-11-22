@@ -724,7 +724,9 @@ async function principal(): Promise<number> {
           pays: s.pays,
           mere: chaine.mere?.cle ?? null,
           paysMere: chaine.mere?.pays ?? null,
-          categorie: siegeRetenu(s.pays, chaine.mere?.pays ?? null).categorie,
+          ...(({ pays, categorie }) => ({ paysRetenu: pays, categorie }))(
+            siegeRetenu(s.pays, chaine.mere?.pays ?? null),
+          ),
         },
       ] as const;
     }),
