@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { cheminJour, joursPublies, lireJour } from "@/lib/donnees/journal";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
@@ -38,6 +39,7 @@ export default async function JournalPage() {
   );
   return (
     <Coque>
+      <FilAriane miettes={[{ nom: fr.coque.navigation.journal, chemin: "/journal" }]} />
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
       <ul className="liste-societes">

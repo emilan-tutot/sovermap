@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { Bulletin, Details } from "@/components/qualite/Bulletin";
 import { EnTete, Sources } from "@/components/qualite/Commun";
 import { Reglettes } from "@/components/qualite/Reglettes";
@@ -26,6 +27,7 @@ export default async function QualitePage({ searchParams }: { searchParams: Prom
   const f = q === null ? null : fraicheurDe(q, heure);
   return (
     <Coque>
+      <FilAriane miettes={[{ nom: fr.qualite.titre, chemin: "/qualite" }]} />
       <h1 className="titre-page">{fr.qualite.titre}</h1>
       <p className="chapo">{fr.qualite.chapo}</p>
       {q === null || f === null ? (

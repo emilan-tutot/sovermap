@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
 import { nombre } from "@/lib/i18n/format";
@@ -35,6 +36,7 @@ export default async function MinisteresPage() {
   }
   return (
     <Coque>
+      <FilAriane miettes={[{ nom: fr.coque.navigation.ministeres, chemin: "/ministeres" }]} />
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
       <p className="releve-note">{t.entete(nombre(ministeres.length))}</p>

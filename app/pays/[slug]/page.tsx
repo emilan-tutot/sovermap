@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, paysDuSlug, societesDuPays } from "@/lib/donnees/pays";
 import { lireIndexSocietes } from "@/lib/donnees/radiographie";
@@ -43,6 +44,7 @@ export default async function PaysPage({ params }: Props) {
   const liste = societesDuPays(p.code, societes);
   return (
     <Coque>
+      <FilAriane miettes={[{ nom: p.nom, chemin: `/pays/${(await params).slug}` }]} />
       <p className="etiquette-capitales">{t.surtitre}</p>
       <h1 className="titre-page">{p.nom}</h1>
       <p className="chapo">{t.honnetete}</p>

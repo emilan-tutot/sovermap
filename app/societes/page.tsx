@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
 import { societesTriees } from "@/lib/donnees/societes";
@@ -38,6 +39,7 @@ export default async function SocietesPage() {
   const societes = societesTriees(index);
   return (
     <Coque>
+      <FilAriane miettes={[{ nom: fr.coque.navigation.societes, chemin: "/societes" }]} />
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
       <p className="releve-note">{t.entete(nombre(societes.length))}</p>

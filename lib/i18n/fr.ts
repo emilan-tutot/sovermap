@@ -26,6 +26,7 @@ export const fr = {
       societes: "Sociétés",
       journal: "Journal",
     },
+    filAriane: "Fil d’Ariane",
   },
   attente: {
     title: "En préparation",

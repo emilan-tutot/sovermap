@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { Valeur } from "@/components/texte/Valeur";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays, sourcesDe } from "@/lib/donnees/radiographie";
@@ -61,6 +62,12 @@ export default async function SocietePage({ params, searchParams }: Props) {
   const sources = sourcesDe(etat.donnees);
   return (
     <Coque>
+      <FilAriane
+        miettes={[
+          { nom: fr.coque.navigation.societes, chemin: "/societes" },
+          { nom: s.nom, chemin: `/societes/${cle}` },
+        ]}
+      />
       <p className="etiquette-capitales">{t.surtitre}</p>
       <h1 className="titre-page">{s.nom}</h1>
       <section className="releve" aria-labelledby="titre-chaine">

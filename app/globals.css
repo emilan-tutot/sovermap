@@ -152,6 +152,23 @@
     font-size: var(--text-base);
   }
 
+  /* The breadcrumb (D.7): small, discreet, its separators drawn by the style. */
+  .fil-ariane ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .fil-ariane li + li::before {
+    content: "›";
+    margin-right: 0.5rem;
+  }
+
   .navigation {
     display: flex;
     flex-wrap: wrap;

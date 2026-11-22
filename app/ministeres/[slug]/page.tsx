@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { Constellation } from "@/components/ministeres/Constellation";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
@@ -82,6 +83,12 @@ export default async function MinisterePage({ params }: Props) {
   const groupes = groupesDe(domaines, societes);
   return (
     <Coque>
+      <FilAriane
+        miettes={[
+          { nom: fr.coque.navigation.ministeres, chemin: "/ministeres" },
+          { nom: m.nom, chemin: `/ministeres/${m.slug}` },
+        ]}
+      />
       <p className="etiquette-capitales">{t.surtitre}</p>
       <h1 className="titre-page">{m.nom}</h1>
       <section className="releve" aria-labelledby="titre-repartition">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import type { FormeChaine } from "@/components/radiographie/Chaine";
 import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
 import { Valeur } from "@/components/texte/Valeur";
@@ -82,6 +83,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
   const s = sourcesDe(etat.donnees);
   return (
     <Coque large>
+      <FilAriane miettes={[{ nom: r.domaine, chemin: `/radiographie/${r.domaine}` }]} />
       <p className="etiquette-capitales">{fr.radiographie.surtitre}</p>
       <h1 className="titre-page radiographie-titre">
         <Valeur texte={r.domaine} />

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import { FilAriane } from "@/components/coque/FilAriane";
 import { Valeur } from "@/components/texte/Valeur";
 import { cheminJour, estJour, joursPublies, lireJour, parCouche } from "@/lib/donnees/journal";
 import { lecteur } from "@/lib/donnees/lecture";
@@ -37,6 +38,12 @@ export default async function JourPage({ params }: Props) {
   const jour = lu.statut === "ok" ? lireJour(lu.donnees) : null;
   return (
     <Coque>
+      <FilAriane
+        miettes={[
+          { nom: fr.coque.navigation.journal, chemin: "/journal" },
+          { nom: dateFr(date), chemin: `/journal/${date}` },
+        ]}
+      />
       <p className="etiquette-capitales">{t.titre}</p>
       <h1 className="titre-page">{t.jour(dateFr(date))}</h1>
       {jour === null ? (
