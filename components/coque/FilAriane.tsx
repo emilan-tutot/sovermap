@@ -9,9 +9,8 @@ export type Miette = { nom: string; chemin: string };
  * absolute addresses from the configured origin). The data are JSON in a script that is never executed, its « < »
  * escaped as Next.js's documentation advises, so that no name can close the script.
  */
-export function FilAriane({ miettes }: { miettes: readonly Miette[] }) {
-  const tout: Miette[] = [{ nom: fr.coque.navigation.atlas, chemin: "/" }, ...miettes];
-  const origine = origineDuSite();
+/** The breadcrumb's structured data, as the text of its script: JSON whose « < » can never close the script. */
+export function jsonLdFilAriane(tout: readonly Miette[], origine: string): string {
   const donnees = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -22,6 +21,11 @@ export function FilAriane({ miettes }: { miettes: readonly Miette[] }) {
       item: `${origine}${m.chemin}`,
     })),
   };
+  return JSON.stringify(donnees).replace(/</g, "\\u003c");
+}
+
+export function FilAriane({ miettes }: { miettes: readonly Miette[] }) {
+  const tout: Miette[] = [{ nom: fr.coque.navigation.atlas, chemin: "/" }, ...miettes];
   return (
     <nav className="fil-ariane" aria-label={fr.coque.filAriane}>
       <ol>
@@ -37,10 +41,7 @@ export function FilAriane({ miettes }: { miettes: readonly Miette[] }) {
           </li>
         ))}
       </ol>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(donnees).replace(/</g, "\\u003c") }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdFilAriane(tout, origineDuSite()) }} />
     </nav>
   );
 }
