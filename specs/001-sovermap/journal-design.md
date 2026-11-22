@@ -64,3 +64,15 @@ Brume douce · fond #D7DADD, clarté OKLCH 0,887 · globe rendu #05080B, clarté
    globe rendu / fond de page       14,30:1 (information, sans seuil : le halo, les côtes et les fils dessinent le globe)
 ```
 <!-- brume-douce : fin -->
+
+## Chantier 2, partie D : premières versions des pages du site complet (22/11/2026, build local porte ouverte, données du jour 1)
+
+Mesuré par `scripts/design/vitesse.ts` (Pixel 7, « Fast 4G », processeur × 4, cache froid, médiane de 5 passages) et `scripts/design/controles.ts` (Edge, Firefox, WebKit ; 9 largeurs de 360 à 1 920 px ; axe à 390 et 1 707 px), branche `feat/c2-site-donnees`.
+
+| Page | LCP | CLS | INP | JavaScript (compressé) |
+|---|---|---|---|---|
+| `/` (l'Atlas, porte ouverte) | 620 ms (la définition du chiffre) | 0 | 56 ms (le champ de recherche) | 158 Ko avant le chargement, 136 Ko de 3D après |
+| `/radiographie/impots.gouv.fr` | 616 ms | 0 | non mesuré | 145 Ko |
+| `/ministeres/ministere-de-la-culture` | 628 ms | 0 | non mesuré | 144 Ko |
+
+Budgets (DESIGN.md § 13) : LCP 1,8 s, CLS 0,02, INP 100 ms au plus : tenus. Contrôles sur 11 pages : 0 défilement horizontal, 0 erreur de console, 0 requête vers un autre domaine ; axe : 0, après la correction des blocs de commandes de la Radiographie (`scrollable-region-focusable`, six fois à 390 px avant). Le serveur local lit les données sur GitHub : le premier rendu d'une page n'est pas compté (une requête de mise en route avant les passages).
