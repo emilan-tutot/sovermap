@@ -269,5 +269,13 @@ describe("the indexes", () => {
     >;
     expect(exploitants["cloud-us"]?.maillons).toEqual([{ cle: "groupe-us", nom: "Groupe Exemple, Inc.", pays: "US" }]);
     expect(exploitants["filiale-inconnue"]?.maillons).toEqual([]);
+    // Every registered domain, sorted, with 1 for the « État » perimeter (the site's search).
+    expect(JSON.parse(fichiers.get("index/domaines.json") ?? "{}")).toEqual({
+      domaines: [
+        ["d0.example", 1],
+        ["d1.example", 1],
+        ["d2.example", 1],
+      ],
+    });
   });
 });

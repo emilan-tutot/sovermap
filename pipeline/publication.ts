@@ -394,6 +394,17 @@ export function index(
   );
   for (const [cle, domaines] of parSociete)
     fichiers.set(`index/exploitants/${cle}.json`, `${jsonStable({ exploitant: cle, domaines: trie(domaines) })}\n`);
+  // Every registered domain of the day, with 1 for the « État » perimeter: what the site's search is built from (D.2),
+  // loaded whole at its first use. Sorted, so that a new day changes only the lines that changed.
+  fichiers.set(
+    "index/domaines.json",
+    `${jsonStable({
+      domaines: [...etat.domaines.values()]
+        .map((d): [string, number] => [d.domaine, d.perimetre === "État" ? 1 : 0])
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    })}
+`,
+  );
   fichiers.set(
     "index/pays.json",
     `${jsonStable(Object.fromEntries([...parPays.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([p, v]) => [p, { domaines: v.domaines.size, domainesEtat: v.etat.size }])))}\n`,
