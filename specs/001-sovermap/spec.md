@@ -119,6 +119,15 @@ Ce qui distingue Sovermap :
   - Preuve : `npm run probe:prod` (la production) et `e2e/porte.spec.ts` (le build local) interrogent la même liste d'adresses, au moins une adresse réelle par famille.
 - **EX-24** WCAG 2.2 AA ; axe sans violation ; une alternative en texte à la 3D et à chaque graphique.
 - **EX-25** Le site écrit, sur l'accueil, la méthode et chaque radiographie, ce qu'il montre et ce qu'il ne montre pas (cahier §2).
+- **EX-26** Les adresses des pages (D.7), en français, lisibles et stables : elles ne changent plus après l'ouverture. Proposées au point 10 du chantier 2 (option recommandée, appliquée en attendant la réponse du propriétaire ; elle se défait jusqu'à l'ouverture) :
+  - `/` : l'Atlas (l'accueil) ;
+  - `/radiographie/<domaine>` : la Radiographie d'un domaine enregistré, par son nom (`/radiographie/impots.gouv.fr`) ;
+  - `/pays/<nom>` : un pays, par son nom français sans accents ni espaces (`/pays/etats-unis`) ;
+  - `/ministeres` et `/ministeres/<nom>` : la liste, puis un ministère par son nom court ; un ministère renommé garde son ancienne adresse, qui renvoie (308) vers la nouvelle ;
+  - `/societes` et `/societes/<clé>` : la liste, puis une société par sa clé du référentiel (`/societes/celeste`) ;
+  - `/territoires`, puis une région, un département, une commune ou un groupement par son code officiel et son nom (fixées avec la deuxième partie de C.6) ;
+  - `/journal` et `/journal/<AAAA-MM-JJ>` ; `/recherche` ; `/qualite` ;
+  - les pages de textes (E) : `/methode`, `/donnees`, `/sources`, `/glossaire`, `/pourquoi-ca-compte`, `/corrections`, `/mentions-legales`, `/confidentialite`, `/accessibilite`, `/credits`, `/a-propos`.
 
 ## 5. Critères de succès mesurables
 
