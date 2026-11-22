@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { cheminJour, joursPublies, lireJour } from "@/lib/donnees/journal";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
@@ -29,14 +30,7 @@ export default async function JournalPage() {
   await connection();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
-  if (etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (etat.statut !== "ok") indisponible();
   const jours = await Promise.all(
     joursPublies(etat.donnees).map(async (date) => {
       const lu = await lecteur.fichier(cheminJour(date));

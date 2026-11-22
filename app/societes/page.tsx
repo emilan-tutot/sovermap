@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { type Categorie, lireIndexSocietes, nomPays, type SocieteIndex } from "@/lib/donnees/radiographie";
 import { formeDeListe, parLettre, societesTriees } from "@/lib/donnees/societes";
@@ -47,14 +48,7 @@ export default async function SocietesPage({ searchParams }: Props) {
   const lu = etat.statut === "ok" ? await lecteur.fichier("index/exploitants.json") : etat;
   const index = lu.statut === "ok" ? lireIndexSocietes(lu.donnees) : null;
   if (lu.statut === "absent") notFound();
-  if (index === null || etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (index === null || etat.statut !== "ok") indisponible();
   const societes = societesTriees(index);
   const forme = formeDeListe((await searchParams).forme);
   const lien = (cle: string, s: SocieteIndex) => (

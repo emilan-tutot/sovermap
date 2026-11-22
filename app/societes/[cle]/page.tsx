@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Valeur } from "@/components/texte/Valeur";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexSocietes, nomPays, sourcesDe } from "@/lib/donnees/radiographie";
 import { estCleSociete, lireDomainesSociete, numeroDePage, pageDe } from "@/lib/donnees/societes";
@@ -43,14 +44,7 @@ export default async function SocietePage({ params, searchParams }: Props) {
   if (!estCleSociete(cle)) notFound();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
-  if (etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (etat.statut !== "ok") indisponible();
   const [luIndex, luDomaines] = await Promise.all([
     lecteur.fichier("index/exploitants.json"),
     lecteur.fichier(`index/exploitants/${cle}.json`),
@@ -59,14 +53,7 @@ export default async function SocietePage({ params, searchParams }: Props) {
   const s = index?.get(cle);
   if (index !== null && s === undefined) notFound();
   const domaines = luDomaines.statut === "ok" ? lireDomainesSociete(luDomaines.donnees, cle) : null;
-  if (s === undefined || domaines === null) {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (s === undefined || domaines === null) indisponible();
   const { page } = await searchParams;
   const p = pageDe(domaines, Number(typeof page === "string" ? page : "1"));
   const sources = sourcesDe(etat.donnees);

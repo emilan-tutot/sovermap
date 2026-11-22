@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { Valeur } from "@/components/texte/Valeur";
 import { type Chiffres, filsDe, lireChiffres, origineDe } from "@/lib/donnees/atlas";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
 import { nombre, pourcent } from "@/lib/i18n/format";
@@ -66,14 +67,7 @@ export async function Atlas() {
   const jours = luHistorique.statut === "ok" ? lireHistorique(luHistorique.donnees) : [];
   const chiffres = luChiffres.statut === "ok" ? lireChiffres(luChiffres.donnees) : null;
   const index = luPays.statut === "ok" ? lireIndexPays(luPays.donnees) : null;
-  if (etat.statut !== "ok" || chiffres === null || index === null) {
-    return (
-      <Coque>
-        <h1 className="question">{fr.site.question}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (etat.statut !== "ok" || chiffres === null || index === null) indisponible();
   const fils = filsDe(index);
   const liens: Record<string, string> = {};
   for (const f of fils) {

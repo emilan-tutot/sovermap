@@ -14,6 +14,7 @@ import {
   fragments,
   index,
   jsonStable,
+  seau,
   sha256,
 } from "../pipeline/publication";
 
@@ -75,11 +76,13 @@ const etat: Etat = {
     ["service.example", domaine("service.example", "État", [MINISTERE])],
     ["nuage.example", domaine("nuage.example", "État", [MINISTERE])],
     ["mairie.example", domaine("mairie.example", "hors État", [])],
+    ["panne.example", domaine("panne.example", "hors État", [])],
   ]),
   noms: new Map([
     ["www.service.example", nom("www.service.example", "service.example", "hebergeur-fr", "hébergé par", "France")],
     ["www.nuage.example", nom("www.nuage.example", "nuage.example", "cdn-us", "diffusé par", "hors d'Europe")],
     ["www.mairie.example", nom("www.mairie.example", "mairie.example", null, "hébergé par", "non déterminé")],
+    ["www.panne.example", nom("www.panne.example", "panne.example", null, "hébergé par", "non déterminé")],
   ]),
 };
 
@@ -132,6 +135,15 @@ if (!fichiers.has("index/domaines.json")) {
     .sort(([a], [b]) => (a < b ? -1 : 1));
   fichiers.set("index/domaines.json", `${jsonStable({ domaines })}\n`);
 }
+// A domain whose record cannot be read: its file is altered after its checksum was taken, so that the reader finds
+// it unreadable, with no copy of the day before. Its Radiographie must answer an error, never a page that Vercel's
+// CDN would keep (lib/donnees/indisponible.ts, D.4). Its bucket holds no other domain of the state.
+const [hautPanne, basPanne] = seau("panne.example").split("/");
+const fichierPanne = `domaines/${hautPanne}/${basPanne}.json`;
+if ([...etat.domaines.keys()].some((d) => d !== "panne.example" && seau(d) === seau("panne.example"))) {
+  throw new Error("données d'essai : panne.example partage son fichier avec un autre domaine");
+}
+fichiers.set(fichierPanne, `${fichiers.get(fichierPanne) ?? ""} `);
 const sommes = Object.fromEntries(
   [...fichiers]
     .filter(([c]) => /^(noms|domaines)\/[0-9a-f]{2}\/sommes\.json$/.test(c) || /^(index|agregats|journal)\//.test(c))

@@ -6,6 +6,7 @@ import { FilAriane } from "@/components/coque/FilAriane";
 import { Constellation } from "@/components/ministeres/Constellation";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { type DomaineServi, groupesDe, lireMinisteres, parCategorie } from "@/lib/donnees/ministeres";
 import { type Categorie, lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
@@ -65,14 +66,7 @@ export default async function MinisterePage({ params }: Props) {
   if (!estSlug(slug)) notFound();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
-  if (etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (etat.statut !== "ok") indisponible();
   const m = await ministereDe(slug);
   if (m === null) notFound();
   const lire = (chemin: string) => lecteur.fichier(chemin);

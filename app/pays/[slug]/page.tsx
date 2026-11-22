@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, paysDuSlug, societesDuPays } from "@/lib/donnees/pays";
 import { lireIndexSocietes } from "@/lib/donnees/radiographie";
@@ -46,14 +47,7 @@ export default async function PaysPage({ params }: Props) {
       : [etat, etat];
   const index = luPays.statut === "ok" ? lireIndexPays(luPays.donnees) : null;
   const societes = luSocietes.statut === "ok" ? lireIndexSocietes(luSocietes.donnees) : null;
-  if (index === null || societes === null || etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{p.nom}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (index === null || societes === null || etat.statut !== "ok") indisponible();
   const chiffres = index.get(p.code) ?? { domaines: 0, domainesEtat: 0 };
   const liste = societesDuPays(p.code, societes);
   return (

@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { dateFr } from "../lib/i18n/format";
 import { fr } from "../lib/i18n/fr";
+import { erreur } from "../lib/i18n/fr-erreur";
 
 // Every kind of page of the full site (D.8), door and indexing open, on the made-up published state of
 // scripts/donnees-essai.ts: its status, its title, no request to another domain, no console error, no serious or
@@ -164,6 +165,14 @@ test("partage : chaque type de page annonce son image, un fichier servi tel quel
     expect(reponse.status(), chemin).toBe(200);
     expect(reponse.headers()["content-type"], chemin).toContain("image/png");
   }
+});
+
+test("site complet : une page dont les données ne se lisent pas répond une erreur, jamais gardée par le CDN", async ({
+  page,
+}) => {
+  const reponse = await page.goto("/radiographie/panne.example");
+  expect(reponse?.status()).toBeGreaterThanOrEqual(500);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(erreur.titre);
 });
 
 test("site complet : un domaine que l'état du jour ne publie pas répond 404", async ({ page }) => {

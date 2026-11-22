@@ -5,6 +5,7 @@ import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Valeur } from "@/components/texte/Valeur";
 import { cheminJour, estJour, joursPublies, lireJour, parCouche } from "@/lib/donnees/journal";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
@@ -35,17 +36,11 @@ export default async function JourPage({ params }: Props) {
   if (!estJour(date)) notFound();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
-  if (etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (etat.statut !== "ok") indisponible();
   if (!joursPublies(etat.donnees).includes(date)) notFound();
   const lu = await lecteur.fichier(cheminJour(date));
   const jour = lu.statut === "ok" ? lireJour(lu.donnees) : null;
+  if (jour === null) indisponible();
   return (
     <Coque>
       <FilAriane
@@ -56,9 +51,7 @@ export default async function JourPage({ params }: Props) {
       />
       <p className="etiquette-capitales">{t.titre}</p>
       <h1 className="titre-page">{t.jour(dateFr(date))}</h1>
-      {jour === null ? (
-        <p className="note">{fr.radiographie.indisponible}</p>
-      ) : jour.etatInitial ? (
+      {jour.etatInitial ? (
         <p className="chapo">{t.etatInitial}</p>
       ) : jour.reglesChangees ? (
         <p className="chapo">{t.reglesChangees}</p>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireMinisteres, type Ministere, sujetMinistere } from "@/lib/donnees/ministeres";
 import { formeDeListe, parLettre } from "@/lib/donnees/societes";
@@ -36,14 +37,7 @@ export default async function MinisteresPage({ searchParams }: Props) {
   const lu = etat.statut === "ok" ? await lecteur.fichier("index/ministeres.json") : etat;
   if (lu.statut === "absent") notFound();
   const ministeres = lu.statut === "ok" ? lireMinisteres(lu.donnees) : null;
-  if (ministeres === null || etat.statut !== "ok") {
-    return (
-      <Coque>
-        <h1 className="titre-page">{t.titre}</h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (ministeres === null || etat.statut !== "ok") indisponible();
   const forme = formeDeListe((await searchParams).forme);
   const lien = (m: Ministere) => (
     <Link href={`/ministeres/${m.slug}`} prefetch={false}>

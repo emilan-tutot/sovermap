@@ -6,6 +6,7 @@ import type { FormeChaine } from "@/components/radiographie/Chaine";
 import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
+import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import {
   lireIndexAs,
@@ -72,16 +73,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
   const lire = (chemin: string) => lecteur.fichier(chemin);
   const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine) : etat;
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
-  if (lu.statut !== "ok" || etat.statut !== "ok") {
-    return (
-      <Coque large>
-        <h1 className="titre-page radiographie-titre">
-          <Valeur texte={domaine} />
-        </h1>
-        <p className="note">{fr.radiographie.indisponible}</p>
-      </Coque>
-    );
-  }
+  if (lu.statut !== "ok" || etat.statut !== "ok") indisponible();
   // The records were checked against their schemas (lib/donnees/fiches.ts); the indexes are checked here.
   const enregistrement = lu.donnees as unknown as EnregistrementDomaine;
   const [web, societes, as, ministeres] = await Promise.all([
