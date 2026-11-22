@@ -13,6 +13,12 @@ const service = (id: string, nom: string, sites: string[], enfants: string[] = [
 });
 
 describe("the DILA Référentiel", () => {
+  it("refuses a name a spreadsheet would read as a formula, or with a tab or a carriage return (open CSV files)", () => {
+    const noms = ["=Exemple", "+Exemple", "-Exemple", "@Exemple", "Nom\tExemple", "Nom\rExemple", "Service Exemple"];
+    const json = JSON.stringify({ service: noms.map((n, i) => service(`s${i}`, n, [`https://s${i}.example`])) });
+    expect([...lireDila(json, "f").services.values()].map((s) => s.nom)).toEqual(["Service Exemple"]);
+  });
+
   it("keeps the hosts of the websites and finds each service's ministry", () => {
     const json = JSON.stringify({
       service: [

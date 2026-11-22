@@ -9,6 +9,7 @@ import {
   type Etat,
   fragments,
   historique,
+  historiqueRelu,
   index,
   jsonStable,
   joursDeChangement,
@@ -332,6 +333,13 @@ describe("the figures' history", () => {
     messagerie: { perimetre: "État", auMoinsPourcent: 0.3, domaines: 900 },
   });
   const lire = (texte: string) => JSON.parse(texte) as { jours: Record<string, unknown>[] };
+
+  it("tells a published history that reads again from one that does not (the collection holds the day then)", () => {
+    expect(historiqueRelu(lire(historique(null, "2026-11-22", "0.2.3", false, figures(4.9))))).toBe(true);
+    expect(historiqueRelu(null)).toBe(false);
+    expect(historiqueRelu("pas un objet")).toBe(false);
+    expect(historiqueRelu({ jours: [{ date: "pas une date" }] })).toBe(false);
+  });
 
   it("starts from the day before, taken from the published figures, so that two days show from the first run", () => {
     const h = lire(

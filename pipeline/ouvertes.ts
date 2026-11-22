@@ -53,33 +53,58 @@ const CHAMPS_DOMAINES: readonly Champ[] = [
     type: "string",
     description: "Le nom web mesuré pour le domaine (www. s'il répond, sinon le domaine).",
   },
-  { name: "web_status", type: "string", description: "L'état de la mesure du nom web (ok, ou la raison d'un échec)." },
   {
-    name: "role",
+    name: "web_status",
     type: "string",
     description:
-      "hosted_by (hébergé par) ou delivered_by (diffusé par un CDN) ; vide quand aucun exploitant n'est établi.",
+      "L'état de la mesure du nom web : ok (il répond par des adresses), nxdomain (le nom n'existe pas), nodata (il existe, sans adresse) ou echec (aucune réponse sûre après les reprises).",
   },
   {
-    name: "operator",
+    name: "roles",
     type: "string",
-    description: "La clé de l'exploitant, société ou organisme public, qui sert le nom web (voir sovermap-operators).",
+    description:
+      "Pour chaque exploitant connu du nom web, dans l'ordre des champs suivants, hosted_by (hébergé par) ou delivered_by (diffusé par un CDN), séparés par « ; » ; vide quand aucun exploitant n'est établi.",
   },
-  { name: "operator_name", type: "string", description: "Le nom de cet exploitant." },
-  { name: "operator_country", type: "string", description: "Le pays de son siège (code ISO 3166-1 alpha-2)." },
-  { name: "parent", type: "string", description: "La clé de sa maison mère ultime ; vide si elle n'est pas établie." },
-  { name: "parent_name", type: "string", description: "Le nom de la maison mère ultime." },
-  { name: "parent_country", type: "string", description: "Le pays de son siège (code ISO 3166-1 alpha-2)." },
+  {
+    name: "operators",
+    type: "string",
+    description:
+      "Les clés des exploitants connus qui servent le nom web, sociétés ou organismes publics, séparées par « ; » (voir sovermap-operators) : un CDN d'abord, puis les hébergeurs.",
+  },
+  { name: "operator_names", type: "string", description: "Leurs noms, dans le même ordre, séparés par « ; »." },
+  {
+    name: "operator_countries",
+    type: "string",
+    description: "Les pays de leurs sièges (codes ISO 3166-1 alpha-2), dans le même ordre, séparés par « ; ».",
+  },
+  {
+    name: "parents",
+    type: "string",
+    description:
+      "Les clés de leurs maisons mères ultimes, dans le même ordre, séparées par « ; » ; un élément vide quand elle n'est pas établie.",
+  },
+  {
+    name: "parent_countries",
+    type: "string",
+    description:
+      "Les pays des sièges de ces maisons mères, dans le même ordre, séparés par « ; » ; un élément vide quand la maison mère n'est pas établie.",
+  },
+  {
+    name: "unknown_networks",
+    type: "integer",
+    description: "Le nombre de réseaux (AS) du nom web dont l'exploitant n'est pas dans les référentiels de Sovermap.",
+  },
   {
     name: "category",
     type: "string",
     description:
-      "Le pays du siège de la maison mère : france, eu_outside_france (Union européenne hors France), europe_outside_eu, outside_europe ou undetermined.",
+      "La catégorie de la couche web, selon la règle du chiffre (D1) : la plus lointaine parmi les pays des sièges des maisons mères de ses exploitants (un seul hors de l'Union européenne suffit) : france, eu_outside_france (Union européenne hors France), europe_outside_eu, outside_europe ou undetermined.",
   },
   {
     name: "outside_eu",
     type: "boolean",
-    description: "Vrai si la maison mère a son siège hors de l'Union européenne ; vide si ce n'est pas déterminé.",
+    description:
+      "Vrai si au moins un exploitant de la couche web a sa maison mère hors de l'Union européenne ; vide si ce n'est pas déterminé.",
   },
   {
     name: "level",
@@ -127,6 +152,11 @@ const CHAMPS_MINISTERES: readonly Champ[] = [
   { name: "ministry", type: "string", description: "L'identifiant du ministère dans le Référentiel de la DILA." },
   { name: "name", type: "string", description: "Le nom du ministère." },
   { name: "domains", type: "integer", description: "Le nombre de domaines qui lui sont rattachés." },
+  {
+    name: "answering",
+    type: "integer",
+    description: "Dont ceux dont le nom web répond ce jour-là : les trois parts suivantes se comptent parmi eux.",
+  },
   { name: "outside_eu_confirmed", type: "integer", description: "Dont servis hors de l'UE, « confirmé »." },
   { name: "outside_eu_probable", type: "integer", description: "Dont servis hors de l'UE, « probable »." },
   { name: "undetermined", type: "integer", description: "Dont « non déterminé »." },
@@ -137,16 +167,29 @@ const CHAMPS_PAYS: readonly Champ[] = [
   {
     name: "domains",
     type: "integer",
-    description: "Le nombre de domaines servis par un exploitant dont la maison mère établie a son siège dans ce pays.",
+    description:
+      "Le nombre de domaines dont le nom web est servi par au moins un exploitant dont la maison mère établie a son siège dans ce pays (les serveurs de noms et la messagerie ne sont pas comptés ici).",
   },
   { name: "state_domains", type: "integer", description: "Dont ceux du périmètre « État »." },
 ];
 
-/** The company that serves a web name: the one that delivers it when a CDN does, otherwise the first that hosts it. */
-function servant(web: EnregistrementNom | undefined) {
+/** The known operators of a web name, each once: the one that delivers it when a CDN does, then those that host it. */
+function servants(web: EnregistrementNom | undefined) {
   const exploitants = web?.exploitants ?? [];
-  return exploitants.find((e) => e.role === "diffusé par") ?? exploitants.find((e) => e.role === "hébergé par") ?? null;
+  const ordre = [
+    ...exploitants.filter((e) => e.role === "diffusé par"),
+    ...exploitants.filter((e) => e.role !== "diffusé par"),
+  ];
+  const vus = new Set<string>();
+  return ordre.flatMap((e) => {
+    if (e.societe === null || vus.has(e.societe)) return [];
+    vus.add(e.societe);
+    return [{ role: e.role, societe: e.societe }];
+  });
 }
+
+/** A list as one field: its elements separated by « ; »; null when it is empty. */
+const liste = (valeurs: readonly string[]): string | null => (valeurs.length === 0 ? null : valeurs.join(";"));
 
 export type Referentiels = {
   societes: ReadonlyMap<string, Societe>;
@@ -162,22 +205,21 @@ export function lignesDomaines(etat: Etat, refs: Referentiels): Ligne[] {
     .sort((a, b) => (a.domaine < b.domaine ? -1 : a.domaine > b.domaine ? 1 : 0))
     .map((d: EnregistrementDomaine): Ligne => {
       const web = etat.noms.get(d.nomWeb);
-      const s = servant(web);
-      const societe = s?.societe === null || s === null ? undefined : refs.societes.get(s.societe);
-      const mere = societe?.mere === null || societe === undefined ? undefined : refs.societes.get(societe.mere);
+      const servis = servants(web);
+      const societes = servis.map((s) => refs.societes.get(s.societe));
       return {
         domain: d.domaine,
         state_scope: d.perimetre === "État",
         state_reasons: d.raisons.join(";"),
         web_name: d.nomWeb,
         web_status: web?.etat ?? null,
-        role: s === null ? null : (ROLES_EN[s.role] ?? null),
-        operator: s?.societe ?? null,
-        operator_name: societe?.nom ?? null,
-        operator_country: societe?.pays ?? null,
-        parent: societe?.mere ?? null,
-        parent_name: mere?.nom ?? null,
-        parent_country: societe?.paysMere ?? null,
+        roles: liste(servis.map((s) => ROLES_EN[s.role] ?? "")),
+        operators: liste(servis.map((s) => s.societe)),
+        operator_names: liste(societes.map((s) => s?.nom ?? "")),
+        operator_countries: liste(societes.map((s) => s?.pays ?? "")),
+        parents: liste(societes.map((s) => s?.mere ?? "")),
+        parent_countries: liste(societes.map((s) => (s?.mere === null || s === undefined ? "" : (s.paysMere ?? "")))),
+        unknown_networks: (web?.exploitants ?? []).filter((e) => e.societe === null).length,
         category: web === undefined ? CATEGORIES_EN["non déterminé"] : CATEGORIES_EN[web.categorie],
         outside_eu: web?.horsUE ?? null,
         level: web === undefined ? NIVEAUX_EN["non déterminé"] : NIVEAUX_EN[web.niveau],
@@ -194,11 +236,13 @@ export function lignesDomaines(etat: Etat, refs: Referentiels): Ligne[] {
 export function lignesSocietes(domaines: readonly Ligne[], refs: Referentiels): Ligne[] {
   const compte = new Map<string, { tous: number; etat: number }>();
   for (const d of domaines) {
-    if (typeof d["operator"] !== "string") continue;
-    const c = compte.get(d["operator"]) ?? { tous: 0, etat: 0 };
-    c.tous += 1;
-    if (d["state_scope"] === true) c.etat += 1;
-    compte.set(d["operator"], c);
+    const cles = typeof d["operators"] === "string" ? new Set(d["operators"].split(";")) : new Set<string>();
+    for (const cle of cles) {
+      const c = compte.get(cle) ?? { tous: 0, etat: 0 };
+      c.tous += 1;
+      if (d["state_scope"] === true) c.etat += 1;
+      compte.set(cle, c);
+    }
   }
   return [...refs.societes]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -215,18 +259,25 @@ export function lignesSocietes(domaines: readonly Ligne[], refs: Referentiels): 
     }));
 }
 
-/** The rows of the ministries' file: each ministry named by a domain, with its counts of the day. */
+/**
+ * The rows of the ministries' file: each ministry named by a domain, with its counts of the day; the three shares among
+ * the domains whose web name answers (a name that does not answer is not « non déterminé », docs/methode.md).
+ */
 export function lignesMinisteres(etat: Etat, refs: Referentiels): Ligne[] {
-  const parMinistere = new Map<string, { domaines: number; confirme: number; probable: number; indetermine: number }>();
+  type Compte = { domaines: number; repondent: number; confirme: number; probable: number; indetermine: number };
+  const parMinistere = new Map<string, Compte>();
   for (const d of etat.domaines.values()) {
     if (d.reduit === true) continue;
     const web = etat.noms.get(d.nomWeb);
     for (const m of d.ministeres) {
-      const c = parMinistere.get(m) ?? { domaines: 0, confirme: 0, probable: 0, indetermine: 0 };
+      const c = parMinistere.get(m) ?? { domaines: 0, repondent: 0, confirme: 0, probable: 0, indetermine: 0 };
       c.domaines += 1;
-      if (web?.horsUE === true && web.niveau === "confirmé") c.confirme += 1;
-      else if (web?.horsUE === true && web.niveau === "probable") c.probable += 1;
-      if (web === undefined || web.horsUE === null || web.niveau === "non déterminé") c.indetermine += 1;
+      if (web?.etat === "ok") {
+        c.repondent += 1;
+        if (web.horsUE === true && web.niveau === "confirmé") c.confirme += 1;
+        else if (web.horsUE === true && web.niveau === "probable") c.probable += 1;
+        if (web.horsUE === null || web.niveau === "non déterminé") c.indetermine += 1;
+      }
       parMinistere.set(m, c);
     }
   }
@@ -236,25 +287,30 @@ export function lignesMinisteres(etat: Etat, refs: Referentiels): Ligne[] {
       ministry: id,
       name: refs.organismes.get(id)?.nom ?? null,
       domains: c.domaines,
+      answering: c.repondent,
       outside_eu_confirmed: c.confirme,
       outside_eu_probable: c.probable,
       undetermined: c.indetermine,
     }));
 }
 
-/** The rows of the countries' file: a country counted only for an established seat of an ultimate parent. */
+/** The rows of the countries' file: a country counted once a domain, only for an established ultimate parent's seat. */
 export function lignesPays(domaines: readonly Ligne[]): Ligne[] {
   const parPays = new Map<string, { tous: number; etat: number }>();
   for (const d of domaines) {
-    if (typeof d["parent"] !== "string" || typeof d["parent_country"] !== "string") continue;
-    const c = parPays.get(d["parent_country"]) ?? { tous: 0, etat: 0 };
-    c.tous += 1;
-    if (d["state_scope"] === true) c.etat += 1;
-    parPays.set(d["parent_country"], c);
+    const parents = typeof d["parents"] === "string" ? d["parents"].split(";") : [];
+    const pays = typeof d["parent_countries"] === "string" ? d["parent_countries"].split(";") : [];
+    const etablis = new Set(pays.filter((p, i) => p !== "" && (parents[i] ?? "") !== ""));
+    for (const p of etablis) {
+      const c = parPays.get(p) ?? { tous: 0, etat: 0 };
+      c.tous += 1;
+      if (d["state_scope"] === true) c.etat += 1;
+      parPays.set(p, c);
+    }
   }
   return [...parPays]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([pays, c]): Ligne => ({ country: pays, domains: c.tous, state_domains: c.etat }));
+    .map(([p, c]): Ligne => ({ country: p, domains: c.tous, state_domains: c.etat }));
 }
 
 const sha256 = (texte: string) => createHash("sha256").update(texte, "utf8").digest("hex");
@@ -265,6 +321,10 @@ const sha256 = (texte: string) => createHash("sha256").update(texte, "utf8").dig
  */
 export type SourceDuJour = { id: string; fiche: number; etat: string; date: string | null };
 
+/** The cards of the sources the collection reads for control only (RIS, card 19): nothing of them is in these files. */
+const FICHES_CONTROLE = new Set([19]);
+const AVERTISSEMENT = "En préparation : le site n'est pas ouvert ; ne pas citer avant l'ouverture.";
+
 /**
  * The open files of the day: each table as CSV and JSON, their data package (Table Schema, licences, the method's
  * version, the day), and their checksums (SHA256SUMS, the format of `sha256sum`).
@@ -272,7 +332,7 @@ export type SourceDuJour = { id: string; fiche: number; etat: string; date: stri
 export function fichiersOuverts(
   etat: Etat,
   refs: Referentiels,
-  jour: { date: string; methode: string; sources: readonly SourceDuJour[] },
+  jour: { date: string; heure: string; methode: string; sources: readonly SourceDuJour[] },
 ): Map<string, string> {
   const domaines = lignesDomaines(etat, refs);
   const tables: [string, string, readonly Champ[], Ligne[]][] = [
@@ -296,7 +356,7 @@ export function fichiersOuverts(
     fichiers.set(`sovermap-${nom}.csv`, csv(champs, lignes));
     fichiers.set(
       `sovermap-${nom}.json`,
-      `${JSON.stringify({ date: jour.date, method: jour.methode, rows: lignes })}\n`,
+      `${JSON.stringify({ status: "preparation", warning: AVERTISSEMENT, date: jour.date, method: jour.methode, rows: lignes })}\n`,
     );
   }
   const paquet = {
@@ -304,8 +364,8 @@ export function fichiersOuverts(
     title: "Sovermap : qui héberge les sites publics français",
     description: `L'état publié du ${jour.date} : pour chaque site public mesuré, l'exploitant qui le sert et le pays du siège de sa maison mère.`,
     version: jour.date,
-    created: jour.date,
-    sovermap: { method: jour.methode },
+    created: jour.heure,
+    sovermap: { method: jour.methode, status: "preparation", warning: AVERTISSEMENT },
     licenses: [
       {
         name: "etalab-2.0",
@@ -319,6 +379,12 @@ export function fichiersOuverts(
       title: `${s.id} (fiche ${s.fiche} du registre des sources de Sovermap)`,
       date: s.date,
       state: s.etat,
+      ...(FICHES_CONTROLE.has(s.fiche)
+        ? {
+            usage:
+              "contrôle seulement : confirme le niveau des adresses ; aucune de ses valeurs n'est dans ces fichiers",
+          }
+        : {}),
     })),
     resources: tables.map(([nom, description, champs]) => ({
       name: nom,
@@ -337,4 +403,37 @@ export function fichiersOuverts(
     .join("");
   fichiers.set("SHA256SUMS", sommes);
   return fichiers;
+}
+
+/**
+ * The open files checked against their own data package, before anything is sent (brief F.3): each CSV's header is its
+ * schema's fields, and each JSON row has those fields, each of its type (or null). The errors, a few of them.
+ */
+export function verifierOuvertes(fichiers: ReadonlyMap<string, string>): string[] {
+  const erreurs: string[] = [];
+  const paquet = JSON.parse(fichiers.get("datapackage.json") ?? "{}") as {
+    resources?: { name: string; path: string; schema: { fields: Champ[] } }[];
+  };
+  const types: Record<Champ["type"], (v: unknown) => boolean> = {
+    string: (v) => typeof v === "string",
+    integer: (v) => typeof v === "number" && Number.isSafeInteger(v),
+    boolean: (v) => typeof v === "boolean",
+    date: (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v),
+  };
+  for (const r of paquet.resources ?? []) {
+    const noms = r.schema.fields.map((f) => f.name);
+    const entete = (fichiers.get(r.path) ?? "").split("\r\n")[0] ?? "";
+    if (entete !== noms.join(",")) erreurs.push(`${r.path} : en-tête différent du schéma`);
+    const json = JSON.parse(fichiers.get(r.path.replace(/\.csv$/, ".json")) ?? "{}") as { rows?: unknown[] };
+    for (const [i, ligne] of (json.rows ?? []).entries()) {
+      const l = (ligne ?? {}) as Record<string, unknown>;
+      if (Object.keys(l).sort().join(",") !== [...noms].sort().join(",")) erreurs.push(`${r.name} ${i} : champs`);
+      for (const f of r.schema.fields) {
+        const v = l[f.name];
+        if (v !== null && !types[f.type](v)) erreurs.push(`${r.name} ${i} ${f.name} : ${f.type} attendu`);
+      }
+      if (erreurs.length >= 5) return erreurs;
+    }
+  }
+  return erreurs;
 }

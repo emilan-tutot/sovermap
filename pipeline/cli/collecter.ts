@@ -29,7 +29,7 @@ import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
-import { fichiersOuverts } from "../ouvertes";
+import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
 import { construireListe, type CopieListe } from "../perimetre";
 import { donneesPersonnelles } from "../personnelles";
 import {
@@ -50,6 +50,7 @@ import {
   type Fichiers,
   fragments,
   historique,
+  historiqueRelu,
   index,
   joursDeChangement,
   journal,
@@ -735,10 +736,18 @@ async function principal(): Promise<number> {
     { societes, organismes, jours },
     {
       date,
+      heure: new Date().toISOString(),
       methode: METHODE,
       sources: sources.map((s) => ({ id: s.id, fiche: s.fiche, etat: s.etat, date: s.date })),
     },
   );
+  const erreursOuvertes = verifierOuvertes(ouvertes);
+  // The figures' history, published since the index of D.2: a file that is there but cannot be read again would restart
+  // the series without a word; the day is then held (a red guard), never published on a shortened history.
+  const historiqueIllisible =
+    o.donnees !== undefined &&
+    existsSync(path.join(o.donnees, "agregats", "historique.json")) &&
+    !historiqueRelu(lireJsonPublie(o.donnees, "agregats/historique.json"));
   // No personal data in anything published (brief F.3): the state's files and the open files (etat.json, written
   // below, holds only the run's counters and these guards).
   const personnelles = donneesPersonnelles([...fichiers, ...ouvertes]);
@@ -790,6 +799,16 @@ async function principal(): Promise<number> {
       detail: `${rapportJour.reduits + rapportJour.erreurs} sur ${jour.noms.size + jour.domaines.size} (schéma refusé : ${rapportJour.reduits} ; erreur : ${rapportJour.erreurs})`,
     },
     { nom: "schémas valides", ok: erreursSchema.length === 0, detail: erreursSchema.slice(0, 5).join(" ; ") },
+    {
+      nom: "fichiers ouverts conformes à leur schéma",
+      ok: erreursOuvertes.length === 0,
+      detail: erreursOuvertes.join(" ; "),
+    },
+    {
+      nom: "historique des chiffres relu",
+      ok: !historiqueIllisible,
+      detail: historiqueIllisible ? "agregats/historique.json est publié mais ne se relit pas" : "",
+    },
     {
       nom: "aucune donnée personnelle",
       ok: personnelles.length === 0,

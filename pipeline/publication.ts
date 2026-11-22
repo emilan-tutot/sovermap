@@ -519,6 +519,11 @@ function jourHistorique(v: unknown): JourHistorique | null {
  * checked, the day added (or replaced, when the same day runs again), in date order. When no history was published
  * yet, the day before is taken from the published figures and state, so that two days show from the first run.
  */
+/** Whether a published history reads again: an object whose « jours » hold at least one valid day. */
+export function historiqueRelu(brut: unknown): boolean {
+  return estObjet(brut) && Array.isArray(brut["jours"]) && brut["jours"].some((j) => jourHistorique(j) !== null);
+}
+
 export function historique(
   publie: { historique: unknown; chiffres: unknown; etat: unknown } | null,
   date: string,

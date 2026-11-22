@@ -52,7 +52,10 @@ export function lireDila(json: string, fichierBrut: string): ReferentielDila {
   for (const s of brut.service) {
     if (!objet(s)) continue;
     const id = texte(s.id);
-    const nom = texte(s.nom);
+    const brut = texte(s.nom);
+    // A name a spreadsheet would read as a formula (« = + - @ » first), or with a tab or a carriage return, is refused:
+    // it would reach the open CSV files as it is (none does, 22/11/2026).
+    const nom = brut === null || /^[=+\-@]|[\t\r]/.test(brut) ? null : brut;
     // Identifiers are short codes (UUIDs today): anything else is left out, so no record ever carries a long or odd one.
     if (id === null || nom === null || !ID_VALIDE.test(id)) continue;
     const enfants = (Array.isArray(s.hierarchie) ? s.hierarchie : []).flatMap((h) =>
