@@ -72,6 +72,9 @@ const SEUIL_REDUITES = 0.001;
 /** The version of the records' building (couches.ts, etat-du-jour.ts): a change rebases the state like new rules. */
 const VERSION_CLASSEMENT = 1;
 
+/** After an emergency stop, the failures asked again to Quad9, for the diagnosis only (the day is never published). */
+const CONFIRMATIONS_APRES_ARRET = 50;
+
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
 const METHODE = "0.2.4";
 const RACINE = process.cwd();
@@ -517,12 +520,15 @@ async function principal(): Promise<number> {
   // options were checked as soon as they were read (LIMITES).
   const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
   const minutesDe = (minutes: number) => maintenant.getTime() + minutes * 60_000;
-  const finControles = minutesDe(finControlesMinutes);
+  // The emergency stop brings the controls' deadline to its instant: Quad9 is asked nothing more for a lost day.
+  let finControles = minutesDe(finControlesMinutes);
+  const finDesControles = () => finControles;
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
   const domainesEtat = new Set(domainesMesures.filter((d) => d.perimetre === "État").map((d) => d.domaine));
-  const controleHotesEnCours = new ControleEnContinu(quad9, 8, finControles);
+  const nomsWeb = new Map(domainesMesures.map((d) => [d.domaine, d.nomWeb] as const));
+  const controleHotesEnCours = new ControleEnContinu(quad9, 8, finDesControles);
   const hotesDeZone = (zone: MesureZone) => [...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((x) => x.hote)];
   const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
     collecter(noms, knot, {
@@ -533,6 +539,10 @@ async function principal(): Promise<number> {
       finReprises: minutesDe(finReprisesMinutes),
       zoneDe,
       suivi,
+      nomWebDe: (domaine) => nomsWeb.get(domaine),
+      surArret: () => {
+        finControles = Date.now();
+      },
       apresDomaine: (domaine, zone) => {
         if (domainesEtat.has(domaine)) controleHotesEnCours.ajouter(hotesDeZone(zone));
       },
@@ -543,7 +553,7 @@ async function principal(): Promise<number> {
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
       ...(debit.journal === undefined ? {} : { journal: debit.journal }),
     }),
-    controler(quad9, plan.noms, plan.mx, 8, finControles),
+    controler(quad9, plan.noms, plan.mx, 8, finDesControles),
     controler(cloudflare, nomsTemoins, []),
   ]);
   suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
@@ -581,6 +591,11 @@ async function principal(): Promise<number> {
       if (type === "MX") pannesMx.add(d.domaine);
     }
   };
+  // A stopped day is never published: a few confirmations are kept for the diagnosis, the rest is not asked.
+  if (mesures.arret !== null && aConfirmer.length > CONFIRMATIONS_APRES_ARRET) {
+    suivi(`arrêt d'urgence : ${CONFIRMATIONS_APRES_ARRET} des ${aConfirmer.length} pannes seulement reposées à Quad9`);
+    aConfirmer.splice(CONFIRMATIONS_APRES_ARRET);
+  }
   const nombreAConfirmer = aConfirmer.length;
   await Promise.all(Array.from({ length: 8 }, confirmer));
   suivi(`confirmation de ${nombreAConfirmer} pannes finie à ${minutes()} min`);

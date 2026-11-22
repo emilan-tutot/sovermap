@@ -66,15 +66,17 @@ export type ResultatControle = {
 
 /**
  * Asks the control resolver, a few questions in flight, at its own pace (the client is a ClientCadence). No question
- * starts after `echeance` (milliseconds since 1970): what is left stays without control.
+ * starts after `echeance` (milliseconds since 1970, or a function that gives it: the emergency stop brings it to
+ * now): what is left stays without control.
  */
 export async function controler(
   client: ClientDns,
   noms: readonly string[],
   mx: readonly string[],
   enVol = 8,
-  echeance = Number.POSITIVE_INFINITY,
+  echeance: number | (() => number) = Number.POSITIVE_INFINITY,
 ): Promise<ResultatControle> {
+  const fin = typeof echeance === "number" ? () => echeance : echeance;
   const resultat: ResultatControle = { resolveur: client.id, noms: new Map(), mx: new Map() };
   const taches: (() => Promise<void>)[] = [
     ...noms.map((nom) => async () => {
@@ -91,7 +93,7 @@ export async function controler(
     }),
   ];
   const ouvrier = async () => {
-    for (let t = taches.shift(); t !== undefined && Date.now() < echeance; t = taches.shift()) await t();
+    for (let t = taches.shift(); t !== undefined && Date.now() < fin(); t = taches.shift()) await t();
   };
   await Promise.all(Array.from({ length: Math.min(enVol, taches.length) }, ouvrier));
   return resultat;
@@ -104,7 +106,7 @@ export async function controler(
  */
 export class ControleEnContinu {
   readonly #client: ClientDns;
-  readonly #echeance: number;
+  readonly #echeance: () => number;
   readonly #file: string[] = [];
   readonly #vus = new Set<string>();
   readonly #attentes: (() => void)[] = [];
@@ -112,9 +114,9 @@ export class ControleEnContinu {
   readonly #fin: Promise<ResultatControle>;
   #ferme = false;
 
-  constructor(client: ClientDns, enVol = 8, echeance = Number.POSITIVE_INFINITY) {
+  constructor(client: ClientDns, enVol = 8, echeance: number | (() => number) = Number.POSITIVE_INFINITY) {
     this.#client = client;
-    this.#echeance = echeance;
+    this.#echeance = typeof echeance === "number" ? () => echeance : echeance;
     this.#resultat = { resolveur: client.id, noms: new Map(), mx: new Map() };
     this.#fin = Promise.all(Array.from({ length: enVol }, () => this.#ouvrier())).then(() => this.#resultat);
     // Handled here at once (awaited by fermer() much later): a failure is never an unhandled rejection in between.
@@ -149,7 +151,7 @@ export class ControleEnContinu {
 
   async #ouvrier(): Promise<void> {
     for (;;) {
-      if (Date.now() >= this.#echeance) return;
+      if (Date.now() >= this.#echeance()) return;
       const nom = this.#file.shift();
       if (nom !== undefined) {
         this.#resultat.noms.set(nom, await mesurerNom(nom, this.#client));

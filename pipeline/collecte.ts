@@ -73,13 +73,20 @@ export type OptionsCollecte = {
    */
   finReprises?: number;
   /**
-   * The emergency stop: once `minimum` domains are measured in the first pass, the collection asks nothing more when
-   * `part` of the last `fenetre` domains failed. The servers then answer badly (the trials of 22/11/2026 at 17:11 and
-   * 20:14: 16 to 17 % of the domains failed, none confirmed by Quad9; day 2, a slow day: 0.6 % of the zones failed),
-   * the day would be red anyway, and the servers are spared hours of the resolver's retries. A guard keeps the day
-   * unpublished (collecter.ts).
+   * The emergency stop, in the first pass only. A domain fails as for the guard of 2 % (collecter.ts): its zone's
+   * question, its MX question or its web name failed (`nomWebDe`; without it, any of its names). When `part` of the
+   * last `fenetre` domains failed, the collection pauses `pauseMs` (no domain is opened; those under way end), then
+   * measures again and counts from zero: a network that broke for a few minutes loses nothing, its failures go to the
+   * retries. When the next `fenetre` domains fail as much, it stops for good: the client answers « ERREUR » without
+   * asking anything any more, the retries are skipped, `surArret` is called, and a guard keeps the day unpublished.
+   * The trials of 22/11/2026 at 17:11 and 20:14 had 16 to 17 % of their domains failed (none confirmed by Quad9); the
+   * published days 1 and 2, 0.7 and 1 %.
    */
-  arret: { fenetre: number; minimum: number; part: number };
+  arret: { fenetre: number; part: number; pauseMs: number };
+  /** The web name of a domain, for the emergency stop's count. */
+  nomWebDe?: (domaine: string) => string | undefined;
+  /** Called once, when the emergency stop is decided, with its reason (the controls stop too). */
+  surArret?: (raison: string) => void;
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -101,7 +108,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
-  arret: { fenetre: 400, minimum: 800, part: 0.15 },
+  arret: { fenetre: 1_000, part: 0.15, pauseMs: 10 * 60 * 1000 },
 };
 
 export type ResultatCollecte = {
@@ -196,6 +203,8 @@ export class ClientParZone implements ClientDns {
   readonly #attenteParents = { questions: 0, ms: 0, total: 0, echecs: 0 };
   /** The cap holds in the first pass only (leverPlafondParents). */
   #plafonne = true;
+  #arrete = false;
+  #pauseJusqua = 0;
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
   /** The pace of each zone's own servers. */
@@ -328,6 +337,7 @@ export class ClientParZone implements ClientDns {
    * NXDOMAIN), and a zone or sub-zone that is down is not asked again in this attempt.
    */
   #sansQuestion(nom: string, zone: string, ouverture: boolean): Reponse | null {
+    if (this.#arrete) return { code: "ERREUR", ad: false, reponses: [], duree: 0 };
     if (!ouverture && this.#inexistantes.has(zone)) return { code: "NXDOMAIN", ad: false, reponses: [], duree: 0 };
     return this.#muette(nom, zone);
   }
@@ -380,6 +390,18 @@ export class ClientParZone implements ClientDns {
    * the zone's own pace.
    */
   async #poser(nom: string, zone: string, type: TypeRr, ouverture = false): Promise<Reponse> {
+    // The emergency pause: a question waits for its end before anything; one that meets it just before it goes out
+    // gives its places back and starts again, so that the questions held go out at the servers' pace afterwards.
+    for (;;) {
+      while (!this.#arrete && this.horloge.maintenant() < this.#pauseJusqua)
+        await this.horloge.dormir(this.#pauseJusqua - this.horloge.maintenant());
+      const r = await this.#poserUneFois(nom, zone, type, ouverture);
+      if (r !== null) return r;
+    }
+  }
+
+  /** One attempt of #poser; null when the emergency pause came while the question waited for its turn. */
+  async #poserUneFois(nom: string, zone: string, type: TypeRr, ouverture: boolean): Promise<Reponse | null> {
     const avant = this.#sansQuestion(nom, zone, ouverture);
     if (avant !== null) return avant;
     await this.#zones.prendre(zone);
@@ -434,6 +456,9 @@ export class ClientParZone implements ClientDns {
         this.horloge,
         poids,
       );
+      // The emergency stop or pause may have come while the question waited for its instant: it is not asked (now).
+      if (this.#arrete) return { code: "ERREUR", ad: false, reponses: [], duree: 0 };
+      if (this.horloge.maintenant() < this.#pauseJusqua) return null;
       this.journal?.envoi(zone);
       const r = await this.base.demander(nom, type);
       if (auParent !== null && CODES_EN_ECHEC.has(r.code)) this.#attenteParents.echecs += 1;
@@ -506,6 +531,19 @@ export class ClientParZone implements ClientDns {
    */
   leverPlafondParents(): void {
     this.#plafonne = false;
+  }
+
+  /** The emergency stop (OptionsCollecte.arret): from now on, every question gets « ERREUR » without being asked. */
+  arreter(): void {
+    this.#arrete = true;
+  }
+
+  /**
+   * The emergency pause (OptionsCollecte.arret): until `jusqua` (the client's clock), no question is asked; each one
+   * waits before its turn and its pace, so the questions held go out at the servers' pace afterwards.
+   */
+  pauser(jusqua: number): void {
+    this.#pauseJusqua = jusqua;
   }
 
   fermer(): void {
@@ -617,34 +655,56 @@ export async function collecter(
     return promesse;
   };
 
-  // The emergency stop (OptionsCollecte.arret): the outcome of the first pass's last domains, in a sliding window.
+  // The emergency stop (OptionsCollecte.arret): the outcome of the first pass's last domains, in a sliding window; a
+  // first breach pauses, a second one stops. A domain opened before the pause is not counted after it (`epoque`).
   let premierePasse = true;
   let mesuresPremierePasse = 0;
-  const fenetre: boolean[] = [];
+  let fenetre: boolean[] = [];
   let enEchecDansFenetre = 0;
-  const noterDomaine = (zone: MesureZone) => {
-    if (!premierePasse || resultat.arret !== null) return;
+  let epoque = 0;
+  let pauseJusqua = 0;
+  const seuil = `seuil : ${Math.round(100 * options.arret.part)} %`;
+  const minutesPause = Math.round(options.arret.pauseMs / 60_000);
+  const enEchecPourArret = (unite: string): boolean => {
+    const zone = resultat.domaines.get(unite);
+    if (zone?.etat === "echec" || zone?.mxEtat === "echec") return true;
+    const web = options.nomWebDe?.(unite);
+    const noms = web === undefined ? (parUnite.get(unite) ?? []) : [web];
+    return noms.some((n) => resultat.noms.get(n)?.etat === "echec");
+  };
+  const noterUnite = (unite: string, sonEpoque: number) => {
+    if (!premierePasse || resultat.arret !== null || sonEpoque !== epoque) return;
     mesuresPremierePasse += 1;
-    const echec = domaineEnEchec(zone);
+    const echec = enEchecPourArret(unite);
     fenetre.push(echec);
     if (echec) enEchecDansFenetre += 1;
     if (fenetre.length > options.arret.fenetre && fenetre.shift() === true) enEchecDansFenetre -= 1;
-    if (
-      mesuresPremierePasse >= options.arret.minimum &&
-      enEchecDansFenetre >= options.arret.part * options.arret.fenetre
-    ) {
-      resultat.arret =
-        `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${enEchecDansFenetre} des ${fenetre.length} ` +
-        `derniers en échec (seuil : ${Math.round(100 * options.arret.part)} %)`;
-      options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);
+    if (fenetre.length < options.arret.fenetre || enEchecDansFenetre < options.arret.part * options.arret.fenetre)
+      return;
+    const constat = `${enEchecDansFenetre} des ${fenetre.length} derniers domaines en échec (${seuil})`;
+    if (epoque === 0) {
+      // The first breach: a pause, then a new count.
+      epoque += 1;
+      pauseJusqua = horloge.maintenant() + options.arret.pauseMs;
+      client.pauser(pauseJusqua);
+      fenetre = [];
+      enEchecDansFenetre = 0;
+      options.suivi?.(
+        `pause d'urgence de ${minutesPause} min après ${mesuresPremierePasse} domaines : ${constat} ; la mesure ` +
+          `reprend ensuite, et s'arrête si les ${options.arret.fenetre} domaines suivants échouent autant`,
+      );
+      return;
     }
+    resultat.arret = `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, après une pause de ${minutesPause} min`;
+    client.arreter();
+    options.surArret?.(resultat.arret);
+    options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);
   };
 
   const mesurerDomaine = async (domaine: string): Promise<void> => {
     essai(domaine);
     const zone = await mesurerZone(domaine, client);
     resultat.domaines.set(domaine, zone);
-    noterDomaine(zone);
     options.apresDomaine?.(domaine, zone);
     // At most 13 name servers and 10 mail exchangers per domain are asked: a domain that names hundreds of slow hosts
     // can never hold the collection (the records keep as many).
@@ -712,8 +772,16 @@ export async function collecter(
   ];
   await passe(
     ordreUnites.map((unite) => async () => {
-      await cadenceDomaines.attendre();
-      await options.frein?.(unite, options.zoneDe(unite), true);
+      // The emergency pause: a domain whose turn comes during it waits for its end, then takes a slot of the domains'
+      // pace again; after a stop, none opens. Only a domain opened after the last pause counts for the stop.
+      for (;;) {
+        await cadenceDomaines.attendre();
+        await options.frein?.(unite, options.zoneDe(unite), true);
+        if (resultat.arret !== null) return;
+        if (horloge.maintenant() >= pauseJusqua) break;
+        await horloge.dormir(pauseJusqua - horloge.maintenant());
+      }
+      const sonEpoque = epoque;
       // The measurement is called first: its NS question is the zone's first (client per zone, above). Its names go a
       // few at a time: a large domain never takes every slot of the names' pace at once.
       await Promise.all([
@@ -723,6 +791,7 @@ export async function collecter(
           await mesurerUnNom(nom);
         }),
       ]);
+      noterUnite(unite, sonEpoque);
     }),
   );
   premierePasse = false;

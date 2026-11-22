@@ -90,6 +90,23 @@ describe("the controls", () => {
     expect(simule.questions).toEqual([]);
   });
 
+  it("follows a deadline that moves: the emergency stop brings it to now, and nothing more is asked", async () => {
+    // One question in flight at a time; the deadline comes once the first name is measured.
+    let echeance = Number.POSITIVE_INFINITY;
+    const simule = new ResolveurSimule({}, zoneDe);
+    const demander = simule.demander.bind(simule);
+    simule.demander = async (nom, type) => {
+      const r = await demander(nom, type);
+      echeance = Date.now() - 1;
+      return r;
+    };
+    const r = await controler(simule, ["a.example", "b.example", "c.example"], [], 1, () => echeance);
+    expect([...r.noms.keys()]).toEqual(["a.example"]);
+    const continu = new ControleEnContinu(simule, 1, () => echeance);
+    continu.ajouter(["d.example"]);
+    expect((await continu.fermer()).noms.size).toBe(0);
+  });
+
   it("agrees only when every resolver finds every witness as it is known", () => {
     const temoins = [
       {
