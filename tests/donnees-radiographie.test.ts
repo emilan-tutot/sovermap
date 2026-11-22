@@ -177,7 +177,10 @@ describe("the Radiographie of a domain (D.2)", () => {
       jours: 1,
       sommes: {},
       brut: {
-        versions: { regles: { listes: ["2024-12-11", "pas une date"], as: "0.2", societes: "0.2", cdn: "<b>0.1</b>" } },
+        versions: {
+          regles: { listes: ["2024-12-11", "pas une date"], as: "0.2", societes: "0.2", cdn: "<b>0.1</b>" },
+          dila: "dila_refOrga_admin_Etat_fr_20261122.json",
+        },
         sources: [
           { id: "iptoasn", date: "2026-11-20T00:00:00.000Z" },
           { id: "ris-ipv4", date: "2026-11-21T18:08:14.000Z" },
@@ -187,10 +190,22 @@ describe("the Radiographie of a domain (D.2)", () => {
     expect(sourcesDe(etat)).toEqual({
       collecte: "2026-11-21",
       listes: ["2024-12-11"],
+      dila: "2026-11-22",
       iptoasn: "2026-11-20",
       ris: "2026-11-21",
       referentiels: { as: "0.2", societes: "0.2", cdn: null },
     });
+  });
+
+  it("reads no DILA day from a file that names none", () => {
+    const etat: EtatPublie = {
+      date: "2026-11-21",
+      statut: "preparation",
+      jours: 1,
+      sommes: {},
+      brut: { versions: { dila: "<b>pas un fichier</b>" } },
+    };
+    expect(sourcesDe(etat).dila).toBeNull();
   });
 
   it("assembles the layers from the records and the indexes", () => {

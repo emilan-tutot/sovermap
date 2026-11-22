@@ -51,11 +51,17 @@ const societes = (exploitants: readonly ExploitantVu[]): SocieteVue[] => [
   ...new Map(exploitants.flatMap((e) => (e.societe === null ? [] : [[e.societe.cle, e.societe] as const]))).values(),
 ];
 const societesDesHotes = (hotes: readonly HoteVu[]) => societes(hotes.flatMap((h) => h.exploitants));
-/** The dates of each list a name comes from, in their order. */
-function provenances(liste: readonly Provenance[]): Map<Provenance["source"], string[]> {
+/**
+ * The dates of each list a name comes from, in their order; the DILA's, which its provenance no longer carries (method
+ * 0.2.4), is the day of the file the collection read (`dila`).
+ */
+function provenances(liste: readonly Provenance[], dila: string | null): Map<Provenance["source"], string[]> {
   const parSource = new Map<Provenance["source"], string[]>();
-  for (const p of liste)
-    parSource.set(p.source, [...(parSource.get(p.source) ?? []), ...(p.date === null ? [] : [p.date])]);
+  for (const p of liste) {
+    const date = p.date ?? (p.source === "dila" ? dila : null);
+    const dates = parSource.get(p.source) ?? [];
+    parSource.set(p.source, date === null || dates.includes(date) ? dates : [...dates, date]);
+  }
   return parSource;
 }
 /** « 23.1.244.0-23.2.9.255 » → « 23.1.244.0 à 23.2.9.255 », which may wrap between its two ends. */
@@ -234,7 +240,7 @@ export function VueRadiographie({
               numero={1}
               titre={t.domaine.titre}
               source={t.listeLongue(
-                [...provenances(web?.provenances ?? [])].map(([source, dates]) =>
+                [...provenances(web?.provenances ?? [], s.dila)].map(([source, dates]) =>
                   t.domaine.copies(t.domaine.provenances[source], dates.map(dateFr)),
                 ),
               )}

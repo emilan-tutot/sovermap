@@ -179,6 +179,11 @@ export type SourcesRadiographie = {
   collecte: string;
   /** The dates of the official list's copies. */
   listes: string[];
+  /**
+   * The day of the DILA's Référentiel the collection read (its file, in etat.json's versions): a name's provenance
+   * « dila » no longer carries it (method 0.2.4).
+   */
+  dila: string | null;
   /** When IPtoASN's copy was surveyed, and the day's RIS. */
   iptoasn: string | null;
   ris: string | null;
@@ -198,11 +203,13 @@ export function sourcesDe(etat: EtatPublie): SourcesRadiographie {
     return typeof v === "string" && /^\d{1,3}(\.\d{1,3}){1,2}$/.test(v) ? v : null;
   };
   const listes = regles?.["listes"];
+  const dila = /(\d{4})(\d{2})(\d{2})\.json$/.exec(texte(objet(etat.brut["versions"])?.["dila"], 200) ?? "");
   return {
     collecte: etat.date,
     listes: (Array.isArray(listes) ? (listes as unknown[]) : [])
       .filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d))
       .slice(0, 10),
+    dila: dila === null ? null : `${dila[1]}-${dila[2]}-${dila[3]}`,
     iptoasn: dateDe("iptoasn"),
     ris: dateDe("ris-ipv4"),
     referentiels: { as: version("as"), societes: version("societes"), cdn: version("cdn") },
