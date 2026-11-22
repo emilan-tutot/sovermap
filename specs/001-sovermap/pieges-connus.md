@@ -173,7 +173,7 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 
 45. **Un nom qui a des noms en dessous existe** (21/11/2026) : le résolveur simulé des tests répondait NXDOMAIN pour `hebergeur.example` alors que `ns1.hebergeur.example` existait ; dans le vrai DNS, un tel nom répond NOERROR sans données (RFC 8020). Depuis que la collecte ne pose plus de question sous un domaine qui n'existe pas, cette erreur du simulateur cachait des questions : il répond maintenant comme le vrai DNS.
 
-46. **Reprendre un nom à moitié en échec peut lancer une tempête de questions** (21/11/2026) : quand une famille d'adresses échoue durablement (une preuve DNSSEC cassée), chaque reprise du nom relance les questions DNSKEY du résolveur : 37 par seconde vers un même serveur à l'essai 44927717383 (7f0b1c6). Seul un SERVFAIL d'une famille laisse le nom « ok » avec l'autre, son hébergement « non déterminé », jamais comparé.
+46. **Reprendre un nom à moitié en échec peut lancer une tempête de questions** (21/11/2026) : quand une famille d'adresses échoue durablement (une preuve DNSSEC cassée), chaque reprise du nom relance les questions DNSKEY du résolveur : 37 par seconde vers un même serveur à l'essai 44927717383 (PR n° 6). Seul un SERVFAIL d'une famille laisse le nom « ok » avec l'autre, son hébergement « non déterminé », jamais comparé.
 
 47. **Un `fetch` en `no-store` rend une page dynamique** (21/11/2026) : dans une page de Next, `cache: "no-store"` (ou `revalidate: 0`) rend la route dynamique, ce qui casserait l'ISR prévue pour les pages agrégées (plan § 11). À l'intérieur d'`unstable_cache`, il ne compte pas (`patch-fetch.js` : « Inside unstable-cache we treat it the same as force-no-store on the page », sans marquer la route) : la lecture des données (B.9) passe par `unstable_cache`.
 
@@ -183,7 +183,7 @@ Chaque piège est noté avec sa date, ce qu'on a vu et la parade. On complète c
 
 50. **L'heure d'une entrée du journal se lit, elle ne s'estime pas** (21/11/2026) : une entrée datée de 18:38 a été écrite à 18:21. L'heure se lit (`date -u`) juste avant d'écrire chaque entrée.
 
-51. **Lire tous les chiffres d'un diagnostic avant de l'expliquer** (21/11/2026) : la pire seconde du jour 1 comptait « 1 coupures de zone, 1 zones, DS 19 ». J'ai conclu à beaucoup d'ouvertures sous `gouv.fr` sans relire le « 1 zones », qui l'excluait, et préparé une correction pour la mauvaise cause (jamais envoyée). Parade : une hypothèse écrit d'abord les chiffres qui la démentiraient, et on les lit avant d'écrire du code.
+51. **Lire tous les chiffres d'un diagnostic avant de l'expliquer** (21/11/2026) : la pire seconde du jour 1 comptait « 1 coupures de zone, 1 zones, DS 19 ». L'explication retenue d'abord, beaucoup d'ouvertures sous `gouv.fr`, l'avait été sans relire ce « 1 zones », qui l'excluait, et une correction avait été préparée pour la mauvaise cause (jamais envoyée). Parade : une hypothèse écrit d'abord les chiffres qui la démentiraient, et on les lit avant d'écrire du code.
 
 52. **Les essais des PR passent l'un après l'autre, pas l'essai lancé à la main** (21/11/2026) : la mesure d'un essai de PR est dans le groupe de concurrence `collecte-mesure-essai` (l'un après l'autre) ; un essai lancé à la main (`workflow_dispatch`, comme celui du disjoncteur) est dans `collecte-mesure-jour`, celui de la collecte quotidienne, et peut tourner en même temps qu'un essai de PR : deux fois la charge sur les mêmes serveurs. Le lancer seulement quand aucun essai de PR ne tourne ni n'attend.
 
