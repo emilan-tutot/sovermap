@@ -687,56 +687,6 @@
     }
   }
 
-  .liste-groupe {
-    margin-top: 2rem;
-  }
-
-  .liste-groupe h2 {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    margin: 0;
-    padding-bottom: 0.375rem;
-    border-bottom: 1px solid var(--color-encre);
-    font-size: var(--text-lg);
-  }
-
-  .index-alpha {
-    columns: 17rem auto;
-    column-gap: 3rem;
-    margin-top: 1.5rem;
-  }
-
-  .index-alpha section {
-    break-inside: avoid;
-    margin-bottom: 1.25rem;
-  }
-
-  .index-lettre {
-    margin: 0 0 0.25rem;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--color-trait);
-    color: var(--color-discret);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-  }
-
-  .index-alpha ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .index-alpha li {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    padding: 0.25rem 0;
-    font-size: var(--text-sm);
-  }
-
   /* The text pages (part E): a reading column, its sources and the day of its revision at the end. */
   .texte-section {
     margin-top: 2rem;

@@ -5,15 +5,6 @@ import type { Categorie, IndexSocietes } from "./radiographie";
 
 export type Ministere = { id: string; nom: string; slug: string; domaines: string[] };
 
-/** The subject of a ministry's name, for an index: « Ministère de la Culture » gives « Culture »; any other name, itself. */
-export function sujetMinistere(nom: string): string {
-  const sujet = nom.replace(
-    /^Ministère\s+(?:de la |de l['’]|du |des |de |chargé (?:de la |de l['’]|du |des |de )?)/u,
-    "",
-  );
-  return sujet.trim() === "" ? nom : sujet.trim();
-}
-
 /** A ministry's address: its name without accents, apostrophes or spaces (« ministere-de-la-culture »), 90 characters. */
 export function slugMinistere(nom: string): string {
   const s = nom

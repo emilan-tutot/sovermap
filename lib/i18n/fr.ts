@@ -420,18 +420,10 @@ export const fr = {
     siege: (pays: string, categorie: string) =>
       `Siège de la maison mère${NBSP}: ${pays === categorie ? pays : `${pays} · ${categorie}`}`,
     siegeInconnu: "Maison mère non déterminée",
-    /** The list's proposed forms (point 11): the table's columns, the groups' titles, an index's letter. */
+    /** The table's columns (point 11, Q2 A). */
     colonnes: { societe: "Société ou organisme", siege: "Siège de la maison mère", domaines: "Domaines servis" },
     /** The seat in the table's column, whose header already names it. */
     siegeCourt: (pays: string, categorie: string) => (pays === categorie ? pays : `${pays} · ${categorie}`),
-    groupes: {
-      France: "France",
-      "UE hors France": "Union européenne, hors France",
-      "Europe hors UE": "Europe, hors Union européenne",
-      "hors d'Europe": "Hors d’Europe",
-      "non déterminé": "Maison mère non déterminée",
-    },
-    lettre: (lettre: string) => `Lettre ${lettre}`,
     controle: (texte: string) => `Contrôle${NBSP}: ${texte}`,
     surtitre: "Exploitant",
     titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis`,
@@ -457,10 +449,8 @@ export const fr = {
       "Les ministères et les services de l’État auxquels le Référentiel de l’organisation administrative de l’État (DILA) rattache des sites mesurés, dans l’ordre alphabétique.",
     entete: (n: string) => `${n}${NBSP}ministères et services`,
     domaines: (n: number, texte: string) => (n === 1 ? "1 domaine" : `${texte} domaines`),
-    /** The list's proposed forms (point 11): the table's columns, the groups by nature, an index's letter. */
+    /** The table's columns (point 11, Q2 A). */
     colonnes: { ministere: "Ministère ou service", domaines: "Domaines" },
-    natures: { ministeres: "Les ministères", autres: "Les autres services de l’État" },
-    lettre: (lettre: string) => `Lettre ${lettre}`,
     surtitre: "Ministère",
     titrePage: (nom: string) => `${nom}${NBSP}: qui héberge ses sites${NBSP}?`,
     descriptionPage: (nom: string) =>

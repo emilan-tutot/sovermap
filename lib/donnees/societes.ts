@@ -22,30 +22,6 @@ export function societesTriees(index: ReadonlyMap<string, SocieteIndex>): [strin
   return [...index].sort(([, a], [, b]) => ordre.compare(a.nom, b.nom));
 }
 
-/**
- * A list's form, provisional until the owner chooses (point 11, Q2): the table (A, recommended) by default; « b » the
- * groups, « c » the index, « liste » the former list. The forms not chosen are then removed, with this parameter.
- */
-export type FormeListe = "actuelle" | "a" | "b" | "c";
-export const formeDeListe = (v: string | string[] | undefined): FormeListe =>
-  v === "b" || v === "c" ? v : v === "liste" ? "actuelle" : "a";
-
-/** A list cut by the first letter of each element's name, accents left out (« # » for a digit), in the list's order. */
-export function parLettre<T>(liste: readonly T[], nom: (e: T) => string): [string, T[]][] {
-  const groupes = new Map<string, T[]>();
-  for (const e of liste) {
-    const premiere = nom(e)
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .trim()
-      .charAt(0)
-      .toUpperCase();
-    const lettre = /^[A-Z]$/.test(premiere) ? premiere : "#";
-    groupes.set(lettre, [...(groupes.get(lettre) ?? []), e]);
-  }
-  return [...groupes];
-}
-
 /** One page of a long list (1-based), and the number of pages. */
 export const PAR_PAGE = 200;
 export function pageDe<T>(liste: readonly T[], page: number): { elements: T[]; page: number; pages: number } {
