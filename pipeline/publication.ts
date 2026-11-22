@@ -6,6 +6,7 @@
 // change of rules or of the list; on the first day the initial state is published, without changes.
 import { createHash } from "node:crypto";
 import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
+import type { Territoire } from "./territoires";
 import type { Categorie, Niveau } from "./types";
 
 export const VERSION_SCHEMA = 1;
@@ -88,6 +89,11 @@ export type EnregistrementDomaine = {
     niveau: Niveau;
     spf: CoucheSpf | null;
   };
+  /**
+   * Its territory (C.6), when the local directory's offices whose websites are among its names give one: not a
+   * measured layer, computed again each day, never compared from one day to the next (journal, circuit breaker).
+   */
+  territoire?: Territoire;
   /** The record was shortened to stay within its size (borner.ts): its lists are partial. */
   tronque?: true;
   /**

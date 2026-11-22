@@ -160,3 +160,69 @@ export function territoireDe(
     ? null
     : { ...vide, commune: { code: commune.code, nom: commune.nom }, departement: commune.dep, region: commune.reg };
 }
+
+/** A host name as the directory's addresses give it (lower case, ASCII); never an address, whose last label is digits. */
+const NOM_HOTE = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+
+/** One office of the published copy, checked at the border; null for a line that is not one. */
+function guichetPublie(valeur: unknown): Guichet | null {
+  if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) return null;
+  const o = valeur as Record<string, unknown>;
+  const texte = (v: unknown, max: number) => (typeof v === "string" && v !== "" && v.length <= max ? v : null);
+  /** A value or null; undefined when it is neither. */
+  const ou = (v: unknown, motif: RegExp) =>
+    v === null ? null : typeof v === "string" && motif.test(v) ? v : undefined;
+  const nom = texte(o["nom"], 300);
+  const type = texte(o["type"], 120);
+  const hotes = Array.isArray(o["hotes"])
+    ? o["hotes"].filter(
+        (h): h is string => typeof h === "string" && NOM_HOTE.test(h) && /[a-z]/.test(h.split(".").at(-1) ?? ""),
+      )
+    : null;
+  const siren = ou(o["siren"], /^\d{9}$/);
+  const siret = ou(o["siret"], /^\d{14}$/);
+  const commune = o["commune"] === null ? null : (texte(o["commune"], 120) ?? undefined);
+  const codePostal = ou(o["codePostal"], /^\d{5}$/);
+  const modification = ou(o["modification"], /^\d{4}-\d{2}-\d{2}$/);
+  if (nom === null || type === null || hotes === null) return null;
+  if (siren === undefined || siret === undefined || commune === undefined) return null;
+  if (codePostal === undefined || modification === undefined) return null;
+  return { nom, type, hotes, siren, siret, commune, codePostal, modification };
+}
+
+/**
+ * The offices of the published copy of the local directory (territoires/annuaire/guichets.jsonl, written by
+ * annuaire.yml, one office per line), each checked: a line that is not an office is left out, and counted.
+ */
+export function lireGuichetsPublies(texte: string): { guichets: Guichet[]; ecartees: number } {
+  const guichets: Guichet[] = [];
+  let ecartees = 0;
+  for (const ligne of texte.split("\n")) {
+    if (ligne.trim() === "") continue;
+    let g: Guichet | null = null;
+    try {
+      g = guichetPublie(JSON.parse(ligne));
+    } catch {
+      g = null;
+    }
+    if (g === null) ecartees += 1;
+    else guichets.push(g);
+  }
+  return { guichets, ecartees };
+}
+
+/** The territory of each domain that has one, from its names, the published offices and the official communes. */
+export function territoiresDesDomaines(
+  nomsParDomaine: ReadonlyMap<string, readonly string[]>,
+  guichets: readonly Guichet[],
+  index: IndexCommunes,
+): Map<string, Territoire> {
+  const parHote = new Map<string, Guichet[]>();
+  for (const g of guichets) for (const h of g.hotes) parHote.set(h, [...(parHote.get(h) ?? []), g]);
+  const territoires = new Map<string, Territoire>();
+  for (const [domaine, noms] of nomsParDomaine) {
+    const t = territoireDe(noms, parHote, index);
+    if (t !== null) territoires.set(domaine, t);
+  }
+  return territoires;
+}

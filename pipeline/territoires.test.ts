@@ -2,7 +2,16 @@
 // not exist).
 import { describe, expect, it } from "vitest";
 import type { Guichet } from "./annuaire-local";
-import { communeDe, departementsDuCodePostal, indexCommunes, normaliserCommune, territoireDe } from "./territoires";
+import { DOMAINE, valider } from "./schemas";
+import {
+  communeDe,
+  departementsDuCodePostal,
+  indexCommunes,
+  lireGuichetsPublies,
+  normaliserCommune,
+  territoireDe,
+  territoiresDesDomaines,
+} from "./territoires";
 
 const guichet = (
   type: string,
@@ -146,5 +155,76 @@ describe("the territory of a domain (C.6)", () => {
     expect(territoireDe(["region.example"], parHote, index)).toMatchObject({ departement: null, region: "97" });
     expect(territoireDe(["siege-inconnu.example"], parHote, index)).toBeNull();
     expect(territoireDe(["ailleurs.example"], parHote, index)).toBeNull();
+  });
+});
+
+describe("the territories of the day's domains, in the collection (C.6)", () => {
+  const index = indexCommunes(COG);
+  const ligne = (g: Record<string, unknown>) => JSON.stringify(g);
+  const mairie = {
+    nom: "Mairie - Exemple-sur-Mer",
+    type: "mairie",
+    hotes: ["www.mairie-exemple.example"],
+    siren: "219900011",
+    siret: null,
+    commune: "Exemple-sur-Mer",
+    codePostal: "99000",
+    modification: "2026-11-01",
+  };
+
+  it("reads the published offices, line by line, and leaves out what is not one", () => {
+    const { guichets, ecartees } = lireGuichetsPublies(
+      [
+        ligne(mairie),
+        "",
+        "pas du JSON",
+        ligne({ ...mairie, siren: "12" }),
+        ligne({ ...mairie, codePostal: "990" }),
+        ligne({ ...mairie, nom: "" }),
+        // A host that is not a name (an address) is left out; the office stays.
+        ligne({ ...mairie, hotes: ["192.0.2.1", "mairie-exemple.example"] }),
+      ].join("\n"),
+    );
+    expect(ecartees).toBe(4);
+    expect(guichets.map((g) => g.hotes)).toEqual([["www.mairie-exemple.example"], ["mairie-exemple.example"]]);
+  });
+
+  it("gives each domain the territory of the offices whose websites are among its names, and none otherwise", () => {
+    const { guichets } = lireGuichetsPublies(ligne(mairie));
+    const territoires = territoiresDesDomaines(
+      new Map([
+        ["mairie-exemple.example", ["mairie-exemple.example", "www.mairie-exemple.example"]],
+        ["autre.example", ["autre.example", "www.autre.example"]],
+      ]),
+      guichets,
+      index,
+    );
+    expect([...territoires.keys()]).toEqual(["mairie-exemple.example"]);
+    expect(territoires.get("mairie-exemple.example")).toEqual({
+      commune: { code: "99001", nom: "Exemple-sur-Mer" },
+      groupement: null,
+      departement: "99",
+      region: "98",
+      niveau: "probable",
+    });
+  });
+
+  it("publishes a territory only in its shape: the published schema refuses anything else", () => {
+    const schema = DOMAINE.properties?.["territoire"];
+    expect(schema).toBeDefined();
+    if (schema === undefined) return;
+    const bon = {
+      commune: null,
+      groupement: { nom: "Communauté de communes de l’Exemple", siren: "200000001" },
+      departement: "2A",
+      region: "94",
+      niveau: "probable",
+    };
+    expect(valider(bon, schema)).toEqual([]);
+    expect(valider({ ...bon, departement: "Corse" }, schema)).not.toEqual([]);
+    expect(valider({ ...bon, niveau: "confirmé" }, schema)).not.toEqual([]);
+    expect(valider({ ...bon, maire: "un nom" }, schema)).not.toEqual([]);
+    // A domain without a territory has none: the property is optional.
+    expect(DOMAINE.required ?? []).not.toContain("territoire");
   });
 });

@@ -55,6 +55,7 @@ import {
   sha256,
   VERSION_SCHEMA,
 } from "../publication";
+import { indexCommunes, lireGuichetsPublies, territoiresDesDomaines } from "../territoires";
 import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
 import { fichiersSchemas, schemaDe, valider } from "../schemas";
@@ -613,6 +614,26 @@ async function principal(): Promise<number> {
   const gardePannes = gardesPannes(tauxPannes, pannesVeille);
   const b = bilan(jour, veille, publie?.etat ?? null, reglesChangees);
 
+  // The territories (C.6): each domain's, from the local directory's offices whose websites are among its names
+  // (territoires/annuaire/, published by annuaire.yml) and the official communes of the COG (referentiels/cog/). Not a
+  // measured layer: computed again each day from these copies, after the comparison with yesterday, so it never enters
+  // the journal or the circuit breaker; a domain without a territory has none.
+  const annuaire = o.donnees === undefined ? null : path.join(o.donnees, "territoires", "annuaire", "guichets.jsonl");
+  const publies = lireGuichetsPublies(annuaire !== null && existsSync(annuaire) ? readFileSync(annuaire, "utf8") : "");
+  const nomsParDomaine = new Map<string, string[]>([...b.etat.domaines.keys()].map((d) => [d, [d]]));
+  for (const [nom, e] of b.etat.noms) nomsParDomaine.get(e.domaine)?.push(nom);
+  const territoires = territoiresDesDomaines(
+    nomsParDomaine,
+    publies.guichets,
+    indexCommunes(readFileSync(path.join(RACINE, "referentiels", "cog", "communes-2026.csv"), "utf8")),
+  );
+  for (const [domaine, d] of b.etat.domaines) {
+    const sans = { ...d };
+    delete sans.territoire;
+    const t = territoires.get(domaine);
+    b.etat.domaines.set(domaine, t === undefined ? sans : { ...sans, territoire: t });
+  }
+
   // The files.
   const asVus = new Set<number>();
   for (const n of b.etat.noms.values()) for (const r of n.reseaux) asVus.add(r.as);
@@ -817,6 +838,18 @@ async function principal(): Promise<number> {
               seconde: debitServeurs.seconde,
             },
       disjoncteur: b.disjoncteur,
+    },
+    // The territories' coverage (C.6): the published offices read, and the domains given a territory, by kind.
+    territoires: {
+      guichets: publies.guichets.length,
+      lignesEcartees: publies.ecartees,
+      domaines: territoires.size,
+      communes: [...territoires.values()].filter((t) => t.commune !== null).length,
+      groupements: [...territoires.values()].filter((t) => t.groupement !== null).length,
+      departementsSeuls: [...territoires.values()].filter(
+        (t) => t.commune === null && t.groupement === null && t.departement !== null,
+      ).length,
+      regionsSeules: [...territoires.values()].filter((t) => t.departement === null && t.region !== null).length,
     },
     journal: { etatInitial: b.etatInitial, reglesChangees: b.reglesChangees, changements: b.changements.length },
     jours:
