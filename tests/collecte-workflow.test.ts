@@ -135,14 +135,25 @@ describe("the collection's workflow", () => {
     expect(vues.some((v) => /^ {4}options:\n {6}minimize: false$/m.test(v))).toBe(true);
   });
 
-  it("measures a day once: the mark « measurement started » is saved before the collection, and both jobs read it", () => {
+  it("measures a day once: the mark « measurement started » is saved and read back before the collection", () => {
     const mesurer = tache("mesurer");
-    const marque = mesurer.indexOf("key: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}");
-    expect(marque).toBeGreaterThan(-1);
-    expect(marque).toBeLessThan(mesurer.indexOf("- id: collecte"));
-    expect(mesurer).toContain('--key "collecte-commencee-$DATE-"');
-    expect(mesurer).toContain('if [ "${commencees:-0}" -gt 0 ]; then');
-    expect(tache("jour")).toContain('--key "collecte-commencee-$DATE-"');
-    expect(tache("jour")).toContain('[ "${commencees:-0}" -gt 0 ]');
+    const debut = mesurer.indexOf("# A day is measured once");
+    const collecte = mesurer.indexOf("- id: collecte");
+    expect(debut).toBeGreaterThan(-1);
+    const temoin = mesurer.slice(debut, collecte);
+    // Three steps, none for a trial: refuse a day already started (or a re-run after midnight), save, read back.
+    expect(temoin.match(/- if: env\.ESSAI != 'true'/g)).toHaveLength(3);
+    expect(temoin).toContain('if [ "$(date -u +%F)" != "$DATE" ]; then');
+    expect(temoin).toContain('--ref refs/heads/main --key "collecte-commencee-$DATE-"');
+    expect(temoin).toContain('if [ "$commencees" != "0" ]; then');
+    expect(temoin).toContain("key: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}");
+    expect(temoin).toContain(
+      '--ref refs/heads/main --key "$CLE" --json key --jq "map(select(.key == \\"$CLE\\")) | length"',
+    );
+    // Never an error swallowed in these steps (the wait above swallows them on purpose: a pattern easy to copy).
+    expect(temoin).not.toMatch(/\|\| true|2> \/dev\/null/);
+    // The run of 09:47 (« jour ») sees a day started, and a reply that is not « 0 » counts as one.
+    expect(tache("jour")).toContain('--ref refs/heads/main --key "collecte-commencee-$DATE-"');
+    expect(tache("jour")).toContain('[ "$commencees" != "0" ]');
   });
 });

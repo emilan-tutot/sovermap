@@ -1,11 +1,19 @@
 // A pull request's trial never measures during, or around the start of, a day's collection.
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { creneauEssaiLibre, MARGE_AVANT_MINUTES } from "./creneau";
+import { creneauEssaiLibre, DEPARTS_MINUTES, MARGE_AVANT_MINUTES } from "./creneau";
 
 const a = (heure: string) => new Date(`2026-11-22T${heure}:00Z`);
 
 describe("the slot of a trial", () => {
+  it("knows the very times the workflow schedules (collecte.yml's cron lines)", () => {
+    const workflow = readFileSync(".github/workflows/collecte.yml", "utf8");
+    const departs = [...workflow.matchAll(/- cron: "(\d+) (\d+) \* \* \*"/g)].map(
+      ([, minute = "", heure = ""]) => Number(heure) * 60 + Number(minute),
+    );
+    expect(departs.sort((x, y) => x - y)).toEqual([...DEPARTS_MINUTES].sort((x, y) => x - y));
+  });
+
   it("is free far from the day's collections, and never while one runs or waits", () => {
     expect(creneauEssaiLibre(a("14:00"), 0)).toBe(true);
     expect(creneauEssaiLibre(a("14:00"), 1)).toBe(false);

@@ -566,7 +566,9 @@ export async function collecter(
     let coupee = false;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
-        if (fin !== undefined && horloge.maintenant() >= fin.a) {
+        // The wall clock, like `echeance` (the review of PR 20: the measuring clock counts from the process's start, and
+        // compared with a date it never cut anything).
+        if (fin !== undefined && Date.now() >= fin.a) {
           if (!coupee)
             options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${file.length + 1} tâches non reprises`);
           coupee = true;

@@ -151,7 +151,7 @@ Calcul d'origine (19/11/2026, sans la messagerie) :
 
 - La documentation de GitHub prévient : une tâche planifiée peut être retardée, et en cas de forte charge, « some queued jobs may be dropped » (lu le 18/11/2026).
 - **Parades** :
-  1. **Deux déclenchements** : 03:17 UTC, puis 09:47 UTC. Le second ne fait rien si la collecte du jour est déjà publiée.
+  1. **Deux déclenchements** : 03:17 UTC, puis 09:47 UTC. Le second ne fait rien si la mesure du jour a commencé (le témoin « mesure commencée », depuis le 22/11/2026).
   2. **Contrôle de fraîcheur dans le site.** Si `etat.json` a plus de 36 h :
      - chaque page affiche bien en vue la date de la dernière collecte et la mention « données en retard » ;
      - la page d'état passe au rouge.
@@ -631,7 +631,7 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 
 **Si cette exposition est refusée : C + D.** Le propriétaire crée un compte GitHub neutre et relance `gh auth login`. Vercel n'est pas relié au dépôt. Cela demande environ 30 minutes de gestes au propriétaire, et la production attend un chantier ultérieur.
 
-- **Les limites de temps de la collecte (22/11/2026, décision seule, après le jour 2 ; se défait)** : la première passe du jour 2 a duré 216 minutes sur un réseau lent, sa reprise a sauté, et la tâche a fini à 221 minutes de ses 240. Désormais : la tâche du jour peut durer 330 minutes (GitHub en permet 360) ; une reprise part jusqu'à 255 minutes (au lieu de 165, validé au point 04), aucune de ses tâches ne part après 290, et les contrôles s'arrêtent à 300 (au lieu de 210). Un essai dure 60 minutes au plus, avec ses propres limites (35, 45 et 48 minutes), et n'en part aucun dans les 60 minutes avant une collecte programmée ni dans les 120 minutes après. Un témoin « mesure commencée » (le cache d'Actions) empêche toute seconde mesure le même jour (consigne du propriétaire, point 13, § 8). La cible reste de moins de 3 heures ; le découpage de B.8 suivra si elle est encore dépassée.
+- **Les limites de temps de la collecte (22/11/2026, décision seule, après le jour 2 ; se défait)** : la première passe du jour 2 a duré 216 minutes sur un réseau lent, sa reprise a sauté, et la tâche a fini à 221 minutes de ses 240. Désormais : la tâche du jour peut durer 330 minutes (GitHub en permet 360) ; une reprise part jusqu'à 255 minutes (au lieu de 165, validé au point 04), aucune de ses tâches n'est prise après 290 (une tâche déjà prise peut finir), et les contrôles s'arrêtent à 300 (au lieu de 210). Un essai dure 60 minutes au plus, avec ses propres limites (35, 45 et 48 minutes), et n'en part aucun dans les 60 minutes avant une collecte programmée ni dans les 120 minutes après. Un témoin « mesure commencée » (le cache d'Actions) empêche toute seconde mesure le même jour (consigne du propriétaire, point 13, § 8). La cible reste de moins de 3 heures ; le découpage de B.8 suivra si elle est encore dépassée.
 
 ## 16. Questions pour plus tard (listées seulement)
 

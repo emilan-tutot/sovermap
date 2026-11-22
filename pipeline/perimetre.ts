@@ -16,7 +16,7 @@ export type EntreeNom = {
   nom: string;
   /** Its unit: the registrable domain, or the name itself on a third-party platform. */
   domaine: string;
-  /** « dinum:AAAA-MM-JJ », « dila:<file> », « domaine » (the apex, added as the web name of its unit). */
+  /** « dinum:AAAA-MM-JJ », « sig:AAAA-MM-JJ », « mesr:AAAA-MM-JJ », « dila » (its day's file is in etat.json), « domaine » (the apex, added as the web name of its unit). */
   provenances: string[];
   types: string[];
   organismes: string[];

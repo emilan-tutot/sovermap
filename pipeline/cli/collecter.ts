@@ -493,9 +493,20 @@ async function principal(): Promise<number> {
   // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
   // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
   // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them. A
-  // retry starts until 255 minutes, and none of its tasks starts after 290.
-  const minutesDe = (option: string | undefined) => maintenant.getTime() + Number(option) * 60_000;
-  const finControles = minutesDe(o["fin-controles-minutes"]);
+  // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end).
+  const limites = (["echeance-minutes", "fin-reprises-minutes", "fin-controles-minutes"] as const).map((nom) => {
+    const minutes = Number(o[nom]);
+    if (!Number.isInteger(minutes) || minutes < 1) {
+      throw new Error(`--${nom} : un nombre entier de minutes, au moins 1 (reçu « ${o[nom] ?? ""} »)`);
+    }
+    return minutes;
+  });
+  const [echeanceMinutes = 255, finReprisesMinutes = 290, finControlesMinutes = 300] = limites;
+  if (!(echeanceMinutes <= finReprisesMinutes && finReprisesMinutes <= finControlesMinutes)) {
+    throw new Error("--echeance-minutes, --fin-reprises-minutes et --fin-controles-minutes doivent aller croissant");
+  }
+  const minutesDe = (minutes: number) => maintenant.getTime() + minutes * 60_000;
+  const finControles = minutesDe(finControlesMinutes);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
@@ -507,8 +518,8 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: minutesDe(o["echeance-minutes"]),
-      finReprises: minutesDe(o["fin-reprises-minutes"]),
+      echeance: minutesDe(echeanceMinutes),
+      finReprises: minutesDe(finReprisesMinutes),
       zoneDe,
       suivi,
       apresDomaine: (domaine, zone) => {

@@ -166,22 +166,30 @@ describe("the scheduling of a collection", () => {
     expect(horloge.attentes.filter((ms) => ms === 10 * 60 * 1000)).toHaveLength(2);
   });
 
-  it("takes no task of a retry pass after its end time: what is left keeps its failure, and it is said", async () => {
-    const horloge = fausseHorloge();
-    const suivis: string[] = [];
-    const r = new ResolveurSimule(ZONE, zoneDe, new Set(["www.sansmail.example"]));
-    const resultat = await collecter(noms, r, {
-      ...POLITESSE,
-      zoneDe,
-      horloge,
-      aleatoire: generateur(3),
-      // The fake clock reaches 10 minutes at the first retry: its tasks would start after this end.
-      finReprises: 5 * 60 * 1000,
-      suivi: (ligne) => suivis.push(ligne),
-    });
-    expect(resultat.noms.get("www.sansmail.example")).toMatchObject({ etat: "echec", echec: "SERVFAIL" });
-    expect(resultat.essais.get("www.sansmail.example")).toBe(1);
-    expect(suivis.some((l) => /^reprise 1 arrêtée à l'heure limite : \d+ tâches non reprises$/.test(l))).toBe(true);
+  it("takes no task of a retry pass after its end time, a date of the wall clock: what is left keeps its failure", async () => {
+    // The fake measuring clock starts at 0: a rule that mixed it with the date would fail one of these two runs.
+    const mesurer = async (finReprises: number) => {
+      const suivis: string[] = [];
+      const r = new ResolveurSimule(ZONE, zoneDe, new Set(["www.sansmail.example"]));
+      const resultat = await collecter(noms, r, {
+        ...POLITESSE,
+        zoneDe,
+        horloge: fausseHorloge(),
+        aleatoire: generateur(3),
+        finReprises,
+        suivi: (ligne) => suivis.push(ligne),
+      });
+      return { resultat, suivis };
+    };
+    const passee = await mesurer(Date.now());
+    expect(passee.resultat.noms.get("www.sansmail.example")).toMatchObject({ etat: "echec", echec: "SERVFAIL" });
+    expect(passee.resultat.essais.get("www.sansmail.example")).toBe(1);
+    expect(passee.suivis.some((l) => /^reprise 1 arrêtée à l'heure limite : \d+ tâches non reprises$/.test(l))).toBe(
+      true,
+    );
+    const lointaine = await mesurer(Date.now() + 3_600_000);
+    expect(lointaine.resultat.essais.get("www.sansmail.example")).toBe(3);
+    expect(lointaine.suivis.some((l) => l.includes("arrêtée à l'heure limite"))).toBe(false);
   });
 
   it("waits for the brake before every question, and before opening each domain", async () => {
