@@ -49,6 +49,7 @@ import {
   fragments,
   historique,
   index,
+  joursDeChangement,
   journal,
   jsonStable,
   SEUIL_DISJONCTEUR,
@@ -669,6 +670,14 @@ async function principal(): Promise<number> {
     }),
   );
   const figures = chiffres(b.etat, METHODE);
+  // The day of each domain's last change on the site (D.7, the sitemaps' lastmod).
+  const jours = joursDeChangement(
+    b.etat,
+    publie?.etat ?? null,
+    date,
+    o.donnees === undefined ? null : lireJsonPublie(o.donnees, "index/domaines.json"),
+    publie?.meta.date ?? null,
+  );
   const fichiers: Fichiers = new Map([
     ...fragments("noms", b.etat.noms),
     ...fragments("domaines", b.etat.domaines),
@@ -688,6 +697,7 @@ async function principal(): Promise<number> {
       societes,
       organismes,
       organismesDe: new Map([...liste.domaines].map(([cle, d]) => [cle, d.organismes])),
+      jours,
     }),
     ["agregats/chiffres.json", `${jsonStable(figures)}\n`],
     [

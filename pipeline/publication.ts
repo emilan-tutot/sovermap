@@ -343,6 +343,8 @@ export function index(
     organismes: ReadonlyMap<string, Organisme>;
     /** The bodies that name each domain as a website. */
     organismesDe: ReadonlyMap<string, readonly string[]>;
+    /** The day of each domain's last change on the site (joursDeChangement), for the sitemaps' lastmod (D.7). */
+    jours?: ReadonlyMap<string, string>;
   },
 ): Fichiers {
   const fichiers: Fichiers = new Map();
@@ -394,13 +396,18 @@ export function index(
   );
   for (const [cle, domaines] of parSociete)
     fichiers.set(`index/exploitants/${cle}.json`, `${jsonStable({ exploitant: cle, domaines: trie(domaines) })}\n`);
-  // Every registered domain of the day, with 1 for the « État » perimeter: what the site's search is built from (D.2),
-  // loaded whole at its first use. Sorted, so that a new day changes only the lines that changed.
+  // Every registered domain of the day, with 1 for the « État » perimeter and the day of its last change on the site:
+  // what the site's search (D.2) and its sitemaps (D.7) are built from. Sorted, so that a new day changes only the lines
+  // that changed.
   fichiers.set(
     "index/domaines.json",
     `${jsonStable({
       domaines: [...etat.domaines.values()]
-        .map((d): [string, number] => [d.domaine, d.perimetre === "État" ? 1 : 0])
+        .map((d): [string, number, ...string[]] => {
+          const jour = details.jours?.get(d.domaine);
+          const perimetre = d.perimetre === "État" ? 1 : 0;
+          return jour === undefined ? [d.domaine, perimetre] : [d.domaine, perimetre, jour];
+        })
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
     })}
 `,
@@ -532,6 +539,37 @@ export function historique(
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .slice(-JOURS_HISTORIQUE_MAX);
   return `${jsonStable({ jours: tous })}\n`;
+}
+
+/**
+ * The day of each domain's last change on the site (D.7: the sitemaps' lastmod): today when the record published for
+ * it, or its web name's, differs from yesterday's (a change confirmed by two collections, or new rules), or when the
+ * domain is new; otherwise the day yesterday's index gave it. The first day the days are published, yesterday's index
+ * has none: an unchanged domain then takes the day of yesterday's published state, the latest its change can be.
+ */
+export function joursDeChangement(
+  aujourdhui: Etat,
+  hier: Etat | null,
+  date: string,
+  indexHier: unknown,
+  dateHier: string | null,
+): Map<string, string> {
+  const joursHier = new Map<string, string>();
+  const lignes = estObjet(indexHier) && Array.isArray(indexHier["domaines"]) ? indexHier["domaines"] : [];
+  for (const l of lignes) {
+    if (Array.isArray(l) && typeof l[0] === "string" && estDate(l[2])) joursHier.set(l[0], l[2]);
+  }
+  const texte = (v: unknown) => (v === undefined ? "" : jsonStable(v));
+  const jours = new Map<string, string>();
+  for (const [domaine, d] of aujourdhui.domaines) {
+    const avant = hier?.domaines.get(domaine);
+    const change =
+      avant === undefined ||
+      texte(d) !== texte(avant) ||
+      texte(aujourdhui.noms.get(d.nomWeb)) !== texte(hier?.noms.get(avant.nomWeb));
+    jours.set(domaine, change ? date : (joursHier.get(domaine) ?? (estDate(dateHier) ? dateHier : date)));
+  }
+  return jours;
 }
 
 /** The journal of the day (brief B.6): the confirmed changes; on the first day, the initial state only. */

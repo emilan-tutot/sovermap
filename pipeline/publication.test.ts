@@ -11,6 +11,7 @@ import {
   historique,
   index,
   jsonStable,
+  joursDeChangement,
   journal,
   seau,
 } from "./publication";
@@ -276,6 +277,48 @@ describe("the indexes", () => {
         ["d0.example", 1],
         ["d1.example", 1],
         ["d2.example", 1],
+      ],
+    });
+  });
+});
+
+describe("the day of each domain's last change (D.7)", () => {
+  it("is today for a new or changed domain, otherwise yesterday's, and the day of yesterday's state the first time", () => {
+    const hier = etat(4, 1);
+    const aujourdhui = etat(5, 1);
+    aujourdhui.domaines.set("d1.example", { ...domaine("d1.example"), noms: 3 });
+    const web = aujourdhui.noms.get("www.d2.example");
+    if (web !== undefined) aujourdhui.noms.set("www.d2.example", { ...web, dnssec: true });
+    const indexHier = {
+      domaines: [
+        ["d0.example", 1, "2026-11-20"],
+        ["d1.example", 1, "2026-11-20"],
+        ["d2.example", 1],
+        ["d3.example", 1],
+      ],
+    };
+    expect(Object.fromEntries(joursDeChangement(aujourdhui, hier, "2026-11-22", indexHier, "2026-11-21"))).toEqual({
+      "d0.example": "2026-11-20",
+      "d1.example": "2026-11-22",
+      "d2.example": "2026-11-22",
+      "d3.example": "2026-11-21",
+      "d4.example": "2026-11-22",
+    });
+    expect(joursDeChangement(aujourdhui, null, "2026-11-22", null, null).get("d0.example")).toBe("2026-11-22");
+  });
+
+  it("is published as the third value of each domain's line, when it is known", () => {
+    const fichiers = index(etat(2, 0), {
+      as: new Map(),
+      societes: new Map(),
+      organismes: new Map(),
+      organismesDe: new Map(),
+      jours: new Map([["d0.example", "2026-11-20"]]),
+    });
+    expect(JSON.parse(fichiers.get("index/domaines.json") ?? "{}")).toEqual({
+      domaines: [
+        ["d0.example", 1, "2026-11-20"],
+        ["d1.example", 1],
       ],
     });
   });
