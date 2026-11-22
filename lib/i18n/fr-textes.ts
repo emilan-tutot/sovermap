@@ -474,6 +474,9 @@ export const radiographieDeSovermap: PageDeTexte = soignee({
             ],
             ["La collecte tourne sur les serveurs de GitHub Actions (même maison mère)."],
             [
+              "Le nom de domaine est enregistré chez Cloudflare, Inc., dont le siège est aux États-Unis, qui en est le registraire et en sert le DNS.",
+            ],
+            [
               "Dans votre navigateur : rien d’autre que le site lui-même. Aucune police, aucun script, aucune image ne vient d’un autre domaine.",
             ],
           ],
