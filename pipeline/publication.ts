@@ -514,15 +514,21 @@ function jourHistorique(v: unknown): JourHistorique | null {
   return jour;
 }
 
+/** Whether a published history reads again in full: an object whose « jours » are all valid days, one at least. */
+export function historiqueRelu(brut: unknown): boolean {
+  return (
+    estObjet(brut) &&
+    Array.isArray(brut["jours"]) &&
+    brut["jours"].length > 0 &&
+    brut["jours"].every((j) => jourHistorique(j) !== null)
+  );
+}
+
 /**
  * The figures' history (agregats/historique.json; D.2, the Atlas's time slider): the published history read back and
  * checked, the day added (or replaced, when the same day runs again), in date order. When no history was published
  * yet, the day before is taken from the published figures and state, so that two days show from the first run.
  */
-/** Whether a published history reads again: an object whose « jours » hold at least one valid day. */
-export function historiqueRelu(brut: unknown): boolean {
-  return estObjet(brut) && Array.isArray(brut["jours"]) && brut["jours"].some((j) => jourHistorique(j) !== null);
-}
 
 export function historique(
   publie: { historique: unknown; chiffres: unknown; etat: unknown } | null,

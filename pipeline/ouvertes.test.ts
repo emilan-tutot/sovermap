@@ -270,5 +270,19 @@ describe("the open data of the day (F.1)", () => {
       (fichiers.get("sovermap-domains.json") ?? "").replace('"unknown_networks":0', '"unknown_networks":"0"'),
     );
     expect(verifierOuvertes(mauvais)).toEqual(["domains 0 unknown_networks : integer attendu"]);
+    // A header changed, a file missing, lists of different lengths: each is seen.
+    const casses = new Map(fichiers);
+    casses.set("sovermap-countries.csv", (fichiers.get("sovermap-countries.csv") ?? "").replace("country,", "pays,"));
+    casses.delete("sovermap-ministries.json");
+    casses.set(
+      "sovermap-domains.json",
+      (fichiers.get("sovermap-domains.json") ?? "").replace('"operators":"hebergeur-fr;cloud-us"', '"operators":"x"'),
+    );
+    expect(verifierOuvertes(casses)).toEqual([
+      "domains 3 : listes d'exploitants de longueurs différentes",
+      "sovermap-ministries.json : absent",
+      "sovermap-countries.csv : en-tête différent du schéma",
+    ]);
+    expect(verifierOuvertes(new Map())).toEqual(["datapackage.json : absent"]);
   });
 });

@@ -807,7 +807,9 @@ async function principal(): Promise<number> {
     {
       nom: "historique des chiffres relu",
       ok: !historiqueIllisible,
-      detail: historiqueIllisible ? "agregats/historique.json est publié mais ne se relit pas" : "",
+      detail: historiqueIllisible
+        ? "agregats/historique.json est publié mais ne se relit pas en entier : réparer par le code (docs/methode.md, § 7)"
+        : "",
     },
     {
       nom: "aucune donnée personnelle",
@@ -868,6 +870,7 @@ async function principal(): Promise<number> {
       nomsUneFamilleEnEchec: famillesEnEchec,
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
       enregistrementsReduits: rapportJour.reduits,
+      nomsDilaNeutralises: dila?.neutralises ?? 0,
       enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,

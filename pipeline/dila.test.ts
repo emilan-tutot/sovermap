@@ -1,6 +1,6 @@
 // Tests of the DILA reader: a made-up Référentiel, documentation names only (RFC 2606).
 import { describe, expect, it } from "vitest";
-import { hoteDuSite, lireDila } from "./dila";
+import { hoteDuSite, lireDila, nomNeutre } from "./dila";
 
 const service = (id: string, nom: string, sites: string[], enfants: string[] = [], extra: object = {}) => ({
   id,
@@ -13,10 +13,33 @@ const service = (id: string, nom: string, sites: string[], enfants: string[] = [
 });
 
 describe("the DILA Référentiel", () => {
-  it("refuses a name a spreadsheet would read as a formula, or with a tab or a carriage return (open CSV files)", () => {
-    const noms = ["=Exemple", "+Exemple", "-Exemple", "@Exemple", "Nom\tExemple", "Nom\rExemple", "Service Exemple"];
+  it("makes a name plain text for a spreadsheet, counts it, and keeps its service (open CSV files)", () => {
+    const noms = [
+      "=Exemple",
+      "+Exemple",
+      "-Exemple",
+      " @=Exemple",
+      "Nom\tExemple",
+      "Nom\r\nExemple",
+      "Nom; =Exemple",
+      "Service; Exemple",
+      "=",
+    ];
     const json = JSON.stringify({ service: noms.map((n, i) => service(`s${i}`, n, [`https://s${i}.example`])) });
-    expect([...lireDila(json, "f").services.values()].map((s) => s.nom)).toEqual(["Service Exemple"]);
+    const ref = lireDila(json, "f");
+    expect([...ref.services.values()].map((s) => [s.nom, s.hotes])).toEqual([
+      ["Exemple", ["s0.example"]],
+      ["Exemple", ["s1.example"]],
+      ["Exemple", ["s2.example"]],
+      ["Exemple", ["s3.example"]],
+      ["Nom Exemple", ["s4.example"]],
+      ["Nom Exemple", ["s5.example"]],
+      ["Nom; Exemple", ["s6.example"]],
+      ["Service; Exemple", ["s7.example"]],
+    ]);
+    // Eight names made plain text; the last one, of signs only, is no name: its service is left out, as one without a name.
+    expect(ref.neutralises).toBe(8);
+    expect(nomNeutre("A; -B; C")).toBe("A; B; C");
   });
 
   it("keeps the hosts of the websites and finds each service's ministry", () => {

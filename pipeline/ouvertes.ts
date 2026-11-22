@@ -189,7 +189,12 @@ function servants(web: EnregistrementNom | undefined) {
 }
 
 /** A list as one field: its elements separated by « ; »; null when it is empty. */
-const liste = (valeurs: readonly string[]): string | null => (valeurs.length === 0 ? null : valeurs.join(";"));
+/** The domain fields that hold one value per known operator, in the same order, « ; » between two. */
+const ALIGNES = ["roles", "operators", "operator_names", "operator_countries", "parents", "parent_countries"] as const;
+
+/** A list of the domains' file: a « ; » inside a value (a company's name) becomes a comma, so the lists stay aligned. */
+const liste = (valeurs: readonly string[]): string | null =>
+  valeurs.length === 0 ? null : valeurs.map((v) => v.replaceAll(";", ",")).join(";");
 
 export type Referentiels = {
   societes: ReadonlyMap<string, Societe>;
@@ -411,9 +416,17 @@ export function fichiersOuverts(
  */
 export function verifierOuvertes(fichiers: ReadonlyMap<string, string>): string[] {
   const erreurs: string[] = [];
-  const paquet = JSON.parse(fichiers.get("datapackage.json") ?? "{}") as {
+  const texteDe = (nom: string): string | null => {
+    const texte = fichiers.get(nom);
+    if (texte === undefined) erreurs.push(`${nom} : absent`);
+    return texte ?? null;
+  };
+  const brut = texteDe("datapackage.json");
+  if (brut === null) return erreurs;
+  const paquet = JSON.parse(brut) as {
     resources?: { name: string; path: string; schema: { fields: Champ[] } }[];
   };
+  if ((paquet.resources ?? []).length === 0) erreurs.push("datapackage.json : aucune table");
   const types: Record<Champ["type"], (v: unknown) => boolean> = {
     string: (v) => typeof v === "string",
     integer: (v) => typeof v === "number" && Number.isSafeInteger(v),
@@ -422,12 +435,22 @@ export function verifierOuvertes(fichiers: ReadonlyMap<string, string>): string[
   };
   for (const r of paquet.resources ?? []) {
     const noms = r.schema.fields.map((f) => f.name);
-    const entete = (fichiers.get(r.path) ?? "").split("\r\n")[0] ?? "";
-    if (entete !== noms.join(",")) erreurs.push(`${r.path} : en-tête différent du schéma`);
-    const json = JSON.parse(fichiers.get(r.path.replace(/\.csv$/, ".json")) ?? "{}") as { rows?: unknown[] };
+    const csv = texteDe(r.path);
+    const texteJson = texteDe(r.path.replace(/\.csv$/, ".json"));
+    if (csv === null || texteJson === null) continue;
+    const lignesCsv = csv.split("\r\n");
+    if (lignesCsv[0] !== noms.join(",")) erreurs.push(`${r.path} : en-tête différent du schéma`);
+    const json = JSON.parse(texteJson) as { rows?: unknown[] };
+    // One CSV line per row, with the header and the final line break (a value never holds a line break: none does).
+    if (lignesCsv.length !== (json.rows ?? []).length + 2)
+      erreurs.push(`${r.path} : nombre de lignes différent du JSON`);
     for (const [i, ligne] of (json.rows ?? []).entries()) {
       const l = (ligne ?? {}) as Record<string, unknown>;
       if (Object.keys(l).sort().join(",") !== [...noms].sort().join(",")) erreurs.push(`${r.name} ${i} : champs`);
+      const longueurs = new Set(
+        ALIGNES.filter((c) => c in l).map((c) => (typeof l[c] === "string" ? (l[c] as string).split(";").length : 0)),
+      );
+      if (longueurs.size > 1) erreurs.push(`${r.name} ${i} : listes d'exploitants de longueurs différentes`);
       for (const f of r.schema.fields) {
         const v = l[f.name];
         if (v !== null && !types[f.type](v)) erreurs.push(`${r.name} ${i} ${f.name} : ${f.type} attendu`);
