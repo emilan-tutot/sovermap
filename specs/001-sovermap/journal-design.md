@@ -76,3 +76,5 @@ Mesuré par `scripts/design/vitesse.ts` (Pixel 7, « Fast 4G », processeur × 4
 | `/ministeres/ministere-de-la-culture` | 628 ms | 0 | non mesuré | 144 Ko |
 
 Budgets (DESIGN.md § 13) : LCP 1,8 s, CLS 0,02, INP 100 ms au plus : tenus. Contrôles sur 11 pages : 0 défilement horizontal, 0 erreur de console, 0 requête vers un autre domaine ; axe : 0, après la correction des blocs de commandes de la Radiographie (`scrollable-region-focusable`, six fois à 390 px avant). Le serveur local lit les données sur GitHub : le premier rendu d'une page n'est pas compté (une requête de mise en route avant les passages).
+
+Images par seconde du globe de l'Atlas, avec les fils du jour 1 (`scripts/design/fps.ts`, Edge sans fenêtre, ANGLE Intel UHD Graphics, Direct3D 11, 12 s de rotation lente) : ordinateur 240 (au plus bas 240, densité 1,5) ; Pixel 9 émulé, processeur × 4 : 234 (au plus bas 225, densité 2). Cibles : 60 et 30.
