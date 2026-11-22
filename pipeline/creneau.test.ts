@@ -10,11 +10,11 @@ describe("the slot of a trial", () => {
     expect(creneauEssaiLibre(a("14:00"), 1)).toBe(false);
   });
 
-  it("is closed within 45 minutes of 03:17 and 09:47 UTC, before as after (a scheduled run may start late)", () => {
-    for (const heure of ["02:33", "03:00", "03:17", "03:50", "04:02", "09:02", "09:47", "10:32"]) {
+  it("is closed within 60 minutes of 03:17 and 09:47 UTC, before as after (a scheduled run may start late)", () => {
+    for (const heure of ["02:17", "03:00", "03:17", "03:50", "04:17", "08:47", "09:47", "10:47"]) {
       expect(creneauEssaiLibre(a(heure), 0)).toBe(false);
     }
-    for (const heure of ["02:31", "04:03", "09:01", "10:33", "23:59", "00:00"]) {
+    for (const heure of ["02:16", "04:18", "08:46", "10:48", "23:59", "00:00"]) {
       expect(creneauEssaiLibre(a(heure), 0)).toBe(true);
     }
   });

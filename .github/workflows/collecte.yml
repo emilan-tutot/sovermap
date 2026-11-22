@@ -87,7 +87,7 @@ jobs:
     if: needs.jour.outputs.faite != 'true'
     runs-on: ubuntu-24.04
     # A trial is capped (it never runs into a day's collection: pipeline/creneau.ts counts on it).
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 240 }}
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}
     # One measurement at a time of each kind: a trial never takes the place of a day's waiting measurement (GitHub keeps
     # one waiting job per group). A trial never measures during, or around the start of, a day's collection (its first
     # step below): two measurements at once would double the questions to the shared servers (brief B.3).
@@ -109,7 +109,7 @@ jobs:
           cache: npm
       - run: npm ci
       # A trial waits for its slot (pipeline/creneau.ts): stopped, in red with a sentence, while a day's collection runs
-      # or waits, or within 45 minutes of 03:17 and 09:47 UTC; it is then run again later.
+      # or waits, or within 60 minutes of 03:17 and 09:47 UTC; it is then run again later.
       - if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}

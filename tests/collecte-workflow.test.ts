@@ -59,7 +59,7 @@ describe("the collection's workflow", () => {
       "github.event_name == 'pull_request'",
     );
     // A trial is capped, and the day's collection waits for a trial that measures.
-    expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 240 }}");
+    expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
     const attente = mesurer.indexOf("--event pull_request");
     expect(attente).toBeGreaterThan(-1);
     expect(attente).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));

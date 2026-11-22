@@ -486,9 +486,10 @@ async function principal(): Promise<number> {
   );
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
-  // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),
-  // and the job always has time to build and keep the day (it stops at 240 minutes).
-  const finControles = maintenant.getTime() + 210 * 60_000;
+  // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
+  // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
+  // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them.
+  const finControles = maintenant.getTime() + 300 * 60_000;
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
@@ -500,7 +501,7 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: maintenant.getTime() + 165 * 60_000,
+      echeance: maintenant.getTime() + 255 * 60_000,
       zoneDe,
       suivi,
       apresDomaine: (domaine, zone) => {
