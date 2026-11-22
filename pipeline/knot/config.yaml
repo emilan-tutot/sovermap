@@ -8,6 +8,14 @@ network:
 cache:
   # One day's run asks about half a million questions: the default size would evict the zones' delegations.
   size-max: 1G
+# The collection asks about public names only: the resolver does not minimise them (query name minimisation, on by
+# default), which hid nothing and sent bursts of NS questions to a zone's servers while it looked for zone cuts under
+# the apex (the busiest seconds of the trials of PRs 15 and 18, 22/11/2026). The option belongs to a view (Knot
+# Resolver 6, « views › options › minimize »): this one holds the collection's own questions, from the loopback.
+views:
+  - subnets: [127.0.0.0/8]
+    options:
+      minimize: false
 logging:
   level: notice
   # Debug lines of the resolver group: one « querying: '<server>'@'<address>' » line per question sent upstream,
