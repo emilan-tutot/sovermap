@@ -83,6 +83,8 @@ export function lireCopiePerimetre(source: CopiePerimetre["source"], date: strin
   for (const ligne of lignes) {
     const site = ligne[iSite];
     if (!site) continue;
+    // A site that is not a host name would be dropped without a word, and the counts would drift: refused.
+    if (nomValide(site) === null) throw new Error(`copie ${source} du ${date} : site illisible (${site.slice(0, 80)})`);
     sites.push(site);
     if (source !== "sig") continue;
     const ministere = ligne[iMinistere] ?? "";

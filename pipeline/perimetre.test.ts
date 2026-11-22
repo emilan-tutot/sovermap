@@ -177,5 +177,7 @@ describe("the reference list", () => {
     expect(() => lireCopiePerimetre("sig", "2026-11-01", "site,ministere\na.example,<b>\n")).toThrow(
       /ministère illisible/,
     );
+    // A site that is not a host name is refused, never dropped without a word.
+    expect(() => lireCopiePerimetre("mesr", "2026-11-21", "site\nhttps://x.example/\n")).toThrow(/site illisible/);
   });
 });
