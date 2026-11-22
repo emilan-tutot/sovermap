@@ -29,7 +29,8 @@ import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
-import { construireListe, type CopieListe } from "../perimetre";
+import { REGLES_EXCLUSION } from "../noms";
+import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -72,7 +73,7 @@ const SEUIL_REDUITES = 0.001;
 const VERSION_CLASSEMENT = 1;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.2.1";
+const METHODE = "0.2.4";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({
@@ -89,6 +90,10 @@ const { values: o } = parseArgs({
     "noms-par-seconde": { type: "string", default: "25" },
     // A local trial may wait less between two attempts (the collection on the runners keeps 10 minutes).
     "delai-reprise-minutes": { type: "string", default: "10" },
+    // The time limits of the day's job (330 minutes); a trial, capped at 60 minutes, passes shorter ones (collecte.yml).
+    "echeance-minutes": { type: "string", default: "255" },
+    "fin-reprises-minutes": { type: "string", default: "290" },
+    "fin-controles-minutes": { type: "string", default: "300" },
     // IPtoASN, surveyed by hand (docs/sources.md, card 18): its files are closed to robots, never downloaded here.
     iptoasn: { type: "string" },
     essai: { type: "boolean", default: false },
@@ -96,6 +101,26 @@ const { values: o } = parseArgs({
     "essai-disjoncteur": { type: "boolean", default: false },
   },
 });
+
+/**
+ * The time limits, in whole minutes, checked as soon as they are read (the review of PR 20): a wrong value stops the
+ * run before any download, any question and the mark « measurement started ».
+ */
+const LIMITES = ((): readonly [number, number, number] => {
+  const [echeance = 0, finReprises = 0, finControles = 0] = (
+    ["echeance-minutes", "fin-reprises-minutes", "fin-controles-minutes"] as const
+  ).map((nom) => {
+    const minutes = Number(o[nom]);
+    if (!Number.isInteger(minutes) || minutes < 1) {
+      throw new Error(`--${nom} : un nombre entier de minutes, au moins 1 (reçu « ${o[nom] ?? ""} »)`);
+    }
+    return minutes;
+  });
+  if (!(echeance <= finReprises && finReprises <= finControles)) {
+    throw new Error("--echeance-minutes, --fin-reprises-minutes et --fin-controles-minutes doivent aller croissant");
+  }
+  return [echeance, finReprises, finControles];
+})();
 
 const lire = (...morceaux: string[]) => readFileSync(path.join(...morceaux), "utf8");
 const json = <T>(...morceaux: string[]) => JSON.parse(lire(...morceaux)) as T;
@@ -114,6 +139,22 @@ function referentiels() {
       return date === undefined ? [] : [{ date, csv: lire(RACINE, "referentiels/listes", f) }];
     })
     .sort((a, b) => (a.date < b.date ? -1 : 1));
+  // The dated copies of the « État » perimeter's open lists (brief C.5): the latest of each source, read and checked
+  // (pipeline/perimetre.ts, lireCopiePerimetre).
+  const FICHIERS_PERIMETRE = {
+    sig: /^sig-(\d{4}-\d{2}-\d{2})\.csv$/,
+    mesr: /^mesr-(\d{4}-\d{2}-\d{2})\.csv$/,
+  } as const;
+  const fichiersPerimetre = readdirSync(path.join(RACINE, "referentiels/perimetre"));
+  const perimetre: CopiePerimetre[] = (["sig", "mesr"] as const).flatMap((source) => {
+    const fichier = fichiersPerimetre
+      .filter((f) => FICHIERS_PERIMETRE[source].test(f))
+      .sort()
+      .at(-1);
+    const date = fichier === undefined ? undefined : FICHIERS_PERIMETRE[source].exec(fichier)?.[1];
+    if (fichier === undefined || date === undefined) return [];
+    return [lireCopiePerimetre(source, date, lire(RACINE, "referentiels/perimetre", fichier))];
+  });
   const fichierPsl = readdirSync(path.join(RACINE, "referentiels/psl"))
     .filter((f) => /^public_suffix_list-\d{4}-\d{2}-\d{2}\.dat$/.test(f))
     .sort()
@@ -129,6 +170,7 @@ function referentiels() {
   if (erreurs.length > 0) throw new Error(`référentiels invalides :\n- ${erreurs.join("\n- ")}`);
   const regles = {
     listes: copies.map((c) => c.date),
+    perimetre: perimetre.map((c) => `${c.source}:${c.date}:${c.empreinte}`),
     psl: psl.version,
     plateformes: plateformes.version,
     cdn: cdn.version,
@@ -138,7 +180,17 @@ function referentiels() {
     schema: VERSION_SCHEMA,
     classement: VERSION_CLASSEMENT,
   };
-  return { copies, psl, plateformes: new Set(plateformes.domaines), temoins, cdn, societes, tableAs, regles };
+  return {
+    copies,
+    perimetre,
+    psl,
+    plateformes: new Set(plateformes.domaines),
+    temoins,
+    cdn,
+    societes,
+    tableAs,
+    regles,
+  };
 }
 type Referentiels = ReturnType<typeof referentiels>;
 
@@ -374,7 +426,15 @@ async function principal(): Promise<number> {
   const quad9 = new ClientCadence(new ClientUdp("quad9", o.controle, 53, 8_000), 2);
   // The fourth rule of the method (§ 3, point 04): at each new list, 20 of its names are asked again to Quad9; if one
   // answers, the rule is suspended and its names are measured, until it is reviewed at the next point.
-  const listeAvecRegle = construireListe(ref.copies, dila, ref.psl, ref.plateformes);
+  const listeAvecRegle = construireListe(
+    ref.copies,
+    dila,
+    ref.psl,
+    ref.plateformes,
+    ".gouv.fr",
+    REGLES_EXCLUSION,
+    ref.perimetre,
+  );
   const nomsRegle = [...(listeAvecRegle.ecartes.get("sous-zone interne") ?? [])];
   const derniereListe = ref.copies.at(-1)?.date ?? "";
   const etatVeille =
@@ -397,7 +457,15 @@ async function principal(): Promise<number> {
         );
   const liste =
     regleInterne.etat === "suspendue"
-      ? construireListe(ref.copies, dila, ref.psl, ref.plateformes, ".gouv.fr", { sousZoneInterne: false })
+      ? construireListe(
+          ref.copies,
+          dila,
+          ref.psl,
+          ref.plateformes,
+          ".gouv.fr",
+          { sousZoneInterne: false },
+          ref.perimetre,
+        )
       : listeAvecRegle;
   const zoneDe = (nom: string) => domaineEnregistrable(nom, ref.psl) ?? nom;
   // Each unit's web name is measured too (it carries the domain's addresses layer); a trial draws a sample whose
@@ -442,9 +510,14 @@ async function principal(): Promise<number> {
   );
   const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
   const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
-  // The controls after the measurement stop at 210 minutes: what is left keeps its level without control (« probable »),
-  // and the job always has time to build and keep the day (it stops at 240 minutes).
-  const finControles = maintenant.getTime() + 210 * 60_000;
+  // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
+  // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
+  // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them. A
+  // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end); the
+  // options were checked as soon as they were read (LIMITES).
+  const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
+  const minutesDe = (minutes: number) => maintenant.getTime() + minutes * 60_000;
+  const finControles = minutesDe(finControlesMinutes);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
@@ -456,7 +529,8 @@ async function principal(): Promise<number> {
       ...POLITESSE,
       nomsParSeconde: Number(o["noms-par-seconde"]),
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: maintenant.getTime() + 165 * 60_000,
+      echeance: minutesDe(echeanceMinutes),
+      finReprises: minutesDe(finReprisesMinutes),
       zoneDe,
       suivi,
       apresDomaine: (domaine, zone) => {
@@ -469,7 +543,7 @@ async function principal(): Promise<number> {
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
       ...(debit.journal === undefined ? {} : { journal: debit.journal }),
     }),
-    controler(quad9, plan.noms, plan.mx),
+    controler(quad9, plan.noms, plan.mx, 8, finControles),
     controler(cloudflare, nomsTemoins, []),
   ]);
   suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);

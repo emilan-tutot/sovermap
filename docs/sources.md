@@ -118,6 +118,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Producteur** : Direction interministérielle du numérique (DINUM).
 - **Adresse** : https://gitlab.adullact.net/dinum/noms-de-domaine-organismes-secteur-public
 - **Ce qu'on en tire** : la liste de référence à jour (nom, type, provenance).
+  - **Piège** (22/11/2026) : la colonne `type` a contenu, pour une ligne, « Ajout Manuel » suivi du nom d'un contributeur. Seuls les 18 types connus sont gardés (`TYPES_LISTE`, `pipeline/liste.ts`) ; toute autre valeur est vidée à la lecture.
 - **Licence ou conditions** :
   - etalab-2.0, d'après la forge, vue par le propriétaire dans un navigateur le 18/11/2026. Non relue par un robot.
   - L'ancienne copie porte la Licence Ouverte 2.0 (fiche 2).
@@ -192,7 +193,10 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Limites de débit** : aucune annoncée. Des réponses 302 vides ont été vues par moments ; rejouées 2 à 3 secondes plus tard, elles ont abouti.
 - **Attribution à afficher** : « Source : Service d'information du Gouvernement (SIG), Observatoire de l'écosystème numérique de l'État – Sites internet, mise à jour du <date> — Licence Ouverte 2.0. »
 - **Téléchargement automatique testé** : **oui**, par l'API tabulaire (`tabular-api.data.gouv.fr/api/resources/<id>/data/`, 15 pages de 50 lignes, `meta.total` = 742). Le fichier lui-même est sur static.data.gouv.fr, fermé aux robots.
-- **Décision : retenue.** La correspondance identifiant → nom de ministère reste à établir (le site source répond 403 aux robots : non vérifié).
+- **Piège** (C.5, 22/11/2026) : dans la copie du 01/11/2026, 15 consulats (`consulfrance.org`) portent l'identifiant ministériel du Premier ministre et de la DILA, quand les 17 autres et les 158 ambassades portent celui des Affaires étrangères. Le ministère d'un domaine est donc celui du Référentiel de la DILA quand elle lui en donne un (c'est le cas de `consulfrance.org`) ; celui du SIG ne sert qu'à défaut, et seulement les jours où le Référentiel est lu, qui seul nomme les ministères.
+- **Décision : retenue.** Les noms des ministères viennent du Référentiel de la DILA (fiche 4), qui emploie les mêmes identifiants.
+- **Copie datée** (C.5, 21/11/2026) : le fichier « audience-liste-sites » de l'édition d'octobre 2026 (mis en ligne le 01/11/2026 ; le jeu publie désormais cinq fichiers d'audience par mois), lu par l'API tabulaire (15 pages de 50 lignes) : 742 sites, dans `referentiels/perimetre/sig-2026-11-01.csv` (site, identifiant de ministère, type de site).
+- **Les noms des ministères** : les 15 identifiants de ministère du SIG sont ceux du Référentiel de la DILA, dont les entrées donnent les noms officiels : 15 sur 15 vérifiés le 21/11/2026.
 
 ### 6. Opérateurs de l'État (annexe « jaune » du projet de loi de finances 2026)
 - **Producteur** : l'État (direction du budget) ; la copie ouverte est déposée par un compte individuel sur data.gouv.fr.
@@ -206,6 +210,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Attribution à afficher** : « Source : projet de loi de finances pour 2026, annexe « Opérateurs de l'État », via data.gouv.fr — Licence Ouverte 2.0. »
 - **Téléchargement automatique testé** : oui, par l'API tabulaire (`meta.total` = 431).
 - **Décision : retenue en contrôle seulement.** Elle délimite le périmètre « opérateurs » (D1). Les domaines viennent d'un rapprochement par nom et par SIREN, à la main, sourcé (T3).
+- **Rapprochement** (21/11/2026) : 431 opérateurs lus par l'API tabulaire (9 pages). Par le nom, le sigle et le nom complet : 87 trouvés parmi les établissements du MESR (fiche 8), 148 au Référentiel de la DILA avec un site et 1 sans site (fiche 4) ; 195 restent à rattacher à leur domaine, à la main, avec une source pour chacun (certains sont déjà dans le périmètre par leur site, comme `ademe.fr` au SIG).
 
 ### 7. Relevés d'août 2026 sur 3 581 domaines publics
 - **Producteur** : un compte individuel sur data.gouv.fr. Son nom n'est pas reproduit ici.
@@ -225,7 +230,9 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Ce qu'on en tire** : 245 établissements, dont 243 avec `url`, plus le SIREN, l'UAI et le statut juridique.
 - **Licence ou conditions** : « Licence Ouverte / Open Licence » (`fr-lo`). Version 1 ou 2.0, l'obligation est la même : citer la source et la date.
 - **Téléchargement automatique testé** : oui, par l'API tabulaire (le portail d'origine est fermé aux robots).
+- **Attribution à afficher** : « Source : ministère de l'Enseignement supérieur, de la Recherche et de l'Espace, Principaux établissements d'enseignement supérieur, version du <date> — Licence Ouverte. »
 - **Décision : retenue** (filtre « enseignement supérieur » ; domaines des universités, qui sont des opérateurs de l'État).
+- **Copie datée** (C.5, 21/11/2026) : le fichier CSV du 21/11/2026, lu par l'API tabulaire (5 pages de 50 lignes) : 245 établissements ; les 152 établissements publics de l'État qui ont un site, dans `referentiels/perimetre/mesr-2026-11-21.csv` (site, nom, SIREN, type) ; les 85 établissements privés et 8 établissements publics locaux (7 écoles d'art en établissements publics de coopération culturelle, SIREN en 2… ; le CREPS de Toulouse, passé à la région en 2016) sont écartés ; aucune autre colonne n'est gardée (ni téléphone, ni adresse, ni compte de réseau social).
 
 ### 9. Établissements des premier et second degrés (Éducation nationale)
 - **Producteur** : ministère de l'Éducation nationale.

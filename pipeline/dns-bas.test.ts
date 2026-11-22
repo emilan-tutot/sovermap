@@ -138,17 +138,19 @@ describe("the low-level DNS client", () => {
     });
     const tcp = net.createServer((s) => s.end());
     await new Promise<void>((ok) => tcp.listen(port, "127.0.0.1", () => ok()));
-    const client = new ClientUdp("essai", "127.0.0.1", port, 10_000);
+    // Three bounds far apart (the client's limit, 30 s; the expected end, under 8 s even on a loaded machine; the test's
+    // own limit, 15 s): a client that waited for its limit fails, and a slow machine alone does not.
+    const client = new ClientUdp("essai", "127.0.0.1", port, 30_000);
     try {
       const debut = performance.now();
       expect((await client.demander("a.example", "TXT")).code).toBe("TIMEOUT");
-      expect(performance.now() - debut).toBeLessThan(5_000);
+      expect(performance.now() - debut).toBeLessThan(8_000);
     } finally {
       client.fermer();
       udp.close();
       tcp.close();
     }
-  });
+  }, 15_000);
 
   it("ends a question at once on a datagram that is not a DNS message (ERREUR, not a TIMEOUT)", async () => {
     const resolveur = dgram.createSocket("udp4");
@@ -159,16 +161,17 @@ describe("the low-level DNS client", () => {
       illisible.writeUInt16BE(dnsPacket.decode(q).id ?? 0, 0);
       resolveur.send(illisible, client.port, client.address);
     });
-    const client = new ClientUdp("essai", "127.0.0.1", resolveur.address().port, 10_000);
+    // The same three bounds as above.
+    const client = new ClientUdp("essai", "127.0.0.1", resolveur.address().port, 30_000);
     try {
       const debut = performance.now();
       expect((await client.demander("a.example", "A")).code).toBe("ERREUR");
-      expect(performance.now() - debut).toBeLessThan(5_000);
+      expect(performance.now() - debut).toBeLessThan(8_000);
     } finally {
       client.fermer();
       resolveur.close();
     }
-  });
+  }, 15_000);
 
   it("ignores a late answer to another question that had the same id", async () => {
     const resolveur = dgram.createSocket("udp4");
