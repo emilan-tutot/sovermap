@@ -15,7 +15,7 @@ export function Reglettes({ q, f }: { q: Qualite; f: Fraicheur }) {
   const g = fr.qualite.gardeFous;
   return (
     <section className="releve" aria-labelledby="q-gardes">
-      <h2 id="q-gardes">{fr.qualite.sections.controles}</h2>
+      <h2 id="q-gardes">{fr.qualite.sections.gardeFous}</h2>
       <ul className="reglettes">
         {gardeFous(q, f).map((gf) => {
           const x = gf.valeur === null ? null : Math.min(LARGEUR, (gf.valeur / (2 * gf.limite)) * LARGEUR);

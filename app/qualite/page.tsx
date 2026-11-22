@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
-import { Bulletin } from "@/components/qualite/Bulletin";
+import { Bulletin, Details } from "@/components/qualite/Bulletin";
 import { EnTete, Sources } from "@/components/qualite/Commun";
 import { Reglettes } from "@/components/qualite/Reglettes";
 import { TableauControles } from "@/components/qualite/TableauControles";
@@ -35,7 +35,14 @@ export default async function QualitePage({ searchParams }: { searchParams: Prom
       ) : (
         <>
           <EnTete q={q} f={f} />
-          {forme === "c" ? <TableauControles q={q} f={f} /> : <Reglettes q={q} f={f} />}
+          {forme === "c" ? (
+            <TableauControles q={q} f={f} />
+          ) : (
+            <>
+              <Reglettes q={q} f={f} />
+              <Details q={q} />
+            </>
+          )}
           <Sources q={q} />
         </>
       )}

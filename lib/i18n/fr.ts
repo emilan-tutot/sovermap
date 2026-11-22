@@ -68,6 +68,7 @@ export const fr = {
       couverture: "La couverture",
       echecs: "Les échecs",
       controles: "Les contrôles",
+      gardeFous: "Les garde-fous",
       debit: "La politesse envers les serveurs",
       sources: "Les sources",
     },

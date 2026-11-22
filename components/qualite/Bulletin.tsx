@@ -18,13 +18,11 @@ function Ligne({ terme, valeur }: { terme: string; valeur: string | null }) {
   );
 }
 
-/** Proposal A, « le bulletin »: one reading column, sections of term-value lists, the sources in a table. */
-export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
+/** The figures of the day's collection as term-value rows (its run, coverage, failures, controls): proposals A and B. */
+export function Details({ q }: { q: Qualite }) {
   const fin = q.collecte.fin;
   return (
     <>
-      <EnTete q={q} f={f} />
-
       <section className="releve" aria-labelledby="q-collecte">
         <h2 id="q-collecte">{t.sections.collecte}</h2>
         <dl>
@@ -95,6 +93,16 @@ export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
           />
         </dl>
       </section>
+    </>
+  );
+}
+
+/** Proposal A, « le bulletin »: one reading column, sections of term-value lists, the sources in a table. */
+export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
+  return (
+    <>
+      <EnTete q={q} f={f} />
+      <Details q={q} />
 
       <section className="releve" aria-labelledby="q-debit">
         <h2 id="q-debit">{t.sections.debit}</h2>
