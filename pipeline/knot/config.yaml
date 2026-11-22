@@ -11,9 +11,12 @@ cache:
 # The collection asks about public names only: the resolver does not minimise them (query name minimisation, on by
 # default), which hid nothing and sent bursts of NS questions to a zone's servers while it looked for zone cuts under
 # the apex (the busiest seconds of the trials of PRs 15 and 18, 22/11/2026). The option belongs to a view (Knot
-# Resolver 6, « views › options › minimize »): this one holds the collection's own questions, from the loopback.
+# Resolver 6, « views › options › minimize »): this one holds the collection's own questions, from the loopback. A view
+# needs exactly one of « answer » and « tags » (6.5.1 refuses the whole configuration otherwise): « allow » lets the
+# questions through, as without the view, and does nothing else.
 views:
   - subnets: [127.0.0.0/8]
+    answer: allow
     options:
       minimize: false
 logging:

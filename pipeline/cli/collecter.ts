@@ -73,7 +73,7 @@ const SEUIL_REDUITES = 0.001;
 const VERSION_CLASSEMENT = 1;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.2.3";
+const METHODE = "0.2.4";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({

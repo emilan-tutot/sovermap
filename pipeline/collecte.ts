@@ -181,7 +181,7 @@ export class ClientParZone implements ClientDns {
   readonly #sousEnPanne = new Set<string>();
   /** The zones each zone's CNAMEs lead to: the resolver's next question goes to their servers. */
   readonly #suites = new Map<string, Set<string>>();
-  /** The names between a zone and the names asked, already asked by the resolver (QNAME minimisation). */
+  /** The names between a zone and the names asked, already counted (a margin: the resolver may ask their DS). */
   readonly #intermediairesVus = new Set<string>();
   constructor(
     private readonly base: ClientDns,
@@ -349,7 +349,8 @@ export class ClientParZone implements ClientDns {
       // question that costs the servers more than one question takes more: what the logs measured for the zone; four
       // where a question failed (the resolver tries the other servers, and again: up to 5 questions for one of ours);
       // and, before the logs can tell, one more for each new name between the zone and the asked name (the resolver
-      // asks those first: QNAME minimisation).
+      // asked those first, with QNAME minimisation; it no longer minimises, since 22/11/2026, but the weight stays, as a
+      // margin: it may still ask the DS of such a name).
       const intermediaires =
         nom === zone
           ? []
