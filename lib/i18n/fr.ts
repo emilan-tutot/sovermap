@@ -58,7 +58,10 @@ export const fr = {
     titre: "Qualité et fraîcheur",
     chapo: "Ce que la collecte du jour a mesuré, comment elle a été contrôlée, et l’âge de chacune de ses sources.",
     nonPublie: "non publié",
-    entete: (date: string, heure: string) => `Collecte du ${date}, publiée à ${heure} UTC`,
+    /** The day and the end of the collection (etat.json says when it ended, not when it was published). */
+    entete: (date: string, heure: string) => `Collecte du ${date}, finie à ${heure}${NBSP}UTC`,
+    /** A time in UTC, never cut from its zone. */
+    heureUtc: (heure: string) => `${heure}${NBSP}UTC`,
     jours: (n: number) => (n === 1 ? "1er jour publié" : `${n} jours publiés de suite`),
     sections: {
       collecte: "La collecte",

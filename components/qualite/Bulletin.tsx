@@ -30,9 +30,9 @@ export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
         <dl>
           <Ligne
             terme={t.collecte.debut}
-            valeur={q.collecte.debut === null ? null : `${heureUtc(q.collecte.debut)} UTC`}
+            valeur={q.collecte.debut === null ? null : t.heureUtc(heureUtc(q.collecte.debut))}
           />
-          <Ligne terme={t.collecte.fin} valeur={fin === null ? null : `${heureUtc(fin)} UTC`} />
+          <Ligne terme={t.collecte.fin} valeur={fin === null ? null : t.heureUtc(heureUtc(fin))} />
           <Ligne
             terme={t.collecte.duree}
             valeur={q.collecte.dureeMinutes === null ? null : minutes(q.collecte.dureeMinutes)}
