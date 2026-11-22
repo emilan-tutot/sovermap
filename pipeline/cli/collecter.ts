@@ -58,7 +58,13 @@ import {
 import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
 import { fichiersSchemas, schemaDe, valider } from "../schemas";
-import { chaineDepuisSociete, type ReferentielAs, type ReferentielSocietes, validerReferentiels } from "../societes";
+import {
+  chaineDepuisSociete,
+  maillonsDe,
+  type ReferentielAs,
+  type ReferentielSocietes,
+  validerReferentiels,
+} from "../societes";
 import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
@@ -645,6 +651,7 @@ async function principal(): Promise<number> {
           mere: chaine.mere?.cle ?? null,
           paysMere: chaine.mere?.pays ?? null,
           categorie: chaine.categorie,
+          maillons: maillonsDe(cle, ref.societes),
         },
       ] as const;
     }),

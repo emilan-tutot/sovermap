@@ -315,7 +315,15 @@ export function fragments<T>(
   return fichiers;
 }
 
-export type Societe = { nom: string; pays: string; mere: string | null; paysMere: string | null; categorie: Categorie };
+export type Societe = {
+  nom: string;
+  pays: string;
+  mere: string | null;
+  paysMere: string | null;
+  categorie: Categorie;
+  /** The companies above it, from its direct parent up, with their names and countries (societes.ts, maillonsDe). */
+  maillons: { cle: string; nom: string; pays: string }[];
+};
 export type Organisme = { nom: string; sigle: string | null; ministere: string | null };
 
 /** The indexes (brief B.6): by AS, company, country, ministry and body. */
