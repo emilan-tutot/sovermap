@@ -651,6 +651,99 @@ export const methode: PageDeTexte = soignee({
   relu: false,
 });
 
+export const confidentialite: PageDeTexte = soignee({
+  chemin: "/confidentialite",
+  titre: "Confidentialité",
+  description:
+    "Ce que Sovermap sait de ses visiteurs : aucun cookie, aucun traceur ; les journaux techniques de son hébergeur, gardés peu de temps ; vos droits.",
+  chapo:
+    "Sovermap n’a ni compte, ni cookie, ni traceur. Il ne reste que ce que tout site produit : les journaux techniques de son hébergeur.",
+  sections: [
+    {
+      titre: "Aucun cookie, aucun traceur",
+      blocs: [
+        {
+          paragraphe: [
+            "Le site ne dépose aucun cookie et n’écrit rien dans votre navigateur. Il ne charge rien d’un autre domaine : ni police, ni script, ni image, ni mesure d’audience. Il n’y a donc aucun bandeau à accepter.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les journaux techniques de l’hébergeur",
+      blocs: [
+        {
+          paragraphe: [
+            "Comme tout hébergeur, Vercel Inc. note, pour chaque requête, l’adresse IP du visiteur, son navigateur et l’heure. Ces journaux servent à faire fonctionner et à protéger le site. L’éditeur en est responsable ; Vercel agit pour lui, en sous-traitant.",
+          ],
+        },
+        {
+          liste: [
+            [
+              "Base juridique : l’intérêt légitime de l’éditeur à faire fonctionner et à protéger le site (RGPD, article 6, paragraphe 1, f).",
+            ],
+            [
+              "Durée : Vercel garde ses journaux d’exécution une heure sur l’offre gratuite du site ; sa politique de confidentialité ne donne pas de durée chiffrée pour ses autres données, gardées « le temps nécessaire ».",
+            ],
+            [
+              "Transfert : Vercel Inc. a son siège aux États-Unis (440 N Barranca Avenue #4133, Covina, CA 91723). Sa politique de confidentialité déclare qu’il respecte le Data Privacy Framework UE–États-Unis, objet de la décision d’adéquation (UE) 2023/1795 de la Commission européenne.",
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les signalements",
+      blocs: [
+        {
+          liste: [
+            [
+              "Une issue GitHub est publique : tout le monde peut la lire. La politique de confidentialité de GitHub s’y applique. N’y écrivez aucune donnée personnelle.",
+            ],
+            [
+              "L’adresse e-mail viendra avec l’ouverture du site, et cette page dira alors ce qu’il advient des messages.",
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Ce que Sovermap mesure",
+      blocs: [
+        {
+          paragraphe: [
+            "Les données mesurées concernent des organismes et des sociétés, pas des personnes. Les rares champs du DNS qui peuvent contenir une donnée personnelle (l’adresse e-mail d’un administrateur dans un enregistrement SOA, les contacts des registres) ne sont jamais gardés.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Vos droits",
+      blocs: [
+        {
+          paragraphe: [
+            "Vous pouvez demander l’accès à vos données, leur rectification, leur effacement, la limitation de leur traitement, ou vous y opposer (RGPD, articles 15 à 21). Le responsable du traitement et ses coordonnées sont dans les mentions légales. Vous pouvez aussi adresser une réclamation à la CNIL (RGPD, article 77).",
+          ],
+        },
+      ],
+    },
+  ],
+  sources: [
+    [
+      "Règlement (UE) 2016/679 (RGPD) : articles 6, 13, 15 à 21, 28 et 77, et chapitre V ; décision d’exécution (UE) 2023/1795.",
+    ],
+    [
+      "Loi n° 78-17, article 82 (cookies et traceurs) ; lignes directrices de la CNIL, délibération n° 2020-091 du 17 septembre 2020.",
+    ],
+    [
+      "Pages de Vercel, lues le 22/11/2026 : sa politique de confidentialité (mise à jour du 1er juin 2026), ses conditions, et sa documentation des journaux (offre Hobby).",
+    ],
+    ["Le cadre juridique de Sovermap (docs/juridique.md, § 2.1 et § 2.2)."],
+  ],
+  revision: REVISION,
+  relu: false,
+});
+
 /** Every text page, in the order of the site's footer. */
 export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [
   aPropos,
@@ -660,5 +753,6 @@ export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [
   radiographieDeSovermap,
   corrections,
   accessibilite,
+  confidentialite,
   credits,
 ];
