@@ -107,6 +107,20 @@ export const fr = {
       date: "Date",
       etat: "État",
     },
+    /** The guards of the day's collection and their limits (proposals B and C). */
+    gardeFous: {
+      echecs: "Échecs non confirmés par le résolveur de contrôle",
+      pannes: "Domaines en panne confirmée",
+      debitPart: "Secondes au-delà de 10 questions vers un même serveur",
+      debitMax: "Le plus de questions en une seconde vers un même serveur",
+      fraicheur: "Âge de la dernière collecte",
+      heures: (h: string) => `${h}${NBSP}h`,
+      limite: (s: string) => `limite${NBSP}: ${s}`,
+      tenu: "dans la limite",
+      depasse: "au-delà de la limite",
+      lecture: (libelle: string, valeur: string, limite: string) => `${libelle}${NBSP}: ${valeur}, ${limite}.`,
+      colonnes: { controle: "Contrôle", valeur: "Valeur", limite: "Limite", resultat: "Résultat" },
+    },
   },
 } as const;
 

@@ -1,7 +1,8 @@
 import type { Fraicheur } from "@/lib/donnees/fraicheur";
 import type { Qualite } from "@/lib/donnees/qualite";
-import { dateFr, heureUtc, minutes, nombre, pourcent } from "@/lib/i18n/format";
+import { heureUtc, minutes, nombre, pourcent } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { EnTete, Sources } from "./Commun";
 
 const t = fr.qualite;
 const nd = (v: string | null) => v ?? t.nonPublie;
@@ -22,14 +23,7 @@ export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
   const fin = q.collecte.fin;
   return (
     <>
-      {f.enRetard ? (
-        <p className="bulletin-retard">
-          <strong>{fr.fraicheur.enRetard}</strong> {fr.fraicheur.retard(nombre(Math.floor(f.ageHeures)))}
-        </p>
-      ) : null}
-      <p className="bulletin-tete">
-        {fin === null ? nd(null) : t.entete(dateFr(fin), heureUtc(fin))} · {t.jours(q.jours)}
-      </p>
+      <EnTete q={q} f={f} />
 
       <section className="releve" aria-labelledby="q-collecte">
         <h2 id="q-collecte">{t.sections.collecte}</h2>
@@ -122,29 +116,7 @@ export function Bulletin({ q, f }: { q: Qualite; f: Fraicheur }) {
         <p className="releve-note">{t.debit.tolerance}</p>
       </section>
 
-      <section className="releve" aria-labelledby="q-sources">
-        <h2 id="q-sources">{t.sections.sources}</h2>
-        <table className="releve-table">
-          <thead>
-            <tr>
-              <th scope="col">{t.sources.fiche}</th>
-              <th scope="col">{t.sources.source}</th>
-              <th scope="col">{t.sources.date}</th>
-              <th scope="col">{t.sources.etat}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {q.sources.map((s) => (
-              <tr key={s.id}>
-                <td className="valeur">{s.fiche ?? ""}</td>
-                <td>{s.id}</td>
-                <td className="valeur">{s.date === null ? "" : dateFr(s.date)}</td>
-                <td>{s.etat}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <Sources q={q} />
     </>
   );
 }
