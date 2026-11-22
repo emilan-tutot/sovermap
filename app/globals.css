@@ -505,6 +505,29 @@
     break-inside: avoid;
   }
 
+  /* The accent says « outside the European Union », everywhere (DESIGN.md §1). */
+  .hors-ue {
+    color: var(--color-accent);
+  }
+
+  .groupe-ministere {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .groupe-ministere h3 {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .groupe-ministere p {
+    margin: 0;
+  }
+
   .pagination {
     display: flex;
     flex-wrap: wrap;

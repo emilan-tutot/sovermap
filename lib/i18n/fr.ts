@@ -245,7 +245,8 @@ export const fr = {
     },
     pays: {
       titre: "Le pays du siège",
-      valeur: (pays: string, categorie: string) => `${pays} · ${categorie}`,
+      /** « États-Unis · hors d’Europe »; « France » once, never « France · France ». */
+      valeur: (pays: string, categorie: string) => (pays === categorie ? pays : `${pays} · ${categorie}`),
     },
     cdn: {
       titre: "Le CDN",
@@ -283,7 +284,8 @@ export const fr = {
       "Les sociétés qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public y figure avec sa nature, jamais comme une société.",
     entete: (date: string, n: string) => `Collecte du ${date} · ${n}${NBSP}sociétés et organismes`,
     domaines: (n: number, texte: string) => (n === 1 ? "1 domaine servi" : `${texte} domaines servis`),
-    siege: (pays: string, categorie: string) => `Siège de la maison mère${NBSP}: ${pays} · ${categorie}`,
+    siege: (pays: string, categorie: string) =>
+      `Siège de la maison mère${NBSP}: ${pays === categorie ? pays : `${pays} · ${categorie}`}`,
     siegeInconnu: "Maison mère non déterminée",
     controle: (texte: string) => `Contrôle${NBSP}: ${texte}`,
     surtitre: "Exploitant",
@@ -301,6 +303,26 @@ export const fr = {
     suivante: "Page suivante",
     pagination: "Pages de la liste",
     source: (version: string) => `Source${NBSP}: référentiels de Sovermap, version ${version}, et collecte du jour.`,
+  },
+  /** The ministries (D.2, R8): the sites the DILA's Référentiel links to each ministry, and who serves them. */
+  ministeres: {
+    titre: "Les ministères",
+    description: `Les ministères et les services de l’État auxquels le Référentiel de la DILA rattache des sites${NBSP}: qui les héberge ou les diffuse, et le pays du siège de sa maison mère.`,
+    chapo:
+      "Les ministères et les services de l’État auxquels le Référentiel de l’organisation administrative de l’État (DILA) rattache des sites mesurés, dans l’ordre alphabétique.",
+    entete: (date: string, n: string) => `Collecte du ${date} · ${n}${NBSP}ministères et services`,
+    domaines: (n: number, texte: string) => (n === 1 ? "1 domaine" : `${texte} domaines`),
+    surtitre: "Ministère",
+    titrePage: (nom: string) => `${nom}${NBSP}: qui héberge ses sites${NBSP}?`,
+    descriptionPage: (nom: string) =>
+      `Les sites de ${nom}${NBSP}: la société qui sert chacun d’eux et le pays du siège de sa maison mère.`,
+    repartition: "Le pays du siège de la maison mère",
+    repartitionNote:
+      "Pour chaque domaine, la société qui sert son nom web (celle qui le diffuse quand un CDN s’interpose, sinon celle qui l’héberge).",
+    groupes: "Les domaines, par société",
+    sansSociete: "Société non déterminée",
+    ligne: (categorie: string, n: string) => `${categorie}${NBSP}: ${n}`,
+    source: `Source${NBSP}: Référentiel de l’organisation administrative de l’État (DILA), et collecte du jour.`,
   },
 } as const;
 
