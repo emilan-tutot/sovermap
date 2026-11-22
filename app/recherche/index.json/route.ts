@@ -63,8 +63,10 @@ export async function GET(): Promise<Response> {
     }),
     ...domaines.map(([d, e]): Entree => ["d", d, e]),
   ];
+  // Shared 6 hours by the CDN (the data change once a day): about 750 KB rendered at most 4 times a day and a region,
+  // rather than 24 (plan § 11, D.4: the Fast Origin Transfer is the tightest quota).
   return Response.json(
     { date: etat.donnees.date, entrees },
-    { headers: { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" } },
+    { headers: { "Cache-Control": "public, max-age=0, s-maxage=21600, stale-while-revalidate=86400" } },
   );
 }
