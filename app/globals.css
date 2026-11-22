@@ -773,6 +773,11 @@
   }
 
   .texte-section p,
+  /* An attribution holds a long address: it wraps anywhere rather than scroll sideways. */
+  .attributions li {
+    overflow-wrap: anywhere;
+  }
+
   .texte-section li {
     max-width: 68ch;
     font-size: var(--text-lecture);

@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
+import { ListeAttributions } from "@/components/donnees/ListeAttributions";
+import { SourcesDuJour } from "@/components/donnees/SourcesDuJour";
+import { attributionsDe } from "@/lib/donnees/attributions";
 import { adresseFichierOuvert, donneesOuvertesDe, FICHIERS_OUVERTS } from "@/lib/donnees/ouvertes";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
@@ -21,7 +24,8 @@ export const metadata: Metadata = {
 };
 
 // The open data (F.1): the day's files in the « donnees-courant » release, their licences, the day's dated sources,
-// the method's version, how to check a file; and the Dataset structured data (D.7). Behind a closed door: « not found ».
+// the method's version, the sources' attributions with the real dates of their files, how to check a file; and the
+// Dataset structured data (D.7). Behind a closed door: « not found ».
 export default async function DonneesPage() {
   if (!sitePublic()) notFound();
   await connection();
@@ -62,17 +66,8 @@ export default async function DonneesPage() {
           ))}
         </ul>
       </section>
-      <section className="texte-section" aria-labelledby="donnees-sources">
-        <h2 id="donnees-sources">{t.sources}</h2>
-        {d.methode === null ? null : <p>{t.methode(d.methode)}</p>}
-        <ul>
-          {d.sources.map((s) => (
-            <li key={`${s.id}-${s.fiche}`}>
-              {t.source(s.id, s.fiche, s.date === null ? t.sansDate : dateFr(s.date), s.etat)}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <SourcesDuJour donnees={d} />
+      <ListeAttributions attributions={attributionsDe(etat.donnees)} />
       <section className="texte-section" aria-labelledby="donnees-verifier">
         <h2 id="donnees-verifier">{t.verifier}</h2>
         <p>{t.verifierTexte}</p>

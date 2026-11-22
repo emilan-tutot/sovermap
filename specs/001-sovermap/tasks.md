@@ -155,7 +155,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] D.8 Tests (e2e de chaque type de page, unitaires, contrôles D.4 de T1). En cours (22/11/2026) : `npm run e2e:site` (`playwright.site.config.ts`, `e2e-site/`), porte ouverte, sur un état publié inventé que `scripts/donnees-essai.ts` écrit avec le code de publication de la collecte (trois domaines en `.example`, numéros d'AS de documentation, aucun réseau), lu dans un dossier local au lieu de GitHub (`SOVERMAP_DONNEES_LOCALES`, jamais sur Vercel) : 11 pages (statut, H1, axe sans violation sérieuse ou critique, aucun défilement horizontal, aucune requête vers un autre domaine, console sans erreur), la 404 d'un domaine non publié, le curseur du temps au clavier et la recherche (index chargé une fois), sur ordinateur et Pixel 7 : 28/28 ; ajouté à la tâche `e2e-public` de la CI. Contrôles D.4 de T1 sur 11 pages × 3 navigateurs × 9 largeurs : 0 défilement, 0 erreur de console, 0 requête vers un autre domaine.
 
 ### Partie E — T5, les textes et les pages légales (`feat/c2-textes`)
-- [ ] E.1 Les pages de texte, datées et sourcées.
+- [ ] E.1 Les pages de texte, datées et sourcées. Fait (22/11/2026) : À propos, la Méthode, Pourquoi ça compte, le Glossaire, Sources et attributions (avec les sources du jour et les attributions datées, lues dans l'état publié), Sovermap passé à sa propre radiographie, Signaler une erreur, Accessibilité, Confidentialité, Crédits ; preuve : `tests/textes.test.ts`, `e2e-site/site.spec.ts` (sources et date de révision de chaque page). Reste : les Mentions légales (Q6 du point 11).
 - [ ] E.2 Le droit, revérifié (`docs/juridique.md`).
 - [ ] E.3 L'article 50 du règlement sur l'IA.
 - [ ] E.4 La fiche des options pour l'identité de l'éditeur.
@@ -163,7 +163,7 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] E.6 Preuves (test des dates et des sources de chaque page de texte).
 
 ### Partie F — T6, les données ouvertes (`feat/c2-donnees-ouvertes`)
-- [ ] F.1 La page Données (CSV, JSON, schéma, licences, attributions, sommes de contrôle).
+- [ ] F.1 La page Données (CSV, JSON, schéma, licences, attributions, sommes de contrôle). Fait (22/11/2026) : la page `/donnees` (fichiers de la Release `donnees-courant`, licences, version de la méthode, sources du jour, attributions exigées et de courtoisie avec la date réelle de chaque fichier, vérification par SHA-256, données `Dataset`) ; preuves : `tests/donnees-ouvertes.test.ts`, `tests/attributions.test.ts`, `e2e-site/site.spec.ts`. Reste : les fichiers par territoire (après C.6), et la première Release écrite par la collecte (branche des données ouvertes).
 - [ ] F.2 Les archives mensuelles (pre-release jusqu'à l'ouverture).
 - [ ] F.3 Les contrôles (schéma, aucune donnée personnelle, rien d'une source « en contrôle seulement »).
 - [ ] F.4 Preuves.

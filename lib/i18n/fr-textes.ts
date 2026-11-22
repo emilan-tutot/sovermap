@@ -754,11 +754,59 @@ export const confidentialite: PageDeTexte = soignee({
 });
 
 /** Every text page, in the order of the site's footer. */
+export const sources: PageDeTexte = soignee({
+  chemin: "/sources",
+  court: "Sources",
+  titre: "Sources et attributions",
+  description:
+    "Les sources de Sovermap : leur registre public, ses décisions, les téléchargements du jour et les attributions, avec la date réelle de chaque fichier.",
+  chapo:
+    "Sovermap ne publie que ce que ses sources permettent de republier. Chacune a sa fiche dans un registre public, avant tout usage.",
+  sections: [
+    {
+      titre: "Le registre",
+      blocs: [
+        {
+          paragraphe: [
+            "Chaque source a sa fiche dans le registre du projet, le fichier ",
+            { valeur: "docs/sources.md" },
+            " de son dépôt public : son producteur, son adresse, ce que Sovermap en tire, sa licence ou ses conditions citées mot pour mot avec leur date de lecture, son fichier robots.txt, ses limites, son attribution et la décision prise.",
+          ],
+        },
+        {
+          paragraphe: [
+            "Une source nouvelle, ou un changement de décision, entre d’abord au registre, avant tout usage. Le fichier robots.txt d’un site se lit avant toute autre requête vers lui. Une protection anti-robots n’est jamais contournée : un fichier fermé aux robots est relevé à la main, dans un navigateur ordinaire, et daté.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "Les décisions",
+      blocs: [
+        {
+          liste: [
+            ["Retenue : la source établit des faits que Sovermap publie, dans le respect de ses conditions."],
+            ["Retenue en contrôle seulement : elle sert à vérifier, jamais à classer seule ; rien n’en est republié."],
+            [
+              "Écartée, parfois pour l’instant : elle n’est pas employée ; sa fiche dit pourquoi, et ce qu’il faudrait pour la rouvrir.",
+            ],
+            ["En attente : elle demande une adresse de contact ou un relevé manuel."],
+          ],
+        },
+      ],
+    },
+  ],
+  sources: [["Le registre des sources de Sovermap (docs/sources.md) : ses règles et ses décisions possibles."]],
+  revision: REVISION,
+  relu: false,
+});
+
 export const PAGES_DE_TEXTE: readonly PageDeTexte[] = [
   aPropos,
   methode,
   pourquoi,
   glossaire,
+  sources,
   radiographieDeSovermap,
   corrections,
   accessibilite,

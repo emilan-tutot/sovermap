@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Texte } from "@/components/texte/Texte";
@@ -32,9 +33,10 @@ function Segments({ segments }: { segments: readonly Segment[] }) {
 /**
  * A text page of the site (part E): its title, a notice by the title while the publisher has not read the text again
  * (brief E.3: clear, and from the first reading), its sections, its sources and the day of its last revision; once
- * read again, one line at the foot of the page instead.
+ * read again, one line at the foot of the page instead. A page that reads the day's state (the sources page) gives
+ * that part as its children, after its sections.
  */
-export function PageTexte({ page }: { page: PageDeTexte }) {
+export function PageTexte({ page, children }: { page: PageDeTexte; children?: ReactNode }) {
   return (
     <Coque>
       <FilAriane miettes={[{ nom: page.titre, chemin: page.chemin }]} />
@@ -66,6 +68,7 @@ export function PageTexte({ page }: { page: PageDeTexte }) {
           )}
         </section>
       ))}
+      {children}
       <section className="texte-sources" aria-labelledby="texte-sources">
         <h2 id="texte-sources">{t.sources}</h2>
         <ul>

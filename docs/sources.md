@@ -862,7 +862,14 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
 
 ## Attributions à afficher sur la page Données
 
-Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers utilisés. Aucune ne suggère un aval du producteur.
+Relue le 22/11/2026 (F.1). La page Données les affiche, chacune avec la date réelle du fichier dont l'état du jour est fait (`lib/donnees/attributions.ts`) : les dates des téléchargements du jour et des copies datées viennent de `etat.json` (ses sources et ses versions) ; celles des pays et des sociétés, des référentiels avec lesquels le site est construit. Une source dont l'état ne donne pas la date n'est pas affichée : jamais une date fausse. Aucune ne suggère un aval du producteur.
+
+Précisions de cette relecture :
+- **DILA** : le nom daté du fichier JSON contenu dans l'archive (`dila_refOrga_admin_Etat_fr_<AAAAMMJJ>.json`, publié dans `etat.json`), et l'adresse longue de l'archive téléchargée (`…/FluxAnneeCourante/dila_refOrga_admin_Etat_fr_latest.zip`) ; les deux tirets cadratins du modèle deviennent des virgules (DESIGN.md § 8.3), sans rien retirer de ce que la DILA exige.
+- **RIPE NCC** : la date de la copie du jour des fichiers « split » est ajoutée.
+- **Insee (Sirene) et GLEIF** : leurs fiches sont lues une à une (API Recherche d'entreprises, fiche 32 ; GLEIF, fiche 31), sans fichier copié ; la date affichée est celle de la dernière lecture (« données lues le <date> », « lues le <date> »).
+- **Union européenne, CC BY 4.0** : « Copyright Union européenne, <année> » ; le signe « © » n'est pas employé dans les textes du site.
+- **SIG et MESR** : affichés dès que l'état du jour nomme leurs copies datées (périmètre, C.5).
 
 **Exigées par la licence ou les conditions :**
 - **DINUM / Etalab** : « liste des noms de domaine des organismes publics, copie du 11/12/2024, Licence Ouverte 2.0 » ; et, pour la liste à jour (fiche 1) : « Source : DINUM, liste des noms de domaine des organismes publics, version du <date>, Licence Ouverte 2.0 ».

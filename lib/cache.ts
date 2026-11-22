@@ -24,6 +24,8 @@ const AGREGATS = [
   "/pays/:slug",
   "/journal",
   "/qualite",
+  "/donnees",
+  "/sources",
 ];
 
 /** The cache rules of next.config.ts's headers(): none behind a closed door. */
