@@ -2,7 +2,7 @@
 // of their last revision. Not read again by the publisher yet (relu: false), until the review of brief E.5. French
 // typography: a non-breaking space before « : ; ! ? » and inside « » (DESIGN.md §6).
 import { type Editeur, HEBERGEUR } from "@/lib/editeur";
-import logiciels from "@/lib/credits.json";
+import { LOGICIELS } from "@/lib/credits";
 import type { PageDeTexte, Segment } from "@/lib/textes";
 
 const NBSP = " ";
@@ -435,8 +435,8 @@ export const credits: PageDeTexte = soignee({
             "Ceux du site et de la collecte, tirés de leurs dépendances, chacun avec sa version et sa licence :",
           ],
         },
-        // lib/credits.json, written by scripts/credits.ts; tests/credits.test.ts fails when it no longer matches.
-        { liste: logiciels.map((l) => [`${l.nom} ${l.version} (licence ${l.licence}).`]) },
+        // lib/credits.ts, written by scripts/credits.ts; tests/credits.test.ts fails when it no longer matches.
+        { liste: LOGICIELS.map((l) => [`${l.nom} ${l.version} (licence ${l.licence}).`]) },
       ],
     },
     {
