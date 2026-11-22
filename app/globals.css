@@ -499,6 +499,83 @@
     color: var(--color-encre);
   }
 
+  /* The chain, proposal B « le fil » (provisional until chosen): a thread with a node per step, like the globe's. */
+  .chaine-b li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    column-gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-left: none;
+  }
+
+  .chaine-b li::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(0.625rem - 0.5px);
+    width: 1px;
+    background: var(--color-trait-fort);
+  }
+
+  .chaine-b li:first-child::before {
+    top: 1rem;
+  }
+
+  .chaine-b li:last-child::before {
+    bottom: calc(100% - 1rem);
+  }
+
+  .chaine-b .chaine-noeud {
+    position: relative;
+    z-index: 1;
+    grid-row: 1 / span 2;
+    justify-self: center;
+    margin-top: 0.25rem;
+    fill: var(--color-fond);
+    stroke: var(--color-encre);
+    stroke-width: 1.5px;
+  }
+
+  .chaine-b li[data-lue] .chaine-noeud {
+    fill: var(--color-encre);
+  }
+
+  .chaine-b li[data-hors-ue] .chaine-noeud {
+    fill: var(--color-accent);
+    stroke: var(--color-accent);
+  }
+
+  .chaine-b a,
+  .chaine-b li > span {
+    grid-column: 2;
+  }
+
+  /* The chain, proposal C « la coupe » (provisional until chosen): strata, one band per step. */
+  .chaine-c {
+    border-top: 1px solid var(--color-trait-fort);
+  }
+
+  .chaine-c li {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem 0.5rem;
+    border-left: none;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .chaine-c .chaine-marque {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: 0.4rem;
+    border-radius: var(--radius-trait);
+    background: var(--color-accent);
+    vertical-align: middle;
+  }
+
   /* The companies (D.2): a list of entries on fine rules; a company's domains in columns at the computer. */
   .liste-societes,
   .liste-domaines {

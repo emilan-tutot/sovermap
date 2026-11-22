@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
+import type { FormeChaine } from "@/components/radiographie/Chaine";
 import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
@@ -19,7 +20,7 @@ import { estNomDns } from "@/pipeline/schemas";
 
 type Props = {
   params: Promise<{ domaine: string }>;
-  searchParams: Promise<{ mode?: string | string[] }>;
+  searchParams: Promise<{ mode?: string | string[]; chaine?: string | string[] }>;
 };
 
 /** The domain of the address, lower case, if it is a DNS name; null otherwise (the page answers « not found »). */
@@ -48,8 +49,10 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
   if (domaine === null) notFound();
   const etat = await lecteur.etat();
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
-  const { mode } = await searchParams;
+  const { mode, chaine } = await searchParams;
   const vue: Mode = mode === "expert" ? "expert" : "simple";
+  // The chain's form, provisional until the owner chooses (point 11): A by default, « ?chaine=b » or « ?chaine=c ».
+  const forme: FormeChaine = chaine === "b" ? "b" : chaine === "c" ? "c" : "a";
   const lire = (chemin: string) => lecteur.fichier(chemin);
   const lu = etat.statut === "ok" ? await fiche(lire, "domaines", domaine) : etat;
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
@@ -85,7 +88,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
       </h1>
       <p className="chapo">{fr.radiographie.chapo}</p>
       <p className="releve-note">{fr.radiographie.collecte(dateFr(s.collecte))}</p>
-      <VueRadiographie r={r} s={s} mode={vue} />
+      <VueRadiographie r={r} s={s} mode={vue} forme={forme} />
     </Coque>
   );
 }

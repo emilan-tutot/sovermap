@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Valeur } from "@/components/texte/Valeur";
+import { Chaine, type Etape, type FormeChaine } from "./Chaine";
 import { CoucheLue } from "./CoucheLue";
 import {
   type Categorie,
@@ -136,12 +137,77 @@ function etatAdresses(r: NonNullable<Radiographie["web"]>): string {
 const niveauAdresses = (r: NonNullable<Radiographie["web"]>): Niveau =>
   r.controle === null ? "probable" : r.controle.accord ? "confirmé" : "non déterminé";
 
-export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRadiographie; mode: Mode }) {
+export function VueRadiographie({
+  r,
+  s,
+  mode,
+  forme = "a",
+}: {
+  r: Radiographie;
+  s: SourcesRadiographie;
+  mode: Mode;
+  forme?: FormeChaine;
+}) {
   const web = r.web;
   const expert = mode === "expert";
   const exploitants = web?.exploitants ?? [];
   const lesSocietes = societes(exploitants);
   const meres = lesSocietes.map((so) => ({ so, mere: so.mere }));
+  // The chain, from the site to the country of a seat (its forms: Chaine.tsx).
+  const paysDesMeres = [
+    ...new Set(meres.flatMap(({ so, mere }) => (mere === null ? [] : [pays(mere === "sommet" ? so.pays : mere.pays)]))),
+  ];
+  const etapes: Etape[] = [
+    { couche: 1, libelle: t.site, valeur: r.nomWeb, brute: true, horsUE: null },
+    {
+      couche: 2,
+      libelle: t.serveurs.titre,
+      valeur: t.liste(societesDesHotes(r.serveurs.hotes).map((x) => x.nom)) || t.nonDetermine,
+      brute: false,
+      horsUE: null,
+    },
+    {
+      couche: 4,
+      libelle: t.reseau.titre,
+      valeur: t.liste([...new Set((web?.reseaux ?? []).map((x) => `AS${x.as}`))]) || t.nonDetermine,
+      brute: true,
+      horsUE: null,
+    },
+    {
+      couche: 5,
+      libelle: t.exploitant.titre,
+      valeur: t.liste(lesSocietes.map((x) => x.nom)) || t.nonDetermine,
+      brute: false,
+      horsUE: null,
+    },
+    {
+      couche: 6,
+      libelle: t.mere.titre,
+      valeur:
+        t.liste(
+          meres.map(({ so, mere }) =>
+            mere === null ? t.nonDetermine : mere === "sommet" ? so.nom : (mere.nom ?? t.mere.nomNonPublie),
+          ),
+        ) || t.nonDetermine,
+      brute: false,
+      horsUE: null,
+    },
+    {
+      couche: 7,
+      libelle: t.pays.titre,
+      valeur:
+        web === null || paysDesMeres.length === 0
+          ? web === null
+            ? t.nonDetermine
+            : categorie(web.categorie)
+          : t.pays.valeur(t.liste(paysDesMeres), categorie(web.categorie)),
+      brute: false,
+      horsUE:
+        web === null || web.categorie === "non déterminé"
+          ? null
+          : web.categorie === "hors d'Europe" || web.categorie === "Europe hors UE",
+    },
+  ];
   const collecte = s.collecte;
   const versionAs = s.referentiels.as ?? t.nonDetermine;
   return (
@@ -385,42 +451,7 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
           <h2 id="titre-chaine" className="etiquette-capitales">
             {t.chaine}
           </h2>
-          <ol className="chaine">
-            <li>
-              <a href="#couche-1">{t.site}</a>
-              <span className="valeur">
-                <Valeur texte={r.nomWeb} />
-              </span>
-            </li>
-            <li>
-              <a href="#couche-2">{t.serveurs.titre}</a>
-              <span>{t.liste(societesDesHotes(r.serveurs.hotes).map((x) => x.nom)) || t.nonDetermine}</span>
-            </li>
-            <li>
-              <a href="#couche-4">{t.reseau.titre}</a>
-              <span className="valeur">
-                {t.liste([...new Set((web?.reseaux ?? []).map((x) => `AS${x.as}`))]) || t.nonDetermine}
-              </span>
-            </li>
-            <li>
-              <a href="#couche-5">{t.exploitant.titre}</a>
-              <span>{t.liste(lesSocietes.map((x) => x.nom)) || t.nonDetermine}</span>
-            </li>
-            <li>
-              <a href="#couche-6">{t.mere.titre}</a>
-              <span>
-                {t.liste(
-                  meres.map(({ so, mere }) =>
-                    mere === null ? t.nonDetermine : mere === "sommet" ? so.nom : (mere.nom ?? t.mere.nomNonPublie),
-                  ),
-                ) || t.nonDetermine}
-              </span>
-            </li>
-            <li>
-              <a href="#couche-7">{t.pays.titre}</a>
-              <span>{web === null ? t.nonDetermine : categorie(web.categorie)}</span>
-            </li>
-          </ol>
+          <Chaine etapes={etapes} forme={forme} />
         </aside>
         <CoucheLue />
       </div>
