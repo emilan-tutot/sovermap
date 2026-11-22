@@ -1614,7 +1614,7 @@
       "note": "Sommet du groupe. GLEIF déclare l'exception « NO_KNOWN_PERSON » (aucune personne connue ne la contrôle) ; les comptes consolidés 2025 disent qu'une personne physique détient la majorité des droits de vote par des sociétés de détention. Les deux sources diffèrent sur la personne, pas sur ce qui compte ici : aucune société ne consolide United Internet AG, qui est donc le sommet de la chaîne. La personne n'est pas nommée, et ses sociétés de détention, qui portent son nom, ne sont pas des maillons."
     },
     "eyona": {
-      "nom": "Eyona",
+      "nom": "Eyona SAS",
       "pays": "FR",
       "mere": "non-determinee",
       "sources": [

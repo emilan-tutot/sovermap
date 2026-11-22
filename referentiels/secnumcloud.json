@@ -359,6 +359,6 @@
     "regle": "Un service n'est lié à une société du référentiel que par sa décision de qualification, lue (fiche 40) : le SIREN qu'elle écrit, s'il est valide (clé de Luhn), est celui de la société au répertoire Sirene (fiche 32) ; sinon, sa raison sociale et sa ville sont celles de Sirene. Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse.",
     "decisionsLues": ["561", "1147", "1951", "2118", "2279", "3393", "4111"],
     "decisionsIntrouvables": ["559", "4267", "4268"],
-    "nonLues": "Les décisions des autres fournisseurs (Cloud Solutions, Cloud Temple, Index Education, Numspot, Oodrive, Thales Cloud Sécurisé, Whaller) ne sont pas lues : aucune société du référentiel ne porte leur nom. Thales Cloud Sécurisé est une filiale du groupe Thales, qui est dans le référentiel : il n'hériterait pas de sa qualification. Leur lien reste vide."
+    "nonLues": "Les décisions des autres fournisseurs (Cloud Solutions, Cloud Temple, Index Education, Numspot, Oodrive, Thales Cloud Sécurisé, Whaller) ne sont pas lues : aucune société du référentiel ne porte leur nom. Le catalogue nomme Thales Cloud Sécurisé, qui n'est pas la société Thales du référentiel ; sans sa décision, aucun lien n'est fait. Leur lien reste vide."
   }
 }
