@@ -30,6 +30,8 @@ export type Qualite = {
     parCode: Record<string, number>;
     pannesConfirmees: number | null;
     pannesPourcent: number | null;
+    /** The share of domains whose failure the control resolver did not confirm: what the guard measures (under 2 %). */
+    nonConfirmesPourcent: number | null;
   };
   temoinsConcordants: boolean | null;
   regleInterne: {
@@ -95,6 +97,7 @@ export function qualiteDe(etat: EtatPublie): Qualite {
       parCode: comptes(champ(q, "echecsParCode")),
       pannesConfirmees: nombre(champ(q, "pannesConfirmees")),
       pannesPourcent: nombre(champ(q, "pannesConfirmeesPourcent")),
+      nonConfirmesPourcent: nombre(champ(q, "tauxEchecNonConfirmesPourcent")),
     },
     temoinsConcordants: ((t) => (typeof t === "boolean" ? t : null))(champ(objet(champ(q, "temoins")), "concordants")),
     regleInterne:

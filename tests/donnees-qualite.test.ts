@@ -32,6 +32,7 @@ const ETAT = {
     echecsParCode: { SERVFAIL: 721, ZONE_MUETTE: 344, "<script>": 1 },
     pannesConfirmees: 256,
     pannesConfirmeesPourcent: 0.61,
+    tauxEchecNonConfirmesPourcent: 0.07,
     temoins: { concordants: true, ecarts: [] },
     regleSousZoneInterne: {
       texte: "sous-zone interne : une étiquette du sous-domaine, autre que la première, vaut « in »",
@@ -54,7 +55,7 @@ describe("the Quality page's figures (part D)", () => {
       collecte: { dureeMinutes: 189, pointDeMesure: "serveur de GitHub Actions (ubuntu-24.04)" },
       methode: "0.2.1",
       couverture: { nomsMesures: 101827, domaines: 41720, domainesEtat: 1903 },
-      echecs: { noms: 1133, pannesConfirmees: 256, pannesPourcent: 0.61 },
+      echecs: { noms: 1133, pannesConfirmees: 256, pannesPourcent: 0.61, nonConfirmesPourcent: 0.07 },
       temoinsConcordants: true,
       regleInterne: { noms: 3901, etat: "appliquée", controle: { poses: 20, codes: { servfail: 14, delai: 5 } } },
       debit: { secondesAuDela: 5, secondes: 9204, max: 19 },
