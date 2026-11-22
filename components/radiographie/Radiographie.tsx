@@ -281,7 +281,10 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
                         ? t.nonDetermine
                         : mere === "sommet"
                           ? t.mere.sommet(so.nom)
-                          : t.societe(mere.nom, pays(mere.pays))}
+                          : t.societe(mere.nom ?? t.mere.nomNonPublie, pays(mere.pays))}
+                      {expert && so.maillons.length > 0 ? (
+                        <p className="releve-note">{t.mere.chaine([so.nom, ...so.maillons.map((m) => m.nom)])}</p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -358,7 +361,9 @@ export function VueRadiographie({ r, s, mode }: { r: Radiographie; s: SourcesRad
               <a href="#couche-6">{t.mere.titre}</a>
               <span>
                 {t.liste(
-                  meres.map(({ so, mere }) => (mere === null ? t.nonDetermine : mere === "sommet" ? so.nom : mere.nom)),
+                  meres.map(({ so, mere }) =>
+                    mere === null ? t.nonDetermine : mere === "sommet" ? so.nom : (mere.nom ?? t.mere.nomNonPublie),
+                  ),
                 ) || t.nonDetermine}
               </span>
             </li>

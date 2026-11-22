@@ -20,6 +20,20 @@ const societes = lireIndexSocietes({
   "filiale-us": { nom: "Filiale Exemple", pays: "IE", mere: "groupe-us", paysMere: "US", categorie: "hors d'Europe" },
   "groupe-us": { nom: "Groupe Exemple", pays: "US", mere: "groupe-us", paysMere: "US", categorie: "hors d'Europe" },
   "sans-mere": { nom: "Société Exemple", pays: "FR", mere: null, paysMere: null, categorie: "non déterminé" },
+  // A parent that serves no site: named by the published chain (from 23/11/2026), or not at all before.
+  "filiale-groupe": {
+    nom: "Filiale de Groupe",
+    pays: "FR",
+    mere: "groupe-fr",
+    paysMere: "FR",
+    categorie: "France",
+    maillons: [
+      { cle: "holding-fr", nom: "Holding Exemple", pays: "FR" },
+      { cle: "groupe-fr", nom: "Groupe Français Exemple", pays: "FR" },
+      { cle: "MAUVAISE", nom: 3, pays: "FR" },
+    ],
+  },
+  "filiale-ancienne": { nom: "Filiale Ancienne", pays: "FR", mere: "groupe-fr", paysMere: "FR", categorie: "France" },
   "MAUVAISE CLE": { nom: "x", pays: "FR", mere: null, paysMere: null, categorie: "France" },
   "pays-illisible": { nom: "x", pays: "France", mere: null, paysMere: null, categorie: "France" },
   "categorie-inconnue": { nom: "x", pays: "FR", mere: null, paysMere: null, categorie: "ailleurs" },
@@ -98,7 +112,14 @@ const web: EnregistrementNom = {
 
 describe("the Radiographie of a domain (D.2)", () => {
   it("reads the day's indexes entry by entry, leaving out what is not one", () => {
-    expect([...(societes?.keys() ?? [])]).toEqual(["hebergeur-fr", "filiale-us", "groupe-us", "sans-mere"]);
+    expect([...(societes?.keys() ?? [])]).toEqual([
+      "hebergeur-fr",
+      "filiale-us",
+      "groupe-us",
+      "sans-mere",
+      "filiale-groupe",
+      "filiale-ancienne",
+    ]);
     expect(as?.get(64496)).toEqual({ titulaire: "Hébergeur Exemple SAS", pays: "FR" });
     // A registry's « EU » is kept as given (no country's name: the page shows the code).
     expect(as?.get(64497)).toEqual({ titulaire: null, pays: "EU" });
@@ -114,6 +135,14 @@ describe("the Radiographie of a domain (D.2)", () => {
     expect(societeVue("hebergeur-fr", index)?.mere).toBe("sommet");
     expect(societeVue("filiale-us", index)?.mere).toEqual({ cle: "groupe-us", nom: "Groupe Exemple", pays: "US" });
     expect(societeVue("sans-mere", index)?.mere).toBeNull();
+    expect(societeVue("filiale-groupe", index)).toMatchObject({
+      mere: { cle: "groupe-fr", nom: "Groupe Français Exemple", pays: "FR" },
+      maillons: [
+        { cle: "holding-fr", nom: "Holding Exemple", pays: "FR" },
+        { cle: "groupe-fr", nom: "Groupe Français Exemple", pays: "FR" },
+      ],
+    });
+    expect(societeVue("filiale-ancienne", index)?.mere).toEqual({ cle: "groupe-fr", nom: null, pays: "FR" });
     expect(societeVue("inconnue", index)).toBeNull();
     expect(societeVue(null, index)).toBeNull();
     expect(nomPays("US")).toBe("États-Unis");

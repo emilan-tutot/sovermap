@@ -11,12 +11,15 @@ export type Niveau = "confirmé" | "probable" | "non déterminé";
 export type Categorie = "France" | "UE hors France" | "Europe hors UE" | "hors d'Europe" | "non déterminé";
 
 /** A company of the day's index (index/exploitants.json). `mere` is its ultimate parent's key: itself at the top. */
+export type Maillon = { cle: string; nom: string; pays: string };
 export type SocieteIndex = {
   nom: string;
   pays: string;
   mere: string | null;
   paysMere: string | null;
   categorie: Categorie;
+  /** The companies above it, from its direct parent up (published from 23/11/2026; none before). */
+  maillons: Maillon[];
 };
 export type IndexSocietes = ReadonlyMap<string, SocieteIndex>;
 /** What the day's index publishes of an AS (index/as.json): its holder only for the AS of the referentials' companies. */
@@ -51,7 +54,16 @@ export function lireIndexSocietes(valeur: unknown): IndexSocietes | null {
     const categorie = CATEGORIES.find((c) => c === e["categorie"]);
     const mere = e["mere"] === null ? null : texte(e["mere"], 100);
     if (nom === null || paysSociete === null || categorie === undefined) continue;
-    index.set(cle, { nom, pays: paysSociete, mere, paysMere: codePays(e["paysMere"]), categorie });
+    const maillons = (Array.isArray(e["maillons"]) ? (e["maillons"] as unknown[]) : []).slice(0, 10).flatMap((m) => {
+      const o = objet(m);
+      const cleMaillon = texte(o?.["cle"], 100);
+      const nomMaillon = texte(o?.["nom"], 200);
+      const paysMaillon = codePays(o?.["pays"]);
+      return cleMaillon === null || nomMaillon === null || paysMaillon === null
+        ? []
+        : [{ cle: cleMaillon, nom: nomMaillon, pays: paysMaillon }];
+    });
+    index.set(cle, { nom, pays: paysSociete, mere, paysMere: codePays(e["paysMere"]), categorie, maillons });
   }
   return index;
 }
@@ -86,8 +98,16 @@ const NOMS_PAYS = new Map<string, string>(pays.pays.map((p) => [p.a2, p.fr]));
 export const nomPays = (code: string | null): string | null => (code === null ? null : (NOMS_PAYS.get(code) ?? null));
 const NOMS_CDN = new Map<string, string>(cdn.fournisseurs.map((f) => [f.id, f.nom]));
 
-export type MereVue = { cle: string; nom: string; pays: string | null } | "sommet" | null;
-export type SocieteVue = { cle: string; nom: string; pays: string; mere: MereVue; categorie: Categorie };
+/** The ultimate parent: its name is null when the day's index does not publish it (before 23/11/2026). */
+export type MereVue = { cle: string; nom: string | null; pays: string | null } | "sommet" | null;
+export type SocieteVue = {
+  cle: string;
+  nom: string;
+  pays: string;
+  mere: MereVue;
+  categorie: Categorie;
+  maillons: Maillon[];
+};
 export type ExploitantVu = {
   role: "hébergé par" | "diffusé par";
   societe: SocieteVue | null;
@@ -180,13 +200,11 @@ export function societeVue(cle: string | null, societes: IndexSocietes): Societe
   if (cle === null) return null;
   const s = societes.get(cle);
   if (s === undefined) return null;
+  const sommet = s.maillons.at(-1);
+  const nomMere = sommet?.cle === s.mere ? sommet.nom : (societes.get(s.mere ?? "")?.nom ?? null);
   const mere: MereVue =
-    s.mere === null
-      ? null
-      : s.mere === cle
-        ? "sommet"
-        : { cle: s.mere, nom: societes.get(s.mere)?.nom ?? s.mere, pays: s.paysMere };
-  return { cle, nom: s.nom, pays: s.pays, mere, categorie: s.categorie };
+    s.mere === null ? null : s.mere === cle ? "sommet" : { cle: s.mere, nom: nomMere, pays: s.paysMere };
+  return { cle, nom: s.nom, pays: s.pays, mere, categorie: s.categorie, maillons: s.maillons };
 }
 
 const niveauDe = (v: string): Niveau => NIVEAUX.find((n) => n === v) ?? "non déterminé";

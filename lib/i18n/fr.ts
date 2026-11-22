@@ -239,6 +239,9 @@ export const fr = {
     mere: {
       titre: "La maison mère",
       sommet: (nom: string) => `${nom}, au sommet de sa chaîne`,
+      nomNonPublie: "nom non publié ce jour-là",
+      /** « qui possède qui »: « OVH SAS → OVH Groupe ». */
+      chaine: (noms: readonly string[]) => noms.join(" → "),
     },
     pays: {
       titre: "Le pays du siège",
