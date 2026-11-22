@@ -175,8 +175,11 @@
 /* The help under the globe, never over a label. */
 .scene-aide {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--color-discret);
 }
 .honnetete {
   margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-discret);
+}

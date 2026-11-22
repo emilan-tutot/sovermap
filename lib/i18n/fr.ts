@@ -353,6 +353,32 @@ export const fr = {
     societes: "Les sociétés",
     aucune: "Aucune société dont la maison mère a son siège dans ce pays, ce jour-là.",
   },
+  /** The Atlas (D.2): the question, the headline figure and its neighbours, the globe and its table. */
+  atlas: {
+    auMoins: (pourcent: string) => `Au moins ${pourcent}`,
+    definition: (domaines: string) =>
+      `des ${domaines}${NBSP}domaines du périmètre «${NBSP}État${NBSP}» sont servis par au moins une société dont la maison mère a son siège hors de l’Union européenne, établi par deux sources indépendantes à chaque étape («${NBSP}confirmé${NBSP}»).`,
+    probable: (pourcent: string) => `Probable${NBSP}: ${pourcent} de plus`,
+    nonDetermine: (pourcent: string) => `Non déterminé${NBSP}: ${pourcent}`,
+    collecte: (date: string) => `Collecte du ${date}`,
+    sousChiffres: "À côté",
+    gouvFr: (pourcent: string, domaines: string) => `Domaines en .gouv.fr${NBSP}: au moins ${pourcent} de ${domaines}`,
+    serveursDeNoms: (pourcent: string, domaines: string) =>
+      `Serveurs de noms${NBSP}: au moins ${pourcent} de ${domaines} domaines`,
+    messagerie: (pourcent: string, domaines: string) =>
+      `Messagerie${NBSP}: au moins ${pourcent} de ${domaines} domaines`,
+    tableau: "Les pays des sièges, en tableau",
+    colonnes: {
+      pays: "Pays du siège",
+      domaines: `Domaines du périmètre «${NBSP}État${NBSP}»`,
+      categorie: "Union européenne",
+    },
+    horsUE: "hors UE",
+    dansUE: "dans l’UE",
+    panneau: (nom: string, n: string) => `${nom}${NBSP}: ${n}${NBSP}domaines du périmètre «${NBSP}État${NBSP}»`,
+    voirPays: "Voir la page du pays",
+    fermer: "Fermer",
+  },
 } as const;
 
 export type Dictionary = typeof fr;
