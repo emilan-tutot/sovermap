@@ -48,7 +48,18 @@ Deux écarts attendus ne sont pas des erreurs, et sont expliqués comme tels : u
 
 ## 6. Les passages
 
-<!-- Le passage sur l'état du jour 2 (22/11/2026) s'écrit ici : date, état, graine, résultat, tableau, désaccords expliqués. -->
+### Passage du 22/11/2026 : l'état du jour 2
+
+- **L'état vérifié** : la collecte du 22/11/2026 (mesure de 11:26 à 15:05 UTC, publiée à 15:06), méthode 0.2.1, référentiels 0.2. Vérification depuis un ordinateur, à partir de 16:10 UTC.
+- **Le tirage** : graine 20261122 ; 30 domaines : 10 de l'État, 5 opérateurs, 5 collectivités, 5 derrière un CDN (tous les cinq derrière Cloudflare ce jour-là), 5 pour la messagerie.
+- **Le résultat** : **160 couches concordent sur 162 vérifiées (98,8 %)**, au-dessus de l'objectif de 95 % ; 6 couches non vérifiables. Questions : Team Cymru 40 (au plus 100), RIPEstat 40 (au plus 140).
+- **Les deux désaccords, expliqués** :
+  - **emploi.gouv.fr** et **ccomptes.fr**, leurs serveurs de noms : l'état publié en donne quatre, le résolveur de l'ordinateur cinq (`nsc.perf1.com` en plus). Au jour 1, ces deux zones n'avaient que les quatre premiers, alors que d'autres zones du même hébergeur de DNS (handicap.gouv.fr, cnle.gouv.fr) avaient déjà le cinquième : le serveur a été ajouté entre le jour 1 et la vérification. L'état publié retient un changement tant que deux collectes de suite ne l'ont pas vu (méthode, § 7), et le jour 2 était un jour de règles nouvelles, où rien n'entre au journal. **Écart attendu, pas une erreur** ; le passage suivant dira si le changement est publié.
+- **Les six couches non vérifiables** :
+  - trois « serveurs de noms » de pages sur une plateforme (`www.mairiebarjac.jimdofree.com`, `lycee-galilee.jimdo.com`, `mairielavergne.e-monsite.com`) : chacune est mesurée comme une unité à part (méthode, § 3), mais ce n'est pas une zone, et la question de ses serveurs de noms n'a pas de réponse ; leurs serveurs sont ceux de la plateforme ;
+  - deux « réseaux » (`mairieviesly.biz`, `mairielavergne.e-monsite.com`) : ni Team Cymru ni RIPEstat n'ont donné d'AS pour les adresses trouvées ;
+  - la maison mère d'Eurofiber France (ccomptes.fr) : la société n'a pas de LEI, et sa maison mère reste « non déterminé » (aucune source permise ne l'établit).
+- **Attribution** : RIPE NCC, RIPEstat (données de RIS, du RIPE NCC) ; Team Cymru ; GLEIF (CC0).
 
 ## 7. Refaire la contre-vérification
 
