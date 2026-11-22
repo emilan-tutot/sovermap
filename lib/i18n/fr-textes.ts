@@ -317,7 +317,7 @@ export const pourquoi: PageDeTexte = soignee({
       blocs: [
         {
           paragraphe: [
-            "Depuis 2024, quand l’État, ses opérateurs et certains groupements confient à un cloud privé des données d’une sensibilité particulière, ils doivent veiller à leur protection contre tout accès d’autorités d’États tiers non autorisé par le droit européen (loi n° 2024-449, article 31 ; décret n° 2026-272).",
+            "La loi n° 2024-449 du 21 mai 2024 (article 31) et son décret d’application, le décret n° 2026-272 du 14 avril 2026 (publié au Journal officiel le 16 avril 2026), demandent à l’État, à ses opérateurs et à certains groupements qui confient à un cloud privé des données d’une sensibilité particulière de veiller à leur protection contre tout accès d’autorités d’États tiers non autorisé par le droit européen.",
           ],
         },
         {
