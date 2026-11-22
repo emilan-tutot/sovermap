@@ -1,0 +1,283 @@
+{
+  "version": "2026-11-19",
+  "source": {
+    "fiche": 40,
+    "document": "ANSSI, Catalogue des produits et services certifiés, qualifiés ou agréés, novembre 2026, § 3.3.1 « Les services qualifiés »",
+    "miseAJour": "2026-11-19",
+    "releve": "relevé manuel : catalogue téléchargé par le propriétaire dans un navigateur ordinaire, déposé le 2026-11-20, lu le 2026-11-21"
+  },
+  "phrase": "Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise.",
+  "note": "Les fournisseurs sont écrits comme dans le catalogue. Leur rapprochement avec les sociétés de referentiels/societes.json (champ societe) demande deux sources et se fait avec C.1 : null jusque-là. Les prestataires « en cours de qualification » de la page de l'ANSSI ne sont jamais repris.",
+  "services": [
+    {
+      "fournisseur": "Cegedim",
+      "societe": null,
+      "service": "CegNumCloud Secured IaaS",
+      "types": ["IaaS"],
+      "debut": "2024-12-04",
+      "fin": "2027-12-04",
+      "decision": "1951"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Air times",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2820"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Workboard",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2816"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Espaces de travail",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2818"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Communautés",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2822"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Chat",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2821"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Taches et gantt",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2817"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Agenda",
+      "types": ["SaaS"],
+      "debut": "2026-05-18",
+      "fin": "2029-05-19",
+      "decision": "2819"
+    },
+    {
+      "fournisseur": "Cloud Solutions",
+      "societe": null,
+      "service": "Wimi - Documents et co-edition",
+      "types": ["SaaS"],
+      "debut": "2026-07-03",
+      "fin": "2029-05-18",
+      "decision": "3110"
+    },
+    {
+      "fournisseur": "Cloud Temple",
+      "societe": null,
+      "service": "PaaS Openshift",
+      "types": ["PaaS"],
+      "debut": "2025-05-30",
+      "fin": "2028-05-30",
+      "decision": "919"
+    },
+    {
+      "fournisseur": "Cloud Temple",
+      "societe": null,
+      "service": "IAAS - Secure Temple (IaaS Vmware, IaaS Opensource, stockage objet S3, brique HSM-KMS, Baremetal, VPC, VMI)",
+      "types": ["IaaS"],
+      "debut": "2026-07-31",
+      "fin": "2028-05-30",
+      "decision": "3389"
+    },
+    {
+      "fournisseur": "Ecritel",
+      "societe": null,
+      "service": "Ecritel Secure Cloud (IaaS)",
+      "types": ["IaaS"],
+      "debut": "2026-09-22",
+      "fin": "2029-09-22",
+      "decision": "4267"
+    },
+    {
+      "fournisseur": "Ecritel",
+      "societe": null,
+      "service": "Ecritel Secure Backup (SaaS)",
+      "types": ["SaaS"],
+      "debut": "2026-11-10",
+      "fin": "2029-09-22",
+      "decision": "4268"
+    },
+    {
+      "fournisseur": "Index Education",
+      "societe": null,
+      "service": "Pronote",
+      "types": ["SaaS"],
+      "debut": "2025-05-05",
+      "fin": "2027-06-18",
+      "decision": "795"
+    },
+    {
+      "fournisseur": "Index Education",
+      "societe": null,
+      "service": "Pronote Primaire",
+      "types": ["SaaS"],
+      "debut": "2025-05-05",
+      "fin": "2027-06-18",
+      "decision": "796"
+    },
+    {
+      "fournisseur": "Index Education",
+      "societe": null,
+      "service": "Hyperplanning",
+      "types": ["SaaS"],
+      "debut": "2025-05-05",
+      "fin": "2027-06-18",
+      "decision": "797"
+    },
+    {
+      "fournisseur": "Index Education",
+      "societe": null,
+      "service": "EDT",
+      "types": ["SaaS"],
+      "debut": "2025-05-05",
+      "fin": "2027-06-18",
+      "decision": "798"
+    },
+    {
+      "fournisseur": "Numspot",
+      "societe": null,
+      "service": "Plateforme des services cloud de Numspot",
+      "types": ["IaaS"],
+      "debut": "2026-07-31",
+      "fin": "2029-07-31",
+      "decision": "3395"
+    },
+    {
+      "fournisseur": "OVH",
+      "societe": null,
+      "service": "Hosted Private Cloud powered by VMware",
+      "types": ["IaaS"],
+      "debut": "2023-12-28",
+      "fin": "2026-12-29",
+      "decision": "2279"
+    },
+    {
+      "fournisseur": "OVH",
+      "societe": null,
+      "service": "Bare Metal Pod",
+      "types": ["IaaS"],
+      "debut": "2025-03-24",
+      "fin": "2028-03-24",
+      "decision": "559"
+    },
+    {
+      "fournisseur": "OVH",
+      "societe": null,
+      "service": "SNC Cloud Platform",
+      "types": ["IaaS"],
+      "debut": "2026-07-31",
+      "fin": "2029-07-31",
+      "decision": "3393"
+    },
+    {
+      "fournisseur": "Oodrive",
+      "societe": null,
+      "service": "Oodrive_Meet",
+      "types": ["SaaS"],
+      "debut": "2026-11-10",
+      "fin": "2028-01-25",
+      "decision": "4260"
+    },
+    {
+      "fournisseur": "Oodrive",
+      "societe": null,
+      "service": "Oodrive_Work",
+      "types": ["SaaS"],
+      "debut": "2025-01-20",
+      "fin": "2028-01-25",
+      "decision": "243"
+    },
+    {
+      "fournisseur": "Oodrive",
+      "societe": null,
+      "service": "Oodrive_Work_Share",
+      "types": ["SaaS"],
+      "debut": "2025-01-20",
+      "fin": "2028-01-25",
+      "decision": "241"
+    },
+    {
+      "fournisseur": "Orange Business Services",
+      "societe": null,
+      "service": "Cloud Avenue SecNum",
+      "types": ["IaaS"],
+      "debut": "2025-07-11",
+      "fin": "2028-07-11",
+      "decision": "1147"
+    },
+    {
+      "fournisseur": "Orange Business Services",
+      "societe": null,
+      "service": "Cloud Avenue Secnum Dynamic",
+      "types": ["IaaS"],
+      "debut": "2026-09-22",
+      "fin": "2029-09-22",
+      "decision": "4111"
+    },
+    {
+      "fournisseur": "Outscale",
+      "societe": null,
+      "service": "IaaS Cloud on Demand",
+      "types": ["IaaS"],
+      "debut": "2023-11-30",
+      "fin": "2026-11-30",
+      "decision": "2118"
+    },
+    {
+      "fournisseur": "Thales Cloud Sécurisé",
+      "societe": null,
+      "service": "Cloud de confiance S3NS",
+      "types": ["PaaS", "CaaS", "IaaS"],
+      "debut": "2025-12-17",
+      "fin": "2028-12-17",
+      "decision": "2057"
+    },
+    {
+      "fournisseur": "Whaller",
+      "societe": null,
+      "service": "Whaller Donjon SaaS",
+      "types": ["SaaS"],
+      "debut": "2024-08-02",
+      "fin": "2027-08-02",
+      "decision": "1369"
+    },
+    {
+      "fournisseur": "Worldline",
+      "societe": null,
+      "service": "Worldline Cloud Services - Secured IaaS",
+      "types": ["IaaS"],
+      "debut": "2025-03-24",
+      "fin": "2028-03-31",
+      "decision": "561"
+    }
+  ]
+}

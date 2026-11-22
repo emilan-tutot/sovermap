@@ -1,6 +1,6 @@
 {
-  "version": "0.1",
-  "date": "2026-11-19",
+  "version": "0.2",
+  "date": "2026-11-21",
   "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents). La table complète est établie en T3.",
   "regle": "Une ligne relie un AS à la société qui l'exploite. Première source : le titulaire inscrit au registre régional (lu dans IPtoASN, vérifiable par le RDAP du registre). Seconde source : l'identité de la société dans un registre d'entreprises (Sirene, GLEIF) ou une liste officielle. Les deux concordent : « confirmé ». Une seule : « probable ».",
   "as": {
@@ -9,14 +9,14 @@
       "titulaire_registre": "Cloudflare, Inc.",
       "sources": [
         {
-          "titre": "RDAP de l'ARIN : AS13335 CLOUDFLARENET, titulaire Cloudflare, Inc. (États-Unis)",
-          "url": "https://rdap.arin.net/registry/autnum/13335",
-          "lu_le": "2026-11-19"
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS13335 « CLOUDFLARENET - Cloudflare, Inc. »",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
         },
         {
-          "titre": "GLEIF : CLOUDFLARE, INC., LEI 5493007DY18BGNLDWU14, États-Unis",
-          "url": "https://search.gleif.org/#/record/5493007DY18BGNLDWU14",
-          "lu_le": "2026-11-19"
+          "titre": "Fichier de délégation de l'ARIN du 20/11/2026 (fiche 21) : l'AS13335 a le même titulaire que 7 des 15 plages IPv4 de la liste officielle de Cloudflare (fiche 27)",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "lu_le": "2026-11-21"
         }
       ]
     },
@@ -25,14 +25,14 @@
       "titulaire_registre": "Fastly, Inc.",
       "sources": [
         {
-          "titre": "RDAP de l'ARIN : AS54113 FASTLY, titulaire Fastly, Inc. (États-Unis)",
-          "url": "https://rdap.arin.net/registry/autnum/54113",
-          "lu_le": "2026-11-19"
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS54113 « FASTLY - Fastly, Inc. »",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
         },
         {
-          "titre": "GLEIF : FASTLY, INC., LEI 549300E2FZC83FJ3H565, États-Unis",
-          "url": "https://search.gleif.org/#/record/549300E2FZC83FJ3H565",
-          "lu_le": "2026-11-19"
+          "titre": "Fichier de délégation de l'ARIN du 20/11/2026 (fiche 21) : l'AS54113 a le même titulaire que 13 des 21 plages IPv4 de la liste officielle de Fastly (fiche 27)",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "lu_le": "2026-11-21"
         }
       ]
     },
@@ -41,9 +41,9 @@
       "titulaire_registre": "Akamai International B.V.",
       "sources": [
         {
-          "titre": "RDAP du RIPE NCC : AS20940 AKAMAI-ASN1, titulaire Akamai International B.V.",
-          "url": "https://rdap.db.ripe.net/autnum/20940",
-          "lu_le": "2026-11-19"
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS20940 « AKAMAI-ASN1 Akamai International B.V. »",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
         }
       ]
     },
@@ -52,9 +52,14 @@
       "titulaire_registre": "Incapsula Inc",
       "sources": [
         {
-          "titre": "RDAP de l'ARIN : AS19551 INCAPSULA, titulaire Incapsula Inc (États-Unis)",
-          "url": "https://rdap.arin.net/registry/autnum/19551",
-          "lu_le": "2026-11-19"
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fiche 18) : AS19551 « INCAPSULA - Incapsula Inc », US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Fichier de délégation de l'ARIN du 20/11/2026 (fiche 21) : l'AS19551 a le même titulaire que 6 des 11 plages IPv4 de la liste officielle d'Imperva (fiche 27)",
+          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "lu_le": "2026-11-21"
         }
       ]
     },
@@ -63,8 +68,8 @@
       "titulaire_registre": "Radware Ltd",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Radware Ltd",
-          "url": "https://rdap.db.ripe.net/autnum/198949",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire Radware Ltd",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -79,8 +84,8 @@
       "titulaire_registre": "Radware Ltd",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Radware Ltd",
-          "url": "https://rdap.db.ripe.net/autnum/48851",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire Radware Ltd",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -95,8 +100,8 @@
       "titulaire_registre": "Claranet Limited",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Claranet Limited",
-          "url": "https://rdap.db.ripe.net/autnum/8426",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire Claranet Limited",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -111,8 +116,8 @@
       "titulaire_registre": "F5 Networks SARL",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire F5 Networks SARL",
-          "url": "https://rdap.db.ripe.net/autnum/35280",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire F5 Networks SARL",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -127,8 +132,8 @@
       "titulaire_registre": "La Direction interministérielle du numérique",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS DISIC-RIE-AS, titulaire LA DIRECTION INTERMINISTERIELLE DU NUMERIQUE",
-          "url": "https://rdap.db.ripe.net/autnum/60855",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS DISIC-RIE-AS, titulaire LA DIRECTION INTERMINISTERIELLE DU NUMERIQUE",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -143,8 +148,8 @@
       "titulaire_registre": "Ministère de l'Europe et des Affaires étrangères",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-MAE, titulaire Ministere De L'europe Et Des Affaires Etrangeres",
-          "url": "https://rdap.db.ripe.net/autnum/50588",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS FR-MAE, titulaire Ministere De L'europe Et Des Affaires Etrangeres",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -159,8 +164,8 @@
       "titulaire_registre": "OVH SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire OVH SAS",
-          "url": "https://rdap.db.ripe.net/autnum/16276",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire OVH SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -175,8 +180,8 @@
       "titulaire_registre": "Renater",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RENATER, titulaire Renater",
-          "url": "https://rdap.db.ripe.net/autnum/2200",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS FR-RENATER, titulaire Renater",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -191,8 +196,8 @@
       "titulaire_registre": "Renater",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RENATER-REAUMUR, titulaire Renater",
-          "url": "https://rdap.db.ripe.net/autnum/2202",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS FR-RENATER-REAUMUR, titulaire Renater",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -207,8 +212,8 @@
       "titulaire_registre": "Renater",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RENATER, titulaire Renater",
-          "url": "https://rdap.db.ripe.net/autnum/2060",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS FR-RENATER, titulaire Renater",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -223,8 +228,8 @@
       "titulaire_registre": "Renater",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS FR-RAREST, titulaire Renater",
-          "url": "https://rdap.db.ripe.net/autnum/2259",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS FR-RAREST, titulaire Renater",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -239,8 +244,8 @@
       "titulaire_registre": "Celeste SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Celeste SAS",
-          "url": "https://rdap.db.ripe.net/autnum/34177",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire Celeste SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -255,8 +260,8 @@
       "titulaire_registre": "Societe Francaise Du Radiotelephone - SFR SA",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS LDCOMNET, titulaire Societe Francaise Du Radiotelephone - SFR SA",
-          "url": "https://rdap.db.ripe.net/autnum/15557",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS LDCOMNET, titulaire Societe Francaise Du Radiotelephone - SFR SA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -271,8 +276,8 @@
       "titulaire_registre": "Orange Business Services SA",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS EOLAS-AS, titulaire Orange Business Services SA",
-          "url": "https://rdap.db.ripe.net/autnum/15401",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS EOLAS-AS, titulaire Orange Business Services SA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -287,8 +292,8 @@
       "titulaire_registre": "Orange S.A.",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Orange S.A.",
-          "url": "https://rdap.db.ripe.net/autnum/3215",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire Orange S.A.",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -303,8 +308,8 @@
       "titulaire_registre": "Eurofiber France SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS EUROFIBER-FRANCE, titulaire Eurofiber France SAS",
-          "url": "https://rdap.db.ripe.net/autnum/35625",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS EUROFIBER-FRANCE, titulaire Eurofiber France SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -319,8 +324,8 @@
       "titulaire_registre": "Eurofiber France SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS ATE-AS, titulaire Eurofiber France SAS",
-          "url": "https://rdap.db.ripe.net/autnum/24935",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS ATE-AS, titulaire Eurofiber France SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -335,8 +340,8 @@
       "titulaire_registre": "Cegedim.Cloud SASU",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire Cegedim.Cloud SASU",
-          "url": "https://rdap.db.ripe.net/autnum/12601",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire Cegedim.Cloud SASU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -351,8 +356,8 @@
       "titulaire_registre": "Worldline IGSA SA",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS ING-AS, titulaire Worldline IGSA SA",
-          "url": "https://rdap.db.ripe.net/autnum/47957",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS ING-AS, titulaire Worldline IGSA SA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -367,8 +372,8 @@
       "titulaire_registre": "France Travail EPA",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS PE-AS, titulaire France Travail EPA",
-          "url": "https://rdap.db.ripe.net/autnum/205461",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS PE-AS, titulaire France Travail EPA",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -383,8 +388,8 @@
       "titulaire_registre": "ANTEMETA SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire ANTEMETA SAS",
-          "url": "https://rdap.db.ripe.net/autnum/201085",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire ANTEMETA SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -399,8 +404,8 @@
       "titulaire_registre": "NFrance Conseil",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire NFrance Conseil",
-          "url": "https://rdap.db.ripe.net/autnum/15826",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire NFrance Conseil",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -415,8 +420,8 @@
       "titulaire_registre": "OVER-LINK s.a.s.",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire OVER-LINK s.a.s.",
-          "url": "https://rdap.db.ripe.net/autnum/48426",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire OVER-LINK s.a.s.",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -431,8 +436,8 @@
       "titulaire_registre": "DRI SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire DRI SAS (Sirene donne plusieurs sociétés « DRI » : aucune n'est retenue sans preuve)",
-          "url": "https://rdap.db.ripe.net/autnum/6738",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire DRI SAS (Sirene donne plusieurs sociétés « DRI » : aucune n'est retenue sans preuve)",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         }
       ]
@@ -442,8 +447,8 @@
       "titulaire_registre": "Hospices civils de Lyon",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS HCL, titulaire Hospices civils de Lyon",
-          "url": "https://rdap.db.ripe.net/autnum/51038",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS HCL, titulaire Hospices civils de Lyon",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -458,8 +463,8 @@
       "titulaire_registre": "Agence Centrale Des Organismes De Securite Sociale",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS cirtilnet, titulaire Agence Centrale Des Organismes De Securite Sociale",
-          "url": "https://rdap.db.ripe.net/autnum/48140",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS cirtilnet, titulaire Agence Centrale Des Organismes De Securite Sociale",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -474,8 +479,8 @@
       "titulaire_registre": "NAMESHIELD SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : titulaire NAMESHIELD SAS",
-          "url": "https://rdap.db.ripe.net/autnum/20756",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : titulaire NAMESHIELD SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
@@ -490,14 +495,94 @@
       "titulaire_registre": "NAMESHIELD SAS",
       "sources": [
         {
-          "titre": "Registre du RIPE NCC, lu via IPtoASN (fichier du 01/11/2026) : AS NAMESHIELDGRP, titulaire NAMESHIELD SAS",
-          "url": "https://rdap.db.ripe.net/autnum/209510",
+          "titre": "IPtoASN (fiche 18, fichier du 01/11/2026), d'après le registre du RIPE NCC : AS NAMESHIELDGRP, titulaire NAMESHIELD SAS",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-19"
         },
         {
           "titre": "Sirene : NAMESHIELD, SAS, SIREN 399140961, siège à Paris",
           "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/399140961",
           "lu_le": "2026-11-19"
+        }
+      ]
+    },
+    "29169": {
+      "societe": "gandi",
+      "titulaire_registre": "GANDI SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS29169 GANDI-AS, titulaire GANDI SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Sirene : GANDI, SAS, SIREN 423093459, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/423093459",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "50624": {
+      "societe": "outscale",
+      "titulaire_registre": "Outscale SASU",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS50624 OUTSCALE, titulaire Outscale SASU, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Sirene : OUTSCALE (3DS OUTSCALE), SAS, SIREN 527594493, siège à Saint-Cloud, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/527594493",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "16509": {
+      "societe": "amazon-com-inc",
+      "titulaire_registre": "Amazon.com, Inc.",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS16509 AMAZON-02, titulaire Amazon.com, Inc., pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "GLEIF : AMAZON.COM, INC., LEI ZXTILKJKG63JELOEG630, société du Delaware, bureaux à Seattle (États-Unis)",
+          "url": "https://search.gleif.org/#/record/ZXTILKJKG63JELOEG630",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "12876": {
+      "societe": "scaleway",
+      "titulaire_registre": "Scaleway SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS12876, titulaire Scaleway SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "Sirene : SCALEWAY, SAS, SIREN 433115904, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/433115904",
+          "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "24940": {
+      "societe": "hetzner-online",
+      "titulaire_registre": "Hetzner Online GmbH",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS24940 HETZNER-AS, titulaire Hetzner Online GmbH, pays d'enregistrement DE",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "titre": "GLEIF : Hetzner Online GmbH, LEI 391200XMWUW8G8MXV439, siège à Gunzenhausen (Allemagne), HRB 6089",
+          "url": "https://search.gleif.org/#/record/391200XMWUW8G8MXV439",
+          "lu_le": "2026-11-21"
         }
       ]
     }

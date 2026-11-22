@@ -132,14 +132,14 @@ Brief du 20/11/2026 (dossier du propriétaire). Décisions C2-1 à C2-4 : `plan.
 - [ ] B.12 `plan.md`, `pieges-connus.md` et README à jour.
 
 ### Partie C — T3, référentiels, périmètre et données en plus (`feat/c2-referentiels`)
-- [ ] C.1 AS → exploitant → maison mère ultime → pays, deux sources datées par ligne, 95 % des adresses « État » en « confirmé ».
+- [ ] C.1 AS → exploitant → maison mère ultime → pays, deux sources datées par ligne, 95 % des adresses « État » en « confirmé ». En cours (21/11/2026) : référentiels en 0.2, 5 AS ajoutés (Amazon, Scaleway, Outscale, Hetzner, Gandi) et 12 sociétés, maillons renforcés (SFR → Altice France, DINUM, RENATER, Cegedim.cloud → Cegedim) ; restent « probable » faute de seconde source permise : l'identité d'Incapsula et d'Akamai International B.V. (et l'AS 20940 d'Akamai), Eurofiber France et sa maison mère, Cegedim → FCB ; l'AS 19551 d'Imperva est prouvé, comme ceux de Cloudflare et de Fastly, par IPtoASN et le fichier de délégation de l'ARIN (même titulaire que des plages de leur liste officielle) ; aucune preuve ne vient plus du RDAP ; la part « confirmé » se mesure sur la collecte du jour 2, avec ces règles.
 - [ ] C.2 Méthode 0.3 (C2-4 et son effet chiffré, relais de sécurité, couche 10, qualifications, territoires, leçons des collectes).
-- [ ] C.3 `referentiels/cdn.yaml` complet.
-- [ ] C.4 Qualifications : SecNumCloud (relevé daté), HDS.
+- [ ] C.3 `referentiels/cdn.yaml` complet. En cours (21/11/2026) : `referentiels/cdn.json` en 0.2, cinq fournisseurs dont deux relais de sécurité (Imperva : deux suffixes prouvés ; Radware : deux AS, « probable ») ; `akamaiedge.net` prouvé ; chaque AS prouvé par les sources retenues, plus par le RDAP ; restent : CDN77 (sa société, C.1), OGO Security (aucune page officielle), la liste officielle d'Imperva (format non lu), la règle « suffit seul » à écrire dans la méthode (C.2).
+- [ ] C.4 Qualifications : SecNumCloud (relevé daté), HDS. Fait : SecNumCloud, `referentiels/secnumcloud.json` (30 services qualifiés de 13 fournisseurs, catalogue de l'ANSSI du 19/11/2026 déposé par le propriétaire ; fiche 40 retenue en relevé manuel daté), preuve : `tests/referentiels-secnumcloud.test.ts`. Reste : le rapprochement des fournisseurs avec les sociétés (avec C.1), HDS.
 - [ ] C.5 Le périmètre : liste à jour versée par PR, périmètre « État ».
 - [ ] C.6 Les territoires : annuaire local, codes officiels, rattachements, fond de carte.
-- [ ] C.7 Pays et libellés (`referentiels/pays.yaml`, noms anglais).
-- [ ] C.8 Encore plus de données, légalement (registre d'abord).
+- [x] C.7 Pays et libellés : `referentiels/pays.json` (249 lignes : codes ISO, `ADM0_A3` de Natural Earth, noms français et anglais, UE, EEE, Europe hors UE, 16 décisions d'adéquation avec leur référence et leur date), fiches 43 à 49 au registre ; `referentiels/libelles.json` (couches, catégories, niveaux, rôles, natures, en anglais). Preuve : `tests/referentiels-pays.test.ts` (deux sources du registre et une date par ligne, appartenances cohérentes, écarts avec les listes de la collecte chiffrés). Écart : JSON, comme les autres référentiels, et non YAML. La table entrera dans le classement avec la méthode 0.3 (C.2), comme changement de règles.
+- [ ] C.8 Encore plus de données, légalement (registre d'abord). En cours : l'Observatoire de la qualité des démarches en ligne (DINUM), fiche 55 retenue en relevé manuel daté par édition (le `robots.txt` de static.data.gouv.fr ferme `/resources`) ; l'édition 15 (octobre 2026) reste à déposer par le propriétaire (il a déposé l'édition 14).
 - [ ] C.9 Contre-vérification de 30 domaines (`docs/contre-verification.md`).
 - [ ] C.10 Preuves : deux sources datées par ligne (test), 95 % « confirmé », part « non déterminé », contre-vérification.
 

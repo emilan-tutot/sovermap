@@ -1,7 +1,7 @@
 {
-  "version": "0.1",
-  "date": "2026-11-19",
-  "statut": "Provisoire : les quatre fournisseurs vus dans l'échantillon du chantier T1. La liste complète (docs/sources.md, fiches 27 à 29) est établie en T3.",
+  "version": "0.2",
+  "date": "2026-11-21",
+  "statut": "Provisoire (C.3, 21/11/2026) : cinq fournisseurs, dont deux relais de sécurité (Imperva, Radware), chaque suffixe lu dans une page officielle et chaque AS confirmé par des sources retenues (fiches 18, 21, 22), jamais par le RDAP (contrôle seulement). Restent : CDN77 (sa société, C.1), et CloudFront, Azure, Gcore et Bunny (fiche 28), à ajouter quand la collecte les verra.",
   "regle": "confirmé : suffixe CNAME documenté par le fournisseur, ou adresse dans sa liste officielle de plages ; probable : AS réservé au seul CDN, confirmé au registre ; sinon, pas de CDN.",
   "fournisseurs": [
     {
@@ -19,13 +19,19 @@
         {
           "numero": 13335,
           "suffit_seul": true,
-          "source": "RDAP de l'ARIN, AS13335 CLOUDFLARENET, titulaire Cloudflare, Inc.",
-          "lu_le": "2026-11-19"
+          "source": "IPtoASN (fiche 18, copie du 20/11/2026) : AS13335 « CLOUDFLARENET - Cloudflare, Inc. », US ; délégation de l'ARIN (fiche 21, fichier du 20/11/2026) : attribué, US",
+          "lu_le": "2026-11-21"
         }
       ],
       "listes_plages": [
-        { "url": "https://www.cloudflare.com/ips-v4", "format": "texte" },
-        { "url": "https://www.cloudflare.com/ips-v6", "format": "texte" }
+        {
+          "url": "https://www.cloudflare.com/ips-v4",
+          "format": "texte"
+        },
+        {
+          "url": "https://www.cloudflare.com/ips-v6",
+          "format": "texte"
+        }
       ]
     },
     {
@@ -43,11 +49,16 @@
         {
           "numero": 54113,
           "suffit_seul": true,
-          "source": "RDAP de l'ARIN, AS54113 FASTLY, titulaire Fastly, Inc.",
-          "lu_le": "2026-11-19"
+          "source": "IPtoASN (fiche 18, copie du 20/11/2026) : AS54113 « FASTLY - Fastly, Inc. », US ; délégation de l'ARIN (fiche 21, fichier du 20/11/2026) : attribué, US",
+          "lu_le": "2026-11-21"
         }
       ],
-      "listes_plages": [{ "url": "https://api.fastly.com/public-ip-list", "format": "fastly-json" }]
+      "listes_plages": [
+        {
+          "url": "https://api.fastly.com/public-ip-list",
+          "format": "fastly-json"
+        }
+      ]
     },
     {
       "id": "akamai",
@@ -68,14 +79,19 @@
           "suffixe": ".akamaized.net",
           "source": "https://techdocs.akamai.com/edge-hostnames/docs/edge-hn-terminology",
           "lu_le": "2026-11-18"
+        },
+        {
+          "suffixe": ".akamaiedge.net",
+          "source": "https://techdocs.akamai.com/edge-hostnames/reference/get-edgehostnameid",
+          "lu_le": "2026-11-21"
         }
       ],
       "as": [
         {
           "numero": 20940,
           "suffit_seul": true,
-          "source": "RDAP du RIPE NCC, AS20940 AKAMAI-ASN1, titulaire Akamai International B.V.",
-          "lu_le": "2026-11-19"
+          "source": "Base du RIPE (fiche 22, fichiers du 19/11/2026) : AS20940 « AKAMAI-ASN1 », organisation Akamai International B.V. (NL) ; délégation du RIPE NCC (fiche 21) : attribué, NL",
+          "lu_le": "2026-11-21"
         }
       ],
       "listes_plages": []
@@ -84,13 +100,45 @@
       "id": "imperva",
       "nom": "Imperva",
       "societe": "incapsula-inc",
-      "suffixes": [],
+      "suffixes": [
+        {
+          "suffixe": ".impervadns.net",
+          "source": "https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/release-notes/2024-01-21.htm",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "suffixe": ".incapdns.net",
+          "source": "https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/release-notes/2021-10-10.htm",
+          "lu_le": "2026-11-21"
+        }
+      ],
       "as": [
         {
           "numero": 19551,
           "suffit_seul": true,
-          "source": "RDAP de l'ARIN, AS19551 INCAPSULA, titulaire Incapsula Inc (Imperva)",
-          "lu_le": "2026-11-19"
+          "source": "IPtoASN (fiche 18, copie du 20/11/2026) : AS19551 « INCAPSULA - Incapsula Inc », US ; délégation de l'ARIN (fiche 21, fichier du 20/11/2026) : même titulaire que six plages de la liste officielle d'Imperva",
+          "lu_le": "2026-11-21"
+        }
+      ],
+      "listes_plages": []
+    },
+    {
+      "id": "radware",
+      "nom": "Radware",
+      "societe": "radware-ltd",
+      "suffixes": [],
+      "as": [
+        {
+          "numero": 48851,
+          "suffit_seul": true,
+          "source": "Base du RIPE (fiche 22, fichiers du 19/11/2026) : AS48851 « radware », organisation Radware Ltd (IL) ; délégation du RIPE NCC (fiche 21) : attribué, IL",
+          "lu_le": "2026-11-21"
+        },
+        {
+          "numero": 198949,
+          "suffit_seul": true,
+          "source": "Base du RIPE (fiche 22, fichiers du 19/11/2026) : AS198949 « Radware », organisation Radware Ltd (IL) ; délégation du RIPE NCC (fiche 21) : attribué, IL, même titulaire que AS48851",
+          "lu_le": "2026-11-21"
         }
       ],
       "listes_plages": []

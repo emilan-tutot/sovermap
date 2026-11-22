@@ -1,0 +1,39 @@
+{
+  "version": "2026-11-21",
+  "note": "Les libellés des données publiées et leur nom anglais, prêts pour la version anglaise (T11). Le français est celui des données et de la méthode (docs/methode.md) ; l'anglais est une traduction du projet, à relire en T11, sauf les noms de pays, tirés de referentiels/pays.json.",
+  "couches": [
+    { "numero": 1, "fr": "Le domaine", "en": "The domain" },
+    { "numero": 2, "fr": "Les serveurs de noms", "en": "The name servers" },
+    { "numero": 3, "fr": "Les adresses", "en": "The addresses" },
+    { "numero": 4, "fr": "Le réseau", "en": "The network" },
+    { "numero": 5, "fr": "La société exploitante", "en": "The operating company" },
+    { "numero": 6, "fr": "La maison mère ultime", "en": "The ultimate parent company" },
+    { "numero": 7, "fr": "Les pays des sièges", "en": "The countries of the head offices" },
+    { "numero": 8, "fr": "SecNumCloud", "en": "SecNumCloud" },
+    { "numero": 9, "fr": "Le CDN", "en": "The CDN" },
+    { "numero": 10, "fr": "La messagerie (MX et SPF)", "en": "Email (MX and SPF)" }
+  ],
+  "categories": {
+    "France": "France",
+    "UE hors France": "EU outside France",
+    "Europe hors UE": "Europe outside the EU",
+    "hors d'Europe": "Outside Europe",
+    "non déterminé": "Undetermined"
+  },
+  "niveaux": {
+    "confirmé": "confirmed",
+    "probable": "probable",
+    "non déterminé": "undetermined"
+  },
+  "roles": {
+    "hébergé par": "hosted by",
+    "diffusé par": "delivered by"
+  },
+  "natures": {
+    "ministère": "ministry",
+    "groupement d'intérêt public": "public interest group",
+    "établissement public": "public body",
+    "collectivité territoriale": "local authority",
+    "université": "university"
+  }
+}
