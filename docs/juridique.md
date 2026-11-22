@@ -4,6 +4,8 @@
 
 Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lues le **18/11/2026**. Ce qui n'a pas pu être lu à la source est marqué **non vérifié**, avec la raison.
 
+**Mise à jour du 22/11/2026** (chantier 2, E.2) : les points du § 4 qui pouvaient l'être ont été relus ce jour-là, par un agent de recherche, sur les pages officielles citées (§ 1.11, § 2.1, § 2.6 et § 4). Pages refusées ou illisibles ce jour-là : congress.gov (403), EUR-Lex (pages vides), InfoCuria et dataprivacyframework.gov (contenu chargé par script), uscode.house.gov (404).
+
 **Accès aux sources**
 - **Légifrance** a refusé les robots (protection Cloudflare). Les textes français ont donc été lus dans les bases officielles de la DILA qui l'alimentent (LEGI, JORF, CNIL, sur echanges.dila.gouv.fr), dans leur version applicable au 18/11/2026. Les liens Légifrance donnés ci-dessous reprennent les identifiants officiels, mais n'ont pas pu être ouverts.
 - **cyber.gouv.fr** (ANSSI) et **congress.gov** ont refusé les robots. **cnil.fr** était en maintenance.
@@ -102,7 +104,7 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
 2. « En droit européen, une demande d'un juge ou d'une autorité d'un pays tiers n'est reconnue que si elle repose sur un accord international (RGPD, art. 48). »
 3. « Depuis 2024, quand l'État, ses opérateurs et certains groupements confient à un cloud privé des données d'une sensibilité particulière, ils doivent veiller à leur protection contre tout accès d'autorités d'États tiers non autorisé par le droit européen (loi n° 2024-449, art. 31 ; décret n° 2026-272). »
 4. « Ces règles dépendent de la sensibilité des données, que Sovermap ne voit pas : un site public peut légalement passer par un réseau de diffusion non européen. »
-5. « La Cour de justice de l'UE a invalidé en 2020 le précédent cadre de transfert UE–États-Unis (C-311/18). Le cadre actuel (décision 2023/1795) a fait l'objet d'un recours rejeté par le Tribunal de l'UE le 3 septembre 2025 (T-553/23) ; un pourvoi est en cours (C-703/25 P). »
+5. « La Cour de justice de l'UE a invalidé en 2020 le précédent cadre de transfert UE–États-Unis (C-311/18). Le cadre actuel (décision 2023/1795) a fait l'objet d'un recours rejeté par le Tribunal de l'UE le 3 septembre 2025 (T-553/23) ; un pourvoi a été formé devant la Cour de justice (C-703/25 P). » (22/11/2026 : « est en cours » devient « a été formé », l'état du pourvoi n'ayant pas pu être lu sur le site de la Cour ; voir le § 4.)
 
 ## 2. Les obligations du site lui-même
 
@@ -112,7 +114,10 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
   - Mais certains champs DNS peuvent en contenir : le champ RNAME du SOA (souvent l'adresse e-mail d'un administrateur), certains noms inverses (PTR).
   - Règle : ne pas les conserver, comme les contacts des registres.
 - **Ce qui reste** :
-  1. les journaux techniques de l'hébergeur : adresse IP des visiteurs, agent utilisateur, heure. L'éditeur est responsable du traitement, et Vercel est son sous-traitant, une société américaine (chapitre V). Restent **non vérifiés** l'inscription de Vercel au Data Privacy Framework, la durée de ses journaux et son adresse postale ;
+  1. les journaux techniques de l'hébergeur : adresse IP des visiteurs, agent utilisateur, heure. L'éditeur est responsable du traitement, et Vercel est son sous-traitant, une société américaine (chapitre V). Lu le 22/11/2026 sur les pages de Vercel :
+     - sa politique de confidentialité (« Last Updated June 1, 2026 », https://vercel.com/legal/privacy-policy) dit que Vercel respecte le Data Privacy Framework UE–États-Unis, son extension britannique et le cadre Suisse–États-Unis ; sa certification est annoncée le 04/06/2024 (https://vercel.com/changelog/vercel-is-now-certified-under-the-eu-us-data-privacy-framework-dpf). Sa fiche sur la liste officielle (dataprivacyframework.gov) reste **non vérifiée** : elle n'a pas pu être lue ;
+     - ses journaux d'exécution sont gardés **une heure** sur l'offre Hobby (https://vercel.com/docs/logs/runtime ; https://vercel.com/docs/plans/hobby). Sa politique ne donne aucune durée chiffrée : les données sont gardées « for the minimum necessary period », puis supprimées ou anonymisées. Pour les visiteurs des sites de ses clients, Vercel agit en sous-traitant, sous son accord de traitement (DPA) ;
+     - son adresse : 440 N Barranca Avenue #4133, Covina, CA 91723, United States (politique, et conditions, § 23.3.4 : https://vercel.com/legal/terms). **Aucun numéro de téléphone** sur ces deux pages ;
   2. les e-mails reçus pour une correction ;
   3. les issues GitHub publiques. Il faut prévenir qu'elles sont publiques, et proposer l'e-mail comme autre voie.
 - **Informations à donner (art. 13)** dans la page Confidentialité :
@@ -164,9 +169,17 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
 - **Exception** : « Cette obligation ne s’applique pas […] lorsque le contenu généré par l’IA a fait l’objet d’un processus d’examen humain ou de contrôle éditorial et lorsqu’une personne physique ou morale assume la responsabilité éditoriale de la publication du contenu. »
 - **Visuels** (§ 4, 1er alinéa) : l'obligation vise les « hypertrucages », c'est-à-dire des contenus qui ressemblent à des personnes, objets, lieux ou événements existants et peuvent passer pour authentiques. Un logo ou une illustration non réaliste n'en est pas un.
 - **Dates** : l'article 50 s'applique depuis le **2 août 2026** (art. 113). L'« omnibus numérique sur l'IA », adopté (règlement (UE) 2026/1744 du 8 juillet 2026), ne reporte pas le § 4. Il ne touche, pour l'article 50, que le § 7 et un délai pour les fournisseurs (§ 2).
+- **Lignes directrices de la Commission** (lues le 22/11/2026) : « Guidelines on the implementation of the transparency obligations for certain AI systems », publiées le 20/07/2026 (https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems ; leur référence C(2026) est **non vérifiée**). Points 130 à 143 :
+  - « publié » veut dire accessible à un nombre indéterminé de personnes ; l'intérêt public couvre l'administration et les services publics ;
+  - l'exception exige les deux conditions à la fois ;
+  - l'examen humain porte sur le fond, avec au minimum une vérification des faits : une correction de l'orthographe, ou une simple politique éditoriale, ne suffit pas ;
+  - une retouche par une IA après la validation fait perdre l'exception ;
+  - la responsabilité éditoriale est la responsabilité juridique ultime ; l'identité et les coordonnées de la personne, ou de « the function », responsable devraient être publiées à un endroit facile à trouver, par exemple les mentions légales ;
+  - l'information ne doit pas être cachée dans des conditions d'utilisation (point 142).
+- **Code de bonnes pratiques** : « Code of Practice on Transparency of AI-Generated Content », version finale du 10/06/2026, volontaire (https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content). Pour l'exception, il demande une politique interne qui nomme le responsable, et la publication des coordonnées « of the function, the natural persons or the legal persons ».
 - **Sanction** : jusqu'à 15 000 000 € d'amende (art. 99, § 4, g). L'autorité française compétente est **non vérifiée**.
 - **Solution proposée pour Sovermap, les deux à la fois** :
-  1. **Relecture éditoriale.** Chaque texte est relu et validé par le propriétaire, qui en assume la responsabilité comme directeur de la publication. Les textes entrent ainsi dans l'exception.
+  1. **Relecture éditoriale.** Chaque texte est relu et validé par le propriétaire, qui en assume la responsabilité comme directeur de la publication. Les textes entrent ainsi dans l'exception, à trois conditions venues des lignes directrices (22/11/2026) : une relecture du fond, faits vérifiés ; aucune retouche par une IA après la validation (sinon, relire de nouveau) ; et des coordonnées publiées pour la personne ou la fonction responsable (le choix E.4 en décide). Tant qu'un texte n'est pas relu, la mention se place près de lui, sur sa page, dès la première lecture (c'est ce que fait le site).
   2. **Mention volontaire** dans la page Crédits : « Textes rédigés avec l'aide d'un outil d'IA, relus et validés par l'éditeur, qui en assume la responsabilité. »
   - Pour les visuels : jamais d'image réaliste d'un lieu, d'une personne ou d'une entité existants. L'outil est cité dans les Crédits.
 
@@ -248,14 +261,14 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
 1. **Les circulaires 6282/SG et 6404/SG** : texte non lu sur Légifrance. Leur contenu a été lu sur le site de la DINUM.
 2. **Légifrance** : aucune page n'a pu être ouverte. Les textes français viennent des bases officielles de la DILA.
 3. **SecNumCloud** : le référentiel lui-même, le numéro de sa section sur le droit extra-européen, les critères de capital, et la version approuvée par l'arrêté du 12 août 2026.
-4. **FISA 702** : une loi postérieure au 10/11/2026, et l'état des certifications en cours.
-5. **Le pourvoi C-703/25 P**, sur le site de la Cour.
+4. **FISA 702** : relu le 22/11/2026. La loi publique 119-84 (18/04/2026) fixait la fin du titre VII au 30/04/2026 ; la loi 119-87 (30/04/2026) l'a reportée au 12/06/2026 (https://www.govinfo.gov/content/pkg/PLAW-119publ84/html/PLAW-119publ84.htm ; https://www.govinfo.gov/content/pkg/PLAW-119publ87/html/PLAW-119publ87.htm). Aucune loi postérieure sur la FISA dans la liste officielle des lois, à jour au 13/11/2026 (dernière loi : 119-142 du 10/11/2026 ; https://www.archives.gov/federal-register/laws/current.html). Restent **non vérifiés** : les lois signées après le 13/11/2026 et pas encore publiées ; la validité des certifications de la FISC « through March of 2027 », lue seulement dans le communiqué d'une élue (https://adams.house.gov/media-center/press-releases/rep-adams-statement-expiration-fisa).
+5. **Le pourvoi C-703/25 P** : toujours **non vérifié** le 22/11/2026 (le site de la Cour renvoie vers InfoCuria, illisible pour un robot ; EUR-Lex vide). Une source secondaire, non officielle, le dit pendant, sans audience ni conclusions annoncées : elle n'est pas citée sur le site.
 6. **CNIL** : la formulation « pas de bandeau sans traceur » ; les modifications de la recommandation n° 2020-092.
-7. **Vercel** : son inscription au Data Privacy Framework, la durée de ses journaux, son adresse postale.
-8. **IA** : les lignes directrices de la Commission sur l'article 50, et l'autorité française compétente.
+7. **Vercel** : relu le 22/11/2026 (§ 2.1). Reste **non vérifiée** sa fiche sur la liste officielle du Data Privacy Framework. Sa politique et ses conditions ne donnent aucun téléphone, ni aucun moyen de lui confier l'identité d'un éditeur (question E.4).
+8. **IA** : les lignes directrices de la Commission ont été lues le 22/11/2026 (§ 2.6). L'autorité française reste **non vérifiée** : la liste de la Commission (09/11/2026) donne la DGCCRF comme point de contact unique pour la France, désignation « still pending final adoption » (https://digital-strategy.ec.europa.eu/en/policies/market-surveillance-authorities-under-ai-act) ; le projet de loi DDADUE, adopté au Sénat le 18/02/2026, est en première lecture à l'Assemblée, et son amendement 442 ne confierait à la CNIL que l'article 50, § 3 (https://www.senat.fr/enseance/2025-2026/348/Amdt_442.html).
 9. **Accessibilité** : la norme harmonisée en vigueur, et sa version par rapport à WCAG 2.2.
 10. **Jurisprudence** : la bonne foi en diffamation, la diffamation d'une société, le « maintien frauduleux ».
-11. **Proposition de loi sur les collectivités** : son issue après la séance du 10/12/2026.
+11. **Proposition de loi sur les collectivités** : son issue après la séance du 10/12/2026 (date pas encore passée le 22/11/2026).
 
 ## 5. Le droit en cinq points (pour l'ARRÊT 1)
 
