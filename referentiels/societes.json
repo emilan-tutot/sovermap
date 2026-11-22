@@ -1,5 +1,5 @@
 {
-  "version": "0.3",
+  "version": "0.4",
   "date": "2026-11-22",
   "statut": "Provisoire : les sociétés vues dans l'échantillon du chantier T1, puis dans la collecte du jour 1 (version 0.3). La table complète est établie en T3.",
   "regle": "« sources » établit l'identité et le pays du siège ; « sources_mere » établit le lien vers la maison mère, ou le fait qu'il n'y en a pas au-dessus. Deux producteurs différents : « confirmé » ; un seul : « probable » ; aucun : « non déterminé ». « non-determinee » marque une maison mère inconnue.",
@@ -562,6 +562,11 @@
           "titre": "GLEIF : exception de déclaration du parent ultime « NO_KNOWN_PERSON »",
           "url": "https://search.gleif.org/#/record/969500MCOONR8990S771",
           "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Orange, document d'enregistrement universel 2025 (déposé à l'AMF le 02/04/2026), p. 155 et 532 : son premier actionnaire, l'État (directement ou de concert avec Bpifrance Participations), détient au 31/12/2025 22,95 % du capital et 29,04 % des droits de vote, une part qui ne lui donne pas le contrôle de la société ; aucune société ne consolide Orange",
+          "url": "https://assets.orange.com/medias/domain12751/media101746/523986-yvts1td99t-75.pdf",
+          "lu_le": "2026-11-22"
         }
       ]
     },
@@ -631,9 +636,14 @@
           "titre": "GLEIF : parent direct et parent ultime FCB (LEI 9695008A28UP3TB2XW95)",
           "url": "https://search.gleif.org/#/record/9695002XQWX9TKCOZT86",
           "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Cegedim, document d'enregistrement universel 2025 (déposé à l'AMF le 17/04/2026), p. 20, 342 et 362 : Cegedim SA est une filiale de FCB, qui détient au 31/12/2025 58,56 % de son capital et 72,92 % des droits de vote, et la contrôle",
+          "url": "https://www.cegedim.fr/Docs_Communiques/CEGEDIM_URD_2025_ASSEMBLAGE_FR_202604171735.pdf",
+          "lu_le": "2026-11-22"
         }
       ],
-      "note": "Le rapport semestriel dit « principal actionnaire », sans la part du capital ni des droits de vote. Le document d'enregistrement universel 2025, qui la donne, pèse 6 841 774 octets et n'a pas été lu (limite de 5 Mo) : https://www.cegedim.fr/Docs_Communiques/CEGEDIM_URD_2025_ASSEMBLAGE_FR_202604171735.pdf Le rapport financier semestriel 2026 dit FCB « principal actionnaire » de Cegedim : ce n'est pas une preuve de contrôle ; le lien repose sur GLEIF seul (probable)."
+      "note": "La part de FCB (58,56 % du capital, 72,92 % des droits de vote au 31/12/2025) vient du document d'enregistrement universel 2025, lu le 22/11/2026 (robots.txt de www.cegedim.fr lu d'abord : /Docs_Communiques/ est permis)."
     },
     "fcb": {
       "nom": "FCB",
@@ -645,6 +655,11 @@
           "titre": "GLEIF : FCB, siège en France",
           "url": "https://search.gleif.org/#/record/9695008A28UP3TB2XW95",
           "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Cegedim, document d'enregistrement universel 2025 (déposé à l'AMF le 17/04/2026), p. 193 : FCB, siège à Boulogne-Billancourt (France)",
+          "url": "https://www.cegedim.fr/Docs_Communiques/CEGEDIM_URD_2025_ASSEMBLAGE_FR_202604171735.pdf",
+          "lu_le": "2026-11-22"
         }
       ],
       "sources_mere": [
@@ -652,6 +667,11 @@
           "titre": "GLEIF : déclaré parent ultime de CEGEDIM et de CEGEDIM.CLOUD",
           "url": "https://search.gleif.org/#/record/9695008A28UP3TB2XW95",
           "lu_le": "2026-11-19"
+        },
+        {
+          "titre": "Cegedim, document d'enregistrement universel 2025 (déposé à l'AMF le 17/04/2026), p. 41 et 342 : FCB est détenue par les membres d'une famille, des personnes physiques ; la chaîne s'arrête à FCB (méthode, § 4)",
+          "url": "https://www.cegedim.fr/Docs_Communiques/CEGEDIM_URD_2025_ASSEMBLAGE_FR_202604171735.pdf",
+          "lu_le": "2026-11-22"
         }
       ]
     },
