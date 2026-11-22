@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import {
   type Finding,
   type ScanContext,
@@ -28,7 +29,10 @@ function tryGit(...args: string[]): string | null {
 
 function context(): ScanContext {
   const remote = tryGit("remote", "get-url", "origin");
-  const motifsPath = ".git/info/motifs-prives.txt";
+  // The private patterns live in the repository's own .git/info, shared by its worktrees: from a worktree, where .git
+  // is a file, the common directory is the main one's (a relative « .git/info » path would skip them there).
+  const commun = tryGit("rev-parse", "--git-common-dir")?.trim();
+  const motifsPath = path.join(commun === undefined || commun === "" ? ".git" : commun, "info", "motifs-prives.txt");
   return {
     ownerLogin: remote === null ? (process.env["GITHUB_REPOSITORY_OWNER"] ?? null) : ownerFromRemote(remote),
     windowsUser: process.platform === "win32" ? os.userInfo().username : null,
