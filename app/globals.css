@@ -128,6 +128,30 @@
     border-bottom: 1px solid var(--color-trait);
   }
 
+  /* The date of the last collection on every page of the full site; past 36 hours, « données en retard » in words
+     under a thick rule, never in red (DESIGN.md §1, plan § 6). */
+  .fraicheur {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .fraicheur p {
+    margin: 0;
+  }
+
+  .fraicheur-retard {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 3px solid var(--color-encre);
+    color: var(--color-encre);
+    font-size: var(--text-base);
+  }
+
   .navigation {
     display: flex;
     flex-wrap: wrap;

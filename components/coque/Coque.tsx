@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { fr } from "@/lib/i18n/fr";
 import { servedVersion, sitePublic } from "@/lib/site";
+import { Fraicheur } from "./Fraicheur";
 
 const NAVIGATION = [
   { href: "/", texte: fr.coque.navigation.atlas },
@@ -36,6 +37,7 @@ export function Coque({ children, large = false }: { children: ReactNode; large?
         ) : null}
       </header>
       <main id="contenu" className={large ? "contenu contenu-large" : "contenu"}>
+        {sitePublic() ? <Fraicheur /> : null}
         {children}
       </main>
       <footer className="pied">

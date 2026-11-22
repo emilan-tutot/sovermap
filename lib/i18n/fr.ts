@@ -58,6 +58,7 @@ export const fr = {
   /** Every page of the full site (plan § 6, point 2). */
   fraicheur: {
     derniereCollecte: (date: string) => `Dernière collecte${NBSP}: ${date}`,
+    dateHeure: (date: string, heure: string) => `${date}, ${heure}${NBSP}UTC`,
     enRetard: "Données en retard",
     retard: (heures: string) => `Dernière collecte il y a ${heures}${NBSP}h, au-delà de 36${NBSP}h.`,
   },
