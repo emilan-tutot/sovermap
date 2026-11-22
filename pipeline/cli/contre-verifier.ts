@@ -24,6 +24,7 @@ import {
   tirer,
 } from "../contre-verification";
 import type { EnregistrementDomaine, EnregistrementNom } from "../publication";
+import { categorie } from "../societes";
 import { agentUtilisateur, Telechargeur } from "../sources";
 
 const RACINE = process.cwd();
@@ -60,7 +61,7 @@ function lireEtat(dossier: string) {
 }
 
 type Fournisseur = { id: string; suffixes: { suffixe: string }[]; as: { numero: number }[] };
-type SocieteRef = { nom: string; mere: string | null; lei?: string };
+type SocieteRef = { nom: string; pays?: string; mere: string | null; lei?: string };
 const cdn = JSON.parse(readFileSync(path.join(RACINE, "referentiels/cdn.json"), "utf8")) as {
   fournisseurs: Fournisseur[];
 };
@@ -127,32 +128,58 @@ async function asRipestat(ip: string): Promise<number[] | null> {
   }
 }
 
-/** The LEI of a company's ultimate parent according to GLEIF; « aucun » when it reports none; null when unknown. */
-async function parentGleif(lei: string): Promise<string | null> {
-  try {
-    const r = await telechargeur.obtenir(
-      `https://api.gleif.org/api/v1/lei-records/${lei}/ultimate-parent-relationship`,
-    );
-    if (r.statut === 404) return "aucun";
-    if (r.statut !== 200) return null;
-    const corps = JSON.parse(r.corps.toString("utf8")) as {
-      data?: { attributes?: { relationship?: { endNode?: { id?: string } } } };
-    };
-    return corps.data?.attributes?.relationship?.endNode?.id ?? null;
-  } catch {
-    return null;
-  }
-}
+/** One answer per address: GLEIF is asked once for each LEI, whatever the number of domains. */
+const memoire = new Map<string, Promise<unknown>>();
+const uneFois = <T>(cle: string, question: () => Promise<T>): Promise<T> => {
+  if (!memoire.has(cle)) memoire.set(cle, question());
+  return memoire.get(cle) as Promise<T>;
+};
 
-/** The top of a company's chain in the referential, and its LEI. */
-function sommet(cle: string): { cle: string; lei: string | null } {
-  let courant = cle;
-  for (let i = 0; i < 10; i += 1) {
-    const mere = societes.societes[courant]?.mere;
-    if (mere === null || mere === undefined || mere === courant || mere === "non-determinee") break;
-    courant = mere;
+/** The LEI of a company's ultimate parent according to GLEIF; « aucun » when it reports none; null when unknown. */
+const parentGleif = (lei: string): Promise<string | null> =>
+  uneFois(`parent:${lei}`, async () => {
+    try {
+      const r = await telechargeur.obtenir(
+        `https://api.gleif.org/api/v1/lei-records/${lei}/ultimate-parent-relationship`,
+      );
+      if (r.statut === 404) return "aucun";
+      if (r.statut !== 200) return null;
+      const corps = JSON.parse(r.corps.toString("utf8")) as {
+        data?: { attributes?: { relationship?: { endNode?: { id?: string } } } };
+      };
+      return corps.data?.attributes?.relationship?.endNode?.id ?? null;
+    } catch {
+      return null;
+    }
+  });
+
+/** The country of a legal entity's registered address according to GLEIF; null when unknown. */
+const paysGleif = (lei: string): Promise<string | null> =>
+  uneFois(`pays:${lei}`, async () => {
+    try {
+      const r = await telechargeur.obtenir(`https://api.gleif.org/api/v1/lei-records/${lei}`);
+      if (r.statut !== 200) return null;
+      const corps = JSON.parse(r.corps.toString("utf8")) as {
+        data?: { attributes?: { entity?: { legalAddress?: { country?: string } } } };
+      };
+      const pays = corps.data?.attributes?.entity?.legalAddress?.country ?? null;
+      return pays !== null && /^[A-Z]{2}$/.test(pays) ? pays : null;
+    } catch {
+      return null;
+    }
+  });
+
+/** A company's chain in the referential, from itself to its top (10 links at most), each with its LEI. */
+function chaineDe(cle: string): { cle: string; lei: string | null; pays: string | null }[] {
+  const maillons: { cle: string; lei: string | null; pays: string | null }[] = [];
+  let courant: string | null = cle;
+  for (let i = 0; i < 10 && courant !== null; i += 1) {
+    const s: SocieteRef | undefined = societes.societes[courant];
+    if (s === undefined) break;
+    maillons.push({ cle: courant, lei: s.lei ?? null, pays: s.pays ?? null });
+    courant = s.mere === null || s.mere === courant || s.mere === "non-determinee" ? null : s.mere;
   }
-  return { cle: courant, lei: societes.societes[courant]?.lei ?? null };
+  return maillons;
 }
 
 async function verifier(t: Tire): Promise<Controle[]> {
@@ -185,6 +212,7 @@ async function verifier(t: Tire): Promise<Controle[]> {
   }
   const adresses = (await demander(() => resolveur.resolve4(web.nom))) ?? [];
   const publies = [...new Set(web.reseaux.map((r) => r.as))];
+  const tousTrouves = new Set<number>();
   for (const [source, chercher] of [
     ["Team Cymru", asCymru],
     ["RIPEstat", asRipestat],
@@ -196,39 +224,70 @@ async function verifier(t: Tire): Promise<Controle[]> {
       if (as === null) complet = false;
       else trouves.push(...as);
     }
+    for (const a of trouves) tousTrouves.add(a);
     ajouter(`réseau (AS)`, complet ? comparerAs(publies, trouves) : "non vérifiable", publies.join(", "), "", source);
   }
   if (web.cdn !== null) {
     const f = cdn.fournisseurs.find((x) => x.id === web.cdn?.id);
-    const parSuffixe = f?.suffixes.some((s) => liens.some((l) => l.endsWith(s.suffixe.replace(/^\./, "")))) ?? false;
-    ajouter(
-      "CDN",
-      f === undefined ? "non vérifiable" : parSuffixe ? "concorde" : "diffère",
-      web.cdn.id,
-      parSuffixe ? "suffixe documenté dans la chaîne" : "aucun suffixe documenté dans la chaîne",
-      "documentation du fournisseur",
-    );
+    if (f === undefined) {
+      ajouter("CDN", "non vérifiable", web.cdn.id, "fournisseur absent du référentiel", "référentiel des CDN");
+    } else if (web.cdn.methode === "cname") {
+      // A documented suffix (« .cdn.cloudflare.net ») ends a link of the chain found elsewhere.
+      const parSuffixe = f.suffixes.some((s) => liens.some((l) => l.endsWith(s.suffixe) || l === s.suffixe.slice(1)));
+      ajouter(
+        "CDN (suffixe)",
+        parSuffixe ? "concorde" : "diffère",
+        web.cdn.id,
+        parSuffixe ? "suffixe documenté dans la chaîne" : "aucun suffixe documenté dans la chaîne",
+        "documentation du fournisseur",
+      );
+    } else {
+      // Recognised by an address range or an AS: one of the provider's AS among those found elsewhere.
+      const parAs = tousTrouves.size === 0 ? null : f.as.some((a) => tousTrouves.has(a.numero));
+      ajouter(
+        `CDN (${web.cdn.methode})`,
+        parAs === null ? "non vérifiable" : parAs ? "concorde" : "diffère",
+        web.cdn.id,
+        parAs === null ? "" : parAs ? "un AS du fournisseur" : "aucun AS du fournisseur",
+        "Team Cymru et RIPEstat",
+      );
+    }
   }
   for (const e of web.exploitants) {
     if (e.societe === null) continue;
-    const lei = societes.societes[e.societe]?.lei;
-    const haut = sommet(e.societe);
-    if (lei === undefined) {
-      ajouter(`maison mère de ${e.societe}`, "non vérifiable", haut.cle, "pas de LEI", "GLEIF");
+    // The published layer is the category of the country of the company's ultimate parent; GLEIF gives the
+    // ultimate parent that consolidates its accounts, and that parent's registered address.
+    const maillons = chaineDe(e.societe);
+    const haut = maillons.at(-1);
+    const lei = maillons[0]?.lei ?? null;
+    if (haut === undefined) continue;
+    const couche = `pays de la maison mère de ${e.societe}`;
+    const publie = `${categorie(haut.pays)} (${haut.cle}, ${haut.pays ?? "?"})`;
+    if (lei === null) {
+      ajouter(couche, "non vérifiable", publie, "pas de LEI", "GLEIF");
       continue;
     }
     const parent = await parentGleif(lei);
-    const verdict =
-      parent === null
-        ? "non vérifiable"
-        : parent === "aucun"
-          ? haut.cle === e.societe
-            ? "concorde"
-            : "diffère"
-          : parent === haut.lei
-            ? "concorde"
-            : "diffère";
-    ajouter(`maison mère de ${e.societe}`, verdict, haut.cle, parent ?? "", "GLEIF");
+    if (parent === null || (parent === "aucun" && maillons.length > 1)) {
+      // No answer, or no parent reported while the referential knows one: GLEIF does not contradict it.
+      ajouter(couche, "non vérifiable", publie, parent === null ? "" : "aucune maison mère déclarée", "GLEIF");
+      continue;
+    }
+    const leiHaut = parent === "aucun" ? lei : parent;
+    const pays = await paysGleif(leiHaut);
+    const position =
+      leiHaut === haut.lei
+        ? "notre sommet"
+        : maillons.some((m) => m.lei === leiHaut)
+          ? `sur notre chaîne : ${maillons.find((m) => m.lei === leiHaut)?.cle ?? ""}`
+          : "hors de notre chaîne";
+    ajouter(
+      couche,
+      pays === null ? "non vérifiable" : categorie(pays) === categorie(haut.pays) ? "concorde" : "diffère",
+      publie,
+      `${categorie(pays)} (${leiHaut}, ${pays ?? "?"}, ${position})`,
+      "GLEIF",
+    );
   }
   return controles;
 }
