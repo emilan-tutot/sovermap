@@ -20,6 +20,10 @@ export type SocieteIndex = {
   categorie: Categorie;
   /** The companies above it, from its direct parent up (published from 23/11/2026; none before). */
   maillons: Maillon[];
+  /** Who controls the top of its chain, as the referential writes it (published from 23/11/2026; null before). */
+  controle: string | null;
+  /** How many registered domains it serves that day. */
+  domaines: number;
 };
 export type IndexSocietes = ReadonlyMap<string, SocieteIndex>;
 /** What the day's index publishes of an AS (index/as.json): its holder only for the AS of the referentials' companies. */
@@ -63,7 +67,17 @@ export function lireIndexSocietes(valeur: unknown): IndexSocietes | null {
         ? []
         : [{ cle: cleMaillon, nom: nomMaillon, pays: paysMaillon }];
     });
-    index.set(cle, { nom, pays: paysSociete, mere, paysMere: codePays(e["paysMere"]), categorie, maillons });
+    const domaines = e["domaines"];
+    index.set(cle, {
+      nom,
+      pays: paysSociete,
+      mere,
+      paysMere: codePays(e["paysMere"]),
+      categorie,
+      maillons,
+      controle: texte(e["controle"], 300),
+      domaines: typeof domaines === "number" && Number.isSafeInteger(domaines) && domaines >= 0 ? domaines : 0,
+    });
   }
   return index;
 }

@@ -467,6 +467,57 @@
     color: var(--color-encre);
   }
 
+  /* The companies (D.2): a list of entries on fine rules; a company's domains in columns at the computer. */
+  .liste-societes,
+  .liste-domaines {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .liste-societes li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .liste-societes a {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .liste-societes p {
+    margin: 0;
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  .liste-domaines {
+    columns: 16rem auto;
+    column-gap: 2rem;
+    font-size: var(--text-sm);
+  }
+
+  .liste-domaines li {
+    padding: 0.25rem 0;
+    break-inside: avoid;
+  }
+
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
   .commande {
     margin: 0;
     padding: 0.75rem;

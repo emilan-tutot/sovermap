@@ -275,6 +275,33 @@ export const fr = {
       commandeDig: (type: string, nom: string) => `dig ${type} ${nom} @9.9.9.9`,
     },
   },
+  /** The companies (D.2, R9): who hosts or delivers the measured sites, who owns whom. */
+  societes: {
+    titre: "Les sociétés",
+    description: `Les sociétés qui hébergent ou diffusent les sites publics mesurés par Sovermap${NBSP}: qui possède qui, et le pays du siège de leur maison mère.`,
+    chapo:
+      "Les sociétés qui hébergent ou diffusent les sites mesurés, dans l’ordre alphabétique. Un organisme public y figure avec sa nature, jamais comme une société.",
+    entete: (date: string, n: string) => `Collecte du ${date} · ${n}${NBSP}sociétés et organismes`,
+    domaines: (n: number, texte: string) => (n === 1 ? "1 domaine servi" : `${texte} domaines servis`),
+    siege: (pays: string, categorie: string) => `Siège de la maison mère${NBSP}: ${pays} · ${categorie}`,
+    siegeInconnu: "Maison mère non déterminée",
+    controle: (texte: string) => `Contrôle${NBSP}: ${texte}`,
+    surtitre: "Exploitant",
+    titrePage: (nom: string) => `${nom}${NBSP}: les sites publics servis`,
+    descriptionPage: (nom: string) =>
+      `Les domaines des sites publics servis par ${nom}, sa chaîne de propriété et le pays du siège de sa maison mère.`,
+    pays: (pays: string) => `Pays${NBSP}: ${pays}`,
+    chaine: "Qui possède qui",
+    sommet: "Au sommet de sa chaîne.",
+    mereInconnue: `Maison mère non déterminée${NBSP}: aucune source permise ne l’établit.`,
+    chaineNonPubliee: "Chaîne de propriété non publiée ce jour-là.",
+    listeDomaines: "Les domaines servis",
+    page: (p: number, n: number) => `Page ${p} sur ${n}`,
+    precedente: "Page précédente",
+    suivante: "Page suivante",
+    pagination: "Pages de la liste",
+    source: (version: string) => `Source${NBSP}: référentiels de Sovermap, version ${version}, et collecte du jour.`,
+  },
 } as const;
 
 export type Dictionary = typeof fr;
