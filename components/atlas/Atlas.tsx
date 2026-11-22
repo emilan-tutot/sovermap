@@ -8,6 +8,8 @@ import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
 import { nombre, pourcent } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { Recherche } from "@/components/recherche/Recherche";
+import { lireHistorique } from "@/lib/donnees/historique";
+import { CurseurTemps } from "./CurseurTemps";
 import { GlobeAtlas } from "./GlobeAtlas";
 
 const t = fr.atlas;
@@ -51,10 +53,15 @@ export async function Atlas() {
   // Rendered on demand with the day's data, never frozen at build time (its caching: D.4).
   await connection();
   const etat = await lecteur.etat();
-  const [luChiffres, luPays] =
+  const [luChiffres, luPays, luHistorique] =
     etat.statut === "ok"
-      ? await Promise.all([lecteur.fichier("agregats/chiffres.json"), lecteur.fichier("index/pays.json")])
-      : [etat, etat];
+      ? await Promise.all([
+          lecteur.fichier("agregats/chiffres.json"),
+          lecteur.fichier("index/pays.json"),
+          lecteur.fichier("agregats/historique.json"),
+        ])
+      : [etat, etat, etat];
+  const jours = luHistorique.statut === "ok" ? lireHistorique(luHistorique.donnees) : [];
   const chiffres = luChiffres.statut === "ok" ? lireChiffres(luChiffres.donnees) : null;
   const index = luPays.statut === "ok" ? lireIndexPays(luPays.donnees) : null;
   if (etat.statut !== "ok" || chiffres === null || index === null) {
@@ -77,6 +84,7 @@ export async function Atlas() {
         <div className="atlas-texte">
           <h1 className="question">{fr.site.question}</h1>
           <ChiffreTitre c={chiffres} />
+          <CurseurTemps jours={jours} />
         </div>
         <div className="atlas-globe-bloc">
           <GlobeAtlas fils={fils} origine={origineDe(index)} liens={liens} />

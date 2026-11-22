@@ -401,6 +401,14 @@ export const fr = {
     panneau: (n: string) => `${n}${NBSP}domaines du périmètre «${NBSP}État${NBSP}» servis depuis ce pays du siège`,
     voirPays: "Voir la page du pays",
     fermer: "Fermer",
+    /** The time slider (D.2), from two published days. */
+    temps: {
+      libelle: "Le chiffre, jour après jour",
+      jour: (date: string, auMoins: string, probable: string, nonDetermine: string) =>
+        `Le ${date}${NBSP}: au moins ${auMoins}${NBSP}; probable${NBSP}: ${probable} de plus${NBSP}; non déterminé${NBSP}: ${nonDetermine}.`,
+      reglesChangees: (methode: string) =>
+        `Règles nouvelles ce jour-là (méthode ${methode})${NBSP}: un écart avec la veille vient des règles, jamais d’un déménagement.`,
+    },
   },
   /** The search (D.2, R4). */
   recherche: {

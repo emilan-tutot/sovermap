@@ -716,6 +716,28 @@
     position: relative;
   }
 
+  /* The time slider (D.2): a plain range input, its day's figure read aloud. */
+  .curseur-temps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-size: var(--text-sm);
+  }
+
+  .curseur-temps label {
+    color: var(--color-discret);
+  }
+
+  .curseur-temps input {
+    width: 100%;
+    min-height: 44px;
+    accent-color: var(--color-encre);
+  }
+
+  .curseur-temps p {
+    margin: 0;
+  }
+
   /* At the computer, the text on the left and the whole globe on the right, both in the first screen (DESIGN.md §8). */
   @media (min-width: 62rem) {
     .atlas-haut {
