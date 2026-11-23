@@ -84,7 +84,8 @@ describe("the collection's workflow", () => {
         expect(verdict.status, `${fichier}, ligne ${i + 1} : ${verdict.stderr}`).toBe(0);
       }
     }
-  });
+    // One bash per block: slow to start on Windows, beyond the default 5 s when the whole suite runs at once.
+  }, 30_000);
 
   it("gives the resolver views Knot Resolver 6.5.1 accepts, over the collection's own address (the review of 96f0218)", () => {
     const config = readFileSync("pipeline/knot/config.yaml", "utf8");
