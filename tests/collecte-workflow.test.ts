@@ -47,6 +47,14 @@ describe("the collection's workflow", () => {
     expect(workflow).toContain('- cron: "17 15 * * *"');
   });
 
+  it("ends a trial's first pass at its deadline, so that a trial always writes its diagnosis in its 60 minutes", () => {
+    // Trap 66 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit.
+    expect(tache("mesurer")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
+    expect(workflow).toContain("--echeance-minutes 35");
+    const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
+    expect(collecter).toContain("...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),");
+  });
+
   it("never reads an error of GitHub's API as « today is not done » (the day would be measured twice)", () => {
     const jour = tache("jour");
     expect(jour).toContain('grep -q "HTTP 404"');

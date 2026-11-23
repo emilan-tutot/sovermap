@@ -184,12 +184,36 @@ describe("the scheduling of a collection", () => {
     const passee = await mesurer(Date.now());
     expect(passee.resultat.noms.get("www.sansmail.example")).toMatchObject({ etat: "echec", echec: "SERVFAIL" });
     expect(passee.resultat.essais.get("www.sansmail.example")).toBe(1);
-    expect(passee.suivis.some((l) => /^reprise 1 arrêtée à l'heure limite : \d+ tâches non reprises$/.test(l))).toBe(
-      true,
-    );
+    expect(passee.suivis.some((l) => /^reprise 1 arrêtée à l'heure limite : \d+ tâches laissées$/.test(l))).toBe(true);
     const lointaine = await mesurer(Date.now() + 3_600_000);
     expect(lointaine.resultat.essais.get("www.sansmail.example")).toBe(3);
     expect(lointaine.suivis.some((l) => l.includes("arrêtée à l'heure limite"))).toBe(false);
+  });
+
+  it("opens no domain of the first pass after its end time, when one is given (a trial's): what is left is not measured", async () => {
+    const mesurer = async (finPremierePasse?: number) => {
+      const suivis: string[] = [];
+      const r = new ResolveurSimule(ZONE, zoneDe);
+      const resultat = await collecter(noms, r, {
+        ...POLITESSE,
+        zoneDe,
+        horloge: fausseHorloge(),
+        aleatoire: generateur(3),
+        ...(finPremierePasse === undefined ? {} : { finPremierePasse }),
+        suivi: (ligne) => suivis.push(ligne),
+      });
+      return { resultat, suivis };
+    };
+    const passee = await mesurer(Date.now());
+    expect(passee.resultat.domaines.size).toBe(0);
+    expect(passee.suivis.some((l) => /^première passe arrêtée à l'heure limite : \d+ tâches laissées$/.test(l))).toBe(
+      true,
+    );
+    for (const fin of [Date.now() + 3_600_000, undefined]) {
+      const entiere = await mesurer(fin);
+      expect(entiere.resultat.domaines.size).toBeGreaterThan(0);
+      expect(entiere.suivis.some((l) => l.includes("arrêtée à l'heure limite"))).toBe(false);
+    }
   });
 
   it("waits for the brake before every question, and before opening each domain", async () => {

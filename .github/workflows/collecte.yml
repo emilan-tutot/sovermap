@@ -116,7 +116,7 @@ jobs:
           cache: npm
       - run: npm ci
       # A trial waits for its slot (pipeline/creneau.ts): stopped, in red with a sentence, while a day's collection runs
-      # or waits, or within 60 minutes before 03:17 and 09:47 UTC or 120 minutes after; it is then run again later.
+      # or waits, or within 60 minutes before 03:17, 09:47 and 15:17 UTC or 120 minutes after; it is then run again later.
       - if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}

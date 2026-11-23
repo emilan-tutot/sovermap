@@ -546,6 +546,9 @@ async function principal(): Promise<number> {
       delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
       echeance: minutesDe(echeanceMinutes),
       finReprises: minutesDe(finReprisesMinutes),
+      // A trial's first pass ends at its deadline too, so that the trial always writes its diagnosis within its job's
+      // 60 minutes (23/11/2026, 07:07); a day's collection keeps its whole first pass.
+      ...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),
       zoneDe,
       suivi,
       nomWebDe: (domaine) => nomsWeb.get(domaine),

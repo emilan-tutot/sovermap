@@ -73,6 +73,12 @@ export type OptionsCollecte = {
    */
   finReprises?: number;
   /**
+   * No domain of the first pass opens after this moment: what is left is not measured. A trial's (collecter.ts): its
+   * job has 60 minutes, and two emergency pauses at one domain a second took it past them on 23/11/2026 (07:07), cut
+   * by GitHub before its state, its diagnosis and its artifact were written. A day's collection has none.
+   */
+  finPremierePasse?: number;
+  /**
    * The emergency stop, in the first pass only. A domain fails as for the guard of 2 % (collecter.ts): its zone's
    * question, its MX question or its web name failed (`nomWebDe`; without it, any of its names). When `part` of the
    * last `fenetre` domains failed (a breach), the collection pauses `pauseMs`: every question is held (no domain opens,
@@ -789,7 +795,7 @@ export async function collecter(
         // compared with a date it never cut anything).
         if (fin !== undefined && Date.now() >= fin.a) {
           if (!coupee)
-            options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${file.length + 1} tâches non reprises`);
+            options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${file.length + 1} tâches laissées`);
           coupee = true;
           file.length = 0;
           break;
@@ -850,6 +856,7 @@ export async function collecter(
       noterUnite(unite, sonEpoque);
       ouverts.delete(unite);
     }),
+    options.finPremierePasse === undefined ? undefined : { a: options.finPremierePasse, etiquette: "première passe" },
   );
   premierePasse = false;
   // The cap on the questions waiting through the parents' servers holds in the first pass only (PARENT_EN_VOL); the
