@@ -28,13 +28,7 @@ import { cheminDiagnostic, diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
-import {
-  type Garde,
-  gardesPannes,
-  gardeTerme,
-  veilleUtilisable as veilleUtilisableDe,
-  verifierLimite,
-} from "../garde";
+import { type Garde, gardesPannes, gardeTerme, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
@@ -84,6 +78,7 @@ import {
 import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
+import { fusionnerTranches, lireTranche, type ResultatTranche, type Tranche, trancheDe } from "../tranches";
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
 
@@ -123,8 +118,38 @@ const { values: o } = parseArgs({
     essai: { type: "boolean", default: false },
     // Brief B.11: a trial that trips the circuit breaker on purpose (nothing is published).
     "essai-disjoncteur": { type: "boolean", default: false },
+    // Brief B.8, the collection split into jobs of one run: « --tranche 1 » then « --tranche 2 » measure each half of
+    // the list (pipeline/tranches.ts), one job after the other; « --assembler » puts them together and builds the day.
+    // Without either, one job does it all (a local trial).
+    tranche: { type: "string" },
+    assembler: { type: "boolean", default: false },
   },
 });
+
+/** The half this job measures (B.8), or null: the whole list, in one job (or the assembly, which measures nothing). */
+const TRANCHE = ((): Tranche | null => {
+  if (o.tranche === undefined) return null;
+  if (o.assembler) throw new Error("--tranche et --assembler ne vont pas ensemble");
+  if (o.tranche !== "1" && o.tranche !== "2") throw new Error(`--tranche : 1 ou 2 (reçu « ${o.tranche} »)`);
+  return o.tranche === "1" ? 1 : 2;
+})();
+
+/**
+ * What the first half keeps for the second half and the assembly (B.8), in its work folder (the run's artifact): the
+ * day and the start of its measurement, the sources' states (their files beside it, never downloaded twice a day) and
+ * the fourth rule's state (asked to Quad9 once a day), so that every job builds the same list.
+ */
+type JourTranche1 = { date: string; debut: string; sources: EtatSource[]; regleInterne: EtatRegleInterne };
+
+function lireJourTranche1(travail: string): JourTranche1 {
+  const j = json<Partial<JourTranche1>>(travail, "jour.json");
+  const regle = lireEtatRegleInterne(j.regleInterne);
+  if (typeof j.date !== "string" || typeof j.debut !== "string" || !Array.isArray(j.sources) || regle === null) {
+    throw new Error("jour.json de la tranche 1 : illisible");
+  }
+  if (Number.isNaN(Date.parse(j.debut))) throw new Error("jour.json de la tranche 1 : début illisible");
+  return { date: j.date, debut: j.debut, sources: j.sources, regleInterne: regle };
+}
 
 /**
  * The time limits, in whole minutes, checked as soon as they are read (the review of PR 20): a wrong value stops the
@@ -401,8 +426,13 @@ function suivreDebit(
 async function principal(): Promise<number> {
   const travail = o.travail;
   if (travail === undefined) throw new Error("option manquante : --travail <dossier>");
-  const maintenant = new Date();
-  const date = o.date ?? maintenant.toISOString().slice(0, 10);
+  // The second half and the assembly (B.8) start from what the first half kept: its day, the start of the day's
+  // measurement, its sources and the fourth rule's state. The job's own start sets its time limits only.
+  const debutJob = new Date();
+  const repris = TRANCHE === 2 || o.assembler ? lireJourTranche1(travail) : null;
+  const maintenant = repris === null ? debutJob : new Date(repris.debut);
+  const date = repris?.date ?? o.date ?? maintenant.toISOString().slice(0, 10);
+  if (o.date !== undefined && o.date !== date) throw new Error(`--date ${o.date} : la tranche 1 a mesuré le ${date}`);
   const heure = maintenant.toISOString();
   rmSync(path.join(travail, "sortie"), { recursive: true, force: true });
   mkdirSync(path.join(travail, "sortie"), { recursive: true });
@@ -410,17 +440,17 @@ async function principal(): Promise<number> {
   const agent = agentUtilisateur(version);
   const ref = referentiels();
 
-  // Downloads, then the reference list.
-  const sources: EtatSource[] = await telechargerSources(
-    new Telechargeur({ agent }),
-    travail,
-    o.veille ?? null,
-    maintenant,
-  );
+  // Downloads (once a day: the second half and the assembly read the first half's files), then the reference list.
+  const sources: EtatSource[] =
+    repris !== null
+      ? repris.sources
+      : await telechargerSources(new Telechargeur({ agent }), travail, o.veille ?? null, maintenant);
   // IPtoASN: the copy surveyed by hand (the workflow takes the latest one from the release « sources-iptoasn »);
   // without it, the last copy kept in the cache; never a download from iptoasn.com.
   const copieVeille = o.veille === undefined ? null : path.join(o.veille, "sources", "iptoasn");
-  if (o.iptoasn !== undefined) {
+  if (repris !== null) {
+    // Its state is in the first half's sources, its file in the work folder.
+  } else if (o.iptoasn !== undefined) {
     sources.push(releverManuel(travail, "iptoasn", 18, o.iptoasn, maintenant));
   } else if (copieVeille !== null && existsSync(copieVeille) && existsSync(`${copieVeille}.meta.json`)) {
     const meta = json<{ date: string; octets: number; sha256: string }>(`${copieVeille}.meta.json`);
@@ -478,18 +508,20 @@ async function principal(): Promise<number> {
       : null;
   const regleVeille = lireEtatRegleInterne(etatVeille?.qualite?.regleSousZoneInterne);
   const regleInterne: EtatRegleInterne =
-    regleVeille !== null && controleDu(regleVeille, derniereListe, METHODE) === "garder"
-      ? regleVeille
-      : // Drawn by the list, not by the day: a check that a red day did not publish draws the same names again.
-        await reposerNoms(
-          quad9,
-          nomsRegle,
-          generateur(Number(derniereListe.replaceAll("-", "")) + 2),
-          date,
-          derniereListe,
-          METHODE,
-          regleVeille,
-        );
+    repris !== null
+      ? repris.regleInterne
+      : regleVeille !== null && controleDu(regleVeille, derniereListe, METHODE) === "garder"
+        ? regleVeille
+        : // Drawn by the list, not by the day: a check that a red day did not publish draws the same names again.
+          await reposerNoms(
+            quad9,
+            nomsRegle,
+            generateur(Number(derniereListe.replaceAll("-", "")) + 2),
+            date,
+            derniereListe,
+            METHODE,
+            regleVeille,
+          );
   const liste =
     regleInterne.etat === "suspendue"
       ? construireListe(
@@ -528,147 +560,237 @@ async function principal(): Promise<number> {
   const domainesMesures = tirage.domaines;
   const noms = tirage.noms;
   verifierLimite(noms.size);
-
-  // The measurement, with Quad9 and Cloudflare alongside, at their own pace.
-  const [hote, port] = adresseEtPort(o.resolveur);
-  const knot = new ClientUdp("knot", hote, port, 12_000);
-  const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
-  const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
-  const plan = planDeControle(domainesMesures, nomsTemoins, generateur(graine + 1));
-  // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
-  // companies' platforms. Only the units of the list name a busy second's zones.
-  const debit = suivreDebit(
-    o.conteneur,
-    zoneDe,
-    (zone) => ref.psl.icann?.has(zone) === true,
-    (zone) => liste.domaines.has(zone),
-  );
-  const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
-  const minutes = () => Math.round((Date.now() - maintenant.getTime()) / 60_000);
-  // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
-  // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
-  // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them. A
-  // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end); the
-  // options were checked as soon as they were read (LIMITES).
-  const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
-  const minutesDe = (minutes: number) => maintenant.getTime() + minutes * 60_000;
-  // The emergency stop brings the controls' deadline to its instant: Quad9 is asked nothing more for a lost day.
-  let finControles = minutesDe(finControlesMinutes);
-  const finDesControles = () => finControles;
-  /** The confirmations of the failures keep their own deadline: after a stop, a few of them are still asked. */
-  const finConfirmations = minutesDe(finControlesMinutes);
-  // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
-  // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
-  // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
-  const domainesEtat = new Set(domainesMesures.filter((d) => d.perimetre === "État").map((d) => d.domaine));
-  const nomsWeb = new Map(domainesMesures.map((d) => [d.domaine, d.nomWeb] as const));
-  const controleHotesEnCours = new ControleEnContinu(quad9, 8, finDesControles);
-  const hotesDeZone = (zone: MesureZone) => [...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((x) => x.hote)];
-  const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
-    collecter(noms, knot, {
-      ...POLITESSE,
-      nomsParSeconde: Number(o["noms-par-seconde"]),
-      delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
-      echeance: minutesDe(echeanceMinutes),
-      finReprises: minutesDe(finReprisesMinutes),
-      // A trial's first pass ends at its deadline too, so that the trial always writes its diagnosis within its job's
-      // 60 minutes (23/11/2026, 07:07); a day's collection keeps its whole first pass.
-      ...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),
-      zoneDe,
-      suivi,
-      nomWebDe: (domaine) => nomsWeb.get(domaine),
-      surArret: () => {
-        finControles = Date.now();
-      },
-      apresDomaine: (domaine, zone) => {
-        if (domainesEtat.has(domaine)) controleHotesEnCours.ajouter(hotesDeZone(zone));
-      },
-      apresPremierePasse: () =>
-        suivi(
-          `première passe finie à ${minutes()} min ; ${controleHotesEnCours.noms.length} hôtes de l'État au contrôle`,
-        ),
-      ...(debit.frein === undefined ? {} : { frein: debit.frein }),
-      ...(debit.journal === undefined ? {} : { journal: debit.journal }),
-    }),
-    controler(quad9, plan.noms, plan.mx, 8, finDesControles),
-    controler(cloudflare, nomsTemoins, []),
-  ]);
-  suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
-  // Every « État » domain was announced by the measurement (first pass and attempts): nothing more is added.
-  const controleHotes = await controleHotesEnCours.fermer();
-  const hotesControles = controleHotesEnCours.noms;
-  suivi(`contrôle de ${hotesControles.length} hôtes de l'État fini à ${minutes()} min`);
-  const temoinsKnot = new Map(await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)));
-  // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
-  // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
-  // par Quad9 »; the others are the collection's, and only they count in the guard of 2 %.
-  const ECHECS_DNS = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
-  const pannes: Pannes = { noms: new Set<string>(), zones: new Set<string>(), resolveur: "quad9" };
-  const aConfirmer = domainesMesures.filter(
-    (d) =>
-      mesures.domaines.get(d.domaine)?.etat === "echec" ||
-      mesures.domaines.get(d.domaine)?.mxEtat === "echec" ||
-      mesures.noms.get(d.nomWeb)?.etat === "echec",
-  );
-  // The domains whose MX question alone failed, and Quad9's too (for the guard only: nothing else is published).
-  const pannesMx = new Set<string>();
-  // The domains Quad9 was asked about (the diagnosis tells « not confirmed » from « not asked »).
-  const demandes = new Set<string>();
-  const confirmer = async () => {
-    for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finConfirmations; d = aConfirmer.shift()) {
-      const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
-      const webEnEchec = mesures.noms.get(d.nomWeb)?.etat === "echec";
-      const [nom, type] = zoneEnEchec
-        ? [d.domaine, "NS" as const]
-        : webEnEchec
-          ? [d.nomWeb, "A" as const]
-          : [d.domaine, "MX" as const];
-      const r = await quad9.demander(nom, type);
-      demandes.add(d.domaine);
-      if (!ECHECS_DNS.has(r.code)) continue;
-      if (zoneEnEchec) (pannes.zones as Set<string>).add(d.domaine);
-      if (webEnEchec) (pannes.noms as Set<string>).add(d.nomWeb);
-      if (type === "MX") pannesMx.add(d.domaine);
-    }
-  };
-  // A stopped day is never published: a few confirmations, drawn at random, are kept for the diagnosis, the rest is not
-  // asked; the domains under way at the stop failed for want of being asked, so Quad9 is asked about the others only.
-  if (mesures.arret !== null) {
-    const retenus = aConfirmer.filter((d) => !mesures.inacheves.has(d.domaine));
-    const ecartes = aConfirmer.length - retenus.length;
-    aConfirmer.splice(
-      0,
-      aConfirmer.length,
-      ...melanger(retenus, generateur(graine + 3)).slice(0, CONFIRMATIONS_APRES_ARRET),
-    );
-    suivi(
-      `arrêt d'urgence : ${aConfirmer.length} des ${retenus.length} pannes seulement reposées à Quad9 ` +
-        `(${ecartes} domaines inachevés écartés)`,
-    );
+  if (TRANCHE === 1) {
+    const jourTranche1: JourTranche1 = { date, debut: heure, sources, regleInterne };
+    writeFileSync(path.join(travail, "jour.json"), `${JSON.stringify(jourTranche1)}\n`);
   }
-  const nombreAConfirmer = aConfirmer.length;
-  await Promise.all(Array.from({ length: 8 }, confirmer));
-  suivi(`confirmation de ${nombreAConfirmer} pannes finie à ${minutes()} min`);
-  const { debit: debitServeurs, attentes: attentesFrein } = debit.arreter();
-  for (const c of [knot, quad9, cloudflare]) c.fermer();
-  const controles: Controles = {
-    noms: new Map(
+
+  /**
+   * The measurement of the list, or of one half of it (B.8), with Quad9 and Cloudflare alongside, at their own pace;
+   * it gives what the rest of the job, or the next job, needs of it. In a half: its domains only (by a stable hash of
+   * their name), their names with them, the control plan drawn among them; the witnesses in the first half only.
+   */
+  const mesurerTranche = async (tranche: Tranche | null): Promise<ResultatTranche> => {
+    const dansLaTranche = (domaine: string) => tranche === null || trancheDe(domaine) === tranche;
+    const domainesDeLaTranche = domainesMesures.filter((d) => dansLaTranche(d.domaine));
+    const nomsDeLaTranche = new Map([...noms].filter(([, domaine]) => dansLaTranche(domaine)));
+    if (tranche !== null) {
+      console.log(
+        `collecte : tranche ${tranche} : ${domainesDeLaTranche.length} domaines et ${nomsDeLaTranche.size} noms`,
+      );
+    }
+    const [hote, port] = adresseEtPort(o.resolveur);
+    const knot = new ClientUdp("knot", hote, port, 12_000);
+    const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
+    const nomsTemoins = tranche === 2 ? [] : ref.temoins.temoins.map((t) => t.nom);
+    const plan = planDeControle(domainesDeLaTranche, nomsTemoins, generateur(graine + 1));
+    // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
+    // companies' platforms. Only the units of the list name a busy second's zones.
+    const debit = suivreDebit(
+      o.conteneur,
+      zoneDe,
+      (zone) => ref.psl.icann?.has(zone) === true,
+      (zone) => liste.domaines.has(zone),
+    );
+    const suivi = (ligne: string) => console.log(`collecte : ${ligne}`);
+    const minutes = () => Math.round((Date.now() - debutJob.getTime()) / 60_000);
+    // The controls after the measurement stop at 300 minutes: what is left keeps its level without control (« probable »),
+    // and the job always has time to build and keep the day (it stops at 330 minutes, within GitHub's 6 hours). Day 2's
+    // first pass took 216 minutes on a slow network, and its retries were dropped: the margins leave room for them. A
+    // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end); the
+    // options were checked as soon as they were read (LIMITES).
+    const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
+    // The time limits are the job's own: each half has its job's (collecte.yml).
+    const minutesDe = (minutes: number) => debutJob.getTime() + minutes * 60_000;
+    // The emergency stop brings the controls' deadline to its instant: Quad9 is asked nothing more for a lost day.
+    let finControles = minutesDe(finControlesMinutes);
+    const finDesControles = () => finControles;
+    /** The confirmations of the failures keep their own deadline: after a stop, a few of them are still asked. */
+    const finConfirmations = minutesDe(finControlesMinutes);
+    // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
+    // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
+    // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
+    const domainesEtat = new Set(domainesDeLaTranche.filter((d) => d.perimetre === "État").map((d) => d.domaine));
+    const nomsWeb = new Map(domainesDeLaTranche.map((d) => [d.domaine, d.nomWeb] as const));
+    const controleHotesEnCours = new ControleEnContinu(quad9, 8, finDesControles);
+    const hotesDeZone = (zone: MesureZone) => [...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((x) => x.hote)];
+    const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
+      collecter(nomsDeLaTranche, knot, {
+        ...POLITESSE,
+        nomsParSeconde: Number(o["noms-par-seconde"]),
+        delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
+        echeance: minutesDe(echeanceMinutes),
+        finReprises: minutesDe(finReprisesMinutes),
+        // A trial's first pass ends at its deadline too, so that the trial always writes its diagnosis within its job's
+        // 60 minutes (23/11/2026, 07:07); a day's collection keeps its whole first pass.
+        ...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),
+        zoneDe,
+        suivi,
+        nomWebDe: (domaine) => nomsWeb.get(domaine),
+        surArret: () => {
+          finControles = Date.now();
+        },
+        apresDomaine: (domaine, zone) => {
+          if (domainesEtat.has(domaine)) controleHotesEnCours.ajouter(hotesDeZone(zone));
+        },
+        apresPremierePasse: () =>
+          suivi(
+            `première passe finie à ${minutes()} min ; ${controleHotesEnCours.noms.length} hôtes de l'État au contrôle`,
+          ),
+        ...(debit.frein === undefined ? {} : { frein: debit.frein }),
+        ...(debit.journal === undefined ? {} : { journal: debit.journal }),
+      }),
+      controler(quad9, plan.noms, plan.mx, 8, finDesControles),
+      controler(cloudflare, nomsTemoins, []),
+    ]);
+    suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
+    // Every « État » domain was announced by the measurement (first pass and attempts): nothing more is added.
+    const controleHotes = await controleHotesEnCours.fermer();
+    const hotesControles = controleHotesEnCours.noms;
+    suivi(`contrôle de ${hotesControles.length} hôtes de l'État fini à ${minutes()} min`);
+    const temoinsKnot = new Map(
+      await Promise.all(nomsTemoins.map(async (n) => [n, await mesurerNom(n, knot)] as const)),
+    );
+    // Point 02, Q2: every domain still failing after its attempts is asked once to Quad9 (NS when its zone fails, the
+    // web name's address otherwise). A failure Quad9 shares is the domain's own breakdown, published « échec, confirmé
+    // par Quad9 »; the others are the collection's, and only they count in the guard of 2 %.
+    const ECHECS_DNS = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR"]);
+    const pannes: Pannes = { noms: new Set<string>(), zones: new Set<string>(), resolveur: "quad9" };
+    const aConfirmer = domainesDeLaTranche.filter(
+      (d) =>
+        mesures.domaines.get(d.domaine)?.etat === "echec" ||
+        mesures.domaines.get(d.domaine)?.mxEtat === "echec" ||
+        mesures.noms.get(d.nomWeb)?.etat === "echec",
+    );
+    // The domains whose MX question alone failed, and Quad9's too (for the guard only: nothing else is published).
+    const pannesMx = new Set<string>();
+    // The domains Quad9 was asked about (the diagnosis tells « not confirmed » from « not asked »).
+    const demandes = new Set<string>();
+    const confirmer = async () => {
+      for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finConfirmations; d = aConfirmer.shift()) {
+        const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
+        const webEnEchec = mesures.noms.get(d.nomWeb)?.etat === "echec";
+        const [nom, type] = zoneEnEchec
+          ? [d.domaine, "NS" as const]
+          : webEnEchec
+            ? [d.nomWeb, "A" as const]
+            : [d.domaine, "MX" as const];
+        const r = await quad9.demander(nom, type);
+        demandes.add(d.domaine);
+        if (!ECHECS_DNS.has(r.code)) continue;
+        if (zoneEnEchec) (pannes.zones as Set<string>).add(d.domaine);
+        if (webEnEchec) (pannes.noms as Set<string>).add(d.nomWeb);
+        if (type === "MX") pannesMx.add(d.domaine);
+      }
+    };
+    // A stopped day is never published: a few confirmations, drawn at random, are kept for the diagnosis, the rest is not
+    // asked; the domains under way at the stop failed for want of being asked, so Quad9 is asked about the others only.
+    if (mesures.arret !== null) {
+      const retenus = aConfirmer.filter((d) => !mesures.inacheves.has(d.domaine));
+      const ecartes = aConfirmer.length - retenus.length;
+      aConfirmer.splice(
+        0,
+        aConfirmer.length,
+        ...melanger(retenus, generateur(graine + 3)).slice(0, CONFIRMATIONS_APRES_ARRET),
+      );
+      suivi(
+        `arrêt d'urgence : ${aConfirmer.length} des ${retenus.length} pannes seulement reposées à Quad9 ` +
+          `(${ecartes} domaines inachevés écartés)`,
+      );
+    }
+    const nombreAConfirmer = aConfirmer.length;
+    await Promise.all(Array.from({ length: 8 }, confirmer));
+    suivi(`confirmation de ${nombreAConfirmer} pannes finie à ${minutes()} min`);
+    const { debit: debitServeurs, attentes: attentesFrein } = debit.arreter();
+    for (const c of [knot, quad9, cloudflare]) c.fermer();
+    const controleNoms = new Map(
       [...controleQuad9.noms, ...controleHotes.noms].map(([n, m]) => [
         n,
         { resolveur: controleQuad9.resolveur, mesure: m },
       ]),
-    ),
-    mx: controleQuad9.mx,
+    );
+    return {
+      tranche: tranche ?? 1,
+      date,
+      noms: [...mesures.noms],
+      domaines: [...mesures.domaines],
+      hotes: [...mesures.hotes],
+      spf: [...mesures.spf],
+      controleNoms: [...controleNoms],
+      controleMx: [...controleQuad9.mx],
+      pannes: { noms: [...pannes.noms].sort(), zones: [...pannes.zones].sort() },
+      pannesMx: [...pannesMx].sort(),
+      demandes: [...demandes].sort(),
+      aConfirmer: nombreAConfirmer,
+      arret: mesures.arret,
+      inacheves: [...mesures.inacheves].sort(),
+      premierePasseCoupee: mesures.premierePasseCoupee,
+      temoinsKnot: [...temoinsKnot],
+      temoinsCloudflare: [...controleCloudflare.noms],
+      controle: { noms: plan.noms.length, mx: plan.mx.length, hotes: hotesControles.length },
+      debit: debitServeurs,
+      attentes: attentesFrein,
+      minutes: minutes(),
+    };
   };
+
+  // One job measures the whole list; a half (B.8) hands its measurement on to the next job and stops there; the
+  // assembly reads the two halves (or a first half stopped by the emergency stop: the second never ran, and the day,
+  // never published, is built from the first for its diagnosis).
+  const fichierTranche = (t: Tranche) => path.join(travail, `tranche-${t}.json.gz`);
+  const lireFichierTranche = (t: Tranche) =>
+    existsSync(fichierTranche(t))
+      ? lireTranche(gunzipSync(readFileSync(fichierTranche(t))).toString("utf8"), t, date)
+      : null;
+  let r: ResultatTranche;
+  if (o.assembler) {
+    const premiere = lireFichierTranche(1);
+    const seconde = lireFichierTranche(2);
+    if (premiere === null) throw new Error("assemblage : le fichier de la tranche 1 manque");
+    if (seconde === null && premiere.arret === null) throw new Error("assemblage : le fichier de la tranche 2 manque");
+    r = seconde === null ? premiere : fusionnerTranches(premiere, seconde);
+  } else {
+    r = await mesurerTranche(TRANCHE);
+  }
+  if (TRANCHE !== null) {
+    writeFileSync(fichierTranche(TRANCHE), gzipSync(JSON.stringify(r)));
+    const arret = r.arret === null ? "" : ` ; **arrêt d'urgence** : ${r.arret} ; la tranche 2 ne part pas`;
+    writeFileSync(
+      path.join(travail, `resume-tranche-${TRANCHE}.md`),
+      `- Tranche ${TRANCHE} : ${r.domaines.length} domaines et ${r.noms.length} noms mesurés en ${r.minutes} min${arret}.\n`,
+    );
+    console.log(`collecte : tranche ${TRANCHE} écrite (${r.minutes} min)`);
+    // Exit 2: the half stopped (the emergency stop); the next half does not run, the assembly keeps the diagnosis.
+    return r.arret === null ? 0 : 2;
+  }
+  // The day, from its one job or its two halves.
+  const mesures = {
+    noms: new Map(r.noms),
+    domaines: new Map(r.domaines),
+    hotes: new Map(r.hotes),
+    spf: new Map(r.spf),
+    arret: r.arret,
+    inacheves: new Set(r.inacheves),
+    premierePasseCoupee: r.premierePasseCoupee,
+  };
+  const controles: Controles = { noms: new Map(r.controleNoms), mx: new Map(r.controleMx) };
+  const pannes: Pannes = { noms: new Set(r.pannes.noms), zones: new Set(r.pannes.zones), resolveur: "quad9" };
+  const pannesMx = new Set(r.pannesMx);
+  const demandes = new Set(r.demandes);
+  const temoinsKnot = new Map(r.temoinsKnot);
+  const temoinsQuad9 = new Map(r.controleNoms.map(([n, c]) => [n, c.mesure]));
+  const temoinsCloudflare = new Map(r.temoinsCloudflare);
+  const debitServeurs = r.debit;
+  const attentesFrein = r.attentes;
   const observations: Observations = {
     date,
-    noms: [...mesures.noms],
-    domaines: [...mesures.domaines],
-    hotes: [...mesures.hotes],
-    spf: [...mesures.spf],
-    controleNoms: [...controles.noms],
-    controleMx: [...controles.mx],
-    pannes: { noms: [...pannes.noms].sort(), zones: [...pannes.zones].sort() },
+    noms: r.noms,
+    domaines: r.domaines,
+    hotes: r.hotes,
+    spf: r.spf,
+    controleNoms: r.controleNoms,
+    controleMx: r.controleMx,
+    pannes: r.pannes,
   };
 
   // Today's state.
@@ -687,8 +809,8 @@ async function principal(): Promise<number> {
     ref.temoins.temoins,
     [
       { resolveur: "knot", noms: temoinsKnot },
-      { resolveur: "quad9", noms: controleQuad9.noms },
-      { resolveur: "cloudflare", noms: controleCloudflare.noms },
+      { resolveur: "quad9", noms: temoinsQuad9 },
+      { resolveur: "cloudflare", noms: temoinsCloudflare },
     ],
     profil,
   );
@@ -1035,7 +1157,7 @@ async function principal(): Promise<number> {
         concordants: temoins.concordants,
         ecarts: temoins.verdicts.filter((v) => !v.ok).map((v) => `${v.nom} (${v.resolveur})`),
       },
-      controle: { resolveur: "quad9", noms: plan.noms.length + hotesControles.length, mx: plan.mx.length },
+      controle: { resolveur: "quad9", noms: r.controle.noms + r.controle.hotes, mx: r.controle.mx },
       debitMaxParServeur:
         debitServeurs === null
           ? null
