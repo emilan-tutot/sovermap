@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { ViewTransition } from "react";
 import { Coque } from "@/components/coque/Coque";
 import { Valeur } from "@/components/texte/Valeur";
 import { type Chiffres, filsDe, lireChiffres, origineDe } from "@/lib/donnees/atlas";
@@ -109,8 +110,13 @@ export async function Atlas() {
                   {liens[f.code] === undefined ? (
                     <Valeur texte={f.nom} />
                   ) : (
-                    <Link href={`/pays/${liens[f.code]}`} prefetch={false}>
-                      <Valeur texte={f.nom} />
+                    // The country's name flies into its page's title (DESIGN.md § 7), on this link only (type « vole »).
+                    <Link href={`/pays/${liens[f.code]}`} prefetch={false} transitionTypes={["vole"]}>
+                      <ViewTransition name={`pays-${f.code}`} share={{ vole: "vole", default: "none" }} default="none">
+                        <span>
+                          <Valeur texte={f.nom} />
+                        </span>
+                      </ViewTransition>
                     </Link>
                   )}
                 </th>

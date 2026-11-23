@@ -110,7 +110,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
     <Coque large>
       <FilAriane miettes={[{ nom: r.domaine, chemin: `/radiographie/${r.domaine}` }]} />
       <p className="etiquette-capitales">{fr.radiographie.surtitre}</p>
-      <h1 className="titre-page radiographie-titre">
+      <h1 className="titre-page radiographie-titre titre-vole">
         {/* The name that flew from the search (DESIGN.md § 7). */}
         <ViewTransition name={`domaine-${r.domaine}`} share="vole" default="none">
           <span>

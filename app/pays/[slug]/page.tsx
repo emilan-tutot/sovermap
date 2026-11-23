@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ViewTransition } from "react";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { indisponible } from "@/lib/donnees/indisponible";
@@ -54,7 +55,12 @@ export default async function PaysPage({ params }: Props) {
     <Coque>
       <FilAriane miettes={[{ nom: p.nom, chemin: `/pays/${(await params).slug}` }]} />
       <p className="etiquette-capitales">{t.surtitre}</p>
-      <h1 className="titre-page">{p.nom}</h1>
+      <h1 className="titre-page titre-vole">
+        {/* The name that flew from the Atlas's table of countries (DESIGN.md § 7). */}
+        <ViewTransition name={`pays-${p.code}`} share={{ vole: "vole", default: "none" }} default="none">
+          <span>{p.nom}</span>
+        </ViewTransition>
+      </h1>
       <p className="chapo">{t.honnetete}</p>
       <p className="valeur">{t.domaines(nombre(chiffres.domaines), nombre(chiffres.domainesEtat))}</p>
       <section className="releve" aria-labelledby="titre-societes">
