@@ -2,8 +2,8 @@
 // and 09:47 UTC): two measurements at once would double the questions to the shared servers (brief B.3), and a trial
 // never takes the place of a day's measurement (the code review of PR 6, finding 5).
 
-/** The day's collections are scheduled at these minutes of the UTC day (collecte.yml): 03:17 and 09:47. */
-export const DEPARTS_MINUTES = [3 * 60 + 17, 9 * 60 + 47];
+/** The day's collections are scheduled at these minutes of the UTC day (collecte.yml): 03:17, 09:47 and 15:17. */
+export const DEPARTS_MINUTES = [3 * 60 + 17, 9 * 60 + 47, 15 * 60 + 17];
 /**
  * A trial lasts about 25 minutes, 60 at worst (its limit, collecte.yml): none starts within 60 minutes before a
  * scheduled collection, so that it ends before it.
