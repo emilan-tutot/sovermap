@@ -1,6 +1,6 @@
 // Tests of the failures' diagnosis: made-up records, documentation names and AS numbers only (RFC 2606, RFC 5398).
 import { describe, expect, it } from "vitest";
-import { diagnosticDesEchecs } from "./diagnostic";
+import { diagnosticDesEchecs, FICHIER_DIAGNOSTIC } from "./diagnostic";
 import type { EnregistrementDomaine, EnregistrementNom, Etat, Hote } from "./publication";
 
 const nom = (n: string, d: string, code: string | null): EnregistrementNom => ({
@@ -90,19 +90,50 @@ describe("diagnosticDesEchecs", () => {
         nom("www.sain.example", "sain.example", null),
       ],
     );
+    const sans = { confirme: false, inacheve: false };
     expect(diagnosticDesEchecs(jour)).toEqual([
-      { domaine: "a.example", zone: "TIMEOUT", messagerie: false, nomWeb: "www.a.example", web: null, serveursDeNoms: [] },
-      { domaine: "b.example", zone: null, messagerie: true, nomWeb: "www.b.example", web: null, serveursDeNoms: [] },
+      { domaine: "a.example", zone: "TIMEOUT", messagerie: false, nomWeb: "www.a.example", web: null, ...sans, serveursDeNoms: [] },
+      { domaine: "b.example", zone: null, messagerie: true, nomWeb: "www.b.example", web: null, ...sans, serveursDeNoms: [] },
       {
         domaine: "c.example",
         zone: null,
         messagerie: false,
         nomWeb: "www.c.example",
         web: "SERVFAIL",
+        ...sans,
         // One line per server; its operators without repeats.
         serveursDeNoms: [{ hote: "ns1.host.example", exploitants: ["hebergeur"] }],
       },
     ]);
+  });
+
+  it("says which failures Quad9 shared, as the guard counts them, and which domains a stop left unfinished", () => {
+    const confirme = (n: EnregistrementNom): EnregistrementNom => ({ ...n, echec: { code: "SERVFAIL", confirmePar: "quad9" } });
+    const zoneConfirmee = domaine("z.example", { zone: "SERVFAIL" });
+    zoneConfirmee.zone.echec = { code: "SERVFAIL", confirmePar: "quad9" };
+    const jour = etat(
+      [zoneConfirmee, domaine("w.example"), domaine("m.example", { mx: true }), domaine("i.example"), domaine("n.example")],
+      [
+        nom("www.z.example", "z.example", null),
+        confirme(nom("www.w.example", "w.example", "SERVFAIL")),
+        nom("www.m.example", "m.example", null),
+        nom("www.i.example", "i.example", "ERREUR"),
+        nom("www.n.example", "n.example", "SERVFAIL"),
+      ],
+    );
+    const lignes = diagnosticDesEchecs(jour, { pannesMx: new Set(["m.example"]), inacheves: new Set(["i.example"]) });
+    expect(lignes.map((l) => [l.domaine, l.confirme, l.inacheve])).toEqual([
+      ["i.example", false, true],
+      ["m.example", true, false],
+      ["n.example", false, false],
+      ["w.example", true, false],
+      ["z.example", true, false],
+    ]);
+  });
+
+  it("is written beside the output, never inside it (the release takes the whole published folder)", () => {
+    expect(FICHIER_DIAGNOSTIC).toBe("diagnostic.json");
+    expect(FICHIER_DIAGNOSTIC).not.toContain("/");
   });
 
   it("names an operator by its proof when no company is established", () => {

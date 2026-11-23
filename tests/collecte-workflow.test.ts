@@ -23,6 +23,15 @@ describe("the collection's workflow", () => {
     expect(tache("alerter")).toContain("needs.jour.result == 'failure'");
   });
 
+  it("keeps the failures' diagnosis in the run's artifact only: never in « donnees » nor in the release", () => {
+    // The artifact takes it beside « sortie » (pipeline/diagnostic.ts writes it in the work folder).
+    expect(tache("mesurer")).toContain("travail/diagnostic.json");
+    // The publication copies « sortie » only, and the release archives what was copied.
+    const publier = tache("publier");
+    expect(publier).toContain("cp -a ../collecte/sortie/. ./");
+    expect(publier).not.toContain("diagnostic");
+  });
+
   it("measures the day the check named, never the clock's", () => {
     const mesurer = tache("mesurer");
     expect(mesurer).toContain("DATE: ${{ needs.jour.outputs.date }}");

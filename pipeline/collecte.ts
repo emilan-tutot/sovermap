@@ -126,6 +126,11 @@ export type ResultatCollecte = {
   fin: number;
   /** Why the collection stopped before its end (the emergency stop), or null: a stopped day is never published. */
   arret: string | null;
+  /**
+   * The domains under way when the collection stopped: their questions not yet asked got « ERREUR » without being
+   * asked, so their failures say nothing of their servers (the diagnosis marks them; Quad9 is not asked about them).
+   */
+  inacheves: Set<string>;
 };
 
 /** The pace at which the questions held by an emergency pause go out again, by default: the names' (POLITESSE). */
@@ -670,7 +675,10 @@ export async function collecter(
     debut: Date.now(),
     fin: 0,
     arret: null,
+    inacheves: new Set(),
   };
+  /** The first pass's domains opened and not yet counted: those still under way at a stop are « inachevés ». */
+  const ouverts = new Set<string>();
   const hotesEnCours = new Map<string, Promise<void>>();
   const essai = (cle: string) => resultat.essais.set(cle, (resultat.essais.get(cle) ?? 0) + 1);
 
@@ -741,6 +749,8 @@ export async function collecter(
           `suite (une pause de ${minutesPause} min après chacun des précédents)`
         : `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, toutes les pauses du jour prises ` +
           `(${pauses} sur ${options.arret.pausesMax})`;
+    // The domain that brought the stop is counted; the others under way end without being asked any more.
+    for (const u of ouverts) if (u !== unite) resultat.inacheves.add(u);
     client.arreter();
     options.surArret?.(resultat.arret);
     options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);
@@ -827,6 +837,7 @@ export async function collecter(
         await horloge.dormir(pauseJusqua - horloge.maintenant());
       }
       const sonEpoque = epoque;
+      ouverts.add(unite);
       // The measurement is called first: its NS question is the zone's first (client per zone, above). Its names go a
       // few at a time: a large domain never takes every slot of the names' pace at once.
       await Promise.all([
@@ -837,6 +848,7 @@ export async function collecter(
         }),
       ]);
       noterUnite(unite, sonEpoque);
+      ouverts.delete(unite);
     }),
   );
   premierePasse = false;

@@ -24,11 +24,17 @@ import {
 } from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
-import { diagnosticDesEchecs } from "../diagnostic";
+import { diagnosticDesEchecs, FICHIER_DIAGNOSTIC } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
-import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
+import {
+  type Garde,
+  gardesPannes,
+  gardeTerme,
+  veilleUtilisable as veilleUtilisableDe,
+  verifierLimite,
+} from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
@@ -594,10 +600,16 @@ async function principal(): Promise<number> {
       if (type === "MX") pannesMx.add(d.domaine);
     }
   };
-  // A stopped day is never published: a few confirmations are kept for the diagnosis, the rest is not asked.
-  if (mesures.arret !== null && aConfirmer.length > CONFIRMATIONS_APRES_ARRET) {
-    suivi(`arrêt d'urgence : ${CONFIRMATIONS_APRES_ARRET} des ${aConfirmer.length} pannes seulement reposées à Quad9`);
-    aConfirmer.splice(CONFIRMATIONS_APRES_ARRET);
+  // A stopped day is never published: a few confirmations are kept for the diagnosis, the rest is not asked; the
+  // domains under way at the stop failed for want of being asked, so Quad9 is asked about the others only.
+  if (mesures.arret !== null) {
+    const retenus = aConfirmer.filter((d) => !mesures.inacheves.has(d.domaine));
+    const ecartes = aConfirmer.length - retenus.length;
+    aConfirmer.splice(0, aConfirmer.length, ...retenus.slice(0, CONFIRMATIONS_APRES_ARRET));
+    suivi(
+      `arrêt d'urgence : ${aConfirmer.length} des ${retenus.length} pannes seulement reposées à Quad9 ` +
+        `(${ecartes} domaines inachevés écartés)`,
+    );
   }
   const nombreAConfirmer = aConfirmer.length;
   await Promise.all(Array.from({ length: 8 }, confirmer));
@@ -675,8 +687,13 @@ async function principal(): Promise<number> {
   writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
   // The failing domains, for the diagnosis of a degraded day: beside the output, never in it (the run's artifact only).
   writeFileSync(
-    path.join(travail, "diagnostic.json"),
-    `${JSON.stringify({ date, essai: o.essai, domaines: diagnosticDesEchecs(jour) })}\n`,
+    path.join(travail, FICHIER_DIAGNOSTIC),
+    `${JSON.stringify({
+      date,
+      essai: o.essai,
+      arret: mesures.arret,
+      domaines: diagnosticDesEchecs(jour, { pannesMx, inacheves: mesures.inacheves }),
+    })}\n`,
   );
 
   const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
@@ -780,7 +797,7 @@ async function principal(): Promise<number> {
   const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
   const gardes: Garde[] = [
     // The emergency stop (collecte.ts): a collection stopped before its end is never published.
-    { nom: "collecte menée à son terme", ok: mesures.arret === null, detail: mesures.arret ?? "" },
+    gardeTerme(mesures.arret),
     {
       nom: "témoins concordants",
       ok: temoins.concordants,

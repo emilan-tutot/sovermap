@@ -1060,6 +1060,10 @@ describe("the scheduling of a collection", () => {
     expect(pendantPause).toBe(0);
     expect(lignes).toContain("reprise 1 sautée : arrêt d'urgence");
     expect(r.domaines.size).toBeLessThan(2_000);
+    // The domains under way at the stop are marked unfinished (the diagnosis and Quad9 leave them aside); each was
+    // opened (its zone's measurement ends, answered « ERREUR » without being asked).
+    expect(r.inacheves.size).toBeGreaterThan(0);
+    for (const u of r.inacheves) expect(r.domaines.has(u)).toBe(true);
   });
 
   it("only pauses for a short outage: the alert is lifted, and the collection goes to its end, retries included", async () => {
@@ -1077,6 +1081,7 @@ describe("the scheduling of a collection", () => {
     // The pause holds every question, those of the domains already open included.
     expect(pendantPause).toBe(0);
     expect(r.arret).toBeNull();
+    expect(r.inacheves.size).toBe(0);
     expect(r.domaines.size).toBe(2_000);
     expect([...r.noms.values()].filter((m) => m.etat === "echec")).toEqual([]);
   });
