@@ -65,6 +65,27 @@ function surveiller(page: Page, origine: string) {
   return { etrangeres, erreurs };
 }
 
+// The links (E.6): every link of the site's own pages leads to a page that answers, on every kind of page. The links
+// to other sites are never followed here (no request leaves the machine in a test).
+test("liens : chaque lien interne de chaque type de page mène à une page qui répond", async ({ page, request }) => {
+  const internes = new Map<string, string>();
+  for (const [chemin] of PAGES) {
+    await page.goto(chemin);
+    for (const href of await page.locator("a[href]").evaluateAll((liens) => liens.map((a) => a.getAttribute("href") ?? ""))) {
+      if (!href.startsWith("/") || href.startsWith("//")) continue;
+      const cible = href.split("#")[0] ?? "";
+      if (cible !== "" && !internes.has(cible)) internes.set(cible, chemin);
+    }
+  }
+  expect(internes.size).toBeGreaterThan(20);
+  const cassees: string[] = [];
+  for (const [cible, depuis] of internes) {
+    const reponse = await request.get(cible);
+    if (reponse.status() >= 400) cassees.push(`${cible} (${reponse.status()}, depuis ${depuis})`);
+  }
+  expect(cassees).toEqual([]);
+});
+
 /** The paths of a sitemap's addresses, in their order. */
 const chemins = (xml: string) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1] ?? "").pathname);
 
