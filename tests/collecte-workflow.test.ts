@@ -43,6 +43,12 @@ describe("the collection's workflow", () => {
     expect(fraicheur).toContain('titre="Workflow planifié désactivé"');
     verifier(fraicheur);
     expect(branche(fraicheur, "disabled_manually")).not.toContain("echec=");
+    // An unreadable state is an error of GitHub's API, never an alarm; a workflow enabled again is said in the issue
+    // (its e-mails may go to the robot), and the issue closes once every one is active (the second review of PR 25).
+    expect(branche(fraicheur, "*")).not.toContain("echec=");
+    expect(branche(fraicheur, "disabled_inactivity")).toContain('reactives="$reactives $fichier"');
+    expect(fraicheur).toContain("ont été réactivés :$reactives.");
+    expect(fraicheur).toContain('gh issue close "$n"');
     // A third chance for the day's collection, which does nothing once the day has started.
     expect(workflow).toContain('- cron: "17 15 * * *"');
   });
@@ -50,7 +56,7 @@ describe("the collection's workflow", () => {
   it("ends a trial's first pass at its deadline, so that a trial always writes its diagnosis in its 60 minutes", () => {
     // Trap 67 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit.
     expect(tache("mesurer")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
-    expect(workflow).toContain("--echeance-minutes 35");
+    expect(workflow).toContain("--echeance-minutes 30");
     const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
     expect(collecter).toContain("...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),");
   });

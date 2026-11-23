@@ -971,6 +971,11 @@ async function principal(): Promise<number> {
   const resume = [
     `## Collecte du ${date}${o.essai ? " (essai)" : ""}`,
     "",
+    ...(mesures.premierePasseCoupee > 0
+      ? [
+          `- **Essai partiel** : sa première passe s'est arrêtée à son échéance ; ${mesures.premierePasseCoupee} domaines n'ont pas été mesurés : ce n'est pas la preuve complète d'une version.`,
+        ]
+      : []),
     `- Noms mesurés : ${mesuresNoms.length} sur ${liste.noms.size} ; domaines : ${b.etat.domaines.size} ; durée : ${etatJson.collecte.dureeMinutes} min.`,
     `- Règle « sous-zone interne » (méthode § 3) : ${
       regleInterne.etat === "appliquée"

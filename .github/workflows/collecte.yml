@@ -252,7 +252,7 @@ jobs:
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
-          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 35 --fin-reprises-minutes 45 --fin-controles-minutes 48); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 30 --fin-reprises-minutes 45 --fin-controles-minutes 48); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"

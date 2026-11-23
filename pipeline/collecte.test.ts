@@ -1,6 +1,6 @@
 // Tests of the measurement and of its scheduling: a simulated resolver, a fake clock, documentation names and
 // addresses only (RFC 2606, RFC 5737, RFC 3849).
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ClientParZone, collecter, PARENT_EN_VOL, POLITESSE } from "./collecte";
 import type { ClientDns, Reponse } from "./dns-bas";
 import type { Horloge } from "./politesse";
@@ -1089,6 +1089,67 @@ describe("the scheduling of a collection", () => {
     expect(r.inacheves.size).toBeGreaterThan(0);
     expect(r.inacheves.size).toBeLessThan(r.domaines.size);
     for (const u of r.inacheves) expect(r.domaines.has(u)).toBe(true);
+  });
+
+  it("starts no pause after a trial's deadline, though the domains in flight end in failure past it", async () => {
+    // The wall clock jumps past the deadline at the first question of p3, with 24 domains in flight; every question
+    // fails after it, so that a count of breaches would bring a pause (the review of PR 25).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const fin = Date.now() + 3_600_000;
+      let saute = false;
+      const { r, lignes } = await collecteEnPanne(
+        domainesP(200),
+        (nom) => {
+          if (!saute && numero(nom) === 3) {
+            saute = true;
+            vi.setSystemTime(fin + 1);
+          }
+          return saute;
+        },
+        { enVol: 24, aleatoire: () => 0.999_999, finPremierePasse: fin },
+      );
+      expect(saute).toBe(true);
+      expect(r.arret).toBeNull();
+      expect(lignes.some((l) => l.startsWith("pause d'urgence"))).toBe(false);
+      expect(lignes.some((l) => /^première passe arrêtée à l'heure limite : [0-9]+ tâches laissées$/.test(l))).toBe(
+        true,
+      );
+      expect(r.domaines.size).toBeLessThanOrEqual(24);
+      expect(r.domaines.size + r.premierePasseCoupee).toBe(200);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens no domain after a trial's deadline, though its task was taken before it", async () => {
+    // The wall clock jumps past the deadline as p5's task, taken with 23 others, is about to open its domain (the brake
+    // is asked just before): p5 and the tasks after it never open (the review of PR 25: 507 domains opened past it).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const fin = Date.now() + 3_600_000;
+      /** The domains whose task asked the brake before the jump: the only ones that may open. */
+      const avant = new Set<string>();
+      let saute = false;
+      const { r } = await collecteEnPanne(domainesP(200), () => false, {
+        enVol: 24,
+        aleatoire: () => 0.999_999,
+        finPremierePasse: fin,
+        frein: async (nom, _zone, ouverture) => {
+          if (!ouverture || saute) return;
+          if (nom === "p5.example") {
+            saute = true;
+            vi.setSystemTime(fin + 1);
+          } else avant.add(nom);
+        },
+      });
+      expect(saute).toBe(true);
+      expect(r.domaines.size).toBeGreaterThan(0);
+      for (const d of r.domaines.keys()) expect(avant.has(d)).toBe(true);
+      expect(r.domaines.size + r.premierePasseCoupee).toBe(200);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("marks unfinished only the domains under way at the stop, never the one whose count brought it", async () => {
