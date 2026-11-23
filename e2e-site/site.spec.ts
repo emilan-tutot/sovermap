@@ -313,9 +313,20 @@ test("territoires : une adresse au mauvais nom renvoie vers la bonne, un territo
   expect((await request.get("/groupements/123456789-inconnu")).status()).toBe(404);
 });
 
-test("territoires : la navigation y mène, de chaque page", async ({ page }) => {
+test("navigation : une barre à l'ordinateur, un menu compact au téléphone, et les territoires dedans", async ({
+  page,
+}, testInfo) => {
   await page.goto("/");
-  const lien = page.locator(".navigation a", { hasText: fr.coque.navigation.territoires });
+  const menu = page.locator(".navigation-compacte > summary");
+  const lien = page.getByRole("link", { name: fr.coque.navigation.territoires, exact: true }).filter({ visible: true });
+  if (testInfo.project.name === "pixel-7") {
+    // DESIGN.md § 9: more than five items on a phone, behind « Menu », closed until asked for.
+    await expect(menu).toBeVisible();
+    await expect(lien).toHaveCount(0);
+    await menu.click();
+  } else {
+    await expect(menu).toBeHidden();
+  }
   await expect(lien).toHaveAttribute("href", "/territoires");
 });
 

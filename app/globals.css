@@ -191,6 +191,55 @@
     text-decoration: underline;
   }
 
+  /* The compact menu (DESIGN.md § 9): more than five items, on a phone, behind « Menu »; a native disclosure, no
+     script. Its sign is drawn, never written: a plus that becomes a minus (DESIGN.md § 5, signs of action). */
+  .navigation-compacte {
+    display: none;
+    margin-left: auto;
+  }
+
+  .navigation-compacte > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .navigation-compacte > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .navigation-compacte > summary::after {
+    content: "";
+    width: 0.75rem;
+    height: 0.75rem;
+    background:
+      linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat,
+      linear-gradient(currentColor, currentColor) center / 1.5px 100% no-repeat;
+  }
+
+  .navigation-compacte[open] > summary::after {
+    background: linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat;
+  }
+
+  .navigation-compacte > .navigation {
+    flex-direction: column;
+    align-items: flex-end;
+    margin-left: 0;
+  }
+
+  @media (max-width: 47.99rem) {
+    .navigation-barre {
+      display: none;
+    }
+
+    .navigation-compacte {
+      display: block;
+    }
+  }
+
   /* A touch target of 44 px at least, like the navigation's links (DESIGN.md): on a phone, the wrapped navigation sits
      right under it. */
   .logo {

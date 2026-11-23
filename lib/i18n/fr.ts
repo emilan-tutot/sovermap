@@ -21,6 +21,8 @@ export const fr = {
     /** The navigation of the full site (DESIGN.md §9), behind an open door only. */
     navigation: {
       libelle: "Navigation principale",
+      /** The compact menu's button, on a phone (DESIGN.md § 9). */
+      menu: "Menu",
       atlas: "Atlas",
       ministeres: "Ministères",
       societes: "Sociétés",

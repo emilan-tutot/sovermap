@@ -40,13 +40,27 @@ export function Coque({
           {fr.site.name}
         </Link>
         {sitePublic() ? (
-          <nav className="navigation" aria-label={fr.coque.navigation.libelle}>
-            {NAVIGATION.map((n) => (
-              <Link key={n.href} href={n.href} prefetch={false}>
-                {n.texte}
-              </Link>
-            ))}
-          </nav>
+          <>
+            {/* A bar where it holds; on a phone, a compact menu (DESIGN.md § 9), without any script: a native
+                disclosure. Only one of the two is ever shown, so only one navigation is ever read. */}
+            <nav className="navigation navigation-barre" aria-label={fr.coque.navigation.libelle}>
+              {NAVIGATION.map((n) => (
+                <Link key={n.href} href={n.href} prefetch={false}>
+                  {n.texte}
+                </Link>
+              ))}
+            </nav>
+            <details className="navigation-compacte">
+              <summary>{fr.coque.navigation.menu}</summary>
+              <nav className="navigation" aria-label={fr.coque.navigation.libelle}>
+                {NAVIGATION.map((n) => (
+                  <Link key={n.href} href={n.href} prefetch={false}>
+                    {n.texte}
+                  </Link>
+                ))}
+              </nav>
+            </details>
+          </>
         ) : null}
       </header>
       <main id="contenu" className={large ? "contenu contenu-large" : "contenu"}>
