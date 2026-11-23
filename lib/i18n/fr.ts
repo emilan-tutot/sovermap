@@ -24,6 +24,7 @@ export const fr = {
       atlas: "Atlas",
       ministeres: "Ministères",
       societes: "Sociétés",
+      territoires: "Territoires",
       journal: "Journal",
       methode: "Méthode",
       donnees: "Données",
@@ -410,6 +411,51 @@ export const fr = {
         `${nom}${NBSP}: ${n === 1 ? "1 site" : `${n}${NBSP}sites`}, ${genre.toLowerCase()}`,
     },
     source: `Source${NBSP}: Référentiel de l’organisation administrative de l’État (DILA), et collecte du jour.`,
+  },
+  /**
+   * The territories (D.2, decision C2-2; addresses: spec EX-26): the sites of the local authorities by région,
+   * département, commune and group of communes. Facts, never a ranking: lists in the order of their names.
+   */
+  territoires: {
+    titre: "Les territoires",
+    description: `Les sites des collectivités territoriales, par région, département, commune et groupement de communes${NBSP}: qui les sert, et le pays des sièges.`,
+    chapo:
+      "Les sites des collectivités mesurés par Sovermap, rangés par région, département, commune et groupement de communes, d’après l’annuaire de l’administration. Des faits, jamais un classement.",
+    surtitres: {
+      region: "Région",
+      departement: "Département",
+      commune: "Commune",
+      groupement: "Groupement de communes",
+    },
+    titrePage: (nom: string) => `${nom}${NBSP}: qui héberge les sites de ses collectivités${NBSP}?`,
+    titreCommune: (nom: string) => `${nom}${NBSP}: qui héberge les sites de la commune${NBSP}?`,
+    titreGroupement: (nom: string) => `${nom}${NBSP}: qui héberge ses sites${NBSP}?`,
+    descriptionPage: (nom: string) =>
+      `${nom}${NBSP}: les sites de ses collectivités mesurés par Sovermap, l’exploitant qui sert chacun et la catégorie du pays des sièges.`,
+    carte: "Carte de France des régions et des départements, avec les départements d’outre-mer en encarts",
+    carteRegion: (nom: string) => `Carte de la région ${nom} et de ses départements`,
+    carteDepartement: (nom: string) => `Carte situant le département ${nom} dans sa région`,
+    regions: "Les régions",
+    departements: "Les départements",
+    outreMer: "Les collectivités d’outre-mer",
+    conseilRegional: "Les sites du conseil régional",
+    conseilDepartemental: "Les sites du conseil départemental",
+    communes: "Les communes",
+    groupements: "Les groupements de communes",
+    sites: "Les sites",
+    colonnes: {
+      region: "Région",
+      departement: "Département",
+      commune: "Commune",
+      groupement: "Groupement de communes",
+      domaine: "Domaine",
+      categorie: "Pays du siège retenu",
+      domaines: "Domaines",
+    },
+    aucun: "Aucun site mesuré ce jour-là.",
+    sansSiren: "Sans numéro SIREN dans l’annuaire : pas de page à lui.",
+    source: `Source${NBSP}: annuaire de l’administration, base de données locales (DILA), et Code officiel géographique (INSEE)${NBSP}; un rattachement «${NBSP}probable${NBSP}» (une seule source).`,
+    fond: `Fond de carte${NBSP}: IGN, ADMIN EXPRESS COG CARTO PE, édition novembre 2026, Licence Ouverte 2.0${NBSP}; contours simplifiés par Sovermap.`,
   },
   /** The journal (D.2, R10): the changes of hosting confirmed by two successive collections, day by day. */
   journal: {

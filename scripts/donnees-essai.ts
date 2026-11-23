@@ -202,6 +202,31 @@ if (!fichiers.has("index/domaines.json")) {
     .sort(([a], [b]) => (a < b ? -1 : 1));
   fichiers.set("index/domaines.json", `${jsonStable({ domaines })}\n`);
 }
+// The territories' index (D.2), until the collection's own writes it (pipeline/territoires-index.ts, branch of the
+// territories), in its published format: a commune with the town hall's site, and a made-up group of communes.
+const listeTerritoire = (d: string) => {
+  const web = etat.noms.get(`www.${d}`);
+  return [{ domaine: d, categorie: web?.categorie ?? "non déterminé", horsUE: web?.horsUE ?? null }];
+};
+if (!fichiers.has("index/territoires.json")) {
+  fichiers.set(
+    "index/territoires.json",
+    `${jsonStable({
+      regions: { "53": { nom: "Bretagne", domaines: 2, conseil: [] } },
+      departements: { "35": { nom: "Ille-et-Vilaine", region: "53", domaines: 2, conseil: [] } },
+      groupements: { "200000001": "35" },
+    })}\n`,
+  );
+  fichiers.set(
+    "index/territoires/35.json",
+    `${jsonStable({
+      departement: "35",
+      conseil: [],
+      communes: [{ code: "35238", nom: "Rennes", domaines: listeTerritoire("mairie.example") }],
+      groupements: [{ nom: "Métropole Exemple", siren: "200000001", domaines: listeTerritoire("nuage.example") }],
+    })}\n`,
+  );
+}
 // A domain whose record cannot be read: its file is altered after its checksum was taken, so that the reader finds
 // it unreadable, with no copy of the day before. Its Radiographie must answer an error, never a page that Vercel's
 // CDN would keep (lib/donnees/indisponible.ts, D.4). Its bucket holds no other domain of the state.

@@ -1,0 +1,34 @@
+// The reading of the territories' indexes for their pages (D.2): behind a closed door, or before the indexes were ever
+// published, the page answers « not found »; a file that cannot be read, or does not pass its checks, is an error
+// (lib/donnees/indisponible.ts), never an empty page kept by the CDN.
+import { notFound } from "next/navigation";
+import { indisponible } from "./indisponible";
+import { lecteur } from "./lecture";
+import {
+  type FichierDepartement,
+  type IndexTerritoires,
+  lireFichierDepartement,
+  lireIndexTerritoires,
+} from "./territoires";
+import { sitePublic } from "@/lib/site";
+
+/** index/territoires.json of the day, checked. */
+export async function indexTerritoiresDuJour(): Promise<IndexTerritoires> {
+  if (!sitePublic()) notFound();
+  const etat = await lecteur.etat();
+  if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
+  const lu = etat.statut === "ok" ? await lecteur.fichier("index/territoires.json") : etat;
+  if (lu.statut === "absent") notFound();
+  const index = lu.statut === "ok" ? lireIndexTerritoires(lu.donnees) : null;
+  if (index === null) indisponible();
+  return index;
+}
+
+/** index/territoires/<code>.json of the day, checked: the département's communes and groups. */
+export async function fichierDepartementDuJour(code: string): Promise<FichierDepartement> {
+  const lu = await lecteur.fichier(`index/territoires/${code}.json`);
+  if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
+  const fichier = lu.statut === "ok" ? lireFichierDepartement(lu.donnees, code) : null;
+  if (fichier === null) indisponible();
+  return fichier;
+}

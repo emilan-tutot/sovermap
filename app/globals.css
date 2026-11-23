@@ -1086,4 +1086,38 @@
       top: 1.5rem;
     }
   }
+
+  /* The map of the territories (components/carte/CarteFrance.tsx): never the accent, which means « outside the EU »
+     in the data; the strokes keep their width whatever the frame. */
+  .carte-france {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 34rem;
+  }
+
+  .carte-departement {
+    fill: var(--color-surface-2);
+    stroke: var(--color-fond);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .carte-surligne {
+    fill: var(--color-discret);
+  }
+
+  .carte-regions {
+    fill: none;
+    stroke: var(--color-discret);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .carte-encart {
+    fill: none;
+    stroke: var(--color-trait-fort);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
 }

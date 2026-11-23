@@ -23,6 +23,11 @@ const PAGES: [string, string][] = [
   ["/journal", fr.journal.titre],
   ["/journal/2026-11-21", fr.journal.jour("21/11/2026")],
   ["/pays/etats-unis", "États-Unis"],
+  ["/territoires", fr.territoires.titre],
+  ["/regions/53-bretagne", fr.territoires.titrePage("Bretagne")],
+  ["/departements/35-ille-et-vilaine", fr.territoires.titrePage("Ille-et-Vilaine")],
+  ["/communes/35238-rennes", fr.territoires.titreCommune("Rennes")],
+  ["/groupements/200000001-metropole-exemple", fr.territoires.titreGroupement("Métropole Exemple")],
   ["/qualite", fr.qualite.titre],
   ["/donnees", donneesOuvertes.titre],
   ...PAGES_DE_TEXTE.map((p): [string, string] => [p.chemin, p.titre]),
@@ -49,6 +54,10 @@ const ROBOTS: [string, string][] = [
   ["/pays/etats-unis", "index, follow"],
   ["/pays/allemagne", "noindex, follow"],
   ["/journal/2026-11-21", "noindex, follow"],
+  ["/regions/53-bretagne", "index, follow"],
+  ["/departements/35-ille-et-vilaine", "index, follow"],
+  ["/communes/35238-rennes", "noindex, follow"],
+  ["/groupements/200000001-metropole-exemple", "noindex, follow"],
 ];
 
 /** Requests to another domain and console errors, from the page's opening. */
@@ -71,7 +80,9 @@ test("liens : chaque lien interne de chaque type de page mène à une page qui r
   const internes = new Map<string, string>();
   for (const [chemin] of PAGES) {
     await page.goto(chemin);
-    for (const href of await page.locator("a[href]").evaluateAll((liens) => liens.map((a) => a.getAttribute("href") ?? ""))) {
+    for (const href of await page
+      .locator("a[href]")
+      .evaluateAll((liens) => liens.map((a) => a.getAttribute("href") ?? ""))) {
       if (!href.startsWith("/") || href.startsWith("//")) continue;
       const cible = href.split("#")[0] ?? "";
       if (cible !== "" && !internes.has(cible)) internes.set(cible, chemin);
@@ -142,9 +153,13 @@ test("plans du site : un index de deux sous-plans, qui ne listent que les pages 
       "/pays/etats-unis",
       "/journal",
       "/qualite",
+      "/territoires",
+      "/regions/53-bretagne",
+      "/departements/35-ille-et-vilaine",
     ]),
   );
   expect(pages).not.toContain("/pays/allemagne");
+  expect(pages.filter((c) => c.startsWith("/communes/") || c.startsWith("/groupements/"))).toEqual([]);
   expect(pages.filter((c) => c.startsWith("/journal/") || c.startsWith("/radiographie/"))).toEqual([]);
   const radiographies = chemins(await (await request.get("/plans/radiographies.xml")).text());
   expect(radiographies).toEqual([
@@ -279,6 +294,17 @@ test("site complet : l'accueil et chaque Radiographie disent ce que le site mont
   // The Method's section the links lead to.
   await page.goto(versMethode);
   await expect(page.locator("#ce-que-sovermap-montre")).toBeVisible();
+});
+
+test("territoires : une adresse au mauvais nom renvoie vers la bonne, un territoire absent répond 404", async ({
+  request,
+}) => {
+  const ancienne = await request.get("/departements/35-autre-nom", { maxRedirects: 0 });
+  expect(ancienne.status()).toBe(308);
+  expect(ancienne.headers()["location"]).toMatch(/\/departements\/35-ille-et-vilaine$/);
+  expect((await request.get("/departements/22-cotes-d-armor")).status()).toBe(404);
+  expect((await request.get("/communes/99999-nulle-part")).status()).toBe(404);
+  expect((await request.get("/groupements/123456789-inconnu")).status()).toBe(404);
 });
 
 test("site complet : le curseur du temps montre chaque jour publié, au clavier", async ({ page }) => {
