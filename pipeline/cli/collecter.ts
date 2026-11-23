@@ -27,7 +27,7 @@ import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
 import { cheminDiagnostic, diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
-import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
+import { accordsReportables, construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
 import { type Garde, gardesPannes, gardeTerme, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
@@ -92,7 +92,7 @@ const VERSION_CLASSEMENT = 1;
 const CONFIRMATIONS_APRES_ARRET = 50;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.3";
+const METHODE = "0.3.1";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({
@@ -583,7 +583,8 @@ async function principal(): Promise<number> {
     const knot = new ClientUdp("knot", hote, port, 12_000);
     const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
     const nomsTemoins = tranche === 2 ? [] : ref.temoins.temoins.map((t) => t.nom);
-    const plan = planDeControle(domainesDeLaTranche, nomsTemoins, generateur(graine + 1));
+    // The day's turn in the control cycle (B.6): the same domains every 33 days, whatever the run or its tranche.
+    const plan = planDeControle(domainesDeLaTranche, nomsTemoins, date);
     // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
     // companies' platforms. Only the units of the list name a busy second's zones.
     const debit = suivreDebit(
@@ -773,7 +774,15 @@ async function principal(): Promise<number> {
     inacheves: new Set(r.inacheves),
     premierePasseCoupee: r.premierePasseCoupee,
   };
-  const controles: Controles = { noms: new Map(r.controleNoms), mx: new Map(r.controleMx) };
+  // The published state (yesterday's, as a rule): its agreements may be carried today by the names not controlled
+  // today, while what serves them is the same (B.6).
+  const publie = lirePublie(o.donnees);
+  const controles: Controles = {
+    noms: new Map(r.controleNoms),
+    mx: new Map(r.controleMx),
+    jour: date,
+    reports: publie === null ? new Map() : accordsReportables(publie.etat, publie.meta.date),
+  };
   const pannes: Pannes = { noms: new Set(r.pannes.noms), zones: new Set(r.pannes.zones), resolveur: "quad9" };
   const pannesMx = new Set(r.pannesMx);
   const demandes = new Set(r.demandes);
@@ -865,7 +874,6 @@ async function principal(): Promise<number> {
           heure,
           veilleObs.pannes,
         );
-  const publie = lirePublie(o.donnees);
   // The rules: the lists and referentials of the repository, and the date of the IPtoASN copy.
   // A suspended fourth rule changes the rules of the day (B.7 bis): its names coming back are never moves.
   const regles = { ...ref.regles, iptoasn: source("iptoasn")?.date ?? null, sousZoneInterne: regleInterne.etat };

@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { collecter, POLITESSE } from "./collecte";
 import { contexteEssai } from "./essai-contexte";
-import { construireEtat } from "./etat-du-jour";
+import { accordsReportables, construireEtat } from "./etat-du-jour";
 import type { ListeReference } from "./perimetre";
 import { generateur } from "./politesse";
 import { fragments, signatures } from "./publication";
@@ -215,6 +215,124 @@ describe("the records of a day", () => {
     expect(n?.tronque).toBeUndefined();
     expect(valider(n, NOM)).toEqual([]);
     expect(etat.domaines.get("ministere.example")?.tronque).toBeUndefined();
+  });
+
+  it("carries the last agreement of the control resolver while what serves the name is the same, 40 days at most (B.6)", async () => {
+    let t = 0;
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe),
+      { ...POLITESSE, zoneDe, horloge: { maintenant: () => t, dormir: async (ms) => void (t += ms) } },
+    );
+    const mesure = mesures.noms.get("www.ministere.example");
+    if (mesure === undefined) throw new Error("mesure manquante");
+    const web = (e: ReturnType<typeof construireEtat>) => e.noms.get("www.ministere.example");
+    // Day 1: the control resolver answers and agrees.
+    const jour1 = construireEtat(
+      liste,
+      mesures,
+      { noms: new Map([["www.ministere.example", { resolveur: "quad9", mesure }]]), mx: new Map(), jour: "2026-11-24" },
+      contexteEssai(),
+      "t",
+    );
+    expect(web(jour1)?.controle).toEqual({ resolveur: "quad9", accord: true, le: "2026-11-24" });
+    const sans = construireEtat(
+      liste,
+      mesures,
+      { noms: new Map(), mx: new Map(), jour: "2026-11-25" },
+      contexteEssai(),
+      "t",
+    );
+    expect(sans.noms.get("www.ministere.example")?.controle).toBeNull();
+    // Day 2, not controlled: the agreement of day 1 holds, with its day, and the level is the one of an agreement.
+    const jour2 = (reports: ReturnType<typeof accordsReportables>, jour = "2026-11-25") =>
+      construireEtat(liste, mesures, { noms: new Map(), mx: new Map(), jour, reports }, contexteEssai(), "t");
+    const reportes = accordsReportables(jour1, "2026-11-24");
+    expect(web(jour2(reportes))?.controle).toEqual({ resolveur: "quad9", accord: true, le: "2026-11-24" });
+    expect(web(jour2(reportes))?.niveau).toBe(web(jour1)?.niveau);
+    // The level an agreement gives, which a name without any control never has.
+    expect(web(jour1)?.niveau).toBe("confirmé");
+    expect(sans.noms.get("www.ministere.example")?.niveau).toBe("probable");
+    // 40 days after the control, still; 41 days, no more; and never before its own day.
+    expect(web(jour2(reportes, "2027-01-03"))?.controle?.le).toBe("2026-11-24");
+    expect(web(jour2(reportes, "2027-01-04"))?.controle).toBeNull();
+    expect(web(jour2(reportes, "2026-11-23"))?.controle).toBeNull();
+    // What serves the name changed: the agreement is not carried.
+    const autre = new Map([...reportes].map(([n, a]) => [n, { ...a, servi: "|64499" }]));
+    expect(web(jour2(autre))?.controle).toBeNull();
+    // A published disagreement is never carried, nor an agreement on a failed name.
+    const desaccord = {
+      ...jour1,
+      noms: new Map(
+        [...jour1.noms].map(([n, e]) => [
+          n,
+          { ...e, controle: { resolveur: "quad9", accord: false, le: "2026-11-24" } },
+        ]),
+      ),
+    };
+    expect(accordsReportables(desaccord, "2026-11-24").size).toBe(0);
+    const enEchec = { ...jour1, noms: new Map([...jour1.noms].map(([n, e]) => [n, { ...e, etat: "echec" as const }])) };
+    expect(accordsReportables(enEchec, "2026-11-24").size).toBe(0);
+    // A record published before schema 4 has no day: its agreement counts as of the day of its state.
+    const ancien = {
+      ...jour1,
+      noms: new Map([...jour1.noms].map(([n, e]) => [n, { ...e, controle: { resolveur: "quad9", accord: true } }])),
+    };
+    expect(accordsReportables(ancien, "2026-11-23").get("www.ministere.example")?.le).toBe("2026-11-23");
+    // Today's own control always wins over a carried agreement.
+    const autreMesure = { ...mesure, a: [{ adresse: "198.51.100.7", ttl: 60 }] };
+    const controleDuJour = construireEtat(
+      liste,
+      mesures,
+      {
+        noms: new Map([["www.ministere.example", { resolveur: "quad9", mesure: autreMesure }]]),
+        mx: new Map(),
+        jour: "2026-11-25",
+        reports: reportes,
+      },
+      contexteEssai(),
+      "t",
+    );
+    expect(web(controleDuJour)?.controle?.le).toBe("2026-11-25");
+    for (const e of [jour1, jour2(reportes)])
+      for (const [chemin, texte] of fragments("noms", e.noms)) {
+        const schema = schemaDe(chemin);
+        if (schema !== null) expect(valider(JSON.parse(texte), schema), chemin).toEqual([]);
+      }
+  });
+
+  it("keeps the networks behind a CDN by their AS only, and the ranges of the others (B.6)", async () => {
+    let t = 0;
+    const horloge = { maintenant: () => t, dormir: async (ms: number) => void (t += ms) };
+    const derriereCdn = {
+      ...zone,
+      "www.ministere.example": {
+        A: [
+          { type: "A" as const, adresse: "198.51.100.7" },
+          { type: "A" as const, adresse: "198.51.100.8" },
+        ],
+      },
+    };
+    const mesures = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(derriereCdn, zoneDe),
+      { ...POLITESSE, zoneDe, horloge },
+    );
+    const web = construireEtat(liste, mesures, { noms: new Map(), mx: new Map() }, contexteEssai(), "t").noms.get(
+      "www.ministere.example",
+    );
+    expect(web?.cdn?.id).toBe("cdn-exemple");
+    expect(web?.reseaux).toEqual([{ as: 64500, plage: null }]);
+    const direct = await collecter(
+      new Map([["www.ministere.example", "ministere.example"]]),
+      new ResolveurSimule(zone, zoneDe),
+      { ...POLITESSE, zoneDe, horloge },
+    );
+    expect(
+      construireEtat(liste, direct, { noms: new Map(), mx: new Map() }, contexteEssai(), "t").noms.get(
+        "www.ministere.example",
+      )?.reseaux,
+    ).toEqual([{ as: 64496, plage: expect.stringContaining("192.0.2.0") }]);
   });
 
   it("shows a disagreement of the control resolver on the mail exchangers, never settles it", async () => {
