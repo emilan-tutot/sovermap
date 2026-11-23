@@ -1,10 +1,12 @@
 name: Pilote du point de mesure
 
-# Brief B.4 (plan § 9, point 6): run by hand, once, in a slot clear of the day's collections. On domains behind a CDN,
-# does the company that serves a web name change with where its visitor is? scripts/pilote-ecs.ts asks Google Public
-# DNS's JSON API (docs/sources.md, card 15, control only) with explicit client subnets (France, United States), one
-# question a second, and writes its report to the run's artifact. It reads the published « donnees » branch and the
-# hand-surveyed IPtoASN copy of the release « sources-iptoasn »; it writes nothing to the repository.
+# Brief B.4 (plan § 9, point 6): run by hand, once, in a slot clear of the day's collections (checked by its first
+# step, as for a trial). On domains behind a CDN, does the company that serves a web name change with where its visitor
+# is? scripts/pilote-ecs.ts asks Google Public DNS's JSON API (docs/sources.md, card 15, control only) with explicit
+# client subnets (France, United States), through the project's polite downloader, and classifies each answer by the
+# method itself; it writes its report to the run's artifact, kept even when the pilot stops early. It reads the
+# published « donnees » branch and the hand-surveyed IPtoASN copy of the release « sources-iptoasn »; it writes nothing
+# to the repository.
 
 on:
   workflow_dispatch:
@@ -22,6 +24,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -31,6 +34,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # The pilot waits for its slot as a trial does (pipeline/creneau.ts): stopped, in red with a sentence, while a
+      # day's collection runs or waits, or within 60 minutes before a departure or 120 minutes after.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          en_cours=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --limit 50 --json event,status --jq '[.[] | select(.event != "pull_request" and .status != "completed")] | length')
+          npx tsx pipeline/cli/creneau-essai.ts "$en_cours"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: donnees
@@ -44,9 +54,10 @@ jobs:
       - run: |
           releve=$(ls releves/ip2asn-combined-*.tsv.gz | sort | tail -n 1)
           npx tsx scripts/pilote-ecs.ts --donnees donnees --iptoasn "$releve" --sortie pilote-ecs.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pilote-ecs
           path: pilote-ecs.json
           retention-days: 30
-          if-no-files-found: error
+          if-no-files-found: warn

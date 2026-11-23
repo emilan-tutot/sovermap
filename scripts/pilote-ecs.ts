@@ -1,28 +1,32 @@
 // The measurement point's pilot (brief B.4; plan § 9, point 6), run once on GitHub's runners by its own workflow
 // (.github/workflows/pilote-ecs.yml), never on the owner's PC. It reads the published state (the « donnees » branch),
-// the IPtoASN copy and the referential; then, robots.txt first, it asks Google Public DNS's JSON API (card 15, control
-// only) for the A records of each drawn web name, once per explicit client subnet (France, United States), one
-// question a second at most, with the project's user agent; it writes its report and prints counts only (the job's
-// log is public: no company, no address).
+// the IPtoASN copy and the referentials, downloads the CDNs' official ranges as the collection does (card 27), then
+// asks Google Public DNS's JSON API (card 15, control only) for the A records of each drawn web name, once per
+// explicit client subnet (France, United States), through the project's polite downloader (robots.txt first, one
+// question a second at most, 15 seconds at most each). It writes its report even when it stops early, and prints
+// counts only (the job's log is public: no company, no address).
 //   npx tsx scripts/pilote-ecs.ts --donnees <dir> --iptoasn <ip2asn-combined-*.tsv.gz> --sortie <report.json>
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { gunzipSync } from "node:zlib";
+import type { ReferentielCdn } from "@/pipeline/cdn";
+import type { Contexte } from "@/pipeline/classement";
+import { coucheReseauPubliable } from "@/pipeline/couches";
 import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
-import { TableIpToAsn } from "@/pipeline/reseau";
-import type { ReferentielAs } from "@/pipeline/societes";
-import { agentUtilisateur } from "@/pipeline/sources";
+import { TableIpToAsn, TableRis } from "@/pipeline/reseau";
+import type { ReferentielAs, ReferentielSocietes } from "@/pipeline/societes";
+import { agentUtilisateur, Telechargeur } from "@/pipeline/sources";
+import { SOURCES, telechargerSources } from "@/pipeline/telechargements";
 import {
   bilanDuPilote,
   domainesDuPilote,
-  type ResultatDomaine,
-  societesDesAdresses,
+  mesureVide,
+  mesurer,
+  plagesOfficielles,
   SOUS_RESEAUX,
 } from "./lib/pilote-ecs";
-
-const API = "https://dns.google";
-const ECART_MS = 1_000;
 
 const { values: o } = parseArgs({
   options: { donnees: { type: "string" }, iptoasn: { type: "string" }, sortie: { type: "string" } },
@@ -30,6 +34,7 @@ const { values: o } = parseArgs({
 if (process.env["GITHUB_ACTIONS"] !== "true") throw new Error("le pilote ne tourne que sur les runners de GitHub (B.4)");
 if (o.donnees === undefined || o.iptoasn === undefined || o.sortie === undefined)
   throw new Error("--donnees, --iptoasn et --sortie sont demandés");
+const sortie = o.sortie;
 
 /** Every record of a kind in the published state's fragments (domaines/xx/yy.json, noms/xx/yy.json). */
 function fragments<T>(dossier: string, sorte: "domaines" | "noms"): T[] {
@@ -40,60 +45,69 @@ function fragments<T>(dossier: string, sorte: "domaines" | "noms"): T[] {
       .flatMap((f) => (JSON.parse(readFileSync(path.join(racine, haut, f), "utf8")) as Record<string, T[]>)[sorte] ?? []),
   );
 }
+const json = <T>(fichier: string) => JSON.parse(readFileSync(fichier, "utf8")) as T;
 
-const AGENT = agentUtilisateur(JSON.parse(readFileSync("package.json", "utf8")).version as string);
-const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
-let derniere = 0;
-async function demander(url: string): Promise<Response> {
-  const reste = derniere + ECART_MS - Date.now();
-  if (reste > 0) await attendre(reste);
-  derniere = Date.now();
-  return fetch(url, { headers: { "User-Agent": AGENT, Accept: "application/json" }, redirect: "error" });
-}
+const telechargeur = new Telechargeur({
+  agent: agentUtilisateur(json<{ version: string }>("package.json").version),
+  delaiMs: 15_000,
+  tailleMax: 4 * 1024 * 1024,
+});
 
-// robots.txt first: the pilot stops if it closes /resolve to every agent.
-const robots = await demander(`${API}/robots.txt`);
-if (robots.ok) {
-  let pourTous = false;
-  for (const ligne of (await robots.text()).split("\n").map((l) => l.trim())) {
-    if (/^user-agent:/i.test(ligne)) pourTous = ligne.slice(11).trim() === "*";
-    else if (pourTous && /^disallow:/i.test(ligne)) {
-      const chemin = ligne.slice(9).trim();
-      if (chemin === "/" || (chemin !== "" && "/resolve".startsWith(chemin)))
-        throw new Error(`robots.txt de dns.google ferme ${chemin} : pilote arrêté`);
-    }
-  }
-}
+// The CDNs' official ranges (card 27), downloaded as the collection downloads them; a list in failure is left out.
+const travail = mkdtempSync(path.join(tmpdir(), "pilote-ecs-"));
+const ID_PLAGES = ["cloudflare-ipv4", "cloudflare-ipv6", "fastly"];
+const etats = await telechargerSources(
+  telechargeur,
+  travail,
+  null,
+  new Date(),
+  SOURCES.filter((s) => ID_PLAGES.includes(s.id)),
+);
+const lire = (id: string) => {
+  const f = path.join(travail, "sources", id);
+  return etats.some((e) => e.id === id && e.etat === "du jour") && existsSync(f) ? readFileSync(f, "utf8") : null;
+};
+const contexte: Contexte = {
+  iptoasn: new TableIpToAsn(gunzipSync(readFileSync(o.iptoasn)).toString("utf8")),
+  // No RIS on the pilot's side: the AS comes from IPtoASN, as the published network layer takes it.
+  ris: new TableRis([]),
+  cdn: json<ReferentielCdn>("referentiels/cdn.json"),
+  plages: plagesOfficielles(
+    [lire("cloudflare-ipv4"), lire("cloudflare-ipv6")].filter((t) => t !== null),
+    lire("fastly"),
+  ),
+  coucheReseau: coucheReseauPubliable,
+  tableAs: json<ReferentielAs>("referentiels/as-societes.json"),
+  societes: json<ReferentielSocietes>("referentiels/societes.json"),
+};
 
 const domaines = fragments<EnregistrementDomaine>(o.donnees, "domaines");
 const noms = new Map(fragments<EnregistrementNom>(o.donnees, "noms").map((n) => [n.nom, n]));
-const iptoasn = new TableIpToAsn(gunzipSync(readFileSync(o.iptoasn)).toString("utf8"));
-const tableAs = JSON.parse(readFileSync("referentiels/as-societes.json", "utf8")) as ReferentielAs;
 const date = new Date().toISOString().slice(0, 10);
 const tires = domainesDuPilote(domaines, noms, Number(date.replaceAll("-", "")));
-console.log(`pilote : ${tires.length} domaines derrière un CDN, ${SOUS_RESEAUX.length} sous-réseaux, une question par seconde`);
-
-const resultats: ResultatDomaine[] = [];
-let echecs = 0;
-for (const d of tires) {
-  const parSousReseau: Record<string, string[] | null> = {};
-  for (const s of SOUS_RESEAUX) {
-    const url = `${API}/resolve?name=${encodeURIComponent(d.nomWeb)}&type=A&edns_client_subnet=${encodeURIComponent(s.prefixe)}`;
-    try {
-      const reponse = await demander(url);
-      const corps = (await reponse.json()) as { Status?: number; Answer?: { type?: number; data?: string }[] };
-      const adresses = (corps.Answer ?? []).filter((a) => a.type === 1 && typeof a.data === "string").map((a) => a.data as string);
-      parSousReseau[s.pays] = reponse.ok && corps.Status === 0 && adresses.length > 0 ? societesDesAdresses(adresses, iptoasn, tableAs) : null;
-    } catch {
-      parSousReseau[s.pays] = null;
-      echecs += 1;
-    }
-  }
-  resultats.push({ ...d, parSousReseau });
-}
-const bilan = bilanDuPilote(resultats);
-writeFileSync(o.sortie, `${JSON.stringify({ date, sousReseaux: SOUS_RESEAUX, bilan, resultats }, null, 2)}\n`);
 console.log(
-  `pilote : ${bilan.compares} domaines comparés sur ${bilan.domaines} ; ${bilan.changent} changent de société selon le sous-réseau ` +
-    `(${String(bilan.partPourcent).replace(".", ",")} %, seuil 1 % : ${bilan.auDelaDuSeuil ? "dépassé" : "tenu"}) ; ${echecs} questions sans réponse`,
+  `pilote : ${tires.length} domaines derrière un CDN tirés au hasard (${tires.filter((d) => d.perimetre === "État").length} du périmètre « État »), ` +
+    `${SOUS_RESEAUX.length} sous-réseaux, une question par seconde au plus ; listes officielles des CDN : ` +
+    `${etats.filter((e) => e.etat === "du jour").length} sur ${ID_PLAGES.length}`,
 );
+
+const mesure = mesureVide();
+try {
+  await mesurer(tires, (adresse) => telechargeur.obtenir(adresse), contexte, mesure);
+} finally {
+  const bilan = bilanDuPilote(mesure.resultats);
+  writeFileSync(
+    sortie,
+    `${JSON.stringify({ date, sousReseaux: SOUS_RESEAUX, listesOfficielles: etats, bilan, ...mesure }, null, 2)}\n`,
+  );
+  const part = bilan.partPourcent === null ? "aucune part" : `${String(bilan.partPourcent).replace(".", ",")} %`;
+  console.log(
+    `pilote : ${bilan.compares} domaines comparés sur ${bilan.domaines} ; ${bilan.changent} changent de société selon le sous-réseau ` +
+      `(${part} ; seuil 1 % : ${bilan.decision}) ; ${mesure.questions} questions, ${mesure.sansReponse} sans réponse de l'API, ` +
+      `${mesure.sansAdresse} sans adresse`,
+  );
+}
+if (mesure.arret !== null) {
+  console.error(`pilote arrêté : ${mesure.arret} (le rapport garde ce qui a été mesuré)`);
+  process.exitCode = 1;
+}
