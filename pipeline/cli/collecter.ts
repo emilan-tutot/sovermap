@@ -31,7 +31,9 @@ import { construireEtat, type Controles, type Mesures, type Pannes } from "../et
 import { type Garde, gardesPannes, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
+import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
 import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
+import { ajouterEcarts, donneesPersonnelles, type Ecarts, garderTexteLibre } from "../personnelles";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -49,7 +51,10 @@ import {
   type Etat,
   type Fichiers,
   fragments,
+  historique,
+  historiqueRelu,
   index,
+  joursDeChangement,
   journal,
   jsonStable,
   SEUIL_DISJONCTEUR,
@@ -60,7 +65,13 @@ import {
 import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
 import { fichiersSchemas, schemaDe, valider } from "../schemas";
-import { chaineDepuisSociete, type ReferentielAs, type ReferentielSocietes, validerReferentiels } from "../societes";
+import {
+  chaineDepuisSociete,
+  maillonsDe,
+  type ReferentielAs,
+  type ReferentielSocietes,
+  validerReferentiels,
+} from "../societes";
 import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
@@ -130,6 +141,16 @@ const LIMITES = ((): readonly [number, number, number] => {
 
 const lire = (...morceaux: string[]) => readFileSync(path.join(...morceaux), "utf8");
 const json = <T>(...morceaux: string[]) => JSON.parse(lire(...morceaux)) as T;
+/** A published file of the « donnees » branch, parsed; null when it is absent or unreadable (checked by its user). */
+const lireJsonPublie = (donnees: string, chemin: string): unknown => {
+  const p = path.join(donnees, chemin);
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8")) as unknown;
+  } catch {
+    return null;
+  }
+};
 const adresseEtPort = (valeur: string): [string, number] => {
   const [hote, port] = valeur.split(":");
   return [hote ?? valeur, port === undefined ? 53 : Number(port)];
@@ -745,6 +766,8 @@ async function principal(): Promise<number> {
           asVus,
         )
       : new Map();
+  // The free text of the AS kept (P13), counted with the Référentiel's in etat.json.
+  const ecartsAs: Ecarts = {};
   const descriptions = new Map<number, string | null>();
   for (const a of asVus) {
     descriptions.set(a, contexte.iptoasn.descriptionAs(a));
@@ -764,6 +787,8 @@ async function principal(): Promise<number> {
           mere: chaine.mere?.cle ?? null,
           paysMere: chaine.mere?.pays ?? null,
           categorie: chaine.categorie,
+          maillons: maillonsDe(cle, ref.societes),
+          controle: chaine.mere?.controle ?? null,
         },
       ] as const;
     }),
@@ -772,6 +797,15 @@ async function principal(): Promise<number> {
   // communes and groups of communes (pipeline/territoires-index.ts).
   const cog = (fichier: string) => readFileSync(path.join(RACINE, "referentiels", "cog", fichier), "utf8");
   const nomsCog = lireNomsCog(cog("regions-2026.csv"), cog("departements-2026.csv"), cog("comer-2026.csv"));
+  const figures = chiffres(b.etat, METHODE);
+  // The day of each domain's last change on the site (D.7, the sitemaps' lastmod).
+  const jours = joursDeChangement(
+    b.etat,
+    publie?.etat ?? null,
+    date,
+    o.donnees === undefined ? null : lireJsonPublie(o.donnees, "index/domaines.json"),
+    publie?.meta.date ?? null,
+  );
   const fichiers: Fichiers = new Map([
     ...fragments("noms", b.etat.noms),
     ...fragments("domaines", b.etat.domaines),
@@ -783,17 +817,40 @@ async function principal(): Promise<number> {
           {
             // A description or a holder's name may name a person (an AS held by an individual): both are published
             // only for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data).
-            description: ref.tableAs.as[String(a)] === undefined ? null : (descriptions.get(a) ?? null),
+            description:
+              ref.tableAs.as[String(a)] === undefined
+                ? null
+                : garderTexteLibre(descriptions.get(a) ?? null, "iptoasn", ecartsAs),
             paysEnregistrement: contexte.paysAs.get(a) ?? null,
-            titulaire: ref.tableAs.as[String(a)] === undefined ? null : (ripe.get(a)?.orgName ?? null),
+            titulaire:
+              ref.tableAs.as[String(a)] === undefined
+                ? null
+                : garderTexteLibre(ripe.get(a)?.orgName ?? null, "ripe", ecartsAs),
           },
         ]),
       ),
       societes,
       organismes,
       organismesDe: new Map([...liste.domaines].map(([cle, d]) => [cle, d.organismes])),
+      jours,
     }),
-    ["agregats/chiffres.json", `${jsonStable(chiffres(b.etat, METHODE))}\n`],
+    ["agregats/chiffres.json", `${jsonStable(figures)}\n`],
+    [
+      "agregats/historique.json",
+      historique(
+        o.donnees === undefined
+          ? null
+          : {
+              historique: lireJsonPublie(o.donnees, "agregats/historique.json"),
+              chiffres: lireJsonPublie(o.donnees, "agregats/chiffres.json"),
+              etat: lireJsonPublie(o.donnees, "etat.json"),
+            },
+        date,
+        METHODE,
+        b.reglesChangees,
+        figures,
+      ),
+    ],
     [`journal/${date.slice(0, 4)}/${date.slice(5, 7)}/${date}.json`, journal(date, b)],
     ...fichiersSchemas(),
     ["README.md", readFileSync(path.join(RACINE, "pipeline/donnees/README.md"), "utf8")],
@@ -803,6 +860,29 @@ async function principal(): Promise<number> {
     const schema = schemaDe(chemin);
     return schema === null ? [] : valider(JSON.parse(texte), schema).map((e) => `${chemin} ${e.chemin} : ${e.attendu}`);
   });
+
+  // The open files of the day (brief F.1), made here so that the guards see them: the publishing job puts them in the
+  // « donnees-courant » release, never into the history of the « donnees » branch.
+  const ouvertes = fichiersOuverts(
+    b.etat,
+    { societes, organismes, jours },
+    {
+      date,
+      heure: new Date().toISOString(),
+      methode: METHODE,
+      sources: sources.map((s) => ({ id: s.id, fiche: s.fiche, etat: s.etat, date: s.date })),
+    },
+  );
+  const erreursOuvertes = verifierOuvertes(ouvertes);
+  // The figures' history, published since the index of D.2: a file that is there but cannot be read again would restart
+  // the series without a word; the day is then held (a red guard), never published on a shortened history.
+  const historiqueIllisible =
+    o.donnees !== undefined &&
+    existsSync(path.join(o.donnees, "agregats", "historique.json")) &&
+    !historiqueRelu(lireJsonPublie(o.donnees, "agregats/historique.json"));
+  // No personal data in anything published (brief F.3): the state's files and the open files (etat.json, written
+  // below, holds only the run's counters and these guards).
+  const personnelles = donneesPersonnelles([...fichiers, ...ouvertes]);
 
   const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
   const gardes: Garde[] = [
@@ -853,6 +933,26 @@ async function principal(): Promise<number> {
       detail: `${rapportJour.reduits + rapportJour.erreurs} sur ${jour.noms.size + jour.domaines.size} (schéma refusé : ${rapportJour.reduits} ; erreur : ${rapportJour.erreurs})`,
     },
     { nom: "schémas valides", ok: erreursSchema.length === 0, detail: erreursSchema.slice(0, 5).join(" ; ") },
+    {
+      nom: "fichiers ouverts conformes à leur schéma",
+      ok: erreursOuvertes.length === 0,
+      detail: erreursOuvertes.join(" ; "),
+    },
+    {
+      nom: "historique des chiffres relu",
+      ok: !historiqueIllisible,
+      detail: historiqueIllisible
+        ? "agregats/historique.json est publié mais ne se relit pas en entier : réparer par le code (docs/methode.md, § 7)"
+        : "",
+    },
+    {
+      nom: "aucune donnée personnelle",
+      ok: personnelles.length === 0,
+      detail: personnelles
+        .slice(0, 5)
+        .map((p) => `${p.fichier} : ${p.extrait}`)
+        .join(" ; "),
+    },
   ];
   const publiable = gardes.every((g) => g.ok);
   // A trustworthy measurement (every guard green but, maybe, those that compare with yesterday: the circuit breaker,
@@ -904,6 +1004,9 @@ async function principal(): Promise<number> {
       nomsUneFamilleEnEchec: famillesEnEchec,
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
       enregistrementsReduits: rapportJour.reduits,
+      nomsDilaNeutralises: dila?.neutralises ?? 0,
+      // The free text left out because it held an e-mail address, a phone or a person's name (P13), by source.
+      texteLibreEcarte: ajouterEcarts(dila?.ecarts ?? {}, ecartsAs),
       enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,
@@ -969,10 +1072,17 @@ async function principal(): Promise<number> {
   };
   fichiers.set("etat.json", `${JSON.stringify(etatJson, null, 2)}\n`);
 
-  for (const [chemin, texte] of fichiers) {
-    const cible = path.join(travail, "sortie", chemin);
-    mkdirSync(path.dirname(cible), { recursive: true });
-    writeFileSync(cible, texte);
+  // The run's artifact is public, like the repository: when a personal datum is found, neither the state nor the open
+  // files are written, and the report alone says where, masked.
+  rmSync(path.join(travail, "ouvertes"), { recursive: true, force: true });
+  mkdirSync(path.join(travail, "ouvertes"), { recursive: true });
+  if (personnelles.length === 0) {
+    for (const [chemin, texte] of fichiers) {
+      const cible = path.join(travail, "sortie", chemin);
+      mkdirSync(path.dirname(cible), { recursive: true });
+      writeFileSync(cible, texte);
+    }
+    for (const [nom, texte] of ouvertes) writeFileSync(path.join(travail, "ouvertes", nom), texte);
   }
   // The registered zones of a busy second that are units of the list (public bodies' domains, published anyway): named;
   // never a third party's.

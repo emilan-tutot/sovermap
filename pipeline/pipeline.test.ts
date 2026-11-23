@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import {
   categorie,
   chaineDepuisAs,
+  maillonsDe,
   MERE_INCONNUE,
   niveauSources,
   type ReferentielAs,
@@ -154,6 +155,13 @@ describe("sociétés et pays", () => {
     expect(chaine.niveau).toBe("confirmé");
     expect(chaineDepuisAs(64501, tableAs, societes).niveau).toBe("probable");
     expect(chaineDepuisAs(64511, tableAs, societes).categorie).toBe("non déterminé");
+  });
+  it("gives the companies above a company, by name: « qui possède qui »", () => {
+    expect(maillonsDe("cdn-filiale-nl", societes)).toEqual([{ cle: "cdn-us", nom: "CDN Exemple, Inc.", pays: "US" }]);
+    // At the top of its chain: none; a parent not established: only the known part; an unknown key: none.
+    expect(maillonsDe("hebergeur-fr", societes)).toEqual([]);
+    expect(maillonsDe("filiale-inconnue", societes)).toEqual([]);
+    expect(maillonsDe("inconnue", societes)).toEqual([]);
   });
   it("counts two pages of the same producer as one source", () => {
     expect(

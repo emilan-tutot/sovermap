@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEPENDABOT_SIGNOFF,
   emailAllowed,
+  etatMotifs,
   ownerFromRemote,
   parseMotifs,
   type ScanContext,
@@ -174,6 +175,18 @@ describe("Dependabot's sign-off line (brief of chantier 2, A.1)", () => {
 });
 
 describe("helpers", () => {
+  it("is closed by default on the PC: a missing or empty list of private patterns fails, and the CI says it runs without", () => {
+    expect(etatMotifs(null, false).ok).toBe(false);
+    expect(etatMotifs([], false)).toEqual({
+      ok: false,
+      texte: expect.stringMatching(/liste vide/) as unknown as string,
+    });
+    expect(etatMotifs(null, true)).toEqual({
+      ok: true,
+      texte: expect.stringMatching(/absents en CI/) as unknown as string,
+    });
+    expect(etatMotifs(["exemple"], false)).toEqual({ ok: true, texte: "1 motif(s) privé(s)" });
+  });
   it("reads the private patterns file and the owner from the remote", () => {
     expect(parseMotifs("# commentaire\n\nJean\n  Exemple  \n")).toEqual(["Jean", "Exemple"]);
     expect(ownerFromRemote("https://github.com/jean-exemple/sovermap.git")).toBe("jean-exemple");

@@ -322,7 +322,20 @@ export function fragments<T>(
   return fichiers;
 }
 
-export type Societe = { nom: string; pays: string; mere: string | null; paysMere: string | null; categorie: Categorie };
+export type Societe = {
+  nom: string;
+  pays: string;
+  mere: string | null;
+  paysMere: string | null;
+  categorie: Categorie;
+  /** The companies above it, from its direct parent up, with their names and countries (societes.ts, maillonsDe). */
+  maillons: { cle: string; nom: string; pays: string }[];
+  /**
+   * Who controls the top of its chain, as the referential writes it (« société cotée », « personnes physiques », never
+   * a person's name; for a public body, its nature): null when the referential says nothing or the top is unknown.
+   */
+  controle: string | null;
+};
 export type Organisme = { nom: string; sigle: string | null; ministere: string | null };
 
 /** The indexes (brief B.6): by AS, company, country, ministry and body. */
@@ -337,6 +350,8 @@ export function index(
     organismes: ReadonlyMap<string, Organisme>;
     /** The bodies that name each domain as a website. */
     organismesDe: ReadonlyMap<string, readonly string[]>;
+    /** The day of each domain's last change on the site (joursDeChangement), for the sitemaps' lastmod (D.7). */
+    jours?: ReadonlyMap<string, string>;
   },
 ): Fichiers {
   const fichiers: Fichiers = new Map();
@@ -358,7 +373,9 @@ export function index(
     for (const e of exploitants) {
       if (e.societe === null) continue;
       noter(parSociete, e.societe, d.domaine);
-      const pays = details.societes.get(e.societe)?.paysMere ?? details.societes.get(e.societe)?.pays;
+      // The country of the ultimate parent's seat, and only when it is established: a company whose parent is unknown
+      // is never counted in its own country (index/pays.json says where the seats are, not where the operators are).
+      const pays = details.societes.get(e.societe)?.paysMere;
       if (pays) {
         const p = parPays.get(pays) ?? { domaines: new Set(), etat: new Set() };
         p.domaines.add(d.domaine);
@@ -386,6 +403,22 @@ export function index(
   );
   for (const [cle, domaines] of parSociete)
     fichiers.set(`index/exploitants/${cle}.json`, `${jsonStable({ exploitant: cle, domaines: trie(domaines) })}\n`);
+  // Every registered domain of the day, with 1 for the « État » perimeter and the day of its last change on the site:
+  // what the site's search (D.2) and its sitemaps (D.7) are built from. Sorted, so that a new day changes only the lines
+  // that changed.
+  fichiers.set(
+    "index/domaines.json",
+    `${jsonStable({
+      domaines: [...etat.domaines.values()]
+        .map((d): [string, number, ...string[]] => {
+          const jour = details.jours?.get(d.domaine);
+          const perimetre = d.perimetre === "État" ? 1 : 0;
+          return jour === undefined ? [d.domaine, perimetre] : [d.domaine, perimetre, jour];
+        })
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    })}
+`,
+  );
   fichiers.set(
     "index/pays.json",
     `${jsonStable(Object.fromEntries([...parPays.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([p, v]) => [p, { domaines: v.domaines.size, domainesEtat: v.etat.size }])))}\n`,
@@ -452,6 +485,108 @@ export function chiffres(etat: Etat, methode: string): Record<string, unknown> {
       ...part(domainesEtat.filter((d) => d.messagerie.etat === "ok").map((d) => d.messagerie)),
     },
   };
+}
+
+/** The four figures of a day, as chiffres() gives them, kept in the history. */
+const FIGURES = ["chiffreTitre", "sousChiffreGouvFr", "serveursDeNoms", "messagerie"] as const;
+/** At most this many days are kept in the history (about ten years). */
+export const JOURS_HISTORIQUE_MAX = 4000;
+
+/** One day of the figures' history: its date, its method, whether its rules changed, and its four figures. */
+export type JourHistorique = { date: string; methode: string; reglesChangees: boolean } & Partial<
+  Record<(typeof FIGURES)[number], Record<string, unknown>>
+>;
+
+const estObjet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const estDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** A day of the history, read back and checked: only its known fields; null when it is not one. */
+function jourHistorique(v: unknown): JourHistorique | null {
+  if (
+    !estObjet(v) ||
+    !estDate(v["date"]) ||
+    typeof v["methode"] !== "string" ||
+    typeof v["reglesChangees"] !== "boolean"
+  )
+    return null;
+  const jour: JourHistorique = {
+    date: v["date"],
+    methode: v["methode"].slice(0, 20),
+    reglesChangees: v["reglesChangees"],
+  };
+  for (const f of FIGURES) {
+    const figure = v[f];
+    if (estObjet(figure)) jour[f] = figure;
+  }
+  return jour;
+}
+
+/** Whether a published history reads again in full: an object whose « jours » are all valid days, one at least. */
+export function historiqueRelu(brut: unknown): boolean {
+  return (
+    estObjet(brut) &&
+    Array.isArray(brut["jours"]) &&
+    brut["jours"].length > 0 &&
+    brut["jours"].every((j) => jourHistorique(j) !== null)
+  );
+}
+
+/**
+ * The figures' history (agregats/historique.json; D.2, the Atlas's time slider): the published history read back and
+ * checked, the day added (or replaced, when the same day runs again), in date order. When no history was published
+ * yet, the day before is taken from the published figures and state, so that two days show from the first run.
+ */
+export function historique(
+  publie: { historique: unknown; chiffres: unknown; etat: unknown } | null,
+  date: string,
+  methode: string,
+  reglesChangees: boolean,
+  figures: Record<string, unknown>,
+): string {
+  const lus =
+    estObjet(publie?.historique) && Array.isArray(publie.historique["jours"]) ? publie.historique["jours"] : [];
+  const jours = lus.flatMap((j) => jourHistorique(j) ?? []);
+  if (jours.length === 0 && estObjet(publie?.chiffres) && estObjet(publie?.etat) && estDate(publie.etat["date"])) {
+    const regles = estObjet(publie.etat["journal"]) ? publie.etat["journal"]["reglesChangees"] === true : false;
+    const veille = jourHistorique({ ...publie.chiffres, date: publie.etat["date"], reglesChangees: regles });
+    if (veille !== null) jours.push(veille);
+  }
+  const jour = jourHistorique({ ...figures, date, methode, reglesChangees });
+  const tous = [...jours.filter((j) => j.date !== date), ...(jour === null ? [] : [jour])]
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .slice(-JOURS_HISTORIQUE_MAX);
+  return `${jsonStable({ jours: tous })}\n`;
+}
+
+/**
+ * The day of each domain's last change on the site (D.7: the sitemaps' lastmod): today when the record published for
+ * it, or its web name's, differs from yesterday's (a change confirmed by two collections, or new rules), or when the
+ * domain is new; otherwise the day yesterday's index gave it. The first day the days are published, yesterday's index
+ * has none: an unchanged domain then takes the day of yesterday's published state, the latest its change can be.
+ */
+export function joursDeChangement(
+  aujourdhui: Etat,
+  hier: Etat | null,
+  date: string,
+  indexHier: unknown,
+  dateHier: string | null,
+): Map<string, string> {
+  const joursHier = new Map<string, string>();
+  const lignes = estObjet(indexHier) && Array.isArray(indexHier["domaines"]) ? indexHier["domaines"] : [];
+  for (const l of lignes) {
+    if (Array.isArray(l) && typeof l[0] === "string" && estDate(l[2])) joursHier.set(l[0], l[2]);
+  }
+  const texte = (v: unknown) => (v === undefined ? "" : jsonStable(v));
+  const jours = new Map<string, string>();
+  for (const [domaine, d] of aujourdhui.domaines) {
+    const avant = hier?.domaines.get(domaine);
+    const change =
+      avant === undefined ||
+      texte(d) !== texte(avant) ||
+      texte(aujourdhui.noms.get(d.nomWeb)) !== texte(hier?.noms.get(avant.nomWeb));
+    jours.set(domaine, change ? date : (joursHier.get(domaine) ?? (estDate(dateHier) ? dateHier : date)));
+  }
+  return jours;
 }
 
 /** The journal of the day (brief B.6): the confirmed changes; on the first day, the initial state only. */

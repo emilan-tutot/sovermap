@@ -5,9 +5,11 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import {
   type Finding,
   type ScanContext,
+  etatMotifs,
   ownerFromRemote,
   parseMotifs,
   scanCommitMessage,
@@ -26,13 +28,18 @@ function tryGit(...args: string[]): string | null {
   }
 }
 
+// The private patterns live in the repository's own .git/info, shared by its worktrees: from a worktree, where .git
+// is a file, the common directory is the main one's (a relative « .git/info » path would skip them there).
+const commun = tryGit("rev-parse", "--git-common-dir")?.trim();
+const motifsPath = path.join(commun === undefined || commun === "" ? ".git" : commun, "info", "motifs-prives.txt");
+const motifsLus = existsSync(motifsPath) ? parseMotifs(readFileSync(motifsPath, "utf8")) : null;
+
 function context(): ScanContext {
   const remote = tryGit("remote", "get-url", "origin");
-  const motifsPath = ".git/info/motifs-prives.txt";
   return {
     ownerLogin: remote === null ? (process.env["GITHUB_REPOSITORY_OWNER"] ?? null) : ownerFromRemote(remote),
     windowsUser: process.platform === "win32" ? os.userInfo().username : null,
-    motifs: existsSync(motifsPath) ? parseMotifs(readFileSync(motifsPath, "utf8")) : [],
+    motifs: motifsLus ?? [],
   };
 }
 
@@ -77,6 +84,11 @@ function scanUnpublishedCommits(ctx: ScanContext): { findings: Finding[]; count:
 }
 
 const ctx = context();
+const etat = etatMotifs(motifsLus, process.env["GITHUB_ACTIONS"] === "true");
+if (!etat.ok) {
+  console.error(`scan:prive : ÉCHEC, ${etat.texte} ; rien ne part tant qu'elle manque.`);
+  process.exit(1);
+}
 const fileFindings = scanTrackedFiles(ctx);
 const commits = scanUnpublishedCommits(ctx);
 const findings = [...fileFindings, ...commits.findings];
@@ -87,7 +99,7 @@ const checks = [
     ? "nom du compte : sauté (compte inconnu)"
     : "nom du compte, partout (adresse du dépôt comprise)",
   ctx.windowsUser === null ? "nom d'utilisateur Windows : sauté (hors Windows)" : "nom d'utilisateur Windows",
-  ctx.motifs.length === 0 ? "motifs privés : sautés (fichier local absent)" : `${ctx.motifs.length} motif(s) privé(s)`,
+  etat.texte,
   "adresses e-mail",
   ctx.ownerLogin === null ? "identité des commits : compte inconnu" : "identité des commits",
 ];

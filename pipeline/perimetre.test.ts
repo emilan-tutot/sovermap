@@ -15,6 +15,8 @@ const plateformes = new Set(["createur.example"]);
 
 const dila: ReferentielDila = {
   fichier: "dila_refOrga_admin_Etat_fr_20260101.zip",
+  neutralises: 0,
+  ecarts: {},
   services: new Map([
     [
       "s1",
