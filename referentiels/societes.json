@@ -2126,6 +2126,31 @@
           "lu_le": "2026-11-23"
         }
       ]
+    },
+    "ina": {
+      "nom": "Institut national de l'audiovisuel (INA)",
+      "pays": "FR",
+      "mere": null,
+      "controle": "établissement public national à caractère industriel et commercial",
+      "sources": [
+        {
+          "titre": "API Recherche d'entreprises (fiche 32) : INSTITUT NATIONAL DE L'AUDIOVISUEL (INA), SIREN 302421193, siège à Bry-sur-Marne (94360), actif, catégorie juridique 4120 (établissement public national à caractère industriel ou commercial)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/302421193",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Base du RIPE, fichier « organisation » du 23/11/2026 (fiche 22) : ORG-INDL4-RIPE, Institut National de l'Audiovisuel, LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "API Recherche d'entreprises (fiche 32) : catégorie juridique 4120, établissement public national à caractère industriel ou commercial",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/302421193",
+          "lu_le": "2026-11-23"
+        }
+      ]
     }
   }
 }

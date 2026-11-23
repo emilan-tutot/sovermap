@@ -1411,6 +1411,23 @@
         }
       ],
       "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS48703 CNAM-AS a pour organisation ORG-CA957-RIPE, « CAISSE NATIONALE DE L'ASSURANCE MALADIE », LIR, FR. Un organisme public : décrit par sa nature, jamais comme une société."
+    },
+    "202321": {
+      "societe": "ina",
+      "titulaire_registre": "Institut National de l'Audiovisuel",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS202321 INA, titulaire Institut National de l'Audiovisuel, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS202321 attribué le 04/06/2018, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS202321 INA a pour organisation ORG-INDL4-RIPE, « Institut National de l'Audiovisuel », LIR, FR. Un organisme public : décrit par sa nature, jamais comme une société."
     }
   }
 }
