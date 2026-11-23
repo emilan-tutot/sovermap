@@ -1,5 +1,6 @@
 // Tests of the guard against personal data in what is published (brief F.3). The examples are assembled at run time,
 // so that the repository's privacy scan never meets an address written whole.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   ajouterEcarts,
@@ -8,6 +9,7 @@ import {
   garderTexteLibre,
   masquer,
   motifsPersonnels,
+  textesAs,
 } from "./personnelles";
 
 const arobase = "@";
@@ -59,23 +61,117 @@ describe("the free text kept from a source (point 13, P13)", () => {
     ]);
   });
 
+  it("finds each spelling of a civility, a particle, an accented capital and a person who trades (the review of PR 19)", () => {
+    for (const texte of [
+      "Bureau de Madame Exemple",
+      "Bureau de Mlle Exemple",
+      "Bureau de Mlles Exemple",
+      "BUREAU DE MME EXEMPLE",
+      "Bureau de Mme. Exemple",
+      "Cabinet de Mme de Exemple",
+      "Cabinet de M. d'Exemple",
+      "Secrétariat de Mme Élise Exemple",
+      // How the RIPE writes a natural person who trades: no civility, a mention or a phrase.
+      "EXEMPLE Jean EI",
+      "EXEMPLE Jean EIRL",
+      "EXEMPLE Jean E.I.",
+      "Jean Exemple trading as Exemple Hosting",
+      "Individual entrepreneur Exemple",
+      "Exemple Jean, entrepreneur individuel",
+      // A historic name after a civility is left out too (the body keeps its acronym).
+      "Lycée Madame de Staël",
+      "Collège Mme de Sévigné",
+    ]) {
+      expect(motifsPersonnels(texte), texte).toEqual(["nom de personne"]);
+    }
+  });
+
+  it("finds an address disguised, spaced or cut short, a mailto: or tel: link alone, and the phone's other forms", () => {
+    for (const texte of [
+      ["Écrire à accueil", "[at]", "exemple.example"].join(" "),
+      ["Écrire à accueil", arobase, "exemple.example"].join(" "),
+      `Écrire à accueil${arobase}exem`,
+      "Écrire à mailto:accueil",
+    ]) {
+      expect(motifsPersonnels(texte), texte).toEqual(["adresse e-mail"]);
+    }
+    for (const texte of [
+      "Appeler tel:+331",
+      "Standard (+33) 1 23 45 67 89",
+      "Accueil 01  23 45 67 89",
+      "Accueil 09 12 34 56 78",
+    ]) {
+      expect(motifsPersonnels(texte), texte).toEqual(["téléphone"]);
+    }
+  });
+
   it("lets through the names of bodies, a code, a checksum, a SIREN, a year or a postal code", () => {
     for (const texte of [
       "Ministère de l’Exemple",
       "M. le maire de la commune",
-      "Lycée Madame de Staël",
-      "Collège Mme de Sévigné",
+      "Monsieur Le Préfet de région",
+      "MONSIEUR LE PREFET",
       "Lycée Marie Curie",
       "DMME",
+      "ADM. Paris",
       "Mairie de Mme-sur-Mer",
+      // Initials: a dot before the « M. » (« J.M. Voith SE » was left out before the review of PR 19).
+      "J.M. Exemple SE",
+      "C.N.A.M. Exemple",
+      "S.T.M. SRL",
+      // A title or an at sign in a company's name, and a company that trades under another name.
+      "Dr. Exemple GmbH",
+      `MEDI${arobase}EXEMPLE SAS`,
+      "Exemple Ltd trading as Exemple Networks",
+      "EXEMPLE SASU, trading as Exemple",
       "SIREN 123456789",
       "SIRET 12345678901234",
+      // A phone's digits inside a longer number are never a phone (« 0201100044 » here).
+      "SIRET 99000201100044",
       "0612345678abcdef0612345678abcdef",
       "Loi du 11 février 2005, 75001 Paris",
       "AS64496 EXEMPLE-HEBERGEUR",
+      "EI-EXEMPLE TELECOM",
     ]) {
       expect(motifsPersonnels(texte), texte).toEqual([]);
     }
+  });
+
+  it("finds none in the texts written by hand in referentiels/, published every day (a company's name and control, an AS's declared holder)", () => {
+    const societes = (
+      JSON.parse(readFileSync("referentiels/societes.json", "utf8")) as {
+        societes: Record<string, { nom: string; controle?: string }>;
+      }
+    ).societes;
+    const as = (
+      JSON.parse(readFileSync("referentiels/as-societes.json", "utf8")) as {
+        as: Record<string, { titulaire_registre: string }>;
+      }
+    ).as;
+    const textes = [
+      ...Object.values(societes).flatMap((s) => [s.nom, ...(s.controle === undefined ? [] : [s.controle])]),
+      ...Object.values(as).map((a) => a.titulaire_registre),
+    ];
+    expect(textes.length).toBeGreaterThan(100);
+    for (const texte of textes) expect(motifsPersonnels(texte), texte).toEqual([]);
+  });
+
+  it("publishes an AS's description and holder only for an AS of the referentials, after the control", () => {
+    const ecarts: Ecarts = {};
+    expect(textesAs(false, "Hébergeur Exemple", "Hébergeur Exemple SAS", ecarts)).toEqual({
+      description: null,
+      titulaire: null,
+    });
+    expect(ecarts).toEqual({});
+    expect(textesAs(true, "Hébergeur Exemple", "Hébergeur Exemple SAS", ecarts)).toEqual({
+      description: "Hébergeur Exemple",
+      titulaire: "Hébergeur Exemple SAS",
+    });
+    expect(textesAs(true, "Hébergeur Exemple, 01 23 45 67 89", "EXEMPLE Jean EI", ecarts)).toEqual({
+      description: null,
+      titulaire: null,
+    });
+    expect(ecarts).toEqual({ iptoasn: { téléphone: 1 }, ripe: { "nom de personne": 1 } });
   });
 
   it("leaves out a text that holds one, counts it by source and kind, and keeps the others whole", () => {
@@ -86,6 +182,10 @@ describe("the free text kept from a source (point 13, P13)", () => {
     expect(garderTexteLibre(null, "dila", ecarts)).toBeNull();
     expect(garderTexteLibre(`Contact ${adresse}`, "ripe", ecarts)).toBeNull();
     expect(ecarts).toEqual({ dila: { "nom de personne": 1, téléphone: 1 }, ripe: { "adresse e-mail": 1 } });
+    // A text with two kinds counts each.
+    expect(garderTexteLibre("Bureau de Mme Exemple, 01 23 45 67 89", "guichets", ecarts)).toBeNull();
+    expect(ecarts["guichets"]).toEqual({ téléphone: 1, "nom de personne": 1 });
+    delete ecarts["guichets"];
     expect(ajouterEcarts(ecarts, { dila: { téléphone: 2 }, iptoasn: { téléphone: 1 } })).toEqual({
       dila: { "nom de personne": 1, téléphone: 3 },
       ripe: { "adresse e-mail": 1 },

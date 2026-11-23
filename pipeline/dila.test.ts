@@ -105,6 +105,21 @@ describe("the DILA Référentiel", () => {
     expect(ref.ecarts).toEqual({ dila: { "nom de personne": 2, téléphone: 1 } });
   });
 
+  it("controls a name whole, before its cut to 300 characters, and never counts a service left out for its identifier", () => {
+    // A phone across the 300th character: cut first, « 01 23 4 » would pass the control (the review of PR 19).
+    const long = `Service ${"x".repeat(284)} 01 23 45 67 89`;
+    expect(long.indexOf("01 23")).toBe(293);
+    const json = JSON.stringify({
+      service: [
+        service("s1", long, ["https://s1.example"]),
+        service("identifiant invalide", "Secrétariat de Mme Exemple", ["https://s2.example"]),
+      ],
+    });
+    const ref = lireDila(json, "f");
+    expect([...ref.services.values()].map((s) => [s.id, s.nom])).toEqual([["s1", "s1"]]);
+    expect(ref.ecarts).toEqual({ dila: { téléphone: 1 } });
+  });
+
   it("keeps of the type column its one known value, the ministry's; any other is never copied (P13)", () => {
     const json = JSON.stringify({
       service: [
