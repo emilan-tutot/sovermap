@@ -23,6 +23,14 @@ describe("the guards of the Quality page", () => {
       ["fraicheur", true],
     ]);
     expect(g.find((x) => x.cle === "debitMax")).toMatchObject({ texte: "19", texteLimite: "15" });
+    // The pace's limits judge a trial of a new version; a day beyond them is still published (methode § 7).
+    expect(g.map((x) => [x.cle, x.juge])).toEqual([
+      ["echecs", "jour"],
+      ["pannes", "jour"],
+      ["debitPart", "essai"],
+      ["debitMax", "essai"],
+      ["fraicheur", "jour"],
+    ]);
   });
 
   it("gives no verdict when a value is not published, and holds the limit itself as within it where the rule says « at most »", () => {

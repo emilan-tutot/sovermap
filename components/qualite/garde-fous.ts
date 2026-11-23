@@ -12,6 +12,11 @@ export type GardeFou = {
   texte: string | null;
   limite: number;
   texteLimite: string;
+  /**
+   * What the limit judges: the day's publication, or the trial of a new version of the collection (the pace: a day
+   * beyond it is still published, its overruns shown here, the resolver's own questions included; methode § 7).
+   */
+  juge: "jour" | "essai";
   /** Within the limit; null when the value is not published. */
   tenu: boolean | null;
 };
@@ -25,6 +30,7 @@ export function gardeFous(q: Qualite, f: Fraicheur): GardeFou[] {
     ecrire: (v: number) => string,
     limite: number,
     inclus: boolean,
+    juge: GardeFou["juge"] = "jour",
   ): GardeFou => ({
     cle,
     libelle,
@@ -32,14 +38,15 @@ export function gardeFous(q: Qualite, f: Fraicheur): GardeFou[] {
     texte: valeur === null ? null : ecrire(valeur),
     limite,
     texteLimite: ecrire(limite),
+    juge,
     tenu: valeur === null ? null : inclus ? valeur <= limite : valeur < limite,
   });
   const heures = (v: number) => g.heures(nombre(Math.floor(v)));
   return [
     garde("echecs", g.echecs, q.echecs.nonConfirmesPourcent, (v) => pourcent(v), 2, false),
     garde("pannes", g.pannes, q.echecs.pannesPourcent, (v) => pourcent(v), 8, false),
-    garde("debitPart", g.debitPart, q.debit?.pourcent ?? null, (v) => pourcent(v, 3), 0.1, true),
-    garde("debitMax", g.debitMax, q.debit?.max ?? null, (v) => nombre(v), 15, true),
+    garde("debitPart", g.debitPart, q.debit?.pourcent ?? null, (v) => pourcent(v, 3), 0.1, true, "essai"),
+    garde("debitMax", g.debitMax, q.debit?.max ?? null, (v) => nombre(v), 15, true, "essai"),
     garde("fraicheur", g.fraicheur, f.ageHeures, heures, RETARD_HEURES, true),
   ];
 }

@@ -29,6 +29,8 @@ describe("the publisher of the legal notices", () => {
     expect(editeurDe({})).toEqual({ mode: "anonyme", contact: null });
     const page = texteDe(mentionsLegales(editeurDe({})));
     expect(page).toContain("ne publie pas son identité");
+    // The law's condition is said, never that it is met (the owner's correction 8 at point 17).
+    expect(page).toContain("avoir donné à son hébergeur ses nom, prénoms, domicile et numéro de téléphone");
     expect(page).toContain("Vercel Inc.");
     expect(page).toContain("sera donnée ici à son ouverture");
     expect(page).not.toMatch(/Exemple|Camille/);

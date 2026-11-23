@@ -358,3 +358,42 @@ test("site complet : la recherche charge son index une fois et trouve un domaine
   await expect(page.locator(".recherche-resultats")).toContainText("nuage.example");
   expect(chargements).toBe(1);
 });
+
+// The Confidentiality page says that Sovermap writes nothing in the browser: no cookie, nothing in localStorage,
+// sessionStorage or IndexedDB. Proved on every kind of page, then after what a visitor does: the menu (on a phone), the
+// globe, the time slider, the search and its result, the Expert mode (the owner's correction 7 at point 17).
+test("confidentialité : rien n'est écrit dans le navigateur, sur aucun type de page", async ({
+  page,
+  context,
+}, testInfo) => {
+  test.setTimeout(180_000);
+  const rienEcrit = async (ou: string) => {
+    expect(await context.cookies(), `cookies : ${ou}`).toEqual([]);
+    const stockage = await page.evaluate(async () => ({
+      local: window.localStorage.length,
+      session: window.sessionStorage.length,
+      bases: (await window.indexedDB.databases()).map((b) => b.name ?? "?"),
+    }));
+    expect(stockage, `stockage : ${ou}`).toEqual({ local: 0, session: 0, bases: [] });
+  };
+  for (const chemin of [...PAGES.map(([c]) => c), ...PAGES_DE_TEXTE.map((p) => p.chemin)]) {
+    await page.goto(chemin);
+    await rienEcrit(chemin);
+  }
+  await page.goto("/");
+  if (testInfo.project.name === "pixel-7") {
+    await page.locator(".navigation-compacte > summary").click();
+    await page.locator(".navigation-compacte > summary").click();
+    await page.getByRole("button", { name: fr.globe.explorer }).click();
+    await page.getByRole("button", { name: fr.globe.terminer }).click();
+  }
+  await page.getByRole("button", { name: fr.globe.recentrer }).click();
+  await page.getByLabel(fr.atlas.temps.libelle).focus();
+  await page.keyboard.press("ArrowLeft");
+  await page.getByLabel(fr.recherche.libelle).fill("serv");
+  await page.locator(".recherche-resultats a", { hasText: "service.example" }).click();
+  await page.waitForURL("**/radiographie/service.example");
+  await page.getByRole("link", { name: fr.radiographie.modes.expert, exact: true }).click();
+  await page.waitForURL(/mode=expert/);
+  await rienEcrit("après le menu, le globe, le curseur du temps, la recherche et le mode Expert");
+});

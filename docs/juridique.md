@@ -23,7 +23,7 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
 - **Vade-mecum de la DINUM sur l'article 31 de la loi SREN** (https://numerique.gouv.fr/documents/244/20260204_Vademecum_donnees_sensibles_.pdf) : « le recours à une offre dite « de confiance » n’est pas systématiquement obligatoire ».
 - **Pour Sovermap** :
   - la doctrine vise l'État et ses organismes, pas les collectivités ;
-  - l'exigence SecNumCloud ne vaut que pour les données d'une sensibilité particulière ;
+  - l'exigence SecNumCloud vise les données d'une sensibilité particulière ; depuis la mise à jour de 2023 (circulaire n° 6404/SG), elles comprennent les données protégées par la loi au titre des articles L. 311-5 et L. 311-6 du code des relations entre le public et l'administration, dont des données personnelles (Banque des Territoires, 5/06/2023, cité par le propriétaire au point 17) : un site public n'y échappe pas par nature, et Sovermap ne dit jamais le contraire ;
   - Sovermap ne voit pas les données d'un site : il ne peut donc **jamais** conclure qu'un site est « non conforme ».
 
 ### 1.2 La loi SREN, article 31, et ses textes d'application
@@ -128,7 +128,7 @@ Version du 18/11/2026 (chantier T1, partie A.4). Toutes les sources ont été lu
 
 ### 2.2 Cookies et traceurs
 - **La protection contre les robots de Vercel** (documentation de Vercel, « Firewall concepts », lue par Context7 le 22/11/2026) : après un défi réussi, une « session de défi » est créée dans le navigateur, valable une heure, liée à ce navigateur. Elle vient de l'hébergeur, pas de Sovermap ; la page Confidentialité le dit (point 13 du chantier 2, § 7).
-- **Page de la CNIL « Cookies et autres traceurs : que dit la loi ? »** (lue le 22/11/2026) : parmi les traceurs non soumis au consentement, « les traceurs destinés à l'authentification auprès d'un service, y compris ceux visant à assurer la sécurité du mécanisme d'authentification, par exemple en limitant les tentatives d'accès robotisées ou inattendues ». Sovermap n'en conclut rien pour la session de défi de Vercel, qui ne sert pas à une authentification.
+- **Page de la CNIL « Cookies et traceurs : que dit la loi ? »** (lue le 22/11/2026 ; titre et citation relus le 23/11/2026, robots.txt de cnil.fr lu d'abord : le chemin est permis) : parmi les traceurs non soumis au consentement, « les traceurs destinés à l'authentification auprès d'un service, y compris ceux visant à assurer la sécurité du mécanisme d'authentification, par exemple en limitant les tentatives d'accès robotisées ou inattendues ». Sovermap n'en conclut rien pour la session de défi de Vercel, qui ne sert pas à une authentification.
 - **Article 82 de la loi n° 78-17** : le consentement est exigé pour lire ou écrire dans le terminal, sauf si cela « a pour finalité exclusive de permettre ou faciliter la communication par voie électronique » ou « est strictement nécessaire à la fourniture d'un service de communication en ligne à la demande expresse de l'utilisateur ».
 - **Lignes directrices de la CNIL** (délibération n° 2020-091 du 17 septembre 2020, lue dans la base CNIL de la DILA) :
   - le stockage local du navigateur (« local storage ») est un traceur au sens de l'article 82 ;

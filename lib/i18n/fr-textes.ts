@@ -193,6 +193,9 @@ export const accessibilite: PageDeTexte = soignee({
           liste: [
             ["Le globe en trois dimensions de l’Atlas : le tableau des pays, sous le globe, donne les mêmes chiffres."],
             ["La constellation d’un ministère : la liste de ses domaines, par exploitant, sur la même page."],
+            [
+              "La carte de France des pages des territoires : les listes de la même page (régions, départements, communes et groupements) donnent les mêmes territoires, avec leurs liens.",
+            ],
           ],
         },
       ],
@@ -257,7 +260,7 @@ export const glossaire: PageDeTexte = soignee({
             [
               `Périmètre «${NBSP}État${NBSP}» : les domaines en `,
               { valeur: ".gouv.fr" },
-              ", plus ceux des services et établissements de l’État recensés par le Référentiel de l’organisation administrative de l’État (DILA) et l’Observatoire du SIG, plus ceux des opérateurs de l’État. Leur nombre du jour est sur la page ",
+              ", plus ceux des services et établissements de l’État recensés par le Référentiel de l’organisation administrative de l’État (DILA) et l’Observatoire du SIG, plus ceux des opérateurs de l’État et des établissements publics d’enseignement supérieur (liste du ministère de l’Enseignement supérieur). Leur nombre du jour est sur la page ",
               { lien: "Qualité", vers: "/qualite" },
               ".",
             ],
@@ -329,7 +332,7 @@ export const pourquoi: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            "Ces règles dépendent de la sensibilité des données, que Sovermap ne voit pas. La doctrine « Cloud au centre » (règle 9, sur le site de la DINUM, lue le 22/11/2026) n’exige une offre de cloud qualifiée SecNumCloud que pour les données d’une sensibilité particulière, et ne parle ni des réseaux de diffusion ni des sites publics. Sovermap décrit des dépendances ; il ne juge jamais leur légalité.",
+            "La doctrine « Cloud au centre » (règle 9, sur le site de la DINUM, lue le 22/11/2026) demande une offre de cloud qualifiée SecNumCloud pour les données d’une sensibilité particulière. Ces règles dépendent de la sensibilité des données, que Sovermap ne voit pas. Sovermap décrit des dépendances ; il ne juge jamais leur légalité.",
           ],
         },
       ],
@@ -444,7 +447,12 @@ export const credits: PageDeTexte = soignee({
     {
       titre: "Les données",
       blocs: [
-        { paragraphe: ["Le fond de carte : Natural Earth (domaine public)."] },
+        { paragraphe: ["Le fond de carte du globe : Natural Earth (domaine public)."] },
+        {
+          paragraphe: [
+            "Le fond de carte des territoires : IGN, ADMIN EXPRESS COG CARTO PE, édition novembre 2026, Licence Ouverte 2.0 ; contours simplifiés par Sovermap.",
+          ],
+        },
         { paragraphe: ["Les autres sources : le registre des sources de Sovermap, dans son dépôt public."] },
       ],
     },
@@ -567,7 +575,7 @@ export const methode: PageDeTexte = soignee({
           paragraphe: [
             "Le chiffre-titre porte sur le périmètre « État » : les domaines en ",
             { valeur: ".gouv.fr" },
-            ", plus ceux des services et établissements de l’État recensés par le Référentiel de la DILA et l’Observatoire du SIG, plus ceux des opérateurs de l’État (leur nombre du jour est sur la page Qualité). Le chiffre limité aux domaines en ",
+            ", plus ceux des services et établissements de l’État recensés par le Référentiel de la DILA et l’Observatoire du SIG, plus ceux des opérateurs de l’État et des établissements publics d’enseignement supérieur (liste du ministère de l’Enseignement supérieur ; leur nombre du jour est sur la page Qualité). Le chiffre limité aux domaines en ",
             { valeur: ".gouv.fr" },
             " est publié à côté.",
           ],
@@ -625,7 +633,7 @@ export const methode: PageDeTexte = soignee({
             ["Des domaines témoins, au comportement connu, sont contrôlés à chaque collecte."],
             ["Au-delà de 2 % de domaines en échec que le résolveur de contrôle ne confirme pas, rien n’est publié."],
             [
-              "La mesure est polie : un agent qui s’identifie, aucune requête vers les sites mesurés, et un débit limité. L’objectif est de ne jamais dépasser 10 questions par seconde vers un même serveur ; une collecte reste acceptée tant qu’elle n’en pose jamais plus de 15, avec au plus une seconde au-delà de 10 (ou 0,1 % des secondes, si c’est plus). Les dépassements de chaque jour sont publiés sur la page Qualité.",
+              "La mesure est polie : un agent qui s’identifie, aucune requête vers les sites mesurés, et un débit limité. L’objectif est de ne jamais dépasser 10 questions par seconde vers un même serveur. Une tolérance juge l’essai de chaque nouvelle version de la collecte : jamais plus de 15 questions en une seconde vers un même serveur, et au plus une seconde au-delà de 10 (ou 0,1 % des secondes, si c’est plus). Elle ne juge pas la publication d’un jour : chaque jour, la page Qualité publie les dépassements de la collecte, questions propres du résolveur comprises (sa validation DNSSEC, par exemple), qui sont ensuite étudiés.",
             ],
           ],
         },
@@ -722,7 +730,7 @@ export const confidentialite: PageDeTexte = soignee({
         },
         {
           paragraphe: [
-            "La règle qui s’applique est l’article 82 de la loi Informatique et Libertés : il exempte de consentement ce qui est strictement nécessaire à un service de communication en ligne expressément demandé par l’utilisateur. Parmi ses exemples, la CNIL cite les traceurs qui assurent la sécurité d’un mécanisme d’authentification, « par exemple en limitant les tentatives d’accès robotisées » (page « Cookies et autres traceurs : que dit la loi ? », lue le 22/11/2026).",
+            "La règle qui s’applique est l’article 82 de la loi Informatique et Libertés : il exempte de consentement ce qui est strictement nécessaire à un service de communication en ligne expressément demandé par l’utilisateur. Parmi ses exemples, la CNIL cite les traceurs qui assurent la sécurité d’un mécanisme d’authentification, « par exemple en limitant les tentatives d’accès robotisées ou inattendues » (page « Cookies et traceurs : que dit la loi ? », lue le 23/11/2026).",
           ],
         },
       ],
@@ -862,7 +870,9 @@ export function mentionsLegales(editeur: Editeur): PageDeTexte {
   const lEditeur: Segment[] =
     editeur.mode === "anonyme"
       ? [
-          "Sovermap est édité à titre non professionnel, par une personne qui ne publie pas son identité, comme le permet l’article 1-1, II, de la loi pour la confiance dans l’économie numérique ; le site donne le nom et l’adresse de son hébergeur.",
+          // The owner's correction 8 at point 17: the condition of the law is said; that the publisher has met it will
+          // be said only once the gesture is done (chantier 3).
+          "Sovermap est édité à titre non professionnel, par une personne qui ne publie pas son identité. L’article 1-1, II, de la loi pour la confiance dans l’économie numérique le permet à une condition : avoir donné à son hébergeur ses nom, prénoms, domicile et numéro de téléphone. Le site donne le nom et l’adresse de son hébergeur.",
         ]
       : editeur.mode === "identite"
         ? [

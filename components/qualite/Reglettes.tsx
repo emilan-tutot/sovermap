@@ -19,13 +19,24 @@ export function Reglettes({ q, f }: { q: Qualite; f: Fraicheur }) {
       <ul className="reglettes">
         {gardeFous(q, f).map((gf) => {
           const x = gf.valeur === null ? null : Math.min(LARGEUR, (gf.valeur / (2 * gf.limite)) * LARGEUR);
-          const verdict = gf.tenu === null ? fr.qualite.nonPublie : gf.tenu ? g.tenu : g.depasse;
+          // The pace's limits judge a trial of a new version, never the day's publication (methode § 7).
+          const essai = gf.juge === "essai";
+          const verdict =
+            gf.tenu === null
+              ? fr.qualite.nonPublie
+              : gf.tenu
+                ? essai
+                  ? g.dansTolerance
+                  : g.tenu
+                : essai
+                  ? g.auDelaTolerance
+                  : g.depasse;
           return (
             <li key={gf.cle} className="reglette">
               <p className="reglette-libelle">{gf.libelle}</p>
               <p className="reglette-chiffres">
-                <span className="valeur">{gf.texte ?? fr.qualite.nonPublie}</span> · {g.limite(gf.texteLimite)} ·{" "}
-                {verdict}
+                <span className="valeur">{gf.texte ?? fr.qualite.nonPublie}</span> ·{" "}
+                {essai ? g.toleranceEssais(gf.texteLimite) : g.limite(gf.texteLimite)} · {verdict}
               </p>
               <svg className="reglette-echelle" viewBox={`0 0 ${LARGEUR} 20`} aria-hidden="true" focusable="false">
                 <line className="reglette-base" x1="0" y1="10" x2={LARGEUR} y2="10" vectorEffect="non-scaling-stroke" />

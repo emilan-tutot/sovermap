@@ -162,7 +162,7 @@ export const fr = {
       maximum: "Le plus de questions en une seconde vers un même serveur",
       auDela: "Secondes au-delà de 10 questions",
       surSecondes: (n: string, total: string, part: string) => `${n} sur ${total} (${part})`,
-      tolerance: `Tolérance${NBSP}: jamais plus de 15, et au plus 0,1${NBSP}% des secondes au-delà de 10.`,
+      tolerance: `La tolérance juge l’essai de chaque nouvelle version de la collecte${NBSP}: jamais plus de 15, et au plus 0,1${NBSP}% des secondes au-delà de 10. Ces chiffres comptent toutes les questions du jour, celles du résolveur comprises (sa validation DNSSEC, par exemple)${NBSP}; un dépassement n’empêche pas la publication du jour${NBSP}: il est publié ici, et étudié.`,
     },
     sources: {
       fiche: "Fiche",
@@ -181,6 +181,10 @@ export const fr = {
       limite: (s: string) => `limite${NBSP}: ${s}`,
       tenu: "dans la limite",
       depasse: "au-delà de la limite",
+      /** The pace's limits judge the trial of a new version of the collection, never the day's publication. */
+      toleranceEssais: (s: string) => `tolérance des essais${NBSP}: ${s}`,
+      dansTolerance: "dans la tolérance",
+      auDelaTolerance: "au-delà de la tolérance, étudié",
       lecture: (libelle: string, valeur: string, limite: string) => `${libelle}${NBSP}: ${valeur}, ${limite}.`,
       colonnes: { controle: "Contrôle", valeur: "Valeur", limite: "Limite", resultat: "Résultat" },
     },
