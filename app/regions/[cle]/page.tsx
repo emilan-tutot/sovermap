@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { CarteFrance } from "@/components/carte/CarteFrance";
+import { CarteFrance, departementsDeLaRegion } from "@/components/carte/CarteFrance";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Valeur } from "@/components/texte/Valeur";
@@ -53,7 +53,7 @@ export default async function RegionPage({ params }: Props) {
       <p className="etiquette-capitales">{t.surtitres.region}</p>
       <h1 className="titre-page">{t.titrePage(region.nom)}</h1>
       <figure className="releve">
-        <CarteFrance titre={t.carteRegion(region.nom)} cadrer={new Set(departements.map((d) => d.code))} />
+        <CarteFrance titre={t.carteRegion(region.nom)} cadrer={departementsDeLaRegion(code)} />
         <figcaption className="releve-note">{t.fond}</figcaption>
       </figure>
       <section className="releve" aria-labelledby="region-conseil">

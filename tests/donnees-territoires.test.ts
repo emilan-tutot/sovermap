@@ -1,5 +1,6 @@
 // Tests of the territories' indexes as the site reads them (D.2): made-up indexes, documentation names (RFC 2606).
 import { describe, expect, it } from "vitest";
+import { departementsDeLaRegion } from "@/components/carte/CarteFrance";
 import {
   adresseCommune,
   adresseDepartement,
@@ -78,5 +79,11 @@ describe("the territories' addresses (spec EX-26)", () => {
     expect(codeDeAdresse("..-x", "region")).toBeNull();
     expect(departementDeCommune("97411")).toBe("974");
     expect(departementDeCommune("2A004")).toBe("2A");
+  });
+
+  it("frames a région's map on all its départements, as the base map gives them, with or without data", () => {
+    expect([...departementsDeLaRegion("53")].sort()).toEqual(["22", "29", "35", "56"]);
+    expect([...departementsDeLaRegion("01")]).toEqual(["971"]);
+    expect(departementsDeLaRegion("99").size).toBe(0);
   });
 });

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { CarteFrance } from "@/components/carte/CarteFrance";
+import { CarteFrance, departementsDeLaRegion } from "@/components/carte/CarteFrance";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Domaines } from "@/components/territoires/Domaines";
@@ -47,9 +47,8 @@ export default async function DepartementPage({ params }: Props) {
   if (`/departements/${cle}` !== adresse) permanentRedirect(adresse);
   const fichier = await fichierDepartementDuJour(code);
   const region = departement.region === null ? undefined : territoires.regions.get(departement.region);
-  const voisins = [...territoires.departements.values()]
-    .filter((d) => departement.region !== null && d.region === departement.region)
-    .map((d) => d.code);
+  // Its whole région on the map, as the base map gives it; an overseas collectivity without a région, alone.
+  const voisins = departement.region === null ? new Set<string>() : departementsDeLaRegion(departement.region);
   const parNom = <T extends { nom: string }>(a: T, b: T) => a.nom.localeCompare(b.nom, "fr");
   return (
     <Coque large>
@@ -66,7 +65,7 @@ export default async function DepartementPage({ params }: Props) {
         <CarteFrance
           titre={t.carteDepartement(departement.nom)}
           surligner={new Set([code])}
-          cadrer={new Set(voisins.length > 0 ? voisins : [code])}
+          cadrer={voisins.size > 0 ? voisins : new Set([code])}
         />
         <figcaption className="releve-note">{t.fond}</figcaption>
       </figure>

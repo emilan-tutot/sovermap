@@ -1107,6 +1107,11 @@
     fill: var(--color-discret);
   }
 
+  /* Around a framed région: lighter, so that the région stands out. */
+  .carte-autour {
+    fill: var(--color-surface);
+  }
+
   .carte-regions {
     fill: none;
     stroke: var(--color-discret);

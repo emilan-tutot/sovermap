@@ -14,6 +14,13 @@ type Props = {
   cadrer?: ReadonlySet<string>;
 };
 
+/**
+ * The départements of a région, as the base map gives them (the IGN's layer, which carries each one's région): the
+ * whole région, whether or not each of its départements has a measured site that day.
+ */
+export const departementsDeLaRegion = (region: string): Set<string> =>
+  new Set(fond.departements.filter((d) => d.region === region).map((d) => d.code));
+
 type Boite = { x: number; y: number; l: number; h: number };
 
 /** The box of some departments' paths, from their points (« M12 34 56 78Z »). */
@@ -52,7 +59,13 @@ export function CarteFrance({ titre, surligner, cadrer }: Props) {
           key={d.code}
           d={d.d}
           fillRule="evenodd"
-          className={surligner?.has(d.code) === true ? "carte-departement carte-surligne" : "carte-departement"}
+          className={
+            surligner?.has(d.code) === true
+              ? "carte-departement carte-surligne"
+              : cadrer !== undefined && !cadrer.has(d.code)
+                ? "carte-departement carte-autour"
+                : "carte-departement"
+          }
         />
       ))}
       <path className="carte-regions" d={fond.frontieresRegions} />
