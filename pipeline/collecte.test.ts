@@ -1063,7 +1063,17 @@ describe("the scheduling of a collection", () => {
     // The domains under way at the stop are marked unfinished (the diagnosis and Quad9 leave them aside); each was
     // opened (its zone's measurement ends, answered « ERREUR » without being asked).
     expect(r.inacheves.size).toBeGreaterThan(0);
+    expect(r.inacheves.size).toBeLessThan(r.domaines.size);
     for (const u of r.inacheves) expect(r.domaines.has(u)).toBe(true);
+  });
+
+  it("marks unfinished only the domains under way at the stop, never the one whose count brought it", async () => {
+    // One task at a time: at the stop, the only domain under way is the one that brought it, so none is unfinished
+    // (marking it, or every failing domain, would leave Quad9 nothing to confirm on a stopped day).
+    const { r } = await collecteEnPanne(domainesP(200), () => true, enOrdre);
+    expect(r.arret).not.toBeNull();
+    expect(r.domaines.size).toBeGreaterThan(0);
+    expect(r.inacheves.size).toBe(0);
   });
 
   it("only pauses for a short outage: the alert is lifted, and the collection goes to its end, retries included", async () => {

@@ -15,17 +15,34 @@ const tache = (nom: string) => {
 
 describe("the collection's workflow", () => {
   it("enables the scheduled workflows again from two places, with the least rights, never on a pull request", () => {
+    const boucle = "for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do";
+    const enable = 'gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"';
+    /** One branch of the loop's « case », up to its end. */
+    const branche = (texte: string, etiquette: string) => {
+      const debut = texte.indexOf(`${etiquette})`);
+      expect(debut).toBeGreaterThan(0);
+      return texte.slice(debut, texte.indexOf(";;", debut));
+    };
+    const verifier = (texte: string) => {
+      expect(texte).toContain(boucle);
+      // Only a workflow GitHub disabled for inactivity is enabled again: never one disabled by hand (the politeness
+      // lever, point 17, § 3), never an active one (the robot would become the recipient of its runs' e-mails).
+      expect(branche(texte, "disabled_inactivity")).toContain(enable);
+      expect(branche(texte, "disabled_manually")).not.toContain("PUT");
+      expect(branche(texte, "active")).not.toContain("PUT");
+      expect(texte.split(enable)).toHaveLength(2);
+    };
     const entretien = tache("entretien");
     expect(entretien).toContain("if: github.event_name != 'pull_request'");
     expect(entretien).toMatch(/permissions:\n {6}actions: write\n {4}env:/);
-    for (const fichier of ["collecte.yml", "fraicheur.yml", "archives.yml", "copies.yml"]) {
-      expect(entretien).toContain(fichier);
-    }
-    expect(entretien).toContain('gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"');
+    verifier(entretien);
+    // This job never turns the collection red: a failure is a warning.
+    expect(entretien).not.toContain("exit 1");
     // The freshness check does the same every 6 hours, and opens an issue when one cannot be enabled.
     const fraicheur = readFileSync(".github/workflows/fraicheur.yml", "utf8");
     expect(fraicheur).toContain('titre="Workflow planifié désactivé"');
-    expect(fraicheur).toContain('gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"');
+    verifier(fraicheur);
+    expect(branche(fraicheur, "disabled_manually")).not.toContain("echec=");
     // A third chance for the day's collection, which does nothing once the day has started.
     expect(workflow).toContain('- cron: "17 15 * * *"');
   });

@@ -2,8 +2,8 @@
 // the collection pins? The Knot Resolver image (Docker Hub's tags, card 12), the Public Suffix List (publicsuffix.org,
 // card 42) and the INSEE's COG (data.gouv.fr's API, card 48). Each host's robots.txt is read first and obeyed, with a
 // second between two requests to a host and the project's user agent (pipeline/sources.ts). Writes a report in French
-// to the standard output; exits 0 when every copy is current, 3 when a newer version exists, 1 when a source cannot be
-// read.
+// to the standard output; exits 3 when a newer version exists (even if another source cannot be read), 1 when a source
+// cannot be read and nothing is to renew, 0 when every copy is current.
 //   npx tsx scripts/copies-epinglees.ts > rapport.md
 import { readdirSync, readFileSync } from "node:fs";
 import { agentUtilisateur, Telechargeur } from "../pipeline/sources";
@@ -115,4 +115,5 @@ const sortie = [
   ...(erreurs.length === 0 ? [] : ["", "Lectures impossibles :", ...erreurs.map((e) => `- ${e}`)]),
 ];
 console.log(sortie.join("\n"));
-process.exitCode = erreurs.length > 0 ? 1 : aRenouveler.length > 0 ? 3 : 0;
+// A copy to renew wins: its issue must open even when another source could not be read (the workflow then turns red).
+process.exitCode = aRenouveler.length > 0 ? 3 : erreurs.length > 0 ? 1 : 0;

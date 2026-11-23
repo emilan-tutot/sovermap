@@ -5,10 +5,14 @@
 // third party. The file is written beside the output, never in it (`travail/diagnostic.json`): it goes to the run's
 // artifact only, never to « donnees » nor to the « donnees-courant » release (both take « sortie »). It asks nothing:
 // it reads the day's state.
+import path from "node:path";
 import type { EnregistrementDomaine, Etat, Exploitant } from "./publication";
 
 /** The file's name, in the work folder beside « sortie », never inside it (tests/collecte-workflow.test.ts). */
 export const FICHIER_DIAGNOSTIC = "diagnostic.json";
+
+/** Where the collection writes it: the work folder itself, never « sortie » (which « donnees » and the release take). */
+export const cheminDiagnostic = (travail: string): string => path.join(travail, FICHIER_DIAGNOSTIC);
 
 export type LigneDiagnostic = {
   domaine: string;
@@ -19,8 +23,12 @@ export type LigneDiagnostic = {
   nomWeb: string;
   /** The web name's questions (A and AAAA) failed: their code; null when it answered. */
   web: string | null;
-  /** Quad9 shared the failure: the domain's own breakdown, outside the guard of 2 % (published « confirmé »). */
-  confirme: boolean;
+  /**
+   * Quad9 shared the failure: the domain's own breakdown, outside the guard of 2 % (published « confirmé »); false
+   * when Quad9 was asked and answered; null when it was not asked (a stopped day asks a few domains only, a slow one
+   * stops asking at its deadline).
+   */
+  confirme: boolean | null;
   /**
    * Under way when the collection stopped: its questions not yet asked got « ERREUR » without being asked, so its
    * failures say nothing of its servers.
@@ -30,10 +38,17 @@ export type LigneDiagnostic = {
   serveursDeNoms: { hote: string; exploitants: string[] }[];
 };
 
-/** What the day's state does not keep: Quad9's verdict on a mail exchangers' failure, and the domains under way. */
-export type ContexteDiagnostic = { pannesMx: ReadonlySet<string>; inacheves: ReadonlySet<string> };
+/**
+ * What the day's state does not keep: Quad9's verdict on a mail exchangers' failure, the domains under way, and the
+ * domains Quad9 was asked about (null when unknown: every failure then reads as asked).
+ */
+export type ContexteDiagnostic = {
+  pannesMx: ReadonlySet<string>;
+  inacheves: ReadonlySet<string>;
+  demandes: ReadonlySet<string> | null;
+};
 
-const SANS_CONTEXTE: ContexteDiagnostic = { pannesMx: new Set(), inacheves: new Set() };
+const SANS_CONTEXTE: ContexteDiagnostic = { pannesMx: new Set(), inacheves: new Set(), demandes: null };
 
 /** An operator as the measurement names it: its company when one is established, otherwise its proof (an AS). */
 function exploitantDe(e: Exploitant): string {
@@ -52,17 +67,18 @@ export function diagnosticDesEchecs(jour: Etat, contexte: ContexteDiagnostic = S
     .sort((a, b) => (a.domaine < b.domaine ? -1 : a.domaine > b.domaine ? 1 : 0))
     .map((d) => {
       const web = jour.noms.get(d.nomWeb);
+      // As the guard counts a confirmed breakdown (pipeline/cli/collecter.ts).
+      const partagee =
+        (d.zone.echec?.confirmePar ?? null) !== null ||
+        (web?.echec?.confirmePar ?? null) !== null ||
+        contexte.pannesMx.has(d.domaine);
       return {
         domaine: d.domaine,
         zone: d.zone.etat === "echec" ? (d.zone.echec?.code ?? "ERREUR") : null,
         messagerie: d.messagerie.etat === "echec",
         nomWeb: d.nomWeb,
         web: web?.etat === "echec" ? (web.echec?.code ?? "ERREUR") : null,
-        // As the guard counts a confirmed breakdown (pipeline/cli/collecter.ts).
-        confirme:
-          (d.zone.echec?.confirmePar ?? null) !== null ||
-          (web?.echec?.confirmePar ?? null) !== null ||
-          contexte.pannesMx.has(d.domaine),
+        confirme: partagee ? true : contexte.demandes === null || contexte.demandes.has(d.domaine) ? false : null,
         inacheve: contexte.inacheves.has(d.domaine),
         serveursDeNoms: d.serveursDeNoms.hotes.map((h) => ({
           hote: h.hote,

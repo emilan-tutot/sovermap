@@ -61,8 +61,9 @@ jobs:
           fi
 
   # GitHub disables the scheduled workflows of a public repository after 60 days without activity (the owner's answer
-  # to point 13, § 8): every 6 hours, this job enables the scheduled workflows again (the collection does the same each
-  # day), and opens the issue « Workflow planifié désactivé » when one cannot be enabled, with the gesture to make.
+  # to point 13, § 8): every 6 hours, this job enables again those GitHub disabled for inactivity (the collection does
+  # the same each day), never one disabled by hand, and opens the issue « Workflow planifié désactivé » when one cannot
+  # be enabled, with the gesture to make.
   entretien:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -78,14 +79,23 @@ jobs:
           echec=""
           for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do
             etat=$(gh api "repos/$REPO/actions/workflows/$fichier" --jq .state 2> /dev/null || echo "illisible")
-            if [ "$etat" = "active" ]; then
-              gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null || echec="$echec $fichier"
-            elif [ "$etat" = "disabled_inactivity" ] || [ "$etat" = "disabled_manually" ]; then
-              echo "$fichier : $etat ; réactivation." >&2
-              gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null || echec="$echec $fichier"
-            else
-              echec="$echec $fichier"
-            fi
+            case "$etat" in
+              active)
+                # Nothing to do: an enable call would make the robot the recipient of the scheduled runs' e-mails.
+                :
+                ;;
+              disabled_inactivity)
+                echo "$fichier : désactivé faute d'activité ; réactivation." >&2
+                gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null || echec="$echec $fichier"
+                ;;
+              disabled_manually)
+                # Disabled by hand: a decision (the collection's politeness lever, point 17, § 3), never undone here.
+                echo "$fichier : désactivé à la main ; laissé tel quel." >&2
+                ;;
+              *)
+                echec="$echec $fichier"
+                ;;
+            esac
           done
           if [ -n "$echec" ]; then
             {
@@ -97,4 +107,4 @@ jobs:
             if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
             exit 1
           fi
-          echo "Workflows planifiés actifs : collecte.yml, fraicheur.yml, archives.yml, copies.yml."
+          echo "Workflows planifiés vérifiés : collecte.yml, fraicheur.yml, archives.yml, copies.yml (ceux désactivés à la main sont laissés)."

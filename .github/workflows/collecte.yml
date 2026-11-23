@@ -239,7 +239,7 @@ jobs:
           done
           {
             echo "mesurer : le témoin « mesure commencée » n'a pas pu être relu ; rien n'est mesuré."
-            echo "S'il apparaît plus tard, la collecte de 09:47 croira le jour commencé : supprimer l'entrée « $CLE » (Actions › Caches), puis « Run workflow » avant 18:30 UTC."
+            echo "S'il apparaît plus tard, les départs suivants du jour (09:47, 15:17) croiront le jour commencé : supprimer l'entrée « $CLE » (Actions › Caches), puis « Run workflow » avant 18:30 UTC."
           } | tee -a "$GITHUB_STEP_SUMMARY" >&2
           exit 1
       - id: collecte
@@ -408,7 +408,7 @@ jobs:
             if [ "$ESSAI" = "true" ]; then echo "**Essai** (déclenché exprès, rien n'a été publié, la série des jours n'est pas cassée)."; echo; fi
             publication_ratee=false
             if [ "$PUBLICATION" = "failure" ] || [ "$PUBLICATION" = "cancelled" ]; then publication_ratee=true; fi
-            if [ "$JOUR" = "failure" ]; then echo "**La vérification du jour a échoué** (l'état publié n'a pas pu être lu) : rien n'a été mesuré. La collecte de 09:47 réessaie ; sinon, Actions › Collecte › « Run workflow », avant 18:30 UTC."; echo; fi
+            if [ "$JOUR" = "failure" ]; then echo "**La vérification du jour a échoué** (l'état publié n'a pas pu être lu) : rien n'a été mesuré. Le départ suivant du jour (09:47, puis 15:17) réessaie ; après celui de 15:17, Actions › Collecte › « Run workflow », avant 18:30 UTC."; echo; fi
             if [ "$publication_ratee" = true ]; then echo "**La publication a échoué ou a été interrompue** (branche donnees ou Release) : la mesure s'est bien passée. Pour la publier : Actions › cette exécution › « Re-run failed jobs », seulement si aucun jour plus récent n'a été publié depuis (la publication refuse un jour qui n'est pas plus récent que le jour publié)."; echo; fi
             if [ -f collecte/resume.md ]; then cat collecte/resume.md; elif [ "$JOUR" != "failure" ]; then echo "La tâche de mesure s'est arrêtée avant de rendre son résumé : sa raison est dans le résumé de l'exécution (par exemple, le témoin « mesure commencée » refuse une seconde mesure du même jour)."; fi
             echo
@@ -422,8 +422,9 @@ jobs:
           exit 1
 
   # GitHub disables the scheduled workflows of a public repository after 60 days without activity (the owner's answer
-  # to point 13, § 8): each scheduled run enables them again (the freshness check does the same every 6 hours, and
-  # opens the issue « Workflow planifié désactivé » when one cannot be). Never on a pull request.
+  # to point 13, § 8): each scheduled run enables again those GitHub disabled for inactivity, never one disabled by hand
+  # (the freshness check does the same every 6 hours, and opens the issue « Workflow planifié désactivé » when one
+  # cannot be). Never on a pull request.
   entretien:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
@@ -434,8 +435,28 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
     steps:
+      # A workflow disabled by hand is a decision (the collection's politeness lever, point 17, § 3): left as it is. This
+      # job never turns the collection red: a failure is a warning, and the freshness check opens the issue.
       - run: |
           for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do
-            gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null
-            echo "$fichier : activé."
+            etat=$(gh api "repos/$REPO/actions/workflows/$fichier" --jq .state 2> /dev/null || echo "illisible")
+            case "$etat" in
+              active)
+                # Nothing to do: an enable call would make the robot the recipient of the scheduled runs' e-mails.
+                echo "$fichier : actif."
+                ;;
+              disabled_inactivity)
+                if gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null; then
+                  echo "$fichier : réactivé (désactivé faute d'activité)."
+                else
+                  echo "::warning::$fichier : réactivation impossible (la fraîcheur ouvrira l'issue)."
+                fi
+                ;;
+              disabled_manually)
+                echo "$fichier : désactivé à la main ; laissé tel quel."
+                ;;
+              *)
+                echo "::warning::$fichier : état illisible ($etat)."
+                ;;
+            esac
           done

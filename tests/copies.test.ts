@@ -72,4 +72,25 @@ describe("the pinned copies", () => {
     expect(workflow).toContain("npx tsx scripts/copies-epinglees.ts > rapport.md");
     expect(workflow).toContain('titre="Copie épinglée à renouveler"');
   });
+
+  it("gives the token to the issue's step only: npm and the script never see it", () => {
+    const workflow = readFileSync(".github/workflows/copies.yml", "utf8");
+    const etapes = workflow.split(/\n {6}- /);
+    const avecJeton = etapes.filter((e) => e.includes("GH_TOKEN"));
+    expect(avecJeton).toHaveLength(1);
+    expect(avecJeton[0]).toContain("if: steps.verification.outputs.code == '3'");
+    expect(avecJeton[0]).toContain("gh issue");
+    expect(avecJeton[0]).not.toMatch(/npm|npx|tsx/);
+    expect(workflow).not.toMatch(/^ {4}env:\n {6}GH_TOKEN/m);
+  });
+
+  it("opens the issue when a copy is to renew even if another could not be read, and is green only when all were read", () => {
+    const script = readFileSync("scripts/copies-epinglees.ts", "utf8");
+    expect(script).toContain("process.exitCode = aRenouveler.length > 0 ? 3 : erreurs.length > 0 ? 1 : 0;");
+    const workflow = readFileSync(".github/workflows/copies.yml", "utf8");
+    expect(workflow).toContain('if [ "$CODE" = "0" ]; then exit 0; fi');
+    expect(workflow).toContain('if [ "$CODE" = "3" ] && ! grep -q "^Lectures impossibles" rapport.md; then exit 0; fi');
+    // Any other exit (1, a killed process) is red.
+    expect(workflow).toMatch(/then exit 0; fi\n[^\n]*\n {10}exit 1\n/);
+  });
 });

@@ -24,7 +24,7 @@ import {
 } from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
-import { diagnosticDesEchecs, FICHIER_DIAGNOSTIC } from "../diagnostic";
+import { cheminDiagnostic, diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
@@ -584,6 +584,8 @@ async function principal(): Promise<number> {
   );
   // The domains whose MX question alone failed, and Quad9's too (for the guard only: nothing else is published).
   const pannesMx = new Set<string>();
+  // The domains Quad9 was asked about (the diagnosis tells « not confirmed » from « not asked »).
+  const demandes = new Set<string>();
   const confirmer = async () => {
     for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finConfirmations; d = aConfirmer.shift()) {
       const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
@@ -594,18 +596,23 @@ async function principal(): Promise<number> {
           ? [d.nomWeb, "A" as const]
           : [d.domaine, "MX" as const];
       const r = await quad9.demander(nom, type);
+      demandes.add(d.domaine);
       if (!ECHECS_DNS.has(r.code)) continue;
       if (zoneEnEchec) (pannes.zones as Set<string>).add(d.domaine);
       if (webEnEchec) (pannes.noms as Set<string>).add(d.nomWeb);
       if (type === "MX") pannesMx.add(d.domaine);
     }
   };
-  // A stopped day is never published: a few confirmations are kept for the diagnosis, the rest is not asked; the
-  // domains under way at the stop failed for want of being asked, so Quad9 is asked about the others only.
+  // A stopped day is never published: a few confirmations, drawn at random, are kept for the diagnosis, the rest is not
+  // asked; the domains under way at the stop failed for want of being asked, so Quad9 is asked about the others only.
   if (mesures.arret !== null) {
     const retenus = aConfirmer.filter((d) => !mesures.inacheves.has(d.domaine));
     const ecartes = aConfirmer.length - retenus.length;
-    aConfirmer.splice(0, aConfirmer.length, ...retenus.slice(0, CONFIRMATIONS_APRES_ARRET));
+    aConfirmer.splice(
+      0,
+      aConfirmer.length,
+      ...melanger(retenus, generateur(graine + 3)).slice(0, CONFIRMATIONS_APRES_ARRET),
+    );
     suivi(
       `arrêt d'urgence : ${aConfirmer.length} des ${retenus.length} pannes seulement reposées à Quad9 ` +
         `(${ecartes} domaines inachevés écartés)`,
@@ -687,12 +694,12 @@ async function principal(): Promise<number> {
   writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
   // The failing domains, for the diagnosis of a degraded day: beside the output, never in it (the run's artifact only).
   writeFileSync(
-    path.join(travail, FICHIER_DIAGNOSTIC),
+    cheminDiagnostic(travail),
     `${JSON.stringify({
       date,
       essai: o.essai,
       arret: mesures.arret,
-      domaines: diagnosticDesEchecs(jour, { pannesMx, inacheves: mesures.inacheves }),
+      domaines: diagnosticDesEchecs(jour, { pannesMx, inacheves: mesures.inacheves, demandes }),
     })}\n`,
   );
 
