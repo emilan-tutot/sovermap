@@ -1207,6 +1207,23 @@
         }
       ],
       "note": "Fichier de délégation de l'ARIN du 22/11/2026 (fiche 21) : AS14618 attribué le 04/11/2005, pays d'enregistrement US ; son identifiant de titulaire diffère de celui d'AS16509 (deux fiches de l'ARIN au nom d'Amazon) : le lien passe par le nom du titulaire et l'identité de la société."
+    },
+    "1715": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS1715 FR-REMIP2000, titulaire Renater, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1715 attribué le 01/12/1991, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1715 FR-REMIP2000 a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
     }
   }
 }
