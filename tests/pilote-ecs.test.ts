@@ -1,10 +1,16 @@
 // Tests of the measurement point's pilot: made-up records, documentation addresses (RFC 5737), AS (RFC 5398) and names
 // (RFC 2606) only.
 import { describe, expect, it } from "vitest";
-import { bilanDuPilote, domainesDuPilote, type ResultatDomaine, societesDesAdresses, SOUS_RESEAUX } from "./pilote-ecs";
-import type { EnregistrementDomaine, EnregistrementNom } from "./publication";
-import { TableIpToAsn } from "./reseau";
-import type { ReferentielAs } from "./societes";
+import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
+import { TableIpToAsn } from "@/pipeline/reseau";
+import type { ReferentielAs } from "@/pipeline/societes";
+import {
+  bilanDuPilote,
+  domainesDuPilote,
+  type ResultatDomaine,
+  societesDesAdresses,
+  SOUS_RESEAUX,
+} from "@/scripts/lib/pilote-ecs";
 
 const domaine = (d: string, perimetre: "État" | "hors État"): EnregistrementDomaine =>
   ({ domaine: d, nomWeb: `www.${d}`, perimetre }) as unknown as EnregistrementDomaine;

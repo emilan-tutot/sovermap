@@ -289,6 +289,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Conditions, mot pour mot** : « Anyone, including Internet Service Providers (ISPs) and large organizations, is free to use Google Public DNS, but we apply rate limits to each client to protect our service. » (https://developers.google.com/speed/public-dns/docs/isp).
 - **Ce qu'on en tire** : des essais du point de mesure, avec le paramètre `edns_client_subnet` (« Format is an IP address with a subnet mask. Examples: 1.2.3.4/24 », https://developers.google.com/speed/public-dns/docs/doh/json).
   - On passe toujours un sous-réseau explicite : sans lui, une partie de l'adresse de l'appelant est transmise.
+- **Le pilote (B.4, outil du 23/11/2026)** : `scripts/pilote-ecs.ts`, lancé une seule fois, à la main, sur les runners de GitHub (`.github/workflows/pilote-ecs.yml`), jamais sur le PC ; 300 domaines au plus derrière un CDN (ceux du périmètre « État » d'abord), une question A par nom web et par sous-réseau, deux sous-réseaux explicites (`90.0.0.0/24`, attribué en France au RIPE, réseau d'Orange ; `24.0.0.0/24`, attribué aux États-Unis à l'ARIN, réseau de Comcast) ; une question par seconde au plus ; le `robots.txt` de dns.google lu d'abord (le pilote s'arrête s'il ferme `/resolve`) ; agent du projet ; le rapport va dans l'artefact de l'exécution, le journal public ne donne que des comptes.
 - **Décision : retenue en contrôle seulement** (pilote du point de mesure, en T2).
 
 ### 16. DNS4EU

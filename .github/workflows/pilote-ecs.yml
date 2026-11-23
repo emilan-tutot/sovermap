@@ -1,0 +1,52 @@
+name: Pilote du point de mesure
+
+# Brief B.4 (plan § 9, point 6): run by hand, once, in a slot clear of the day's collections. On domains behind a CDN,
+# does the company that serves a web name change with where its visitor is? scripts/pilote-ecs.ts asks Google Public
+# DNS's JSON API (docs/sources.md, card 15, control only) with explicit client subnets (France, United States), one
+# question a second, and writes its report to the run's artifact. It reads the published « donnees » branch and the
+# hand-surveyed IPtoASN copy of the release « sources-iptoasn »; it writes nothing to the repository.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pilote-ecs
+  cancel-in-progress: false
+
+jobs:
+  pilote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: donnees
+          path: donnees
+          fetch-depth: 1
+          persist-credentials: false
+      # IPtoASN is surveyed by hand (card 18): the latest copy of this repository's release, never iptoasn.com.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download sources-iptoasn --repo "$GITHUB_REPOSITORY" --pattern 'ip2asn-combined-*.tsv.gz' --dir releves
+      - run: |
+          releve=$(ls releves/ip2asn-combined-*.tsv.gz | sort | tail -n 1)
+          npx tsx scripts/pilote-ecs.ts --donnees donnees --iptoasn "$releve" --sortie pilote-ecs.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pilote-ecs
+          path: pilote-ecs.json
+          retention-days: 30
+          if-no-files-found: error

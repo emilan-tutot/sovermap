@@ -4,10 +4,10 @@
 // address would be passed on), at one question a second. The pure parts are here: the domains drawn, the companies
 // behind a set of addresses, the comparison. The decision (plan § 9): beyond 1 % of domains whose company changes, the
 // options of a European control go to a point.
-import type { EnregistrementDomaine, EnregistrementNom } from "./publication";
-import { generateur, melanger } from "./politesse";
-import type { TableIpToAsn } from "./reseau";
-import type { ReferentielAs } from "./societes";
+import { generateur, melanger } from "@/pipeline/politesse";
+import type { EnregistrementDomaine, EnregistrementNom } from "@/pipeline/publication";
+import type { TableIpToAsn } from "@/pipeline/reseau";
+import type { ReferentielAs } from "@/pipeline/societes";
 
 /** An explicit client subnet: a /24 inside a large block of a residential network, registered in that country. */
 export type SousReseau = { pays: string; prefixe: string; source: string };
