@@ -1224,6 +1224,23 @@
         }
       ],
       "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1715 FR-REMIP2000 a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "209242": {
+      "societe": "cloudflare-london-llc",
+      "titulaire_registre": "Cloudflare London, LLC",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS209242 CLOUDFLARESPECTRUM, titulaire Cloudflare London, LLC, pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS209242 attribué le 13/03/2019, pays d'enregistrement US",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS209242 CLOUDFLARESPECTRUM a pour organisation ORG-CLL6-RIPE, « Cloudflare London, LLC », LIR, US."
     }
   }
 }
