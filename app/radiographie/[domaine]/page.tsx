@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ViewTransition } from "react";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
@@ -110,7 +111,12 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
       <FilAriane miettes={[{ nom: r.domaine, chemin: `/radiographie/${r.domaine}` }]} />
       <p className="etiquette-capitales">{fr.radiographie.surtitre}</p>
       <h1 className="titre-page radiographie-titre">
-        <Valeur texte={r.domaine} />
+        {/* The name that flew from the search (DESIGN.md § 7). */}
+        <ViewTransition name={`domaine-${r.domaine}`} share="vole" default="none">
+          <span>
+            <Valeur texte={r.domaine} />
+          </span>
+        </ViewTransition>
       </h1>
       <p className="chapo">{fr.radiographie.chapo}</p>
       <p className="releve-note">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, ViewTransition } from "react";
 import { fr } from "@/lib/i18n/fr";
 import { chercher, type Entree, lireIndexRecherche } from "@/lib/recherche";
 
@@ -65,7 +65,14 @@ export function Recherche() {
           {resultats.map((r) => (
             <li key={r.adresse}>
               <Link href={r.adresse} prefetch={false} className={r.type === "d" ? "valeur" : undefined}>
-                {r.libelle}
+                {r.type === "d" ? (
+                  // The domain's name flies into the Radiographie's title (DESIGN.md § 7).
+                  <ViewTransition name={`domaine-${r.libelle}`} share="vole" default="none">
+                    <span>{r.libelle}</span>
+                  </ViewTransition>
+                ) : (
+                  r.libelle
+                )}
               </Link>
               <span>{r.etat ? t.categorieEtat : r.nature !== null ? t.natures[r.nature] : t.categories[r.type]}</span>
             </li>

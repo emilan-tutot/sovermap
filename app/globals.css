@@ -95,6 +95,44 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* Transitions between pages (DESIGN.md § 7; correction 4 of the Brume douce videos): the name of a domain flies
+     from the search into the Radiographie's title (« vole »), and two pages are never both readable at once (no ghost
+     text). React's integration keeps the page itself out of the transition (filmed on 23/11/2026: the pages swap at
+     once); should the page ever be animated, the old one leaves before the new one comes. Without the browser's
+     support, no animation at all. */
+  ::view-transition-old(root) {
+    animation: 150ms var(--ease-courbe) both vt-sortie;
+  }
+
+  ::view-transition-new(root) {
+    animation: 210ms var(--ease-courbe) 150ms both vt-entree;
+  }
+
+  ::view-transition-group(.vole) {
+    animation-duration: 360ms;
+    animation-timing-function: var(--ease-courbe);
+  }
+
+  @keyframes vt-sortie {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes vt-entree {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+  }
 }
 
 /* The shell of every page (DESIGN.md §9): a skip link, the header with the wordmark, the content, the footer with the
