@@ -1,11 +1,12 @@
 name: Collecte
 
 # The daily collection (brief B of chantier 2, plan § 4 to § 13): at 03:17 UTC, and again at 09:47 and 15:17 UTC,
-# which do nothing once the day has started. The measuring job has read-only rights; only the publishing job may write (the
-# « donnees » branch and the « donnees-courant » release), and only the alerting job may open or comment an issue.
-# A pull request that touches the collection runs the measuring job alone, on a sample (LIMITE_ESSAI), as a trial:
-# nothing is published, nothing is kept for tomorrow, no issue is opened; it never measures during, or around the
-# start of, a day's collection.
+# which do nothing once the day has started. The measurement runs in three jobs that follow one another (brief B.8):
+# the first half of the list, the second half, then the assembly of the day; they have read-only rights; only the
+# publishing job may write (the « donnees » branch and the « donnees-courant » release), and only the alerting job may
+# open or comment an issue. A pull request that touches the collection runs the three measuring jobs alone, on a sample
+# (LIMITE_ESSAI), as a trial: nothing is published, nothing is kept for tomorrow, no issue is opened; it never measures
+# during, or around the start of, a day's collection.
 # Emergency gesture if GitHub disables this workflow after 60 days without activity: Actions › Collecte ›
 # « Enable workflow ».
 
@@ -89,15 +90,22 @@ jobs:
           echo "Mesures du jour commencées : ${commencees:-0}"
           if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ] || [ "$commencees" != "0" ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
 
-  mesurer:
+  # The measurement, in jobs of one run that follow one another (brief B.8: a collection that approaches 3 hours is
+  # split; day 3 took 216 minutes): each half of the list is measured in its own job, never two at once (the load on
+  # the servers stays the same), then the assembly builds the day from both halves and runs the guards on the whole
+  # day. Each job has its own time limits, well under GitHub's 6 hours, and a failed job can be re-run alone. The first
+  # half downloads the sources and checks the fourth rule once a day, and hands them on (never downloaded twice).
+  mesurer-1:
     needs: jour
     if: needs.jour.outputs.faite != 'true'
     runs-on: ubuntu-24.04
-    # A trial is capped (it never runs into a day's collection: pipeline/creneau.ts counts on it).
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}
+    # A trial is capped: its three jobs end within 60 minutes (it never runs into a day's collection: pipeline/creneau.ts
+    # counts on it).
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 25 || 165 }}
     # One measurement at a time of each kind: a trial never takes the place of a day's waiting measurement (GitHub keeps
     # one waiting job per group). A trial never measures during, or around the start of, a day's collection (its first
-    # step below): two measurements at once would double the questions to the shared servers (brief B.3).
+    # step below): two measurements at once would double the questions to the shared servers (brief B.3). The day's
+    # runs are also one at a time (the workflow's group).
     concurrency:
       group: collecte-mesure-${{ github.event_name == 'pull_request' && 'essai' || 'jour' }}
       cancel-in-progress: false
@@ -105,7 +113,7 @@ jobs:
       contents: read
       actions: read
     outputs:
-      publiable: ${{ steps.collecte.outputs.publiable }}
+      arret: ${{ steps.collecte.outputs.arret }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -248,11 +256,186 @@ jobs:
           # above; a trial's is measured on the same day).
           DATE: ${{ needs.jour.outputs.date }}
         run: |
-          args=(--travail travail --veille veille --conteneur knot --date "$DATE")
+          args=(--tranche 1 --travail travail --veille veille --conteneur knot --date "$DATE")
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
-          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 20 --fin-reprises-minutes 45 --fin-controles-minutes 48); fi
+          # A half's time limits, from its job's start: its first pass (about 85 minutes on day 3), its attempts, its
+          # controls; a trial's are shorter.
+          if [ "$ESSAI" = "true" ]; then
+            args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10 --fin-reprises-minutes 18 --fin-controles-minutes 20)
+          else
+            args+=(--echeance-minutes 115 --fin-reprises-minutes 135 --fin-controles-minutes 145)
+          fi
+          set +e
+          npx tsx pipeline/cli/collecter.ts "${args[@]}"
+          code=$?
+          set -e
+          if [ -f travail/resume-tranche-1.md ]; then cat travail/resume-tranche-1.md >> "$GITHUB_STEP_SUMMARY"; fi
+          case "$code" in
+            0) echo "arret=false" >> "$GITHUB_OUTPUT" ;;
+            2) echo "arret=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$code" ;;
+          esac
+      - if: always()
+        run: |
+          # The resolver's last lines, for a failure: never its questions nor a server's address (the log is public).
+          docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
+          docker rm -f knot > /dev/null 2>&1 || true
+      # What the next jobs need, kept one day in the run's artifacts (never published: they hold RIS's answers): the
+      # day's context, the sources (never downloaded twice a day) and the first half's measurement.
+      - if: steps.collecte.outputs.arret != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tranche-1
+          path: |
+            travail/jour.json
+            travail/tranche-1.json.gz
+            travail/resume-tranche-1.md
+            travail/sources
+          retention-days: 1
+          if-no-files-found: error
+
+  # The second half, after the first (never at the same time), from the first's sources and context; never after an
+  # emergency stop (the day is lost: the assembly keeps its diagnosis).
+  mesurer-2:
+    needs: [jour, mesurer-1]
+    if: needs.mesurer-1.outputs.arret == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 25 || 165 }}
+    permissions:
+      contents: read
+    outputs:
+      arret: ${{ steps.collecte.outputs.arret }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - id: image
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/knot-resolver
+          key: knot-resolver-${{ env.RESOLVEUR }}
+      - if: steps.image.outputs.cache-hit != 'true'
+        run: |
+          docker pull "$RESOLVEUR"
+          docker tag "$RESOLVEUR" knot-resolver:epingle
+          mkdir -p ~/knot-resolver
+          docker save knot-resolver:epingle -o ~/knot-resolver/image.tar
+          docker image inspect --format '{{.Id}}' knot-resolver:epingle > ~/knot-resolver/id
+      - if: steps.image.outputs.cache-hit == 'true'
+        run: |
+          docker load -i ~/knot-resolver/image.tar
+          test "$(docker image inspect --format '{{.Id}}' knot-resolver:epingle)" = "$(cat ~/knot-resolver/id)"
+      - run: |
+          docker run -d --name knot --network host --log-opt max-size=200m --log-opt max-file=5 \
+            -v "$PWD/pipeline/knot/config.yaml:/etc/knot-resolver/config.yaml:ro" knot-resolver:epingle
+          npx tsx pipeline/cli/attendre-resolveur.ts 127.0.0.1:5300
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tranche-1
+          path: travail
+      - id: collecte
+        env:
+          DATE: ${{ needs.jour.outputs.date }}
+        run: |
+          args=(--tranche 2 --travail travail --conteneur knot --date "$DATE")
+          if [ "$ESSAI" = "true" ]; then
+            args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10 --fin-reprises-minutes 18 --fin-controles-minutes 20)
+          else
+            args+=(--echeance-minutes 115 --fin-reprises-minutes 135 --fin-controles-minutes 145)
+          fi
+          set +e
+          npx tsx pipeline/cli/collecter.ts "${args[@]}"
+          code=$?
+          set -e
+          if [ -f travail/resume-tranche-2.md ]; then cat travail/resume-tranche-2.md >> "$GITHUB_STEP_SUMMARY"; fi
+          case "$code" in
+            0) echo "arret=false" >> "$GITHUB_OUTPUT" ;;
+            2) echo "arret=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$code" ;;
+          esac
+      - if: always()
+        run: |
+          # The resolver's last lines, for a failure: never its questions nor a server's address (the log is public).
+          docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
+          docker rm -f knot > /dev/null 2>&1 || true
+      - if: steps.collecte.outputs.arret != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tranche-2
+          path: |
+            travail/tranche-2.json.gz
+            travail/resume-tranche-2.md
+          retention-days: 1
+          if-no-files-found: error
+
+  # The day from its two halves (or from a first half stopped by the emergency stop, for its diagnosis): the guards on
+  # the whole day, the files, tomorrow's yesterday. No DNS question is asked here.
+  assembler:
+    needs: [jour, mesurer-1, mesurer-2]
+    if: always() && needs.mesurer-1.result == 'success' && (needs.mesurer-2.result == 'success' || (needs.mesurer-2.result == 'skipped' && needs.mesurer-1.outputs.arret == 'true'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 10 || 30 }}
+    permissions:
+      contents: read
+    outputs:
+      publiable: ${{ steps.collecte.outputs.publiable }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tranche-1
+          path: travail
+      - if: needs.mesurer-2.result == 'success'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tranche-2
+          path: travail
+      # Yesterday: its observations (the Actions cache, never published), and the published state.
+      - if: env.ESSAI != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: veille
+          key: collecte-veille-${{ needs.jour.outputs.date }}
+          restore-keys: collecte-veille-
+      - run: |
+          # Exit code 2: the data branch does not exist yet (the first day). Any other error stops here: it is never read
+          # as « no data yet », which would publish a first state over the published one.
+          set +e
+          git ls-remote --exit-code --heads origin donnees > /dev/null
+          code=$?
+          set -e
+          case "$code" in
+            0)
+              git fetch --depth=1 origin donnees
+              git worktree add --detach publie FETCH_HEAD
+              ;;
+            2) ;;
+            *)
+              echo "collecte : la branche donnees n'a pas pu être lue (code $code)" >&2
+              exit 1
+              ;;
+          esac
+      - id: collecte
+        env:
+          DATE: ${{ needs.jour.outputs.date }}
+        run: |
+          args=(--assembler --travail travail --veille veille --date "$DATE")
+          if [ -d publie ]; then args+=(--donnees publie); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI"); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"
@@ -265,11 +448,6 @@ jobs:
             2) echo "publiable=false" >> "$GITHUB_OUTPUT" ;;
             *) exit "$code" ;;
           esac
-      - if: always()
-        run: |
-          # The resolver's last lines, for a failure: never its questions nor a server's address (the log is public).
-          docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
-          docker rm -f knot > /dev/null 2>&1 || true
 
       # The artifact also keeps the day's failing domains (diagnostic.json: what the published files already say of them,
       # with the layer that failed), for the diagnosis of a degraded day; the publication copies « sortie » only.
@@ -301,8 +479,8 @@ jobs:
           key: collecte-veille-${{ needs.jour.outputs.date }}-${{ github.run_id }}
 
   publier:
-    needs: [jour, mesurer]
-    if: needs.mesurer.outputs.publiable == 'true' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.essai != 'aucun')
+    needs: [jour, assembler]
+    if: needs.assembler.outputs.publiable == 'true' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.essai != 'aucun')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -387,8 +565,8 @@ jobs:
           gh release upload donnees-courant ../collecte/ouvertes/* --clobber
 
   alerter:
-    needs: [jour, mesurer, publier]
-    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.jour.result == 'failure' || needs.mesurer.result == 'failure' || needs.mesurer.result == 'cancelled' || needs.mesurer.outputs.publiable == 'false' || needs.publier.result == 'failure' || needs.publier.result == 'cancelled')
+    needs: [jour, mesurer-1, mesurer-2, assembler, publier]
+    if: always() && github.event_name != 'pull_request' && needs.jour.outputs.faite != 'true' && (needs.jour.result == 'failure' || needs.mesurer-1.result == 'failure' || needs.mesurer-1.result == 'cancelled' || needs.mesurer-2.result == 'failure' || needs.mesurer-2.result == 'cancelled' || needs.assembler.result == 'failure' || needs.assembler.result == 'cancelled' || needs.assembler.outputs.publiable == 'false' || needs.publier.result == 'failure' || needs.publier.result == 'cancelled')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

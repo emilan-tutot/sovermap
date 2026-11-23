@@ -5,8 +5,9 @@
 /** The day's collections are scheduled at these minutes of the UTC day (collecte.yml): 03:17, 09:47 and 15:17. */
 export const DEPARTS_MINUTES = [3 * 60 + 17, 9 * 60 + 47, 15 * 60 + 17];
 /**
- * A trial lasts about 25 minutes, 60 at worst (its limit, collecte.yml): none starts within 60 minutes before a
- * scheduled collection, so that it ends before it.
+ * A trial lasts about 35 minutes, 60 at worst (the limits of its three jobs add up to 60, collecte.yml; brief B.8):
+ * none starts within 60 minutes before a scheduled collection, so that it ends before it (the day's collection also
+ * waits 15 minutes at most for a trial that still measures).
  */
 export const MARGE_AVANT_MINUTES = 60;
 /**
