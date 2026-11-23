@@ -7,6 +7,7 @@
 import { parquetMetadata, parquetReadObjects } from "hyparquet";
 import type { AsyncBuffer, ColumnMetaData, FileMetaData } from "hyparquet";
 import { zstdDecompressSync } from "node:zlib";
+import { type Ecarts, garderTexteLibre } from "./personnelles";
 import type { Reponse } from "./sources";
 
 export const JEU = "AgentPublic/local-administrations-directory";
@@ -194,21 +195,45 @@ export const TYPE_DEPARTEMENT = "cg (Collectivité locale)";
 export const TYPE_REGION = "cr (Collectivité locale)";
 export const TYPES_GUICHET: readonly string[] = [TYPE_MAIRIE, TYPE_GROUPEMENT, TYPE_DEPARTEMENT, TYPE_REGION];
 
-/** One office from the values of its row (the useful columns only); null without a name, or of another kind. */
-export function guichetDe(ligne: Partial<Record<Colonne, unknown>>): Guichet | null {
-  const nom = texte(ligne.name);
+/** How an office is named when its own name holds a personal datum (P13): by its kind, then its commune. */
+const NOM_DU_TYPE: Readonly<Record<string, string>> = {
+  [TYPE_MAIRIE]: "Mairie",
+  [TYPE_GROUPEMENT]: "Groupement de communes",
+  [TYPE_DEPARTEMENT]: "Conseil départemental",
+  [TYPE_REGION]: "Conseil régional",
+};
+
+/** « Mairie de Lyon », « Mairie d'Arles »: the name an office gets when its own cannot be kept. */
+export function nomDeRemplacement(type: string, commune: string | null): string {
+  const genre = NOM_DU_TYPE[type] ?? "Guichet";
+  if (commune === null) return genre;
+  // An initial vowel elides « de » (« d'Arles ») ; an initial h is left as « de » (it may be aspirated).
+  return /^[AEIOUYÂÉÈÊËÎÏÔÛÙŒ]/u.test(commune) ? `${genre} d'${commune}` : `${genre} de ${commune}`;
+}
+
+/**
+ * One office from the values of its row (the useful columns only); null without a name, or of another kind. Its free
+ * text (its name, its commune) passes the control of personal data (the owner's answer to point 13, P13): a name that
+ * holds an e-mail address, a phone or a person's name is never kept, and counted in `ecarts`; the office is then named
+ * by its kind and its commune.
+ */
+export function guichetDe(ligne: Partial<Record<Colonne, unknown>>, ecarts: Ecarts = {}): Guichet | null {
+  const brut = texte(ligne.name);
   const type = texte(ligne.types, 120);
-  if (nom === null || type === null || !TYPES_GUICHET.includes(type)) return null;
+  if (brut === null || type === null || !TYPES_GUICHET.includes(type)) return null;
   const siren = texte(ligne.siren, 20);
   const siret = texte(ligne.siret, 20);
   const modification = texte(ligne.modification_date, 40);
+  const lieu = lieuDe(ligne.addresses);
+  const commune = garderTexteLibre(lieu.commune, "annuaire-local", ecarts);
   return {
-    nom,
+    nom: garderTexteLibre(brut, "annuaire-local", ecarts) ?? nomDeRemplacement(type, commune),
     type,
     hotes: hotesDe(ligne.urls),
     siren: siren !== null && /^\d{9}$/.test(siren) ? siren : null,
     siret: siret !== null && /^\d{14}$/.test(siret) ? siret : null,
-    ...lieuDe(ligne.addresses),
+    commune,
+    codePostal: lieu.codePostal,
     modification: modification !== null && /^\d{4}-\d{2}-\d{2}/.test(modification) ? modification.slice(0, 10) : null,
   };
 }
@@ -217,11 +242,13 @@ const COMPRESSEURS = { ZSTD: (entree: Uint8Array) => new Uint8Array(zstdDecompre
 
 /**
  * Reads one file of the copy: its footer, then each useful column on its own; returns its offices of the kinds kept,
- * and the number of the others (another kind, or none), never copied.
+ * and the number of the others (another kind, or none), never copied. The free text left out (P13) is counted in
+ * `ecarts`.
  */
 export async function lireFichier(
   obtenir: Obtenir,
   fichier: FichierCopie,
+  ecarts: Ecarts = {},
 ): Promise<{ guichets: Guichet[]; autres: number }> {
   const adresse = `https://huggingface.co/datasets/${JEU}/resolve/${fichier.commit}/${fichier.chemin}`;
   const lire = async (debut: number, fin: number): Promise<ArrayBuffer> => {
@@ -258,7 +285,7 @@ export async function lireFichier(
   for (let i = 0; i < total; i += 1) {
     const ligne: Partial<Record<Colonne, unknown>> = {};
     for (const colonne of COLONNES) ligne[colonne] = colonnes.get(colonne)?.[i];
-    const g = guichetDe(ligne);
+    const g = guichetDe(ligne, ecarts);
     if (g !== null) guichets.push(g);
     else if (texte(ligne.name) !== null) autres += 1;
   }

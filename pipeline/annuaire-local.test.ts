@@ -14,11 +14,13 @@ import {
   lignesGuichets,
   lireCopieAnnuaire,
   memeCopie,
+  nomDeRemplacement,
   type Obtenir,
   plagesPermises,
   sansStatistiques,
   TYPES_GUICHET,
 } from "./annuaire-local";
+import type { Ecarts } from "./personnelles";
 
 const SHA = "a".repeat(64);
 const COMMIT = "b".repeat(40);
@@ -176,6 +178,28 @@ describe("the local directory, read by ranges (C.6)", () => {
       codePostal: null,
     });
     expect(lieuDe("pas du JSON")).toEqual({ commune: null, codePostal: null });
+  });
+
+  it("never keeps an e-mail, a phone or a person's name in an office's name or commune: it is named by its kind (P13)", () => {
+    // The examples are put together at run time, so that scan:prive finds none in the repository.
+    const courriel = ["accueil", "mairie.example"].join("@");
+    const telephone = ["01", "23", "45", "67", "89"].join(" ");
+    const adresses = (commune: string) => JSON.stringify([{ commune, code_postal: "99999" }]);
+    const ecarts: Ecarts = {};
+    expect(
+      guichetDe({ name: "Permanence de M. Exemple", types: "mairie", addresses: adresses("Exemple-sur-Mer") }, ecarts),
+    ).toMatchObject({ nom: "Mairie d'Exemple-sur-Mer", commune: "Exemple-sur-Mer" });
+    expect(
+      guichetDe({ name: `Accueil (${courriel})`, types: "epci", addresses: adresses("Bourg-Exemple") }, ecarts)?.nom,
+    ).toBe("Groupement de communes de Bourg-Exemple");
+    expect(guichetDe({ name: `Mairie annexe ${telephone}`, types: "mairie" }, ecarts)?.nom).toBe("Mairie");
+    // An office's usual name passes unchanged: « M. le maire » names no person.
+    expect(guichetDe({ name: "Cabinet de M. le maire", types: "mairie" }, ecarts)?.nom).toBe("Cabinet de M. le maire");
+    // The commune too: one that holds a person's name is left out, never copied.
+    expect(guichetDe({ name: "Mairie", types: "mairie", addresses: adresses("Chez Mme Exemple") }, ecarts)?.commune).toBeNull();
+    expect(ecarts).toEqual({ "annuaire-local": { "nom de personne": 2, "adresse e-mail": 1, téléphone: 1 } });
+    expect(nomDeRemplacement("cg (Collectivité locale)", "Ain-Exemple")).toBe("Conseil départemental d'Ain-Exemple");
+    expect(nomDeRemplacement("cr (Collectivité locale)", null)).toBe("Conseil régional");
   });
 
   it("builds an office from the useful columns of its row", () => {

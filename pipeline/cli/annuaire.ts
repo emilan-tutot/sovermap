@@ -21,6 +21,7 @@ import {
   lireFichier,
   memeCopie,
 } from "../annuaire-local";
+import type { Ecarts } from "../personnelles";
 import { agentUtilisateur, Telechargeur } from "../sources";
 
 // Run from the repository's root, as the collection is.
@@ -57,14 +58,22 @@ if (!o.essai && memeCopie(fichiers, publiee)) {
   dire("nouvelle", "false");
 } else {
   const guichets: Guichet[] = [];
+  // The free text left out (P13): counted by kind of personal datum, never copied, never printed (the log is public).
+  const ecarts: Ecarts = {};
   for (const fichier of fichiers) {
-    const { guichets: lus, autres } = await lireFichier(obtenir, fichier);
+    const { guichets: lus, autres } = await lireFichier(obtenir, fichier, ecarts);
     guichets.push(...lus);
     console.log(
       `annuaire : ${fichier.chemin} (copie du ${fichier.date.slice(0, 10)}) : ${lus.length} guichets gardés ; ` +
         `${autres} d'un autre type (ni mairie, ni EPCI, ni conseil départemental ou régional), jamais copiés`,
     );
   }
+  const ecartes = Object.values(ecarts).flatMap((m) => Object.entries(m));
+  console.log(
+    ecartes.length === 0
+      ? "annuaire : aucun texte libre écarté (P13)."
+      : `annuaire : textes libres écartés (P13 : le guichet est nommé par sa nature et sa commune) : ${ecartes.map(([motif, n]) => `${n} pour ${motif}`).join(", ")}.`,
+  );
   const ecart = ecartVolume(guichets.length, publiee);
   if (ecart !== null && (guichets.length === 0 || !o["accepter-ecart"])) {
     throw new Error(
@@ -79,11 +88,12 @@ if (!o.essai && memeCopie(fichiers, publiee)) {
     const dossier = path.join(o.sortie, "territoires", "annuaire");
     mkdirSync(dossier, { recursive: true });
     writeFileSync(path.join(dossier, "guichets.jsonl"), lignesGuichets(guichets));
-    const copie: CopieAnnuaire = {
+    const copie: CopieAnnuaire & { ecarts: Ecarts } = {
       fichiers,
       guichets: guichets.length,
       etat: dateEtat(guichets),
       lue: new Date().toISOString(),
+      ecarts,
     };
     writeFileSync(path.join(dossier, "copie.json"), `${JSON.stringify(copie, null, 2)}\n`);
     console.log(`annuaire : ${guichets.length} guichets écrits.`);
