@@ -231,6 +231,11 @@
   }
 
   @media (max-width: 47.99rem) {
+    /* The wordmark stays at the top when the menu opens below « Menu ». */
+    .entete {
+      align-items: flex-start;
+    }
+
     .navigation-barre {
       display: none;
     }
