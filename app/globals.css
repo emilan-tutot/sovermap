@@ -66,8 +66,12 @@
     text-wrap: pretty;
   }
 
+  /* Tailwind's preflight sets « text-decoration: inherit » on links: the underline is written here, so that a link of
+     the text's own colour can be told from the words around it (WCAG 1.4.1). The navigation and the buttons keep
+     their own rules (« text-decoration: none »). */
   a {
     color: inherit;
+    text-decoration-line: underline;
     text-underline-offset: 0.2em;
     text-decoration-thickness: 1px;
   }

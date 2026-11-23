@@ -164,6 +164,22 @@ test("clavier : le lien d'évitement d'abord, puis chaque élément atteint mont
   }
 });
 
+test("accessibilité : un lien dans le texte se voit sans la couleur, souligné (WCAG 1.4.1)", async ({ page }) => {
+  // Tailwind's preflight sets « text-decoration: inherit » on links: a link in a paragraph, of the text's own colour,
+  // could not be told from the words around it. The navigation and the buttons keep their own look.
+  for (const [chemin, lien] of [
+    ["/methode", "Pourquoi ça compte"],
+    ["/", fr.atlas.limites.lien],
+    ["/radiographie/relais.example", fr.radiographie.limitesLien],
+  ] as const) {
+    await page.goto(chemin);
+    const a = page.locator("main p a", { hasText: lien }).first();
+    await expect(a, chemin).toHaveCSS("text-decoration-line", "underline");
+  }
+  await page.goto("/");
+  await expect(page.locator(".navigation a").first()).toHaveCSS("text-decoration-line", "none");
+});
+
 test("partage : chaque type de page annonce son image, un fichier servi tel quel", async ({ page, request }) => {
   const TYPES: [string, string][] = [
     ["/", "accueil"],
