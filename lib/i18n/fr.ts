@@ -491,6 +491,13 @@ export const fr = {
     erreur: "La recherche n’a pas pu se charger. Réessayez plus tard.",
     nombre: (n: number) => (n === 0 ? "Aucun résultat" : n === 1 ? "1 résultat" : `${n}${NBSP}résultats`),
     categories: { d: "Domaine", s: "Exploitant", m: "Ministère ou service de l’État", p: "Pays du siège" },
+    /** An operator that is a public body: its nature, never « Exploitant » alone (D.3, correction 1). */
+    natures: {
+      administration: "Administration de l’État",
+      gip: "Groupement d’intérêt public",
+      etablissement: "Établissement public",
+      securiteSociale: "Organisme de sécurité sociale",
+    },
     categorieEtat: `Domaine, périmètre «${NBSP}État${NBSP}»`,
   },
 } as const;

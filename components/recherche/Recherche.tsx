@@ -67,7 +67,7 @@ export function Recherche() {
               <Link href={r.adresse} prefetch={false} className={r.type === "d" ? "valeur" : undefined}>
                 {r.libelle}
               </Link>
-              <span>{r.etat ? t.categorieEtat : t.categories[r.type]}</span>
+              <span>{r.etat ? t.categorieEtat : r.nature !== null ? t.natures[r.nature] : t.categories[r.type]}</span>
             </li>
           ))}
         </ul>

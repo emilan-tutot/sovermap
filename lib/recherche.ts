@@ -1,11 +1,21 @@
 // The search (D.2, R4): one index of the day's domains, companies, ministries and countries, loaded whole at its first
 // use (never piecemeal, which would tell what is typed), searched in the browser. The beginnings of words first, then,
 // from 3 characters only, the inside of words; each result with its real category (a public body is never « Société »:
-// its category is the one the index gives). Pure: shared by the server, which builds the index, and the browser.
+// its category is its nature, which the index gives: D.3, correction 1). Pure: shared by the server, which builds the
+// index, and the browser.
+import { type Nature, NATURES } from "./donnees/nature";
 
-/** d: a registered domain (« 1 »: of the « État » perimeter); s: a company; m: a ministry; p: a country. */
-export type Entree = ["d", string, 0 | 1] | ["s", string, string] | ["m", string, string] | ["p", string, string];
-export type Resultat = { type: Entree[0]; libelle: string; adresse: string; etat: boolean };
+/**
+ * d: a registered domain (« 1 »: of the « État » perimeter); s: an operator, with its nature when it is a public body;
+ * m: a ministry; p: a country.
+ */
+export type Entree =
+  | ["d", string, 0 | 1]
+  | ["s", string, string]
+  | ["s", string, string, Nature]
+  | ["m", string, string]
+  | ["p", string, string];
+export type Resultat = { type: Entree[0]; libelle: string; adresse: string; etat: boolean; nature: Nature | null };
 
 /** A text, comparable: no accents, no case, œ and æ spelt out. */
 export function comparable(texte: string): string {
@@ -83,6 +93,7 @@ export function chercher(entrees: readonly Entree[], brute: string, limite = 20)
     libelle: e[1],
     adresse: adresseDe(e),
     etat: e[0] === "d" && e[2] === 1,
+    nature: e[0] === "s" ? (e[3] ?? null) : null,
   }));
 }
 
@@ -92,9 +103,11 @@ export function lireIndexRecherche(valeur: unknown): Entree[] {
     return [];
   const sur = (v: unknown, max: number) => typeof v === "string" && v.length > 0 && v.length <= max;
   return (valeur as { entrees: unknown[] }).entrees.filter((e): e is Entree => {
-    if (!Array.isArray(e) || e.length !== 3) return false;
-    const [type, libelle, x] = e as unknown[];
+    if (!Array.isArray(e) || (e.length !== 3 && e.length !== 4)) return false;
+    const [type, libelle, x, nature] = e as unknown[];
     if (!sur(libelle, 253)) return false;
+    // A fourth item only for an operator, and only a known nature.
+    if (e.length === 4 && (type !== "s" || !(NATURES as readonly unknown[]).includes(nature))) return false;
     if (type === "d") return (x === 0 || x === 1) && /^[a-z0-9_.-]+$/.test(libelle as string);
     return (type === "s" || type === "m" || type === "p") && sur(x, 100) && /^[a-z0-9-]+$/.test(x as string);
   });

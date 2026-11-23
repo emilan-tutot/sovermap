@@ -4,6 +4,7 @@
 import { lireIndexDomaines } from "@/lib/donnees/domaines";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
+import { natureDe } from "@/lib/donnees/nature";
 import { lireIndexPays, slugDuCode } from "@/lib/donnees/pays";
 import { lireIndexSocietes, nomPays } from "@/lib/donnees/radiographie";
 import { lireDomainesSociete } from "@/lib/donnees/societes";
@@ -60,7 +61,11 @@ export async function GET(): Promise<Response> {
   }
   const entrees: Entree[] = [
     ...ministeres.map((m): Entree => ["m", m.nom, m.slug]),
-    ...[...societes].map(([cle, s]): Entree => ["s", s.nom, cle]),
+    // A public body comes with its nature, never as a company (D.3, correction 1).
+    ...[...societes].map(([cle, s]): Entree => {
+      const nature = natureDe(s.controle);
+      return nature === null ? ["s", s.nom, cle] : ["s", s.nom, cle, nature];
+    }),
     ...[...pays.keys()].flatMap((code): Entree[] => {
       const nom = nomPays(code);
       const slug = slugDuCode(code);
