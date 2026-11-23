@@ -1122,6 +1122,74 @@
           "lu_le": "2026-11-22"
         }
       ]
+    },
+    "1712": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS1712 FR-RENATER-ENST, titulaire Renater, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1712 attribué le 01/12/1991, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1712 FR-RENATER-ENST a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà relié(s) à renater."
+    },
+    "2269": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2269 FR-U-PARISSUD-ORSAY, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2269 attribué le 01/09/1993, pays d'enregistrement EU",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2269 FR-U-PARISSUD-ORSAY a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà relié(s) à renater."
+    },
+    "2457": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2457 FR-RAIMU-2, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2457 attribué le 01/09/1993, pays d'enregistrement EU",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2457 FR-RAIMU-2 a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà relié(s) à renater."
+    },
+    "2280": {
+      "societe": "orange",
+      "titulaire_registre": "Orange S.A.",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2280 OCBHoney, titulaire Orange S.A., pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2280 attribué le 01/09/1993, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2280 OCBHoney a pour organisation ORG-FT2-RIPE, « Orange S.A. », LIR, FR, la même que AS3215, déjà relié(s) à orange."
     }
   }
 }
