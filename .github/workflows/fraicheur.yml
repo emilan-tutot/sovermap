@@ -59,3 +59,77 @@ jobs:
           elif [ -n "$n" ]; then
             gh issue close "$n" --repo "$REPO" --comment "La collecte est de nouveau à jour : la dernière date de $fin."
           fi
+
+  # GitHub disables the scheduled workflows of a public repository after 60 days without activity (the owner's answer
+  # to point 13, § 8): every 6 hours, this job enables again those GitHub disabled for inactivity (the collection does
+  # the same each day), never one disabled by hand. It says so in the issue « Workflow planifié désactivé »: when one
+  # cannot be enabled (the gesture to make), and when one was (the gesture to receive its e-mails again); the issue
+  # closes once every one is active. Its limit (README): GitHub disables them all at once, this job included; it only
+  # helps when one of them still runs, or is enabled again by hand.
+  entretien:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          titre="Workflow planifié désactivé"
+          echec=""
+          reactives=""
+          illisibles=""
+          for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do
+            etat=$(gh api "repos/$REPO/actions/workflows/$fichier" --jq .state 2> /dev/null || echo "illisible")
+            case "$etat" in
+              active)
+                # Nothing to do: an enable call would make the robot the recipient of the scheduled runs' e-mails.
+                :
+                ;;
+              disabled_inactivity)
+                echo "$fichier : désactivé faute d'activité ; réactivation." >&2
+                if gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable" > /dev/null; then
+                  reactives="$reactives $fichier"
+                else
+                  echec="$echec $fichier"
+                fi
+                ;;
+              disabled_manually)
+                # Disabled by hand: a decision (the collection's politeness lever, point 17, § 3), never undone here.
+                echo "$fichier : désactivé à la main ; laissé tel quel." >&2
+                ;;
+              *)
+                # An error of GitHub's API, never a sign of a disabled workflow: a warning, read again in 6 hours.
+                illisibles="$illisibles $fichier"
+                echo "::warning::$fichier : état illisible ($etat), relu dans 6 heures."
+                ;;
+            esac
+          done
+          # A list that cannot be read is an error of GitHub's API: nothing opened nor closed this time (never a second
+          # issue), read again in 6 hours; a workflow that could not be enabled still turns the run red.
+          if ! n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty"); then
+            echo "::warning::La liste des issues n'a pas pu être lue ; rien n'est ouvert ni fermé ce passage-ci (relu dans 6 heures)."
+            if [ -n "$echec" ]; then exit 1; fi
+            exit 0
+          fi
+          if [ -n "$echec" ] || [ -n "$reactives" ]; then
+            {
+              if [ -n "$echec" ]; then
+                echo "Ces workflows planifiés n'ont pas pu être réactivés :$echec."
+                echo
+                echo "Le geste : Actions › le workflow › « Enable workflow »."
+              fi
+              if [ -n "$reactives" ]; then
+                echo "Ces workflows planifiés, coupés par GitHub faute d'activité, ont été réactivés :$reactives."
+                echo
+                echo "GitHub peut désormais envoyer les e-mails de leurs exécutions planifiées au robot qui les a réactivés. Pour les recevoir de nouveau : Actions › le workflow › « … » › « Disable workflow », puis « Enable workflow »."
+              fi
+            } > corps.md
+            if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
+            if [ -n "$echec" ]; then exit 1; fi
+          elif [ -n "$n" ] && [ -z "$illisibles" ]; then
+            gh issue close "$n" --repo "$REPO" --comment "Les quatre workflows planifiés sont de nouveau actifs (ou désactivés à la main, à dessein)." || echo "::warning::L'issue n° $n n'a pas pu être fermée (relu dans 6 heures)."
+          fi
+          echo "Workflows planifiés vérifiés : collecte.yml, fraicheur.yml, archives.yml, copies.yml (ceux désactivés à la main sont laissés)."

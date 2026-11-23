@@ -1,6 +1,8 @@
 // Tests of the failures' diagnosis: made-up records, documentation names and AS numbers only (RFC 2606, RFC 5398).
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { diagnosticDesEchecs } from "./diagnostic";
+import { cheminDiagnostic, diagnosticDesEchecs, FICHIER_DIAGNOSTIC } from "./diagnostic";
 import type { EnregistrementDomaine, EnregistrementNom, Etat, Hote } from "./publication";
 
 const nom = (n: string, d: string, code: string | null): EnregistrementNom => ({
@@ -90,19 +92,69 @@ describe("diagnosticDesEchecs", () => {
         nom("www.sain.example", "sain.example", null),
       ],
     );
+    const sans = { confirme: false, inacheve: false };
     expect(diagnosticDesEchecs(jour)).toEqual([
-      { domaine: "a.example", zone: "TIMEOUT", messagerie: false, nomWeb: "www.a.example", web: null, serveursDeNoms: [] },
-      { domaine: "b.example", zone: null, messagerie: true, nomWeb: "www.b.example", web: null, serveursDeNoms: [] },
+      { domaine: "a.example", zone: "TIMEOUT", messagerie: false, nomWeb: "www.a.example", web: null, ...sans, serveursDeNoms: [] },
+      { domaine: "b.example", zone: null, messagerie: true, nomWeb: "www.b.example", web: null, ...sans, serveursDeNoms: [] },
       {
         domaine: "c.example",
         zone: null,
         messagerie: false,
         nomWeb: "www.c.example",
         web: "SERVFAIL",
+        ...sans,
         // One line per server; its operators without repeats.
         serveursDeNoms: [{ hote: "ns1.host.example", exploitants: ["hebergeur"] }],
       },
     ]);
+  });
+
+  it("says which failures Quad9 shared, as the guard counts them, and which domains a stop left unfinished", () => {
+    const confirme = (n: EnregistrementNom): EnregistrementNom => ({ ...n, echec: { code: "SERVFAIL", confirmePar: "quad9" } });
+    const zoneConfirmee = domaine("z.example", { zone: "SERVFAIL" });
+    zoneConfirmee.zone.echec = { code: "SERVFAIL", confirmePar: "quad9" };
+    const jour = etat(
+      [zoneConfirmee, domaine("w.example"), domaine("m.example", { mx: true }), domaine("i.example"), domaine("n.example")],
+      [
+        nom("www.z.example", "z.example", null),
+        confirme(nom("www.w.example", "w.example", "SERVFAIL")),
+        nom("www.m.example", "m.example", null),
+        nom("www.i.example", "i.example", "ERREUR"),
+        nom("www.n.example", "n.example", "SERVFAIL"),
+      ],
+    );
+    const lignes = diagnosticDesEchecs(jour, {
+      pannesMx: new Set(["m.example"]),
+      inacheves: new Set(["i.example"]),
+      demandes: null,
+    });
+    expect(lignes.map((l) => [l.domaine, l.confirme, l.inacheve])).toEqual([
+      ["i.example", false, true],
+      ["m.example", true, false],
+      ["n.example", false, false],
+      ["w.example", true, false],
+      ["z.example", true, false],
+    ]);
+    // When the asked domains are known: a failure Quad9 was not asked about is « not asked » (null), never « not
+    // confirmed » (false); a shared failure stays confirmed.
+    const demandes = new Set(["m.example", "w.example", "z.example", "i.example"]);
+    const suivis = diagnosticDesEchecs(jour, { pannesMx: new Set(["m.example"]), inacheves: new Set(), demandes });
+    expect(suivis.map((l) => [l.domaine, l.confirme])).toEqual([
+      ["i.example", false],
+      ["m.example", true],
+      ["n.example", null],
+      ["w.example", true],
+      ["z.example", true],
+    ]);
+  });
+
+  it("is written in the work folder itself, never in « sortie » (which « donnees » and the release take)", () => {
+    expect(FICHIER_DIAGNOSTIC).toBe("diagnostic.json");
+    expect(cheminDiagnostic(path.join("travail"))).toBe(path.join("travail", "diagnostic.json"));
+    // The collection writes it there, and nowhere else.
+    const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
+    expect(collecter).toContain("cheminDiagnostic(travail),");
+    expect(collecter).not.toMatch(/sortie[^\n]*diagnostic|FICHIER_DIAGNOSTIC/);
   });
 
   it("names an operator by its proof when no company is established", () => {

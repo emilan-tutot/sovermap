@@ -1,6 +1,6 @@
 // Tests of the measurement and of its scheduling: a simulated resolver, a fake clock, documentation names and
 // addresses only (RFC 2606, RFC 5737, RFC 3849).
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ClientParZone, collecter, PARENT_EN_VOL, POLITESSE } from "./collecte";
 import type { ClientDns, Reponse } from "./dns-bas";
 import type { Horloge } from "./politesse";
@@ -184,12 +184,36 @@ describe("the scheduling of a collection", () => {
     const passee = await mesurer(Date.now());
     expect(passee.resultat.noms.get("www.sansmail.example")).toMatchObject({ etat: "echec", echec: "SERVFAIL" });
     expect(passee.resultat.essais.get("www.sansmail.example")).toBe(1);
-    expect(passee.suivis.some((l) => /^reprise 1 arrêtée à l'heure limite : \d+ tâches non reprises$/.test(l))).toBe(
-      true,
-    );
+    expect(passee.suivis.some((l) => /^reprise 1 arrêtée à l'heure limite : \d+ tâches laissées$/.test(l))).toBe(true);
     const lointaine = await mesurer(Date.now() + 3_600_000);
     expect(lointaine.resultat.essais.get("www.sansmail.example")).toBe(3);
     expect(lointaine.suivis.some((l) => l.includes("arrêtée à l'heure limite"))).toBe(false);
+  });
+
+  it("opens no domain of the first pass after its end time, when one is given (a trial's): what is left is not measured", async () => {
+    const mesurer = async (finPremierePasse?: number) => {
+      const suivis: string[] = [];
+      const r = new ResolveurSimule(ZONE, zoneDe);
+      const resultat = await collecter(noms, r, {
+        ...POLITESSE,
+        zoneDe,
+        horloge: fausseHorloge(),
+        aleatoire: generateur(3),
+        ...(finPremierePasse === undefined ? {} : { finPremierePasse }),
+        suivi: (ligne) => suivis.push(ligne),
+      });
+      return { resultat, suivis };
+    };
+    const passee = await mesurer(Date.now());
+    expect(passee.resultat.domaines.size).toBe(0);
+    expect(passee.suivis.some((l) => /^première passe arrêtée à l'heure limite : \d+ tâches laissées$/.test(l))).toBe(
+      true,
+    );
+    for (const fin of [Date.now() + 3_600_000, undefined]) {
+      const entiere = await mesurer(fin);
+      expect(entiere.resultat.domaines.size).toBeGreaterThan(0);
+      expect(entiere.suivis.some((l) => l.includes("arrêtée à l'heure limite"))).toBe(false);
+    }
   });
 
   it("waits for the brake before every question, and before opening each domain", async () => {
@@ -1060,6 +1084,81 @@ describe("the scheduling of a collection", () => {
     expect(pendantPause).toBe(0);
     expect(lignes).toContain("reprise 1 sautée : arrêt d'urgence");
     expect(r.domaines.size).toBeLessThan(2_000);
+    // The domains under way at the stop are marked unfinished (the diagnosis and Quad9 leave them aside); each was
+    // opened (its zone's measurement ends, answered « ERREUR » without being asked).
+    expect(r.inacheves.size).toBeGreaterThan(0);
+    expect(r.inacheves.size).toBeLessThan(r.domaines.size);
+    for (const u of r.inacheves) expect(r.domaines.has(u)).toBe(true);
+  });
+
+  it("starts no pause after a trial's deadline, though the domains in flight end in failure past it", async () => {
+    // The wall clock jumps past the deadline at the first question of p3, with 24 domains in flight; every question
+    // fails after it, so that a count of breaches would bring a pause (the review of PR 25).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const fin = Date.now() + 3_600_000;
+      let saute = false;
+      const { r, lignes } = await collecteEnPanne(
+        domainesP(200),
+        (nom) => {
+          if (!saute && numero(nom) === 3) {
+            saute = true;
+            vi.setSystemTime(fin + 1);
+          }
+          return saute;
+        },
+        { enVol: 24, aleatoire: () => 0.999_999, finPremierePasse: fin },
+      );
+      expect(saute).toBe(true);
+      expect(r.arret).toBeNull();
+      expect(lignes.some((l) => l.startsWith("pause d'urgence"))).toBe(false);
+      expect(lignes.some((l) => /^première passe arrêtée à l'heure limite : [0-9]+ tâches laissées$/.test(l))).toBe(
+        true,
+      );
+      expect(r.domaines.size).toBeLessThanOrEqual(24);
+      expect(r.domaines.size + r.premierePasseCoupee).toBe(200);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens no domain after a trial's deadline, though its task was taken before it", async () => {
+    // The wall clock jumps past the deadline as p5's task, taken with 23 others, is about to open its domain (the brake
+    // is asked just before): p5 and the tasks after it never open (the review of PR 25: 507 domains opened past it).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const fin = Date.now() + 3_600_000;
+      /** The domains whose task asked the brake before the jump: the only ones that may open. */
+      const avant = new Set<string>();
+      let saute = false;
+      const { r } = await collecteEnPanne(domainesP(200), () => false, {
+        enVol: 24,
+        aleatoire: () => 0.999_999,
+        finPremierePasse: fin,
+        frein: async (nom, _zone, ouverture) => {
+          if (!ouverture || saute) return;
+          if (nom === "p5.example") {
+            saute = true;
+            vi.setSystemTime(fin + 1);
+          } else avant.add(nom);
+        },
+      });
+      expect(saute).toBe(true);
+      expect(r.domaines.size).toBeGreaterThan(0);
+      for (const d of r.domaines.keys()) expect(avant.has(d)).toBe(true);
+      expect(r.domaines.size + r.premierePasseCoupee).toBe(200);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("marks unfinished only the domains under way at the stop, never the one whose count brought it", async () => {
+    // One task at a time: at the stop, the only domain under way is the one that brought it, so none is unfinished
+    // (marking it, or every failing domain, would leave Quad9 nothing to confirm on a stopped day).
+    const { r } = await collecteEnPanne(domainesP(200), () => true, enOrdre);
+    expect(r.arret).not.toBeNull();
+    expect(r.domaines.size).toBeGreaterThan(0);
+    expect(r.inacheves.size).toBe(0);
   });
 
   it("only pauses for a short outage: the alert is lifted, and the collection goes to its end, retries included", async () => {
@@ -1077,6 +1176,7 @@ describe("the scheduling of a collection", () => {
     // The pause holds every question, those of the domains already open included.
     expect(pendantPause).toBe(0);
     expect(r.arret).toBeNull();
+    expect(r.inacheves.size).toBe(0);
     expect(r.domaines.size).toBe(2_000);
     expect([...r.noms.values()].filter((m) => m.etat === "echec")).toEqual([]);
   });

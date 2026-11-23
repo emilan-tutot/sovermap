@@ -1,0 +1,66 @@
+name: Copies épinglées
+
+# Once a month (the owner's answer to point 13, § 8): is a newer version out of a copy the collection pins, the Knot
+# Resolver image, the Public Suffix List or the INSEE's COG (scripts/copies-epinglees.ts; docs/sources.md, cards 12, 42
+# and 48)? When one is, the issue « Copie épinglée à renouveler » is opened, or commented when it is already open, with
+# the gesture. Each host's robots.txt is read first; one request per source and per month. Nothing is changed here: a
+# copy is renewed by a pull request, with its trial.
+
+on:
+  schedule:
+    - cron: "23 6 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: copies
+  cancel-in-progress: false
+
+jobs:
+  verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The script's exit: 0 every copy read is up to date, 3 a copy is to renew (even when another could not be read),
+      # 1 nothing to renew but a copy could not be read; anything else is a failure.
+      - id: verification
+        run: |
+          set +e
+          npx tsx scripts/copies-epinglees.ts > rapport.md
+          code=$?
+          set -e
+          cat rapport.md >> "$GITHUB_STEP_SUMMARY"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+      # Only this step holds the token: npm and the script never see it.
+      - if: steps.verification.outputs.code == '3'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          # The run's number, never its address (which names the account).
+          RUN: ${{ github.run_number }}
+        run: |
+          titre="Copie épinglée à renouveler"
+          { cat rapport.md; echo; echo "Exécution n° $RUN (Actions › Copies épinglées)."; } > corps.md
+          n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty")
+          if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
+      # Green only when every copy could be read: a copy that could not be read turns the run red, after the issue.
+      - env:
+          CODE: ${{ steps.verification.outputs.code }}
+        run: |
+          if [ "$CODE" = "0" ]; then exit 0; fi
+          if [ "$CODE" = "3" ] && ! grep -q "^Lectures impossibles" rapport.md; then exit 0; fi
+          echo "Copies épinglées : sortie $CODE (une copie n'a pas pu être lue, ou le script a échoué)." >&2
+          exit 1
