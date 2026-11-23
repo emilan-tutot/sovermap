@@ -1394,6 +1394,23 @@
         }
       ],
       "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS198682 NETIWAN-AS a pour organisation ORG-EFS19-RIPE, « Eurofiber France SAS », LIR, FR, la même que AS24935 et AS35625, déjà reliés à eurofiber-france."
+    },
+    "48703": {
+      "societe": "cnam",
+      "titulaire_registre": "CAISSE NATIONALE DE L'ASSURANCE MALADIE",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS48703 CNAM-AS, titulaire CAISSE NATIONALE DE L'ASSURANCE MALADIE, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS48703 attribué le 13/01/2009, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS48703 CNAM-AS a pour organisation ORG-CA957-RIPE, « CAISSE NATIONALE DE L'ASSURANCE MALADIE », LIR, FR. Un organisme public : décrit par sa nature, jamais comme une société."
     }
   }
 }

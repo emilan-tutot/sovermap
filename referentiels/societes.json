@@ -2101,6 +2101,31 @@
       ],
       "sources_mere": [],
       "note": "Maison mère attendue : Cloudflare, Inc. (États-Unis), d'après le nom seul. Aucune source primaire lisible ici : GLEIF n'a aucune fiche pour cette société (23/11/2026) ; l'annexe 21 du 10-K de Cloudflare, sur SEC EDGAR (fiche 36, en attente d'une adresse e-mail), la donnera au chantier 3. Le pilote du point de mesure (B.4, 23/11/2026) a trouvé ce réseau derrière 3 des 300 domaines tirés parmi ceux qui sont derrière un CDN."
+    },
+    "cnam": {
+      "nom": "Caisse nationale de l'assurance maladie (CNAM)",
+      "pays": "FR",
+      "mere": null,
+      "controle": "établissement public national à caractère administratif",
+      "sources": [
+        {
+          "titre": "API Recherche d'entreprises (fiche 32) : CAISSE NATIONALE DE L'ASSURANCE MALADIE (CNAM), SIREN 180035024, siège à Paris (75020), active, catégorie juridique 7389 (établissement public national à caractère administratif)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180035024",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Base du RIPE, fichier « organisation » du 23/11/2026 (fiche 22) : ORG-CA957-RIPE, CAISSE NATIONALE DE L'ASSURANCE MALADIE, LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "API Recherche d'entreprises (fiche 32) : catégorie juridique 7389, établissement public national à caractère administratif",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180035024",
+          "lu_le": "2026-11-23"
+        }
+      ]
     }
   }
 }
