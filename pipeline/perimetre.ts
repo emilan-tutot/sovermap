@@ -48,6 +48,19 @@ export type CopieListe = { date: string; csv: string };
 /** The démarches' addresses of an edition of the Observatoire (referentiels/demarches.json), and its publication date. */
 export type AdressesDemarches = { date: string; hotes: readonly string[] };
 
+/**
+ * The démarches' part of the day's rules (pipeline/cli/collecter.ts): the edition, its date and a fingerprint of its
+ * sorted addresses. A new edition, or the same one read again with other addresses, changes it: that day is a change of
+ * list, and nothing goes to the journal (B.7 bis; the review of C.8).
+ */
+export function cleDemarches(edition: number, demarches: AdressesDemarches): string {
+  const empreinte = createHash("sha256")
+    .update([...demarches.hotes].sort().join("\n"))
+    .digest("hex")
+    .slice(0, 12);
+  return `observatoire:${edition}:${demarches.date}:${empreinte}`;
+}
+
 /** The reasons of the « État » perimeter (decision D1, a2; brief C.5). */
 export type RaisonEtat = "gouv.fr" | "dila" | "sig" | "mesr";
 
@@ -205,7 +218,8 @@ export function construireListe(
     }
   }
   // The démarches' addresses: the same rules of exclusion as any name.
-  if (demarches !== null) for (const hote of demarches.hotes) ajouter(hote, `observatoire:${demarches.date}`, null, null);
+  if (demarches !== null)
+    for (const hote of demarches.hotes) ajouter(hote, `observatoire:${demarches.date}`, null, null);
 
   // Units, their web name (added to the measured names when it is not listed) and their perimeter.
   const parDomaine = new Map<string, EntreeNom[]>();

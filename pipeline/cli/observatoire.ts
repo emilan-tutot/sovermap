@@ -37,6 +37,9 @@ if (
 
 const contenu = lireZip(readFileSync(fichier), (n) => n === "content.xml").get("content.xml");
 if (contenu === undefined) throw new Error("ODS : pas de content.xml");
+// An edition's sheet is about 627 KB: a content.xml beyond 8 MiB is refused before it becomes text (the review of C.8).
+if (contenu.length > 8 * 1024 * 1024)
+  throw new Error("ODS : content.xml trop grand pour une édition de l'Observatoire");
 // The Public Suffix List the collection uses: the pinned one (referentiels/psl/), so that a démarche's domain is the
 // one the collection measures.
 const fichierPsl = readdirSync(path.join(RACINE, "referentiels/psl"))

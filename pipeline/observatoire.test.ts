@@ -103,4 +103,57 @@ describe("the reading of the Observatoire (C.8)", () => {
     const sansAdresse = CONTENU.replace("URL Démarche", "Adresse");
     expect(() => demarchesDe(lignesOds(sansAdresse).lignes, SUFFIXES)).toThrow(/URL Démarche/);
   });
+
+  it("expands repeated empty cells before a column, and reads numeric references (the review of C.8)", () => {
+    // Two marks in the headers, two empty cells written as one repeated cell in the row: the address is read in its
+    // own column only if the repetition is expanded.
+    const contenu = CONTENU.replace(
+      cellule("Note Satisfaction"),
+      cellule("Note Satisfaction") + cellule("Note Accessibilité"),
+    ).replace(cellule("9,1"), `<table:table-cell table:number-columns-repeated="2"/>`);
+    const avecRepetees = demarchesDe(lignesOds(contenu).lignes, SUFFIXES);
+    expect(avecRepetees.find((d) => d.id === "1764")?.hote).toBe("www.service.example");
+    expect(
+      lignesOds(CONTENU.replace("Je déclare l&apos;exemple", "Je d&#xE9;clare l&#39;exemple")).lignes[1]?.[0]?.texte,
+    ).toBe("Je déclare l'exemple");
+    // An unknown entity stays text, even one named like a property of every object.
+    expect(lignesOds(CONTENU.replace("DEX", "&constructor;")).lignes[1]?.[3]?.texte).toBe("&constructor;");
+  });
+
+  it("refuses an edition with a cell's comment or note, and drops control or direction characters", () => {
+    const annotee = CONTENU.replace(
+      cellule("Je déclare l&apos;exemple"),
+      `<table:table-cell office:value-type="string"><office:annotation><dc:creator>Personne Exemple</dc:creator><text:p>à revoir</text:p></office:annotation><text:p>Je déclare l&apos;exemple</text:p></table:table-cell>`,
+    );
+    expect(() => lignesOds(annotee)).toThrow(/commentaire/);
+    const notee = CONTENU.replace(
+      "Je déclare l&apos;exemple",
+      "Je déclare<text:note><text:note-body><text:p>note interne</text:p></text:note-body></text:note> l&apos;exemple",
+    );
+    expect(() => lignesOds(notee)).toThrow(/note/);
+    expect(lignesOds(CONTENU.replace("Je déclare", "Je dé­clare​")).lignes[1]?.[0]?.texte).toBe("Je déclare l'exemple");
+    expect(lignesOds(CONTENU.replace("DEX", "D\u202eEX\u0007")).lignes[1]?.[3]?.texte).toBe("DEX");
+  });
+
+  it("takes no host from an address that is not a web address on a name", () => {
+    for (const adresse of [
+      "mailto:accueil",
+      "ftp://www.service.example/",
+      "https://10.0.0.10/demarche",
+      "https://[2001:db8::1]/",
+    ]) {
+      const contenu = CONTENU.replaceAll("https://www.service.example/demarche", adresse);
+      expect(demarchesDe(lignesOds(contenu).lignes, SUFFIXES).find((d) => d.id === "1764")?.hote, adresse).toBe(null);
+    }
+  });
+
+  it("refuses a sheet larger than any edition, and a full cell after a repetition cut at 64", () => {
+    expect(() => lignesOds(CONTENU + " ".repeat(8 * 1024 * 1024))).toThrow(/trop grand/);
+    const decalee = CONTENU.replace(cellule("9,1"), `<table:table-cell table:number-columns-repeated="100"/>`);
+    expect(() => lignesOds(decalee)).toThrow(/répétition/);
+    const large = ligne(...Array.from({ length: 300 }, () => cellule("x")));
+    expect(() =>
+      lignesOds(CONTENU.replace(`${ligne(`<table:table-cell table:number-columns-repeated="8"/>`)}`, large)),
+    ).toThrow(/cellules/);
+  });
 });

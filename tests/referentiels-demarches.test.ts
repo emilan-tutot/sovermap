@@ -1,10 +1,23 @@
 // Tests of the démarches of the Observatoire (C.8; docs/sources.md, card 55): one dated edition, deposited by the owner,
 // with only what Sovermap takes of a démarche, never its marks.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { construireListe, lireCopiePerimetre } from "@/pipeline/perimetre";
+import { domaineEnregistrable, lireListeSuffixes } from "@/pipeline/psl";
 import demarches from "@/referentiels/demarches.json";
+import plateformes from "@/referentiels/plateformes-tierces.json";
 
 const registre = readFileSync(new URL("../docs/sources.md", import.meta.url), "utf8");
+const lire = (dossier: string, fichier: string) =>
+  readFileSync(new URL(`../referentiels/${dossier}/${fichier}`, import.meta.url), "utf8");
+const fichiers = (dossier: string, motif: RegExp) =>
+  readdirSync(new URL(`../referentiels/${dossier}/`, import.meta.url))
+    .filter((f) => motif.test(f))
+    .sort();
+/** The pinned Public Suffix List, the one the collection uses (its latest copy). */
+const SUFFIXES = lireListeSuffixes(
+  lire("psl", fichiers("psl", /^public_suffix_list-\d{4}-\d{2}-\d{2}\.dat$/).at(-1) ?? ""),
+);
 const CLES = ["id", "nom", "perimetre", "administration", "volumeTotal", "volumeEnLigne", "hote", "domaine"];
 const NOM = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
 
@@ -31,8 +44,40 @@ describe("the démarches of the Observatoire (referentiels/demarches.json)", () 
       expect(d.hote === null, d.id).toBe(d.domaine === null);
       if (d.hote !== null && d.domaine !== null) {
         expect(d.hote).toMatch(NOM);
-        expect(d.hote === d.domaine || d.hote.endsWith(`.${d.domaine}`), d.id).toBe(true);
+        // The domain is the one the pinned Public Suffix List gives: never a public suffix alone (the review of C.8).
+        expect(domaineEnregistrable(d.hote, SUFFIXES), d.id).toBe(d.domaine);
       }
     }
+  });
+
+  it("bring no unit outside the DINUM's, the SIG's and the MESR's lists but the ones named here (the review of C.8)", () => {
+    // Each démarche's address is measured every day (method 0.2.6): a domain that none of the lists has becomes a new
+    // unit, measured and published. A new edition that brings one updates this list, after a look at what it is (a
+    // platform, a video or a form service would be a third party, never a unit).
+    const copies = fichiers("listes", /^liste-dinum-\d{4}-\d{2}-\d{2}\.csv$/).map((f) => ({
+      date: f.slice(12, 22),
+      csv: lire("listes", f),
+    }));
+    const perimetre = (["sig", "mesr"] as const).flatMap((source) => {
+      const f = fichiers("perimetre", new RegExp(`^${source}-\\d{4}-\\d{2}-\\d{2}\\.csv$`)).at(-1);
+      return f === undefined
+        ? []
+        : [lireCopiePerimetre(source, f.slice(source.length + 1, source.length + 11), lire("perimetre", f))];
+    });
+    expect(copies.length).toBeGreaterThan(0);
+    expect(perimetre.map((c) => c.source)).toEqual(["sig", "mesr"]);
+    const liste = construireListe(
+      copies,
+      null,
+      SUFFIXES,
+      new Set(plateformes.domaines),
+      ".gouv.fr",
+      undefined,
+      perimetre,
+    );
+    const nouveaux = new Set(
+      demarches.demarches.flatMap((d) => (d.domaine !== null && !liste.domaines.has(d.domaine) ? [d.domaine] : [])),
+    );
+    expect([...nouveaux].sort()).toEqual(["monespacesante.fr"]);
   });
 });

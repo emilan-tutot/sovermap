@@ -31,54 +31,80 @@ function decoder(texte: string): string {
       const n = e[1] === "x" || e[1] === "X" ? Number.parseInt(e.slice(2), 16) : Number.parseInt(e.slice(1), 10);
       return Number.isInteger(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : tout;
     }
-    return ENTITES[e.toLowerCase()] ?? tout;
+    return Object.hasOwn(ENTITES, e.toLowerCase()) ? (ENTITES[e.toLowerCase()] ?? tout) : tout;
   });
 }
 
-/** The text of a cell: its paragraphs, their spaces, tabs and line breaks as one space each; every tag removed. */
+/**
+ * The text of a cell: its paragraphs, their spaces, tabs and line breaks as one space each; every tag removed; the
+ * control and format characters (direction marks, zero-width spaces, soft hyphens) removed (the review of C.8).
+ */
 function texteCellule(xml: string): string {
   return [...xml.matchAll(/<text:p\b[^>]*>([\s\S]*?)<\/text:p>/g)]
     .map((p) => decoder((p[1] ?? "").replace(/<text:(?:s|tab|line-break)\b[^>]*\/>/g, " ").replace(/<[^>]*>/g, "")))
     .join(" ")
     .replace(/\s+/g, " ")
+    .replace(/[\p{Cc}\p{Cf}]/gu, "")
+    .replace(/ {2,}/g, " ")
     .trim();
 }
 
-/** The cells of a row, repeated columns expanded (64 copies at most: the row's trailing empty cells). */
+/** The bounds of a sheet Sovermap reads (about 250 rows of 30 columns today, in 627 KB): beyond, the file is refused. */
+const TAILLE_MAX = 8 * 1024 * 1024;
+const LIGNES_MAX = 5_000;
+const CELLULES_MAX = 256;
+const REPETITION_MAX = 64;
+
+/**
+ * The cells of a row, repeated columns expanded (64 copies at most: the row's trailing empty cells). A cell with text
+ * after a repetition cut at 64 would be read in the wrong column: the row is refused (the review of C.8).
+ */
 function cellules(ligne: string): Cellule[] {
   const resultat: Cellule[] = [];
   const ouverture = /<table:(?:covered-)?table-cell\b([^>]*?)(\/?)>/g;
+  const fermeture = /<\/table:(?:covered-)?table-cell>/g;
+  let decalee = false;
   for (let m = ouverture.exec(ligne); m !== null; m = ouverture.exec(ligne)) {
     const attributs = m[1] ?? "";
     let contenu = "";
     if (m[2] !== "/") {
-      const fins = ["</table:table-cell>", "</table:covered-table-cell>"]
-        .map((f) => ligne.indexOf(f, ouverture.lastIndex))
-        .filter((i) => i >= 0);
-      const fin = fins.length === 0 ? ligne.length : Math.min(...fins);
+      // One search for the cell's end, from the end of its opening tag: never quadratic.
+      fermeture.lastIndex = ouverture.lastIndex;
+      const f = fermeture.exec(ligne);
+      const fin = f === null ? ligne.length : f.index;
       contenu = ligne.slice(ouverture.lastIndex, fin);
-      ouverture.lastIndex = fin;
+      ouverture.lastIndex = f === null ? ligne.length : f.index + f[0].length;
     }
     const repete = Number(/table:number-columns-repeated="(\d+)"/.exec(attributs)?.[1] ?? "1");
     const valeur = /office:value="([^"]*)"/.exec(attributs)?.[1];
     const cellule = { texte: texteCellule(contenu), valeur: valeur === undefined ? null : decoder(valeur) };
-    for (let i = 0; i < Math.min(Math.max(repete, 1), 64); i += 1) resultat.push(cellule);
+    if (decalee && cellule.texte !== "") throw new Error("ODS : une cellule pleine suit une répétition trop longue");
+    if (repete > REPETITION_MAX) decalee = true;
+    for (let i = 0; i < Math.min(Math.max(repete, 1), REPETITION_MAX); i += 1) resultat.push(cellule);
+    if (resultat.length > CELLULES_MAX) throw new Error(`ODS : plus de ${CELLULES_MAX} cellules dans une ligne`);
   }
   return resultat;
 }
 
 /**
  * The rows of the first sheet of an ODS file's content.xml, empty rows left out. A document type or an entity
- * declaration is refused: nothing in this file may ask for more than its own text.
+ * declaration is refused: nothing in this file may ask for more than its own text. A file or a sheet larger than any
+ * edition is refused too, before it is read.
  */
 export function lignesOds(contenu: string): { feuille: string; lignes: Cellule[][] } {
+  if (contenu.length > TAILLE_MAX) throw new Error("ODS : contenu trop grand pour une édition de l'Observatoire");
   if (/<!DOCTYPE|<!ENTITY/i.test(contenu)) throw new Error("ODS : déclaration de type ou d'entité refusée");
+  // A cell's comment (office:annotation) or a note (text:note) would mix a remark, even a person's name, into a
+  // démarche's text: an edition that has one is refused, to be read by hand first (the review of C.8).
+  if (/<office:annotation[\s/>]|<text:note[\s/>]/.test(contenu))
+    throw new Error("ODS : commentaire ou note de cellule refusé");
   const table = /<table:table\s[^>]*?table:name="([^"]*)"[^>]*>([\s\S]*?)<\/table:table>/.exec(contenu);
   if (table === null) throw new Error("ODS : aucune feuille");
   const lignes: Cellule[][] = [];
   for (const l of (table[2] ?? "").matchAll(/<table:table-row\b[^>]*>([\s\S]*?)<\/table:table-row>/g)) {
     const c = cellules(l[1] ?? "");
     if (c.some((x) => x.texte !== "")) lignes.push(c);
+    if (lignes.length > LIGNES_MAX) throw new Error(`ODS : plus de ${LIGNES_MAX} lignes`);
   }
   return { feuille: decoder(table[1] ?? ""), lignes };
 }
@@ -100,11 +126,14 @@ function volume(c: Cellule | undefined): number | null {
   return /^\d{1,12}$/.test(brut) ? Number(brut) : null;
 }
 
-/** The name an address is on, when it is a web address on a valid name. */
+/** The name an address is on, when it is a web address on a valid name (never an IP address). */
 function hoteDe(adresse: string): string | null {
   try {
     const url = new URL(adresse);
-    return url.protocol === "https:" || url.protocol === "http:" ? nomValide(url.hostname) : null;
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    // An address by its IP (« https://10.0.0.10/ ») names no host: never a unit of the list (the review of C.8).
+    if (url.hostname.startsWith("[") || /^\d+(?:\.\d+){3}$/.test(url.hostname)) return null;
+    return nomValide(url.hostname);
   } catch {
     return null;
   }

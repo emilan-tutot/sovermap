@@ -33,6 +33,7 @@ import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import {
   type AdressesDemarches,
+  cleDemarches,
   construireListe,
   type CopieListe,
   type CopiePerimetre,
@@ -83,7 +84,7 @@ const VERSION_CLASSEMENT = 1;
 const CONFIRMATIONS_APRES_ARRET = 50;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.2.5";
+const METHODE = "0.2.6";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({
@@ -180,10 +181,21 @@ function referentiels() {
   if (erreurs.length > 0) throw new Error(`référentiels invalides :\n- ${erreurs.join("\n- ")}`);
   // The démarches' addresses of the Observatoire's latest edition (fiche 55, C.8), read and checked here: each one a
   // host name (pipeline/perimetre.ts checks it again), its edition dated.
-  const observatoire = json<{ source?: { publiee?: unknown }; demarches?: unknown }>(RACINE, "referentiels/demarches.json");
+  const observatoire = json<{ source?: { publiee?: unknown; edition?: unknown }; demarches?: unknown }>(
+    RACINE,
+    "referentiels/demarches.json",
+  );
   const publiee = observatoire.source?.publiee;
-  if (typeof publiee !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(publiee) || !Array.isArray(observatoire.demarches))
-    throw new Error("referentiels/demarches.json : date de l'édition ou démarches illisibles");
+  const edition = observatoire.source?.edition;
+  if (
+    typeof publiee !== "string" ||
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(publiee) ||
+    typeof edition !== "number" ||
+    !Number.isSafeInteger(edition) ||
+    edition < 1 ||
+    !Array.isArray(observatoire.demarches)
+  )
+    throw new Error("referentiels/demarches.json : édition, date de l'édition ou démarches illisibles");
   const demarches: AdressesDemarches = {
     date: publiee,
     hotes: [
@@ -198,8 +210,9 @@ function referentiels() {
   const regles = {
     listes: copies.map((c) => c.date),
     perimetre: perimetre.map((c) => `${c.source}:${c.date}:${c.empreinte}`),
-    // A new edition that brings new addresses is a change of list (B.7 bis): nothing goes to the journal that day.
-    demarches: `observatoire:${demarches.date}:${demarches.hotes.length}`,
+    // A new edition, or the same one read again with other addresses, is a change of list (B.7 bis): nothing goes to
+    // the journal that day (pipeline/perimetre.ts, cleDemarches).
+    demarches: cleDemarches(edition, demarches),
     psl: psl.version,
     plateformes: plateformes.version,
     cdn: cdn.version,
