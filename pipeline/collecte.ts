@@ -3,8 +3,11 @@
 // MX and TXT, then the addresses of its name servers and mail exchangers (once per host for the whole collection) and
 // its SPF record expanded — and at most 8 domains open per second, so that the servers of a top-level domain (.fr)
 // get at most one referral per new domain. Every single question holds one of the two permits of the zone it goes to
-// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks. A name or a
-// domain that fails is asked again, at most twice, 10 minutes apart; a failure stays a failure, never « no site ».
+// (the registrable domain of the asked name): at most 2 simultaneous questions per zone, whoever asks; and, in the
+// first pass, at most 8 questions waiting for their answer among those that go through the servers of one registry
+// (the openings, the questions of zones not known as delegated), so that servers that answer late never have more
+// than these pending with the resolver. A name or a domain that fails is asked again, at most twice, 10 minutes apart;
+// a failure stays a failure, never « no site ».
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type MesureNom, type MesureZone, mesurerNom, mesurerZone } from "./mesure";
 import { Cadence, type Horloge, HORLOGE_REELLE, instantCommun, melanger, type Montee, ParZone } from "./politesse";
@@ -69,6 +72,24 @@ export type OptionsCollecte = {
    * (the review of 22/11/2026: a retry that started late had no end).
    */
   finReprises?: number;
+  /**
+   * The emergency stop, in the first pass only. A domain fails as for the guard of 2 % (collecter.ts): its zone's
+   * question, its MX question or its web name failed (`nomWebDe`; without it, any of its names). When `part` of the
+   * last `fenetre` domains failed (a breach), the collection pauses `pauseMs`: every question is held (no domain opens,
+   * those under way wait), then released at one shared pace, and the count starts from zero. A full count under the
+   * threshold lifts the alert; at the `depassements`-th breach in a row, or at a breach after `pausesMax` pauses that
+   * day, it stops for good: the client answers « ERREUR » without asking anything any more, the retries are skipped,
+   * `surArret` is called, and a guard keeps the day unpublished. An outage of some twenty minutes, at the network of
+   * the machine or at a large host, thus costs pauses rather than the day, as long as the first pass, longer by them,
+   * leaves time for the retries (the retries start before `echeance` only). The trials of 22/11/2026 at 17:11 and
+   * 20:14 had 15 to 17 % of their domains failed (none confirmed by Quad9); the published days 1 and 2, 0.7 and 1 %
+   * after their retries.
+   */
+  arret: { fenetre: number; part: number; pauseMs: number; depassements: number; pausesMax: number };
+  /** The web name of a domain, for the emergency stop's count. */
+  nomWebDe?: (domaine: string) => string | undefined;
+  /** Called once, when the emergency stop is decided, with its reason (the controls stop too). */
+  surArret?: (raison: string) => void;
   reprises: number;
   delaiRepriseMs: number;
   /** The zone a question goes to: the registrable domain of the asked name (Public Suffix List). */
@@ -90,6 +111,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
+  arret: { fenetre: 1_000, part: 0.15, pauseMs: 10 * 60 * 1000, depassements: 3, pausesMax: 3 },
 };
 
 export type ResultatCollecte = {
@@ -102,9 +124,15 @@ export type ResultatCollecte = {
   essais: Map<string, number>;
   debut: number;
   fin: number;
+  /** Why the collection stopped before its end (the emergency stop), or null: a stopped day is never published. */
+  arret: string | null;
 };
 
+/** The pace at which the questions held by an emergency pause go out again, by default: the names' (POLITESSE). */
+const REPRISE_PAR_SECONDE = 25;
+
 /** The client, with the per-zone limit on every question. */
+
 const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR", "ZONE_MUETTE", "SOUS_ZONE_MUETTE"]);
 /**
  * Failures in a row of the questions about a zone's apex (NS, SOA, MX…), with no answer between them, after which the
@@ -139,10 +167,26 @@ const REGISTRES: Readonly<Record<string, string>> = {
 };
 const groupeDuParent = (zone: string) => {
   const tld = zone.slice(zone.lastIndexOf(".") + 1);
-  return REGISTRES[tld] ?? tld;
+  // Its own keys only: a label read in the DNS (« constructor ») is a top-level domain like any other.
+  return (Object.hasOwn(REGISTRES, tld) ? REGISTRES[tld] : undefined) ?? tld;
 };
 /** Slots a first question may take while the brake holds it, before it goes on its last one. */
 const CRENEAUX_MAX = 5;
+/**
+ * Questions waiting for their answer at once, per group of parent servers, among those that go through them (the
+ * openings of domains, and the questions of a zone not known as delegated). When those servers answer late or not at
+ * all, the resolver asks each pending question again on their other servers: their number, more than our pace, then
+ * makes the load (the trial of 22/11/2026, from 17:24 UTC: 22 questions in a second to a server of .fr, five of the
+ * resolver's for one of ours). A place is taken before the parent's pace and its brake, and held until the answer, the
+ * child zone's servers included: the pace keeps its six openings per second while they answer within 1.3 s on
+ * average, but a zone whose servers never answer holds places for up to 36 s (its two openings, then its SOA and the
+ * first question of one of its names, 12 s each, until the client gives up). The cap holds in the first pass only: the
+ * retries are made mostly of such zones, and with it a retry of a few hundred of them would last most of an hour. After
+ * a first pass when a registry's servers answered badly, the retries reopen its zones at the pace and under the brake
+ * only, as before this cap; a decision by registry, from the counts the job's log now gives, may come later (the three
+ * reviews of 22/11/2026).
+ */
+export const PARENT_EN_VOL = 8;
 /**
  * Upstream questions one of ours may cost and still keep a server, at our full pace (5 per second), under 8: a zone
  * whose questions cost more takes several instants per question (4 at most).
@@ -157,6 +201,20 @@ export class ClientParZone implements ClientDns {
   readonly #zones: ParZone;
   /** The zones opened in this attempt, each with the end of its opening (its NS question, at its parent's pace). */
   readonly #premieres = new Map<string, Promise<void>>();
+  /** The questions in flight to each group of parent servers (PARENT_EN_VOL at most). */
+  readonly #parentsEnVol = new ParZone(PARENT_EN_VOL);
+  /**
+   * The questions that took a place (total), those that failed, those that waited for a place, and how long in all
+   * (milliseconds of the clock; the wait for the parent's pace counts, since the place is taken before it).
+   */
+  readonly #attenteParents = { questions: 0, ms: 0, total: 0, echecs: 0 };
+  /** The cap holds in the first pass only (leverPlafondParents). */
+  #plafonne = true;
+  #arrete = false;
+  #pauseJusqua = 0;
+  /** The pace at which the questions held by an emergency pause go out again (created with the first pause). */
+  #repriseCadence: Cadence | null = null;
+  #repriseParSeconde = REPRISE_PAR_SECONDE;
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
   /** The pace of each zone's own servers. */
@@ -289,6 +347,7 @@ export class ClientParZone implements ClientDns {
    * NXDOMAIN), and a zone or sub-zone that is down is not asked again in this attempt.
    */
   #sansQuestion(nom: string, zone: string, ouverture: boolean): Reponse | null {
+    if (this.#arrete) return { code: "ERREUR", ad: false, reponses: [], duree: 0 };
     if (!ouverture && this.#inexistantes.has(zone)) return { code: "NXDOMAIN", ad: false, reponses: [], duree: 0 };
     return this.#muette(nom, zone);
   }
@@ -336,20 +395,51 @@ export class ClientParZone implements ClientDns {
 
   /**
    * One question: the zone's turn (two at a time), then the paces, then the answer, recorded. A question of a zone
-   * not known as delegated takes a slot of its parent's pace while holding the zone's turn: one zone never reserves
-   * more than two slots of its parent. Every question keeps the zone's own pace.
+   * not known as delegated takes a place among the questions in flight to its parent's servers and a slot of its
+   * parent's pace while holding the zone's turn: one zone never reserves more than two of either. Every question keeps
+   * the zone's own pace.
    */
   async #poser(nom: string, zone: string, type: TypeRr, ouverture = false): Promise<Reponse> {
+    // The emergency pause: a question waits for its end before anything; one that meets it just before it goes out
+    // gives its places back and starts again, so that the questions held go out at the servers' pace afterwards.
+    for (;;) {
+      let retenue = false;
+      while (!this.#arrete && this.horloge.maintenant() < this.#pauseJusqua) {
+        retenue = true;
+        await this.horloge.dormir(this.#pauseJusqua - this.horloge.maintenant());
+      }
+      // The questions held go out again one at a time, at the names' pace, before their own turns and paces.
+      if (retenue) await this.#reprise.attendre();
+      const r = await this.#poserUneFois(nom, zone, type, ouverture);
+      if (r !== null) return r;
+    }
+  }
+
+  /** One attempt of #poser; null when the emergency pause came while the question waited for its turn. */
+  async #poserUneFois(nom: string, zone: string, type: TypeRr, ouverture: boolean): Promise<Reponse | null> {
     const avant = this.#sansQuestion(nom, zone, ouverture);
     if (avant !== null) return avant;
     await this.#zones.prendre(zone);
+    /** The group of parent servers whose place the question holds, until its answer. */
+    let auParent: string | null = null;
+    /** How long it waited for that place (null: not at all); counted once, when the question goes out. */
+    let attenteAuParent: number | null = null;
     try {
       // The zone may have gone down while the question waited for its turn.
       const pendant = this.#sansQuestion(nom, zone, ouverture);
       if (pendant !== null) return pendant;
-      // An opening asks the parent for the delegation, at every attempt too: a slot of the parent's pace.
-      if (ouverture || !this.#deleguees.has(zone)) await this.#creneauParent(nom, zone);
-      else if (this.frein) await this.frein(nom, zone, false);
+      // An opening asks the parent for the delegation, at every attempt too: while the cap holds, a place among the
+      // questions waiting for an answer through the parent's servers (PARENT_EN_VOL); then a slot of the parent's pace.
+      if (ouverture || !this.#deleguees.has(zone)) {
+        if (this.#plafonne) {
+          const groupe = groupeDuParent(zone);
+          const debut = this.horloge.maintenant();
+          const attendu = await this.#parentsEnVol.prendre(groupe);
+          auParent = groupe;
+          attenteAuParent = attendu ? this.horloge.maintenant() - debut : null;
+        }
+        await this.#creneauParent(nom, zone);
+      } else if (this.frein) await this.frein(nom, zone, false);
       // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
       // question that costs the servers more than one question takes more: what the logs measured for the zone; four
       // where a question failed (the resolver tries the other servers, and again: up to 5 questions for one of ours);
@@ -379,8 +469,19 @@ export class ClientParZone implements ClientDns {
         this.horloge,
         poids,
       );
+      // The emergency stop or pause may have come while the question waited for its instant: it is not asked (now).
+      if (this.#arrete) return { code: "ERREUR", ad: false, reponses: [], duree: 0 };
+      if (this.horloge.maintenant() < this.#pauseJusqua) return null;
+      if (auParent !== null) {
+        this.#attenteParents.total += 1;
+        if (attenteAuParent !== null) {
+          this.#attenteParents.questions += 1;
+          this.#attenteParents.ms += attenteAuParent;
+        }
+      }
       this.journal?.envoi(zone);
       const r = await this.base.demander(nom, type);
+      if (auParent !== null && CODES_EN_ECHEC.has(r.code)) this.#attenteParents.echecs += 1;
       for (const n of intermediaires) this.#intermediairesVus.add(n);
       if (CODES_EN_ECHEC.has(r.code)) {
         if (nom === zone) this.#apexEnPanne.add(zone);
@@ -431,9 +532,49 @@ export class ClientParZone implements ClientDns {
       }
       return r;
     } finally {
+      if (auParent !== null) this.#parentsEnVol.rendre(auParent);
       this.#zones.rendre(zone);
     }
   }
+
+  /**
+   * The questions that took a place among those in flight to a parent's servers (total), those that failed, those that
+   * waited for a place, and how long in all (ms).
+   */
+  get attenteParents(): Readonly<{ questions: number; ms: number; total: number; echecs: number }> {
+    return { ...this.#attenteParents };
+  }
+
+  /**
+   * From now on (the retries), no question waits for a place among those of its parent's servers (PARENT_EN_VOL): the
+   * retries are mostly zones whose servers never answer, each of which would hold places until the client gives up.
+   */
+  leverPlafondParents(): void {
+    this.#plafonne = false;
+  }
+
+  /** The emergency stop (OptionsCollecte.arret): from now on, every question gets « ERREUR » without being asked. */
+  arreter(): void {
+    this.#arrete = true;
+  }
+
+  /**
+   * The emergency pause (OptionsCollecte.arret): until `jusqua` (the client's clock), no question is asked; each one
+   * waits before its turn and its pace, so the questions held go out at the servers' pace afterwards.
+   */
+  pauser(jusqua: number, repriseParSeconde = REPRISE_PAR_SECONDE): void {
+    this.#pauseJusqua = jusqua;
+    if (repriseParSeconde !== this.#repriseParSeconde) {
+      this.#repriseParSeconde = repriseParSeconde;
+      this.#repriseCadence = null;
+    }
+  }
+
+  get #reprise(): Cadence {
+    this.#repriseCadence ??= new Cadence(this.#repriseParSeconde, this.horloge);
+    return this.#repriseCadence;
+  }
+
   fermer(): void {
     this.base.fermer();
   }
@@ -528,6 +669,7 @@ export async function collecter(
     essais: new Map(),
     debut: Date.now(),
     fin: 0,
+    arret: null,
   };
   const hotesEnCours = new Map<string, Promise<void>>();
   const essai = (cle: string) => resultat.essais.set(cle, (resultat.essais.get(cle) ?? 0) + 1);
@@ -540,6 +682,68 @@ export async function collecter(
     });
     hotesEnCours.set(hote, promesse);
     return promesse;
+  };
+
+  // The emergency stop (OptionsCollecte.arret): the outcome of the first pass's last domains, in a sliding window; a
+  // breach pauses, a full count under the threshold lifts the alert, the last breach in a row stops. A domain opened
+  // before a pause is not counted after it (`epoque`).
+  let premierePasse = true;
+  let mesuresPremierePasse = 0;
+  let fenetre: boolean[] = [];
+  let enEchecDansFenetre = 0;
+  let epoque = 0;
+  let pauseJusqua = 0;
+  /** The breaches in a row: each but the last brings a pause; a full count under the threshold resets them. */
+  let depassements = 0;
+  /** The pauses of the day (at most `pausesMax`: a breach beyond them stops). */
+  let pauses = 0;
+  const seuil = `seuil : ${Math.round(100 * options.arret.part)} %`;
+  const minutesPause = Math.round(options.arret.pauseMs / 60_000);
+  const enEchecPourArret = (unite: string): boolean => {
+    const zone = resultat.domaines.get(unite);
+    if (zone?.etat === "echec" || zone?.mxEtat === "echec") return true;
+    const web = options.nomWebDe?.(unite);
+    const noms = web === undefined ? (parUnite.get(unite) ?? []) : [web];
+    return noms.some((n) => resultat.noms.get(n)?.etat === "echec");
+  };
+  const noterUnite = (unite: string, sonEpoque: number) => {
+    if (!premierePasse || resultat.arret !== null || sonEpoque !== epoque) return;
+    mesuresPremierePasse += 1;
+    const echec = enEchecPourArret(unite);
+    fenetre.push(echec);
+    if (echec) enEchecDansFenetre += 1;
+    if (fenetre.length > options.arret.fenetre && fenetre.shift() === true) enEchecDansFenetre -= 1;
+    if (fenetre.length < options.arret.fenetre) return;
+    const constat = `${enEchecDansFenetre} des ${fenetre.length} derniers domaines en échec (${seuil})`;
+    if (enEchecDansFenetre < options.arret.part * options.arret.fenetre) {
+      if (depassements > 0) options.suivi?.(`alerte levée après ${mesuresPremierePasse} domaines : ${constat}`);
+      depassements = 0;
+      return;
+    }
+    depassements += 1;
+    if (depassements < options.arret.depassements && pauses < options.arret.pausesMax) {
+      // A pause, then a new count.
+      pauses += 1;
+      epoque += 1;
+      pauseJusqua = horloge.maintenant() + options.arret.pauseMs;
+      client.pauser(pauseJusqua, options.nomsParSeconde);
+      fenetre = [];
+      enEchecDansFenetre = 0;
+      options.suivi?.(
+        `pause d'urgence de ${minutesPause} min après ${mesuresPremierePasse} domaines (dépassement ${depassements} ` +
+          `sur ${options.arret.depassements}) : ${constat} ; la mesure reprend ensuite, et recompte`,
+      );
+      return;
+    }
+    resultat.arret =
+      depassements >= options.arret.depassements
+        ? `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, au dépassement ${depassements} de ` +
+          `suite (une pause de ${minutesPause} min après chacun des précédents)`
+        : `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, toutes les pauses du jour prises ` +
+          `(${pauses} sur ${options.arret.pausesMax})`;
+    client.arreter();
+    options.surArret?.(resultat.arret);
+    options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);
   };
 
   const mesurerDomaine = async (domaine: string): Promise<void> => {
@@ -566,6 +770,11 @@ export async function collecter(
     let coupee = false;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
+        // The emergency stop: no task is taken once the collection decided to stop (those under way end).
+        if (resultat.arret !== null) {
+          file.length = 0;
+          break;
+        }
         // The wall clock, like `echeance` (the review of PR 20: the measuring clock counts from the process's start, and
         // compared with a date it never cut anything).
         if (fin !== undefined && Date.now() >= fin.a) {
@@ -608,8 +817,16 @@ export async function collecter(
   ];
   await passe(
     ordreUnites.map((unite) => async () => {
-      await cadenceDomaines.attendre();
-      await options.frein?.(unite, options.zoneDe(unite), true);
+      // The emergency pause: a domain whose turn comes during it waits for its end, then takes a slot of the domains'
+      // pace again; after a stop, none opens. Only a domain opened after the last pause counts for the stop.
+      for (;;) {
+        await cadenceDomaines.attendre();
+        await options.frein?.(unite, options.zoneDe(unite), true);
+        if (resultat.arret !== null) return;
+        if (horloge.maintenant() >= pauseJusqua) break;
+        await horloge.dormir(pauseJusqua - horloge.maintenant());
+      }
+      const sonEpoque = epoque;
       // The measurement is called first: its NS question is the zone's first (client per zone, above). Its names go a
       // few at a time: a large domain never takes every slot of the names' pace at once.
       await Promise.all([
@@ -619,12 +836,27 @@ export async function collecter(
           await mesurerUnNom(nom);
         }),
       ]);
+      noterUnite(unite, sonEpoque);
     }),
   );
+  premierePasse = false;
+  // The cap on the questions waiting through the parents' servers holds in the first pass only (PARENT_EN_VOL); the
+  // job's log tells how its questions went, for a later decision on the retries.
+  const attente = client.attenteParents;
+  options.suivi?.(
+    `questions par les serveurs parents, première passe : ${attente.total}, dont ${attente.echecs} en échec ; ` +
+      `${attente.questions} ont attendu une place (${Math.round(attente.ms / 1000)} s en tout ; ${PARENT_EN_VOL} au ` +
+      `plus en attente par registre) ; reprises sans plafond`,
+  );
+  client.leverPlafondParents();
   options.apresPremierePasse?.(resultat);
 
   // Two more attempts, 10 minutes apart, for what failed (names, domains, hosts).
   for (let reprise = 1; reprise <= options.reprises; reprise += 1) {
+    if (resultat.arret !== null) {
+      options.suivi?.(`reprise ${reprise} sautée : arrêt d'urgence`);
+      break;
+    }
     const nomsEchoues = [...resultat.noms.values()].filter(enEchec).map((m) => m.nom);
     // A domain whose SPF list is incomplete (a lookup failed) is asked again too.
     const domainesEchoues = [...resultat.domaines.values()]

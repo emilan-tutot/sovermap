@@ -25,6 +25,15 @@ describe("the controls", () => {
     expect(plan.noms).toHaveLength(1 + 3 + 1);
   });
 
+  it("asks the witnesses first, so that neither the deadline nor an emergency stop leaves them out", () => {
+    const domaines = [
+      { domaine: "a.example", nomWeb: "a.example", perimetre: "État" as const },
+      { domaine: "z.example", nomWeb: "z.example", perimetre: "État" as const },
+    ];
+    const plan = planDeControle(domaines, ["temoin-b.example", "temoin-a.example"], generateur(7));
+    expect(plan.noms).toEqual(["temoin-a.example", "temoin-b.example", "a.example", "z.example"]);
+  });
+
   it("asks the control resolver at 2 questions per second at most", async () => {
     let t = 0;
     const horloge: Horloge = { maintenant: () => t, dormir: async (ms) => void (t += ms) };
@@ -88,6 +97,25 @@ describe("the controls", () => {
     const r = await controle.fermer();
     expect(r.noms.size).toBe(0);
     expect(simule.questions).toEqual([]);
+  });
+
+  it("follows a deadline that moves: the emergency stop brings it to now, and nothing more is asked", async () => {
+    // One question in flight at a time; the deadline comes once the first name is measured.
+    let echeance = Number.POSITIVE_INFINITY;
+    const simule = new ResolveurSimule({}, zoneDe);
+    const demander = simule.demander.bind(simule);
+    simule.demander = async (nom, type) => {
+      const r = await demander(nom, type);
+      echeance = Date.now() - 1;
+      return r;
+    };
+    const r = await controler(simule, ["a.example", "b.example", "c.example"], [], 1, () => echeance);
+    expect([...r.noms.keys()]).toEqual(["a.example"]);
+    // The continuous control reads it each time too: built before the deadline moves, it asks one name, then stops.
+    echeance = Number.POSITIVE_INFINITY;
+    const continu = new ControleEnContinu(simule, 1, () => echeance);
+    continu.ajouter(["d.example", "e.example", "f.example"]);
+    expect([...(await continu.fermer()).noms.keys()]).toEqual(["d.example"]);
   });
 
   it("agrees only when every resolver finds every witness as it is known", () => {
