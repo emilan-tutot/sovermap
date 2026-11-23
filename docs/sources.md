@@ -267,6 +267,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
   - logiciel libre ;
   - l'image est reconstruite chaque semaine (étiquettes datées, la dernière du 17/11/2026) ;
   - Docker Hub limite les téléchargements anonymes à « 100 per IPv4 address or IPv6 /64 subnet » par 6 h (https://docs.docker.com/docker-hub/usage/pulls/).
+- **Vérification mensuelle** (depuis le 22/11/2026, `.github/workflows/copies.yml`, `scripts/copies-epinglees.ts`) : la liste des étiquettes de l'image, https://hub.docker.com/v2/namespaces/cznic/repositories/knot-resolver/tags?page_size=50&ordering=last_updated, une requête par mois, avec l'agent du projet ; robots.txt de hub.docker.com lu le 22/11/2026 : « User-agent: * » et « Disallow: » vide (rien n'est fermé), relu à chaque passage ; lecture d'essai du 22/11/2026 : 101 étiquettes, la plus récente des 6.x, `v6.5.1-20261117`, a l'empreinte épinglée. Une construction plus récente ouvre l'issue « Copie épinglée à renouveler » ; l'image ne change que par une PR, avec son essai.
 - **Décision : retenu** (`specs/001-sovermap/plan.md`, § 9).
 
 ### 13. Quad9
@@ -665,6 +666,7 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **Copie renouvelée** le 22/11/2026 (robots.txt relu le même jour : « Disallow: /images/ » seulement) : version `2026-11-21_04-33-45_UTC`, commit `87a2c1b8de5886a133ff4da21b2aa6fec88d8739`, 342 871 octets, réduite par `pipeline/cli/epingler-psl.ts` dans `referentiels/psl/public_suffix_list-2026-11-21.dat` (l'ancienne copie retirée) ; 3 règles ajoutées (`fj.kg`, `wordsmithmcpcontent.com`, `staging.wordsmithmcpcontent.com`) et 1 retirée (`xihuan`) : aucune ne touche un suffixe des sites mesurés. Un changement de règles (sa version est dans `etat.json`).
 - **Données personnelles** : des noms et des adresses e-mail de contributeurs dans les commentaires ; écartés de la copie, jamais lus par la collecte.
 - **Attribution à afficher** : par courtoisie : « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
+- **Vérification mensuelle** (depuis le 22/11/2026, `.github/workflows/copies.yml`) : la liste elle-même, à son adresse unique, une fois par mois, avec l'agent du projet et son robots.txt relu à chaque passage ; seule sa ligne « VERSION » est comparée à celle de la copie épinglée. Une version plus récente ouvre l'issue « Copie épinglée à renouveler » ; la copie ne change que par une PR.
 - **Décision : retenue** (outil de calcul ; rien de la liste n'est republié dans les données, sinon la copie épinglée dans le code source).
 
 ## G. Pays, appartenances et décisions d'adéquation
@@ -843,6 +845,7 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
 - **Attribution à afficher** : « Source : Insee, Code officiel géographique, pays et territoires étrangers au 01/01/2026, Licence Ouverte ».
 - **Téléchargement automatique testé** : **oui**, par l'API tabulaire : 5 pages de 50 lignes, `meta.total` = 229.
 - **Données personnelles** : aucune.
+- **Vérification mensuelle** (depuis le 22/11/2026, `.github/workflows/copies.yml`) : la fiche du jeu de données, https://www.data.gouv.fr/api/1/datasets/58c984b088ee386cdb1261f3/ (ouverte par robots.txt), une requête par mois, avec l'agent du projet ; un titre de ressource « Millésime NNNN » plus récent que celui de la source épinglée (`cog-insee-pays-2026`, `referentiels/pays.json`) ouvre l'issue « Copie épinglée à renouveler ».
 - **Décision : retenue en contrôle seulement** (codes ISO), avec un second producteur, français.
 
 ### 49. Sources écartées ou non lues pour les pays (21/11/2026)
