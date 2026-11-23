@@ -268,6 +268,8 @@ jobs:
           docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
           docker rm -f knot > /dev/null 2>&1 || true
 
+      # The artifact also keeps the day's failing domains (diagnostic.json: what the published files already say of them,
+      # with the layer that failed), for the diagnosis of a degraded day; the publication copies « sortie » only.
       - if: steps.collecte.outputs.publiable != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -276,6 +278,7 @@ jobs:
             travail/sortie
             travail/resume.md
             travail/rapport.json
+            travail/diagnostic.json
           retention-days: 7
           if-no-files-found: error
 
