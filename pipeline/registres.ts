@@ -44,12 +44,14 @@ function* objets(contenu: string, gardes: ReadonlySet<string>): Generator<Map<st
     const attribut = ligne.slice(0, deux).trim().toLowerCase();
     // Every field but these is dropped at once: no e-mail, no address, no phone, no person ever kept.
     if (!gardes.has(attribut) || courant.has(attribut)) continue;
+    // 2,000 characters at most: a name is controlled whole before its cut to 200 (P13, personnelles.ts, textesAs);
+    // the other fields are cut to 200 by their reader.
     courant.set(
       attribut,
       ligne
         .slice(deux + 1)
         .trim()
-        .slice(0, 200),
+        .slice(0, 2000),
     );
   }
   if (courant.size > 0) yield courant;
@@ -73,14 +75,21 @@ export function titulairesRipe(
   for (const o of objets(autNum, new Set(["aut-num", "as-name", "org"]))) {
     const asn = Number((o.get("aut-num") ?? "").replace(/^AS/i, ""));
     if (!observes.has(asn)) continue;
-    parAs.set(asn, { asn, asName: o.get("as-name") ?? "", org: o.get("org") ?? null, orgName: null, pays: null });
+    parAs.set(asn, {
+      asn,
+      asName: (o.get("as-name") ?? "").slice(0, 200),
+      org: o.get("org")?.slice(0, 200) ?? null,
+      orgName: null,
+      pays: null,
+    });
   }
   const voulues = new Set([...parAs.values()].flatMap((t) => (t.org === null ? [] : [t.org])));
   const parOrg = new Map<string, { nom: string; pays: string | null }>();
   for (const o of objets(organisations, new Set(["organisation", "org-name", "country"]))) {
     const id = o.get("organisation") ?? "";
     if (!voulues.has(id)) continue;
-    parOrg.set(id, { nom: o.get("org-name") ?? "", pays: o.get("country")?.toUpperCase() ?? null });
+    // The name whole (2,000 characters at most): the control of personal data reads it before its cut (textesAs).
+    parOrg.set(id, { nom: o.get("org-name") ?? "", pays: o.get("country")?.slice(0, 200).toUpperCase() ?? null });
   }
   for (const t of parAs.values()) {
     const org = t.org === null ? undefined : parOrg.get(t.org);
