@@ -1055,6 +1055,7 @@ Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque
 - **Données personnelles** : aucune.
 - **Attribution à afficher** : « Fond de carte : IGN, ADMIN EXPRESS COG CARTO PE, édition <mois année>, Licence Ouverte 2.0 ; contours simplifiés par Sovermap ».
 - **Décision : retenue** : fond de carte des régions et des départements, métropole et DROM. Natural Earth (fiche 41) reste le fond du monde.
+- **Copie épinglée le 23/11/2026** (`referentiels/fond-de-carte/`, sa notice) : la couche des départements seule, `.2026`, 1 778 584 octets (la taille lue le 21/11/2026), SHA-256 `70edeac239cb3363edda6e045a2650c7b4bdeb211aca09a1b453969b466aba2c`, trois propriétés gardées. Les régions ne sont pas téléchargées : leurs frontières se tirent de celles des départements (chacun porte le code de sa région), si bien que les deux ne peuvent jamais différer ; la décision ne change pas. Simplification : un petit script maison (`pipeline/carte.ts`), sans dépendance, qui garde les frontières communes (chaque frontière simplifiée une seule fois pour les deux voisins). Encarts des DROM : dans une colonne à gauche, chacun à sa propre échelle (la meilleure version, montrée en planche au propriétaire ; elle se défait).
 
 ### 54. Sources écartées ou non retenues pour les territoires (21/11/2026)
 - **Contours administratifs** (data.gouv.fr, jeu `683424e996857155175d4f68`, organisation « data.gouv.fr », mis à jour le 04/05/2026) : **écartée**.
