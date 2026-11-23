@@ -94,7 +94,7 @@ Choisie par le propriétaire à l’ARRÊT 2 quater (19/11/2026), après quatre 
 
 - Une seule courbe (`--ease-courbe`). Durées : 200 ms (étiquettes, filets), 240 à 360 ms (panneau, transitions de vue), 900 ms (fondu d’arrivée de la scène, après 400 ms) ; tracé d’un fil 1,7 s, les suivants à 0,35 s d’écart, lueur une seule fois.
 - N’animer que `transform` et `opacity`.
-- Transitions de vue entre l’Atlas, le panneau d’un pays et la Radiographie (le nom du site vole dans le titre), toujours avec un repli.
+- Transitions de vue entre l’Atlas, le panneau d’un pays et la Radiographie (le nom du site vole dans le titre), toujours avec un repli. Appliqué le 23/11/2026 (films du point 17 ; se défait) : le nom d’un domaine vole d’un résultat de la recherche au titre de sa Radiographie (`<ViewTransition>` de React, 360 ms) ; la page change d’un coup, jamais deux pages lisibles à la fois (correction 4 des vidéos de Brume douce) ; sans prise en charge du navigateur, aucune animation.
 - Rien d’animé au repos, sauf la rotation lente du globe, coupée au premier contact et par « réduire les animations ». « Réduire les animations » est respecté partout (`prefers-reduced-motion`).
 
 ## 8. L’objet principal : la carte et la Radiographie
