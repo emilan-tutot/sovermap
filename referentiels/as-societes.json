@@ -1190,6 +1190,23 @@
         }
       ],
       "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2280 OCBHoney a pour organisation ORG-FT2-RIPE, « Orange S.A. », LIR, FR, la même que AS3215, déjà relié(s) à orange."
+    },
+    "14618": {
+      "societe": "amazon-com-inc",
+      "titulaire_registre": "Amazon.com, Inc.",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS14618 AMAZON-AES, titulaire Amazon.com, Inc., pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "GLEIF : AMAZON.COM, INC., LEI ZXTILKJKG63JELOEG630, société du Delaware, bureaux à Seattle (États-Unis)",
+          "url": "https://search.gleif.org/#/record/ZXTILKJKG63JELOEG630",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Fichier de délégation de l'ARIN du 22/11/2026 (fiche 21) : AS14618 attribué le 04/11/2005, pays d'enregistrement US ; son identifiant de titulaire diffère de celui d'AS16509 (deux fiches de l'ARIN au nom d'Amazon) : le lien passe par le nom du titulaire et l'identité de la société."
     }
   }
 }
