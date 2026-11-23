@@ -30,7 +30,9 @@
             "items": {
               "enum": [
                 "gouv.fr",
-                "dila"
+                "dila",
+                "sig",
+                "mesr"
               ]
             },
             "maxItems": 5
