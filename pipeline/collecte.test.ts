@@ -1021,7 +1021,7 @@ describe("the scheduling of a collection", () => {
       ...POLITESSE,
       zoneDe,
       horloge,
-      arret: { fenetre: 10, part: 0.5, pauseMs: 60_000, depassements: 3 },
+      arret: { fenetre: 10, part: 0.5, pauseMs: 60_000, depassements: 3, pausesMax: 3 },
       nomWebDe: (domaine) => `www.${domaine}`,
       surArret: (raison) => arrets.push(raison),
       suivi: (ligne) => {
@@ -1095,6 +1095,13 @@ describe("the scheduling of a collection", () => {
     );
     expect(pauseA(au.lignes)).toMatch(/^pause d'urgence de 1 min après 10 domaines \(dépassement 1 sur 3\) : 5 des 10/);
     expect(au.r.arret).toMatch(/^arrêt d'urgence après 30 domaines : 5 des 10 derniers domaines en échec/);
+    // Five in ten by their zone's NS question alone (an outage of the zones only, their web names answered): they count.
+    const zones = await collecteEnPanne(
+      domainesP(20),
+      (nom, type) => type === "NS" && !nom.startsWith("www.") && numero(nom) % 10 < 5,
+      enOrdre,
+    );
+    expect(pauseA(zones.lignes)).toMatch(/^pause d'urgence de 1 min après 10 domaines/);
     // Five in ten by their MX question alone: they count.
     const mx = await collecteEnPanne(domainesP(20), (nom, type) => type === "MX" && numero(nom) % 10 < 5, enOrdre);
     expect(pauseA(mx.lignes)).toMatch(/^pause d'urgence de 1 min après 10 domaines/);
@@ -1172,6 +1179,20 @@ describe("the scheduling of a collection", () => {
     expect(envois.map((e) => Number(e.split(" ")[0]))).toEqual([60_000, 60_040, 60_080, 60_120, 60_160]);
   });
 
+  it("lets them go out at the pace the collection gives, 10 names per second here, never a fixed 25", async () => {
+    // collecter passes POLITESSE.nomsParSeconde to the pause (a one-line wiring, read in review: a whole collection's
+    // fake clock cannot show that pace among the others).
+    const { horloge, avancer } = horlogeManuelle();
+    const { base, envois } = baseNotee(horloge);
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge);
+    client.pauser(60_000, 10);
+    const questions = Array.from({ length: 3 }, (_, i) => client.demander(`z${i}.example`, "NS"));
+    await avancer(60_000);
+    for (let i = 0; i < 2; i += 1) await avancer(100);
+    await Promise.all(questions);
+    expect(envois.map((e) => Number(e.split(" ")[0]))).toEqual([60_000, 60_100, 60_200]);
+  });
+
   it("starts again from the first breach after a lifted alert: two separate outages only pause", async () => {
     // A first outage until the first pause; the alert is lifted; a second one, until the next pause; then no more.
     const { r, lignes } = await collecteEnPanne(domainesP(2_000), (_nom, _type, lignes) => {
@@ -1184,6 +1205,22 @@ describe("the scheduling of a collection", () => {
     for (const pause of pauses) expect(pause).toMatch(/\(dépassement 1 sur 3\)/);
     expect(lignes.filter((l) => l.startsWith("alerte levée"))).toHaveLength(2);
     expect(r.arret).toBeNull();
+  });
+
+  it("stops at a breach once the day's pauses are all taken, even after a lifted alert", async () => {
+    // Two separate outages, one pause a day at most: the first one pauses, the alert is lifted, the second one stops
+    // (repeated pauses would eat the retries' time).
+    const { r, lignes } = await collecteEnPanne(
+      domainesP(2_000),
+      (_nom, _type, lignes) =>
+        lignes.every((l) => !l.startsWith("pause d'urgence")) || lignes.some((l) => l.startsWith("alerte levée")),
+      { arret: { fenetre: 10, part: 0.5, pauseMs: 60_000, depassements: 3, pausesMax: 1 } },
+    );
+    expect(lignes.filter((l) => l.startsWith("pause d'urgence"))).toHaveLength(1);
+    expect(lignes.filter((l) => l.startsWith("alerte levée"))).toHaveLength(1);
+    expect(r.arret).toMatch(
+      /^arrêt d'urgence après [0-9]+ domaines : (?:[5-9]|10) des 10 derniers domaines en échec \(seuil : 50 %\), toutes les pauses du jour prises \(1 sur 1\)$/,
+    );
   });
 
   it("never counts the retries: a retry full of failures never pauses nor stops", async () => {

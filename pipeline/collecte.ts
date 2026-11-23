@@ -77,13 +77,15 @@ export type OptionsCollecte = {
    * question, its MX question or its web name failed (`nomWebDe`; without it, any of its names). When `part` of the
    * last `fenetre` domains failed (a breach), the collection pauses `pauseMs`: every question is held (no domain opens,
    * those under way wait), then released at one shared pace, and the count starts from zero. A full count under the
-   * threshold lifts the alert; at the `depassements`-th breach in a row, it stops for good: the client answers
-   * « ERREUR » without asking anything any more, the retries are skipped, `surArret` is called, and a guard keeps the
-   * day unpublished. An outage of some twenty minutes, at the network of the machine or at a large host, thus costs
-   * pauses, never the day: its failures go to the retries. The trials of 22/11/2026 at 17:11 and 20:14 had 16 to 17 %
-   * of their domains failed (none confirmed by Quad9); the published days 1 and 2, 0.7 and 1 %.
+   * threshold lifts the alert; at the `depassements`-th breach in a row, or at a breach after `pausesMax` pauses that
+   * day, it stops for good: the client answers « ERREUR » without asking anything any more, the retries are skipped,
+   * `surArret` is called, and a guard keeps the day unpublished. An outage of some twenty minutes, at the network of
+   * the machine or at a large host, thus costs pauses rather than the day, as long as the first pass, longer by them,
+   * leaves time for the retries (the retries start before `echeance` only). The trials of 22/11/2026 at 17:11 and
+   * 20:14 had 15 to 17 % of their domains failed (none confirmed by Quad9); the published days 1 and 2, 0.7 and 1 %
+   * after their retries.
    */
-  arret: { fenetre: number; part: number; pauseMs: number; depassements: number };
+  arret: { fenetre: number; part: number; pauseMs: number; depassements: number; pausesMax: number };
   /** The web name of a domain, for the emergency stop's count. */
   nomWebDe?: (domaine: string) => string | undefined;
   /** Called once, when the emergency stop is decided, with its reason (the controls stop too). */
@@ -109,7 +111,7 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   montee: { depart: 1, dureeMs: 10 * 60 * 1000 },
   reprises: 2,
   delaiRepriseMs: 10 * 60 * 1000,
-  arret: { fenetre: 1_000, part: 0.15, pauseMs: 10 * 60 * 1000, depassements: 3 },
+  arret: { fenetre: 1_000, part: 0.15, pauseMs: 10 * 60 * 1000, depassements: 3, pausesMax: 3 },
 };
 
 export type ResultatCollecte = {
@@ -126,9 +128,10 @@ export type ResultatCollecte = {
   arret: string | null;
 };
 
-/** The client, with the per-zone limit on every question. */
-/** The pace at which the questions held by an emergency pause go out again: the names' pace (POLITESSE). */
+/** The pace at which the questions held by an emergency pause go out again, by default: the names' (POLITESSE). */
 const REPRISE_PAR_SECONDE = 25;
+
+/** The client, with the per-zone limit on every question. */
 
 const CODES_EN_ECHEC = new Set(["SERVFAIL", "TIMEOUT", "REFUSED", "ERREUR", "ZONE_MUETTE", "SOUS_ZONE_MUETTE"]);
 /**
@@ -211,6 +214,7 @@ export class ClientParZone implements ClientDns {
   #pauseJusqua = 0;
   /** The pace at which the questions held by an emergency pause go out again (created with the first pause). */
   #repriseCadence: Cadence | null = null;
+  #repriseParSeconde = REPRISE_PAR_SECONDE;
   /** The pace of each group of parent servers, for the questions that go to them. */
   readonly #parents = new Map<string, Cadence>();
   /** The pace of each zone's own servers. */
@@ -558,12 +562,16 @@ export class ClientParZone implements ClientDns {
    * The emergency pause (OptionsCollecte.arret): until `jusqua` (the client's clock), no question is asked; each one
    * waits before its turn and its pace, so the questions held go out at the servers' pace afterwards.
    */
-  pauser(jusqua: number): void {
+  pauser(jusqua: number, repriseParSeconde = REPRISE_PAR_SECONDE): void {
     this.#pauseJusqua = jusqua;
+    if (repriseParSeconde !== this.#repriseParSeconde) {
+      this.#repriseParSeconde = repriseParSeconde;
+      this.#repriseCadence = null;
+    }
   }
 
   get #reprise(): Cadence {
-    this.#repriseCadence ??= new Cadence(REPRISE_PAR_SECONDE, this.horloge);
+    this.#repriseCadence ??= new Cadence(this.#repriseParSeconde, this.horloge);
     return this.#repriseCadence;
   }
 
@@ -687,6 +695,8 @@ export async function collecter(
   let pauseJusqua = 0;
   /** The breaches in a row: each but the last brings a pause; a full count under the threshold resets them. */
   let depassements = 0;
+  /** The pauses of the day (at most `pausesMax`: a breach beyond them stops). */
+  let pauses = 0;
   const seuil = `seuil : ${Math.round(100 * options.arret.part)} %`;
   const minutesPause = Math.round(options.arret.pauseMs / 60_000);
   const enEchecPourArret = (unite: string): boolean => {
@@ -711,11 +721,12 @@ export async function collecter(
       return;
     }
     depassements += 1;
-    if (depassements < options.arret.depassements) {
+    if (depassements < options.arret.depassements && pauses < options.arret.pausesMax) {
       // A pause, then a new count.
+      pauses += 1;
       epoque += 1;
       pauseJusqua = horloge.maintenant() + options.arret.pauseMs;
-      client.pauser(pauseJusqua);
+      client.pauser(pauseJusqua, options.nomsParSeconde);
       fenetre = [];
       enEchecDansFenetre = 0;
       options.suivi?.(
@@ -725,8 +736,11 @@ export async function collecter(
       return;
     }
     resultat.arret =
-      `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, au dépassement ${depassements} de suite ` +
-      `(une pause de ${minutesPause} min après chacun des précédents)`;
+      depassements >= options.arret.depassements
+        ? `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, au dépassement ${depassements} de ` +
+          `suite (une pause de ${minutesPause} min après chacun des précédents)`
+        : `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, toutes les pauses du jour prises ` +
+          `(${pauses} sur ${options.arret.pausesMax})`;
     client.arreter();
     options.surArret?.(resultat.arret);
     options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);

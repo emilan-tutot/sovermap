@@ -51,8 +51,14 @@ export function planDeControle(
   const etat = domaines.filter((d) => d.perimetre === "État");
   const autres = domaines.filter((d) => d.perimetre !== "État");
   const echantillon = melanger(autres, aleatoire).slice(0, Math.round(autres.length * PART_ECHANTILLON));
+  // The witnesses first: asked within the first seconds, they are never left out by the deadline or an emergency stop.
   return {
-    noms: [...new Set([...etat.map((d) => d.nomWeb), ...echantillon.map((d) => d.nomWeb), ...temoins])].sort(),
+    noms: [
+      ...new Set([
+        ...[...temoins].sort(),
+        ...[...etat.map((d) => d.nomWeb), ...echantillon.map((d) => d.nomWeb)].sort(),
+      ]),
+    ],
     mx: etat.map((d) => d.domaine).sort(),
   };
 }

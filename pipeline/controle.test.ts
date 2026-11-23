@@ -25,6 +25,15 @@ describe("the controls", () => {
     expect(plan.noms).toHaveLength(1 + 3 + 1);
   });
 
+  it("asks the witnesses first, so that neither the deadline nor an emergency stop leaves them out", () => {
+    const domaines = [
+      { domaine: "a.example", nomWeb: "a.example", perimetre: "État" as const },
+      { domaine: "z.example", nomWeb: "z.example", perimetre: "État" as const },
+    ];
+    const plan = planDeControle(domaines, ["temoin-b.example", "temoin-a.example"], generateur(7));
+    expect(plan.noms).toEqual(["temoin-a.example", "temoin-b.example", "a.example", "z.example"]);
+  });
+
   it("asks the control resolver at 2 questions per second at most", async () => {
     let t = 0;
     const horloge: Horloge = { maintenant: () => t, dormir: async (ms) => void (t += ms) };
