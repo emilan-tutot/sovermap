@@ -64,7 +64,13 @@ export function Recherche() {
         <ul className="recherche-resultats">
           {resultats.map((r) => (
             <li key={r.adresse}>
-              <Link href={r.adresse} prefetch={false} className={r.type === "d" ? "valeur" : undefined}>
+              {/* A domain's link carries the type « vole »: its Radiographie's chapô waits for the name to land. */}
+              <Link
+                href={r.adresse}
+                prefetch={false}
+                className={r.type === "d" ? "valeur" : undefined}
+                transitionTypes={r.type === "d" ? ["vole"] : []}
+              >
                 {r.type === "d" ? (
                   // The domain's name flies into the Radiographie's title (DESIGN.md § 7).
                   <ViewTransition name={`domaine-${r.libelle}`} share="vole" default="none">

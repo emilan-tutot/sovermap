@@ -114,6 +114,29 @@
     animation-timing-function: var(--ease-courbe);
   }
 
+  /* The flying name never passes as text over text (the owner's retouch at point 17: it crossed the chapô for four
+     frames, and its two renderings blended for as many): only its new image flies, on a solid ground of the page's
+     colour, and what follows the Radiographie's title (chapô, note, layers) stays hidden while a navigation from the
+     search (type « vole », carried by its links) runs, then appears in 200 ms, once the name has landed: wherever
+     the name starts (lower on a phone), it never passes over text. */
+  ::view-transition-old(.vole) {
+    animation: none;
+    opacity: 0;
+  }
+
+  ::view-transition-new(.vole) {
+    animation: none;
+    background-color: var(--color-fond);
+  }
+
+  .radiographie-titre ~ * {
+    transition: opacity 200ms var(--ease-courbe);
+  }
+
+  :root:active-view-transition-type(vole) .radiographie-titre ~ * {
+    opacity: 0;
+  }
+
   @keyframes vt-sortie {
     to {
       opacity: 0;
