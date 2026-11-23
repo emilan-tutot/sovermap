@@ -271,7 +271,7 @@ Principe :
   - aucun fichier au-dessus de 50 Mio (seuil d'avertissement ; blocage à 100 Mio) ;
   - au plus 3 000 entrées par dossier (limite recommandée de « Directory width ») ;
   - au plus 6 envois par minute (recommandation de GitHub).
-- **Règles respectées** : aucun commit sur `main`. La branche `donnees` n'est pas protégée par l'ensemble de règles de `main`. Depuis le 21/11/2026, un ensemble de règles à elle interdit sa suppression et tout push forcé, sans exception (n° 27811110). La règle « seul le robot des Actions y écrit » se pose sous surveillance d'une publication (une erreur ferait manquer un jour) ; si une règle fait lancer CodeQL sur `donnees`, elle est retirée et l'écart noté ici (B.6).
+- **Règles respectées** : aucun commit sur `main`. La branche `donnees` n'est pas protégée par l'ensemble de règles de `main`. Depuis le 21/11/2026, un ensemble de règles à elle interdit sa suppression et tout push forcé, sans exception (n° 27811110). La règle « seul le robot des Actions y écrit » se pose sous surveillance d'une publication (une erreur ferait manquer un jour) ; si une règle fait lancer CodeQL sur `donnees`, elle est retirée et l'écart noté ici (B.6). **Écart (23/11/2026)** : GitHub refuse cette exception pour un dépôt personnel (« Actor GitHub Actions integration must be part of the ruleset source or owner organization », HTTP 422) ; rien n'a été créé, et la solution la plus simple reste seule : ni suppression ni push forcé (vérifiée par les publications des jours 2 et 3, sans aucune exécution d'Actions lancée sur `donnees`). À revoir si le dépôt passe dans une organisation (chantier 3).
 
 ## 11. Quotas de Vercel Hobby
 
