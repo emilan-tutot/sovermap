@@ -45,7 +45,7 @@ export const fr = {
     accueil: {
       etiquette: "Atlas",
       question: `Qui héberge l’État${NBSP}?`,
-      phrase: `Chaque site public français${NBSP}: la société qui le sert et le pays du siège de sa maison mère, jour après jour.`,
+      phrase: `Chaque site public français${NBSP}: la société qui le sert, sa maison mère et le pays de leurs sièges, jour après jour.`,
     },
     radiographie: {
       etiquette: "Radiographie",
@@ -55,8 +55,7 @@ export const fr = {
     ministere: {
       etiquette: "Ministère",
       question: `Qui héberge ses sites${NBSP}?`,
-      phrase:
-        "Les sites d’un ministère, la société ou l’organisme qui sert chacun d’eux et le pays du siège de sa maison mère.",
+      phrase: `Les sites d’un ministère${NBSP}: l’exploitant de chacun, sa maison mère et le pays de leurs sièges.`,
     },
     societe: {
       etiquette: "Exploitant",
