@@ -6,6 +6,8 @@
 // « Administration centrale (ou Ministère) »; independent authorities and courts have none.
 import { nomValide } from "./liste";
 
+import { type Ecarts, garderTexteLibre } from "./personnelles";
+
 export type ServiceDila = {
   id: string;
   nom: string;
@@ -23,10 +25,21 @@ export type ReferentielDila = {
   services: Map<string, ServiceDila>;
   /** The names made plain text for a spreadsheet (nomNeutre), counted in etat.json. */
   neutralises: number;
+  /** The names and acronyms left out because they held a personal datum (P13), counted in etat.json. */
+  ecarts: Ecarts;
 };
 
 const objet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const texte = (v: unknown): string | null => (typeof v === "string" && v.trim() !== "" ? v.trim().slice(0, 300) : null);
+/**
+ * A free text that passes the control of personal data (P13) before it is cut to its 300 characters: a datum that the
+ * cut would split (« nom@exem… ») is seen whole. The control reads 2,000 characters at most, so that no text is long
+ * enough to slow it.
+ */
+const texteControle = (v: unknown, ecarts: Ecarts): string | null => {
+  const entier = typeof v === "string" && v.trim() !== "" ? v.trim().slice(0, 2000) : null;
+  return garderTexteLibre(entier, "dila", ecarts)?.slice(0, 300).trim() ?? null;
+};
 
 export const TYPE_MINISTERE = "Administration centrale (ou Ministère)";
 
@@ -72,19 +85,24 @@ export function lireDila(json: string, fichierBrut: string): ReferentielDila {
   if (!objet(brut) || !Array.isArray(brut.service)) throw new Error(`${fichier} : liste « service » attendue`);
   const lus = new Map<string, Omit<ServiceDila, "parent" | "ministere"> & { enfants: string[] }>();
   let neutralises = 0;
+  const ecarts: Ecarts = {};
   for (const s of brut.service) {
     if (!objet(s)) continue;
     const id = texte(s.id);
-    const nomBrut = texte(s.nom);
+    // Identifiers are short codes (UUIDs today): anything else is left out, so no record ever carries a long or odd one
+    // (and its name is neither read nor counted).
+    if (id === null || !ID_VALIDE.test(id)) continue;
+    // A name or an acronym that holds an e-mail address, a phone or a person's name is never kept (P13): the service
+    // is then named by its acronym, or its identifier.
+    const nomBrut = texteControle(s.nom, ecarts);
+    const sigle = texteControle(s.sigle, ecarts);
     // A name reaches the open CSV files: one a spreadsheet would read as a formula is made plain text, and counted
     // (none, 22/11/2026).
     const nomNet = nomBrut === null ? "" : nomNeutre(nomBrut);
     if (nomBrut !== null && nomNet !== nomBrut) neutralises += 1;
-    // Identifiers are short codes (UUIDs today): anything else is left out, so no record ever carries a long or odd one.
-    if (id === null || !ID_VALIDE.test(id)) continue;
     // A service keeps its place (its websites, its children) whatever its name: without one, its acronym or its
     // identifier names it.
-    const nom = nomNet || nomNeutre(texte(s.sigle) ?? "") || id;
+    const nom = nomNet || nomNeutre(sigle ?? "") || id;
     const enfants = (Array.isArray(s.hierarchie) ? s.hierarchie : []).flatMap((h) =>
       objet(h) && h.type_hierarchie === "Service Fils" && texte(h.service) !== null ? [texte(h.service) as string] : [],
     );
@@ -96,8 +114,9 @@ export function lireDila(json: string, fichierBrut: string): ReferentielDila {
     lus.set(id, {
       id,
       nom,
-      sigle: texte(s.sigle),
-      type: texte(s.type_organisme),
+      sigle,
+      // A category column keeps its known values only (P13): the one that marks a ministry, the only one read.
+      type: texte(s.type_organisme) === TYPE_MINISTERE ? TYPE_MINISTERE : null,
       hotes: [...new Set(hotes)].sort(),
       enfants,
     });
@@ -133,5 +152,5 @@ export function lireDila(json: string, fichierBrut: string): ReferentielDila {
       hotes: s.hotes,
     });
   }
-  return { fichier, services, neutralises };
+  return { fichier, services, neutralises, ecarts };
 }

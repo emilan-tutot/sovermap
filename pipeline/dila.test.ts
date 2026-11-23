@@ -87,6 +87,52 @@ describe("the DILA Référentiel", () => {
     expect(JSON.stringify([...lireDila(json, "f").services.values()])).not.toMatch(/Personne|contact@|01 00/);
   });
 
+  it("never keeps a name or an acronym that holds a person's name or a phone, and counts it (P13)", () => {
+    const json = JSON.stringify({
+      service: [
+        service("s1", "Secrétariat de Mme Exemple", ["https://s1.example"], [], { sigle: "SME" }),
+        service("s2", "Accueil 01 23 45 67 89", ["https://s2.example"], [], { sigle: "Cabinet de M. Exemple" }),
+        service("s3", "Service Exemple", ["https://s3.example"]),
+      ],
+    });
+    const ref = lireDila(json, "f");
+    // Its acronym names the first; the second has none left, so its identifier does.
+    expect([...ref.services.values()].map((s) => [s.id, s.nom, s.sigle])).toEqual([
+      ["s1", "SME", "SME"],
+      ["s2", "s2", null],
+      ["s3", "Service Exemple", null],
+    ]);
+    expect(ref.ecarts).toEqual({ dila: { "nom de personne": 2, téléphone: 1 } });
+  });
+
+  it("controls a name whole, before its cut to 300 characters, and never counts a service left out for its identifier", () => {
+    // A phone across the 300th character: cut first, « 01 23 4 » would pass the control (the review of PR 19).
+    const long = `Service ${"x".repeat(284)} 01 23 45 67 89`;
+    expect(long.indexOf("01 23")).toBe(293);
+    const json = JSON.stringify({
+      service: [
+        service("s1", long, ["https://s1.example"]),
+        service("identifiant invalide", "Secrétariat de Mme Exemple", ["https://s2.example"]),
+      ],
+    });
+    const ref = lireDila(json, "f");
+    expect([...ref.services.values()].map((s) => [s.id, s.nom])).toEqual([["s1", "s1"]]);
+    expect(ref.ecarts).toEqual({ dila: { téléphone: 1 } });
+  });
+
+  it("keeps of the type column its one known value, the ministry's; any other is never copied (P13)", () => {
+    const json = JSON.stringify({
+      service: [
+        service("m", "Ministère de l’Exemple", ["https://m.example"], ["d"]),
+        service("d", "Direction de l’Exemple", ["https://d.example"], [], { type_organisme: "Direction, Exemple" }),
+      ],
+    });
+    const services = lireDila(json, "f").services;
+    expect(services.get("m")?.type).toBe("Administration centrale (ou Ministère)");
+    expect(services.get("d")?.type).toBeNull();
+    expect(services.get("d")?.ministere).toBe("m");
+  });
+
   it("reads a host only from a web address", () => {
     expect(hoteDuSite("https://www.site.example/a?b")).toBe("www.site.example");
     expect(hoteDuSite("site.example")).toBe("site.example");

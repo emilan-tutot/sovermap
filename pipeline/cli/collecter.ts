@@ -24,6 +24,7 @@ import {
 } from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
+import { diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
@@ -32,7 +33,7 @@ import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
 import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
-import { donneesPersonnelles } from "../personnelles";
+import { ajouterEcarts, donneesPersonnelles, type Ecarts, textesAs } from "../personnelles";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -85,6 +86,9 @@ const SEUIL_REDUITES = 0.001;
 
 /** The version of the records' building (couches.ts, etat-du-jour.ts): a change rebases the state like new rules. */
 const VERSION_CLASSEMENT = 1;
+
+/** After an emergency stop, the failures asked again to Quad9, for the diagnosis only (the day is never published). */
+const CONFIRMATIONS_APRES_ARRET = 50;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
 const METHODE = "0.3";
@@ -542,12 +546,17 @@ async function principal(): Promise<number> {
   // options were checked as soon as they were read (LIMITES).
   const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
   const minutesDe = (minutes: number) => maintenant.getTime() + minutes * 60_000;
-  const finControles = minutesDe(finControlesMinutes);
+  // The emergency stop brings the controls' deadline to its instant: Quad9 is asked nothing more for a lost day.
+  let finControles = minutesDe(finControlesMinutes);
+  const finDesControles = () => finControles;
+  /** The confirmations of the failures keep their own deadline: after a stop, a few of them are still asked. */
+  const finConfirmations = minutesDe(finControlesMinutes);
   // The hosts of the « État » domains (name servers, mail exchangers), asked to Quad9 as soon as each domain is
   // measured: Quad9's pace is shared with the control of the plan, which ends long before the first pass, so the hosts
   // fill the time Quad9 would otherwise wait (the day's tail was this control, run after the first pass).
   const domainesEtat = new Set(domainesMesures.filter((d) => d.perimetre === "État").map((d) => d.domaine));
-  const controleHotesEnCours = new ControleEnContinu(quad9, 8, finControles);
+  const nomsWeb = new Map(domainesMesures.map((d) => [d.domaine, d.nomWeb] as const));
+  const controleHotesEnCours = new ControleEnContinu(quad9, 8, finDesControles);
   const hotesDeZone = (zone: MesureZone) => [...zone.ns.slice(0, 13), ...zone.mx.slice(0, 10).map((x) => x.hote)];
   const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
     collecter(noms, knot, {
@@ -558,6 +567,10 @@ async function principal(): Promise<number> {
       finReprises: minutesDe(finReprisesMinutes),
       zoneDe,
       suivi,
+      nomWebDe: (domaine) => nomsWeb.get(domaine),
+      surArret: () => {
+        finControles = Date.now();
+      },
       apresDomaine: (domaine, zone) => {
         if (domainesEtat.has(domaine)) controleHotesEnCours.ajouter(hotesDeZone(zone));
       },
@@ -568,7 +581,7 @@ async function principal(): Promise<number> {
       ...(debit.frein === undefined ? {} : { frein: debit.frein }),
       ...(debit.journal === undefined ? {} : { journal: debit.journal }),
     }),
-    controler(quad9, plan.noms, plan.mx, 8, finControles),
+    controler(quad9, plan.noms, plan.mx, 8, finDesControles),
     controler(cloudflare, nomsTemoins, []),
   ]);
   suivi(`mesure, reprises et contrôles parallèles finis à ${minutes()} min`);
@@ -591,7 +604,7 @@ async function principal(): Promise<number> {
   // The domains whose MX question alone failed, and Quad9's too (for the guard only: nothing else is published).
   const pannesMx = new Set<string>();
   const confirmer = async () => {
-    for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finControles; d = aConfirmer.shift()) {
+    for (let d = aConfirmer.shift(); d !== undefined && Date.now() < finConfirmations; d = aConfirmer.shift()) {
       const zoneEnEchec = mesures.domaines.get(d.domaine)?.etat === "echec";
       const webEnEchec = mesures.noms.get(d.nomWeb)?.etat === "echec";
       const [nom, type] = zoneEnEchec
@@ -606,6 +619,11 @@ async function principal(): Promise<number> {
       if (type === "MX") pannesMx.add(d.domaine);
     }
   };
+  // A stopped day is never published: a few confirmations are kept for the diagnosis, the rest is not asked.
+  if (mesures.arret !== null && aConfirmer.length > CONFIRMATIONS_APRES_ARRET) {
+    suivi(`arrêt d'urgence : ${CONFIRMATIONS_APRES_ARRET} des ${aConfirmer.length} pannes seulement reposées à Quad9`);
+    aConfirmer.splice(CONFIRMATIONS_APRES_ARRET);
+  }
   const nombreAConfirmer = aConfirmer.length;
   await Promise.all(Array.from({ length: 8 }, confirmer));
   suivi(`confirmation de ${nombreAConfirmer} pannes finie à ${minutes()} min`);
@@ -680,6 +698,11 @@ async function principal(): Promise<number> {
   // The day's observations, kept as tomorrow's yesterday when the day is trustworthy, with its breakdowns' share.
   observations.tauxPannes = tauxPannes;
   writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
+  // The failing domains, for the diagnosis of a degraded day: beside the output, never in it (the run's artifact only).
+  writeFileSync(
+    path.join(travail, "diagnostic.json"),
+    `${JSON.stringify({ date, essai: o.essai, domaines: diagnosticDesEchecs(jour) })}\n`,
+  );
 
   const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
   const veille =
@@ -725,6 +748,8 @@ async function principal(): Promise<number> {
           asVus,
         )
       : new Map();
+  // The free text of the AS kept (P13), counted with the Référentiel's in etat.json.
+  const ecartsAs: Ecarts = {};
   const descriptions = new Map<number, string | null>();
   for (const a of asVus) {
     descriptions.set(a, contexte.iptoasn.descriptionAs(a));
@@ -766,16 +791,24 @@ async function principal(): Promise<number> {
     ...fragments("domaines", b.etat.domaines),
     ...index(b.etat, {
       as: new Map(
-        [...asVus].map((a) => [
-          a,
-          {
-            // A description or a holder's name may name a person (an AS held by an individual): both are published
-            // only for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data).
-            description: ref.tableAs.as[String(a)] === undefined ? null : (descriptions.get(a) ?? null),
-            paysEnregistrement: contexte.paysAs.get(a) ?? null,
-            titulaire: ref.tableAs.as[String(a)] === undefined ? null : (ripe.get(a)?.orgName ?? null),
-          },
-        ]),
+        [...asVus].map((a) => {
+          // A description or a holder's name may name a person (an AS held by an individual): both are published only
+          // for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data), after the control (P13).
+          const textes = textesAs(
+            ref.tableAs.as[String(a)] !== undefined,
+            descriptions.get(a) ?? null,
+            ripe.get(a)?.orgName ?? null,
+            ecartsAs,
+          );
+          return [
+            a,
+            {
+              description: textes.description,
+              paysEnregistrement: contexte.paysAs.get(a) ?? null,
+              titulaire: textes.titulaire,
+            },
+          ];
+        }),
       ),
       societes,
       organismes,
@@ -834,6 +867,8 @@ async function principal(): Promise<number> {
 
   const partReduites = (rapportJour.reduits + rapportJour.erreurs) / Math.max(1, jour.noms.size + jour.domaines.size);
   const gardes: Garde[] = [
+    // The emergency stop (collecte.ts): a collection stopped before its end is never published.
+    { nom: "collecte menée à son terme", ok: mesures.arret === null, detail: mesures.arret ?? "" },
     {
       nom: "témoins concordants",
       ok: temoins.concordants,
@@ -951,6 +986,8 @@ async function principal(): Promise<number> {
       tauxEchecPourcent: Math.round(10000 * tauxEchec) / 100,
       enregistrementsReduits: rapportJour.reduits,
       nomsDilaNeutralises: dila?.neutralises ?? 0,
+      // The free text left out because it held an e-mail address, a phone or a person's name (P13), by source.
+      texteLibreEcarte: ajouterEcarts(dila?.ecarts ?? {}, ecartsAs),
       enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,
