@@ -1252,6 +1252,36 @@
     stroke-width: 1px;
     vector-effect: non-scaling-stroke;
   }
+
+  /* Printing a record (point 13, § 10): the content alone; the skip link, the header and its navigation, the footer,
+     the modes, the search and the buttons are left out; the chain follows the layers instead of standing beside them;
+     a layer, a reference or a statement is never cut across two pages. Nothing changes on screen. */
+  @media print {
+    .evitement,
+    .entete,
+    .navigation-compacte,
+    .pied,
+    .radiographie-modes,
+    .recherche,
+    .scene-outils,
+    .bouton {
+      display: none !important;
+    }
+
+    .radiographie-colonnes {
+      display: block;
+    }
+
+    .radiographie-chaine {
+      position: static;
+    }
+
+    .couche,
+    .citer,
+    .releve {
+      break-inside: avoid;
+    }
+  }
 }
 
 /* The globe of the Atlas (DESIGN.md §8): the canvas, the labels and their leader lines in HTML and SVG over it, the

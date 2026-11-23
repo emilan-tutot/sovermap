@@ -377,6 +377,19 @@ test("citer : une Radiographie, un ministère, une société et un pays donnent 
   }
 });
 
+// Printing a Radiographie (point 13, § 10): the layers and the reference, without the header, the modes or the footer.
+test("impression : une Radiographie s'imprime sans en-tête, modes ni pied de page, ses couches et sa référence gardées", async ({
+  page,
+}) => {
+  await page.goto("/radiographie/service.example");
+  await page.emulateMedia({ media: "print" });
+  for (const masque of [".entete", ".radiographie-modes", ".pied"]) await expect(page.locator(masque).first()).toBeHidden();
+  await expect(page.locator(".couche").first()).toBeVisible();
+  await expect(page.locator("section.citer")).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
+  await expect(page.locator(".entete")).toBeVisible();
+});
+
 // The Confidentiality page says that Sovermap writes nothing in the browser: no cookie, nothing in localStorage,
 // sessionStorage or IndexedDB. Proved on every kind of page, then after what a visitor does: the menu (on a phone), the
 // globe, the time slider, the search and its result, the Expert mode (the owner's correction 7 at point 17).
