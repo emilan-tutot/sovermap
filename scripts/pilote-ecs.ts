@@ -47,6 +47,11 @@ function fragments<T>(dossier: string, sorte: "domaines" | "noms"): T[] {
 }
 const json = <T>(fichier: string) => JSON.parse(readFileSync(fichier, "utf8")) as T;
 
+// The local inputs first: a missing one stops the pilot before any request.
+const domaines = fragments<EnregistrementDomaine>(o.donnees, "domaines");
+const noms = new Map(fragments<EnregistrementNom>(o.donnees, "noms").map((n) => [n.nom, n]));
+const iptoasn = new TableIpToAsn(gunzipSync(readFileSync(o.iptoasn)).toString("utf8"));
+
 const telechargeur = new Telechargeur({
   agent: agentUtilisateur(json<{ version: string }>("package.json").version),
   delaiMs: 15_000,
@@ -68,7 +73,7 @@ const lire = (id: string) => {
   return etats.some((e) => e.id === id && e.etat === "du jour") && existsSync(f) ? readFileSync(f, "utf8") : null;
 };
 const contexte: Contexte = {
-  iptoasn: new TableIpToAsn(gunzipSync(readFileSync(o.iptoasn)).toString("utf8")),
+  iptoasn,
   // No RIS on the pilot's side: the AS comes from IPtoASN, as the published network layer takes it.
   ris: new TableRis([]),
   cdn: json<ReferentielCdn>("referentiels/cdn.json"),
@@ -81,8 +86,6 @@ const contexte: Contexte = {
   societes: json<ReferentielSocietes>("referentiels/societes.json"),
 };
 
-const domaines = fragments<EnregistrementDomaine>(o.donnees, "domaines");
-const noms = new Map(fragments<EnregistrementNom>(o.donnees, "noms").map((n) => [n.nom, n]));
 const date = new Date().toISOString().slice(0, 10);
 const tires = domainesDuPilote(domaines, noms, Number(date.replaceAll("-", "")));
 console.log(
@@ -91,9 +94,17 @@ console.log(
     `${etats.filter((e) => e.etat === "du jour").length} sur ${ID_PLAGES.length}`,
 );
 
+/** Each request ends within 30 seconds, robots.txt's own included (the downloader gives it no time limit). */
+const DELAI_MS = 30_000;
+const obtenir = (adresse: string) =>
+  Promise.race([
+    telechargeur.obtenir(adresse),
+    new Promise<never>((_, refuser) => setTimeout(() => refuser(new Error("délai dépassé")), DELAI_MS).unref()),
+  ]);
+
 const mesure = mesureVide();
 try {
-  await mesurer(tires, (adresse) => telechargeur.obtenir(adresse), contexte, mesure);
+  await mesurer(tires, obtenir, contexte, mesure);
 } finally {
   const bilan = bilanDuPilote(mesure.resultats);
   writeFileSync(
@@ -102,12 +113,12 @@ try {
   );
   const part = bilan.partPourcent === null ? "aucune part" : `${String(bilan.partPourcent).replace(".", ",")} %`;
   console.log(
-    `pilote : ${bilan.compares} domaines comparés sur ${bilan.domaines} ; ${bilan.changent} changent de société selon le sous-réseau ` +
-      `(${part} ; seuil 1 % : ${bilan.decision}) ; ${mesure.questions} questions, ${mesure.sansReponse} sans réponse de l'API, ` +
+    `pilote : ${bilan.compares} domaines comparés sur ${bilan.domaines}, dont ${bilan.selonLeSousReseau} où une réponse au moins ` +
+      `dépend du sous-réseau ; ${bilan.changent} changent de société selon le sous-réseau (${part} ; seuil 1 % : ` +
+      `${bilan.decision}) ; ${mesure.questions} questions, ${mesure.sansReponse} sans réponse de l'API, ` +
       `${mesure.sansAdresse} sans adresse`,
   );
 }
-if (mesure.arret !== null) {
-  console.error(`pilote arrêté : ${mesure.arret} (le rapport garde ce qui a été mesuré)`);
-  process.exitCode = 1;
-}
+if (mesure.arret !== null) console.error(`pilote arrêté : ${mesure.arret} (le rapport garde ce qui a été mesuré)`);
+// A request still pending after its time limit must not keep the job alive: the report is written, the pilot ends.
+process.exit(mesure.arret === null ? 0 : 1);

@@ -40,8 +40,12 @@ export const API_GOOGLE = "https://dns.google";
 export const DOMAINES_DU_PILOTE = 300;
 /** Below this many compared domains, one domain alone would weigh more than 1 %: the share is not judged. */
 export const COMPARES_AU_MOINS = 100;
-/** The pilot stops after this many questions in a row without the API's answer (a refusal, an error, a time-out). */
+/** The pilot stops after this many questions in a row without the API's answer (a server error, a time-out). */
 export const SANS_REPONSE_DE_SUITE_AU_PLUS = 5;
+/** A refusal of the API (a rate limit, a ban): the pilot stops at the first one, as on a page that is not its answer. */
+export const STATUTS_DE_REFUS: ReadonlySet<number> = new Set([403, 429]);
+/** The pilot stops asking after this long and writes what it measured (its job's limit is 30 minutes). */
+export const ECHEANCE_MS = 20 * 60_000;
 
 export type Perimetre = EnregistrementDomaine["perimetre"];
 export type DomaineDuPilote = {
@@ -151,18 +155,21 @@ export function societesDe(o: ObservationDns, perimetre: Perimetre, contexte: Co
 
 /**
  * Whether the company changes from the first subnet to any other, by the method's own comparison (its control
- * resolver's accord); null when one subnet got no address (the domain is then not compared).
+ * resolver's accord); null when one subnet got no address, or no company the method can name (the method would say
+ * « non déterminé »): the domain is then not compared.
  */
 export function changeDeSociete(
   observations: readonly (ObservationDns | null)[],
   perimetre: Perimetre,
   contexte: Contexte,
 ): boolean | null {
-  const [premiere, ...autres] = observations;
-  if (premiere === undefined || premiere === null || premiere.statut !== "NOERROR" || autres.length === 0) return null;
+  const vues = observations.filter(
+    (o): o is ObservationDns => o !== null && (societesDe(o, perimetre, contexte)?.length ?? 0) > 0,
+  );
+  const [premiere, ...autres] = vues;
+  if (premiere === undefined || autres.length === 0 || vues.length !== observations.length) return null;
   let change = false;
   for (const autre of autres) {
-    if (autre === null || autre.statut !== "NOERROR") return null;
     const accord = classer(premiere, autre, perimetre, contexte).controle?.accord;
     if (accord === undefined) return null;
     if (!accord) change = true;
@@ -214,8 +221,8 @@ export const mesureVide = (): Mesure => ({ resultats: [], questions: 0, sansRepo
 /**
  * Asks every drawn domain once per subnet, one question at a time, through `obtenir` (the polite downloader: it
  * spaces the questions and obeys robots.txt). It fills `mesure` as it goes, so that the caller keeps what was measured
- * even if it stops; it stops when robots.txt forbids the questions, or after too many questions in a row without the
- * API's answer.
+ * even if it stops. It stops when robots.txt forbids the questions, at the first refusal of the API (403, 429) or page
+ * that is not its answer, after too many questions in a row without its answer, and at its deadline.
  */
 export async function mesurer(
   tires: readonly DomaineDuPilote[],
@@ -225,15 +232,25 @@ export async function mesurer(
   sousReseaux: readonly SousReseau[] = SOUS_RESEAUX,
   maintenant: () => Date = () => new Date(),
 ): Promise<Mesure> {
+  const debut = maintenant().getTime();
   let sansReponseDeSuite = 0;
   for (const d of tires) {
     const sr: ResultatSousReseau[] = [];
     const observations: (ObservationDns | null)[] = [];
     for (const s of sousReseaux) {
+      if (maintenant().getTime() - debut >= ECHEANCE_MS) {
+        mesure.arret = `échéance de ${ECHEANCE_MS / 60_000} minutes atteinte`;
+        return mesure;
+      }
       let reponse: ReponseGoogle | null = null;
+      let refus: string | null = null;
       try {
         const r = await obtenir(adresseDeQuestion(d.nomWeb, s));
-        reponse = r.statut === 200 ? lireReponse(r.corps.toString("utf8")) : null;
+        if (STATUTS_DE_REFUS.has(r.statut)) refus = `refus de l'API (HTTP ${r.statut})`;
+        else if (r.statut === 200) {
+          reponse = lireReponse(r.corps.toString("utf8"));
+          if (reponse === null) refus = "une page qui n'est pas la réponse de l'API";
+        }
       } catch (e) {
         // Refused by robots.txt (or by a server error on it): the question was never sent.
         if (e instanceof RefusRobots) {
@@ -242,6 +259,11 @@ export async function mesurer(
         }
       }
       mesure.questions += 1;
+      if (refus !== null) {
+        mesure.sansReponse += 1;
+        mesure.arret = refus;
+        return mesure;
+      }
       if (reponse === null) {
         mesure.sansReponse += 1;
         sansReponseDeSuite += 1;
@@ -267,14 +289,28 @@ export async function mesurer(
   return mesure;
 }
 
+/** The ECS scope of an answer (the last number of « address/…/scope »), or null when absent or unreadable. */
+export function porteeDe(portee: string | null): number | null {
+  const fin = portee?.includes("/") ? (portee.split("/").at(-1) ?? "") : "";
+  if (!/^[0-9]{1,3}$/.test(fin)) return null;
+  const n = Number(fin);
+  return n <= 128 ? n : null;
+}
+
 export type Decision = "au-delà du seuil" | "seuil tenu" | "non déterminé";
 
 export type BilanPilote = {
   domaines: number;
-  /** Domains every subnet got an address for. */
+  /** Domains every subnet got an address, and a company the method names, for. */
   compares: number;
   /** Among them, those whose company changes from one subnet to another. */
   changent: number;
+  /**
+   * Among the compared, those with at least one answer that depends on the subnet (an ECS scope above 0). A server
+   * that ignores the subnet answers by the place of Google's resolver: a change could not be seen there, so the share
+   * is a lower bound, to be read with this count.
+   */
+  selonLeSousReseau: number;
   /** For display only, rounded to a tenth; the threshold is judged on the exact counts. */
   partPourcent: number | null;
   decision: Decision;
@@ -301,6 +337,8 @@ export function bilanDuPilote(resultats: readonly ResultatDomaine[]): BilanPilot
     domaines: resultats.length,
     compares: compares.length,
     changent: changent.length,
+    selonLeSousReseau: compares.filter((r) => r.sousReseaux.some((s) => (porteeDe(s.reponse?.portee ?? null) ?? 0) > 0))
+      .length,
     partPourcent: compares.length === 0 ? null : Math.round((1000 * changent.length) / compares.length) / 10,
     decision,
     parPerimetre,

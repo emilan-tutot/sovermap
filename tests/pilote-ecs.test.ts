@@ -15,15 +15,18 @@ import {
   COMPARES_AU_MOINS,
   type DomaineDuPilote,
   domainesDuPilote,
+  ECHEANCE_MS,
   lireReponse,
   mesureVide,
   mesurer,
   observationDe,
   plagesOfficielles,
+  porteeDe,
   type ResultatDomaine,
   SANS_REPONSE_DE_SUITE_AU_PLUS,
   societesDe,
   SOUS_RESEAUX,
+  STATUTS_DE_REFUS,
 } from "@/scripts/lib/pilote-ecs";
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -33,8 +36,9 @@ const IPTOASN = [
   "192.0.2.0\t192.0.2.255\t64496\tFR\tEXEMPLE-HEBERGEUR",
   "198.51.100.0\t198.51.100.127\t64500\tNL\tEXEMPLE-CDN",
   "198.51.100.128\t198.51.100.255\t64501\tFR\tEXEMPLE-FAI",
-  "203.0.113.0\t203.0.113.255\t64502\tUS\tEXEMPLE-CLOUD",
+  "203.0.113.0\t203.0.113.127\t64502\tUS\tEXEMPLE-CLOUD",
 ].join("\n");
+// 203.0.113.128 to 203.0.113.255: addresses no network list knows.
 const source = (hote: string) => ({ titre: hote, url: `https://${hote}/fiche`, lu_le: "2026-11-23" });
 const deux = [source("registre.example"), source("societes.example")];
 const societes: ReferentielSocietes = {
@@ -165,6 +169,13 @@ describe("the pilot's companies, by the method", () => {
     expect(societesDe(observation([], [], 2), "État", contexte)).toBeNull();
   });
 
+  it("compares nothing when a side has no company the method can name (an address no network list knows)", () => {
+    const inconnue = observation([], ["203.0.113.200"]);
+    expect(societesDe(inconnue, "État", contexte)).toEqual([]);
+    expect(changeDeSociete([observation([], ["192.0.2.10"]), inconnue], "État", contexte)).toBeNull();
+    expect(changeDeSociete([inconnue, observation([], ["203.0.113.201"])], "État", contexte)).toBeNull();
+  });
+
   it("reads the CDNs' official ranges as the collection does, and leaves out a list of another shape", () => {
     const plages = plagesOfficielles(
       ["192.0.2.0/24\n\n2001:db8::/32\npas-une-plage\n", "198.51.100.0/25"],
@@ -209,6 +220,15 @@ describe("the pilot's draw and its count", () => {
     expect(trois[0]?.publiees).toEqual(["cdn-nl"]);
   });
 
+  it("draws at random: never simply the first names in order, and another seed draws others", () => {
+    const vingt = Array.from({ length: 20 }, (_, i) => `n${String(i).padStart(2, "0")}.example`);
+    const domaines = vingt.map((d) => domaine(d, "hors État"));
+    const noms = new Map(vingt.map((d) => nom(d, true)).map((n) => [n.nom, n]));
+    const tirage = (graine: number) => domainesDuPilote(domaines, noms, graine, 5).map((d) => d.domaine);
+    expect(tirage(20261123)).not.toEqual(vingt.slice(0, 5));
+    expect(tirage(20261124)).not.toEqual(tirage(20261123));
+  });
+
   const resultat = (d: string, change: boolean | null, perimetre: "État" | "hors État" = "hors État"): ResultatDomaine => ({
     domaine: d,
     nomWeb: `www.${d}`,
@@ -241,6 +261,27 @@ describe("the pilot's draw and its count", () => {
       resultat("h2.example", null, "État"),
     ]).parPerimetre;
     expect(parts).toEqual({ État: { compares: 2, changent: 1 }, "hors État": { compares: 1, changent: 0 } });
+  });
+
+  it("reads the ECS scope the API gives back, and counts the compared domains whose answer depends on the subnet", () => {
+    expect(porteeDe("90.0.0.0/24/0")).toBe(0);
+    expect(porteeDe("90.0.0.0/24")).toBe(24);
+    expect(porteeDe("90.0.0.0/0")).toBe(0);
+    for (const illisible of [null, "", "90.0.0.0", "90.0.0.0/x", "90.0.0.0/24/-1"]) expect(porteeDe(illisible)).toBeNull();
+    const avecPortee = (d: string, portees: (string | null)[], change: boolean | null): ResultatDomaine => ({
+      ...resultat(d, change),
+      sousReseaux: portees.map((p, i) => ({
+        pays: SOUS_RESEAUX[i]?.pays ?? "",
+        reponse: { code: 0, chaineCname: [], a: ["192.0.2.1"], portee: p },
+        societes: ["cdn-nl"],
+      })),
+    });
+    const bilan = bilanDuPilote([
+      avecPortee("a.example", ["90.0.0.0/24/0", "24.0.0.0/24/24"], false),
+      avecPortee("b.example", ["90.0.0.0/24/0", "24.0.0.0/24/0"], false),
+      avecPortee("c.example", [null, "24.0.0.0/24/24"], null),
+    ]);
+    expect(bilan).toMatchObject({ compares: 2, selonLeSousReseau: 1 });
   });
 });
 
@@ -343,25 +384,60 @@ describe("the pilot's questions", () => {
     }
   });
 
-  it("stops after five questions in a row without the API's answer, and keeps what it measured", async () => {
+  it("stops at the first refusal of the API, or at a page that is not its answer", async () => {
+    expect([...STATUTS_DE_REFUS].sort()).toEqual([403, 429]);
+    for (const [refus, arret] of [
+      [{ status: 429 }, "refus de l'API (HTTP 429)"],
+      [{ status: 403 }, "refus de l'API (HTTP 403)"],
+      [{ status: 200, corps: "<html>défi</html>" }, "une page qui n'est pas la réponse de l'API"],
+    ] as const) {
+      // robots.txt, one good answer, then the refusal.
+      const f = reseauFaux((url, rang) => (url === ROBOTS ? { status: 404 } : rang <= 2 ? { status: 200, corps: reponseApi(url) } : refus));
+      try {
+        const m = await mesurer(tires, f.obtenir, contexte, mesureVide());
+        expect(m).toMatchObject({ questions: 2, sansReponse: 1, resultats: [], arret });
+        expect(f.appels).toHaveLength(3);
+      } finally {
+        f.retablir();
+      }
+    }
+  });
+
+  it("stops after five server errors in a row, never for errors apart, and keeps what it measured", async () => {
     expect(SANS_REPONSE_DE_SUITE_AU_PLUS).toBe(5);
-    // robots.txt, then two good answers, then only refusals (429) and a page that is not the API's answer.
-    const f = reseauFaux((url, rang) =>
-      url === ROBOTS
-        ? { status: 404 }
-        : rang <= 3
-          ? { status: 200, corps: reponseApi(url) }
-          : rang === 5
-            ? { status: 200, corps: "<html>défi</html>" }
-            : { status: 429 },
+    // Errors two by two between good answers: seven in all, never five in a row.
+    const espacees = reseauFaux((url, rang) =>
+      url === ROBOTS ? { status: 404 } : (rang - 1) % 3 === 0 ? { status: 200, corps: reponseApi(url) } : { status: 503 },
     );
     try {
-      const m = await mesurer(tires, f.obtenir, contexte, mesureVide());
+      const m = await mesurer(tires, espacees.obtenir, contexte, mesureVide());
+      expect(m).toMatchObject({ questions: 10, sansReponse: 7, arret: null });
+      expect(m.resultats).toHaveLength(5);
+    } finally {
+      espacees.retablir();
+    }
+    // Two good answers, then errors only: the fifth in a row stops it.
+    const suivies = reseauFaux((url, rang) =>
+      url === ROBOTS ? { status: 404 } : rang <= 3 ? { status: 200, corps: reponseApi(url) } : { status: 503 },
+    );
+    try {
+      const m = await mesurer(tires, suivies.obtenir, contexte, mesureVide());
       expect(m).toMatchObject({ questions: 7, sansReponse: 5, arret: "5 questions de suite sans réponse de l'API" });
       expect(m.resultats.map((r) => r.change)).toEqual([false, null, null]);
-      expect(f.appels).toHaveLength(8);
     } finally {
-      f.retablir();
+      suivies.retablir();
     }
+  });
+
+  it("stops asking at its deadline, and keeps what it measured", async () => {
+    expect(ECHEANCE_MS).toBe(20 * 60_000);
+    let t = 0;
+    const lente = async (url: string) => {
+      t += 7 * 60_000;
+      return { url, statut: 200, entetes: new Headers(), corps: Buffer.from(reponseApi(url)) };
+    };
+    const m = await mesurer(tires, lente, contexte, mesureVide(), SOUS_RESEAUX, () => new Date(t));
+    expect(m).toMatchObject({ questions: 3, arret: "échéance de 20 minutes atteinte" });
+    expect(m.resultats.map((r) => r.domaine)).toEqual(["a.example"]);
   });
 });

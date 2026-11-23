@@ -39,11 +39,19 @@ describe("the pilot's workflow", () => {
     expect(actif).toContain("runs-on: ubuntu-24.04");
   });
 
-  it("waits for a slot clear of the day's collections before anything is asked", () => {
+  it("checks its slot, clear of the day's collections, before anything is asked, and nothing can ignore that check", () => {
     const garde = actif.indexOf("npx tsx pipeline/cli/creneau-essai.ts");
     expect(garde).toBeGreaterThan(0);
     expect(garde).toBeLessThan(actif.indexOf("npx tsx scripts/pilote-ecs.ts"));
     expect(actif).toContain("--workflow collecte.yml");
+    // The check's line ends there (no « || true »), and no step may fail without stopping the job.
+    expect(actif).toMatch(/^ {10}npx tsx pipeline\/cli\/creneau-essai\.ts "\$en_cours"$/m);
+    expect(actif).not.toContain("continue-on-error");
+  });
+
+  it("leaves the upload time to run: the pilot's step ends within 25 minutes, the job within 30", () => {
+    expect(actif).toContain("    timeout-minutes: 30\n");
+    expect(actif).toMatch(/- timeout-minutes: 25\n\s+run: \|\n\s+releve=/);
   });
 
   it("asks through the pilot's script only, with the hand-surveyed IPtoASN copy, and keeps its report even when it stops", () => {
