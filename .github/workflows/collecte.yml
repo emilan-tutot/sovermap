@@ -305,6 +305,7 @@ jobs:
     timeout-minutes: ${{ github.event_name == 'pull_request' && 25 || 165 }}
     permissions:
       contents: read
+      actions: read
     outputs:
       arret: ${{ steps.collecte.outputs.arret }}
     steps:
@@ -340,6 +341,41 @@ jobs:
         with:
           name: tranche-1
           path: travail
+      # The second half is measured once too (the owner's rule, point 13, § 8): its own mark is saved before its first
+      # question and read back, so that a re-run of this job never asks its servers again; the assembly, which asks
+      # nothing, may be re-run.
+      - if: env.ESSAI != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATE: ${{ needs.jour.outputs.date }}
+        run: |
+          commencees=$(gh cache list --repo "$GITHUB_REPOSITORY" --ref refs/heads/main --key "collecte-commencee-$DATE-moitie2-" --json key --jq 'length')
+          if [ "$commencees" != "0" ]; then
+            echo "mesurer-2 : la seconde moitié du $DATE a déjà commencé une fois ; rien n'est remesuré (une seule interrogation des serveurs par jour)." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+            exit 1
+          fi
+          mkdir -p commencee
+          echo "$DATE" > commencee/date
+      - if: env.ESSAI != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: commencee
+          key: collecte-commencee-${{ needs.jour.outputs.date }}-moitie2-${{ github.run_id }}
+      - if: env.ESSAI != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLE: collecte-commencee-${{ needs.jour.outputs.date }}-moitie2-${{ github.run_id }}
+        run: |
+          for essai in 1 2 3 4 5 6; do
+            trouvee=$(gh cache list --repo "$GITHUB_REPOSITORY" --ref refs/heads/main --key "$CLE" --json key --jq 'map(select(.key == env.CLE)) | length') || trouvee=""
+            if [ "$trouvee" = "1" ]; then
+              echo "Témoin « seconde moitié commencée » enregistré."
+              exit 0
+            fi
+            if [ "$essai" != "6" ]; then sleep 20; fi
+          done
+          echo "mesurer-2 : le témoin « seconde moitié commencée » n'a pas pu être relu ; rien n'est mesuré." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+          exit 1
       - id: collecte
         env:
           DATE: ${{ needs.jour.outputs.date }}

@@ -236,7 +236,17 @@ describe("the collection's workflow", () => {
   it("measures a day once: the mark « measurement started » is saved and read back before the collection", () => {
     // In the first half's job, before its first question; the second half and the assembly run only after it.
     const mesurer = tache("mesurer-1");
-    for (const nom of ["mesurer-2", "assembler"]) expect(tache(nom)).not.toContain("collecte-commencee");
+    // The assembly asks nothing: it may be re-run. The second half has its own mark: a re-run of it refuses.
+    expect(tache("assembler")).not.toContain("collecte-commencee");
+    const seconde = tache("mesurer-2");
+    const marque = seconde.indexOf(
+      "key: collecte-commencee-${{ needs.jour.outputs.date }}-moitie2-${{ github.run_id }}",
+    );
+    expect(seconde.indexOf('--key "collecte-commencee-$DATE-moitie2-"')).toBeGreaterThan(-1);
+    expect(seconde.indexOf('--key "collecte-commencee-$DATE-moitie2-"')).toBeLessThan(marque);
+    expect(marque).toBeLessThan(seconde.indexOf('--ref refs/heads/main --key "$CLE"'));
+    expect(seconde.indexOf('--ref refs/heads/main --key "$CLE"')).toBeLessThan(seconde.indexOf("- id: collecte"));
+    expect(seconde).toMatch(/permissions:\n {6}contents: read\n {6}actions: read/);
     const debut = mesurer.indexOf("# A day is measured once");
     const collecte = mesurer.indexOf("- id: collecte");
     expect(debut).toBeGreaterThan(-1);
