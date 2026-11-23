@@ -213,6 +213,32 @@ describe("sociétés et pays", () => {
       ),
     ).toEqual([]);
   });
+  it("refuses a link without a dated source; an unknown parent needs none (C.10)", () => {
+    const source = { titre: "Registre", url: "https://registre.example/", lu_le: "2026-11-19" };
+    const erreurs = validerReferentiels(
+      cdn,
+      { version: "test", as: { "64510": { societe: "sans-source", titulaire_registre: "X", sources: [] } } },
+      {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "sans-source": { nom: "Sans Source", pays: "FR", mere: null, sources: [], sources_mere: [] },
+          "mere-inconnue": {
+            nom: "Mère Inconnue",
+            pays: "FR",
+            mere: "non-determinee",
+            sources: [source],
+            sources_mere: [],
+          },
+        },
+      },
+    );
+    expect(erreurs).toEqual([
+      "société sans-source : aucune source datée",
+      "société sans-source (maison mère) : aucune source datée",
+      "AS 64510 : aucune source datée",
+    ]);
+  });
   it("sorts countries into the five categories", () => {
     expect([categorie("FR"), categorie("DE"), categorie("CH"), categorie("US"), categorie(null)]).toEqual([
       "France",
