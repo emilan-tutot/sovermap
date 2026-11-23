@@ -1,7 +1,7 @@
 {
-  "version": "0.2",
-  "date": "2026-11-21",
-  "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents). La table complète est établie en T3.",
+  "version": "0.3",
+  "date": "2026-11-22",
+  "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents), puis dans la collecte du jour 1 (version 0.3). La table complète est établie en T3.",
   "regle": "Une ligne relie un AS à la société qui l'exploite. Première source : le titulaire inscrit au registre régional (lu dans IPtoASN, vérifiable par le RDAP du registre). Seconde source : l'identité de la société dans un registre d'entreprises (Sirene, GLEIF) ou une liste officielle. Les deux concordent : « confirmé ». Une seule : « probable ».",
   "as": {
     "13335": {
@@ -583,6 +583,301 @@
           "titre": "GLEIF : Hetzner Online GmbH, LEI 391200XMWUW8G8MXV439, siège à Gunzenhausen (Allemagne), HRB 6089",
           "url": "https://search.gleif.org/#/record/391200XMWUW8G8MXV439",
           "lu_le": "2026-11-21"
+        }
+      ]
+    },
+    "203476": {
+      "societe": "gandi",
+      "titulaire_registre": "GANDI SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS203476 GANDI-AS-2, titulaire GANDI SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : GANDI, SAS, SIREN 423093459, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/423093459",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "13273": {
+      "societe": "alter-way",
+      "titulaire_registre": "Alter Way SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS13273 ALTERWAY-OPS, titulaire Alter Way SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : ALTER WAY, SAS, SIREN 490932308, siège à Asnières-sur-Seine, active (seule société « Alter Way » active)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/490932308",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "41628": {
+      "societe": "alter-way",
+      "titulaire_registre": "Alter Way SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS41628 ALTERWAYHOSTING-NETWORK, titulaire Alter Way SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : ALTER WAY, SAS, SIREN 490932308, siège à Asnières-sur-Seine, active (seule société « Alter Way » active)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/490932308",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "20994": {
+      "societe": "actimage-consulting",
+      "titulaire_registre": "Actimage Consulting SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS20994 ACTIMAGE, titulaire Actimage Consulting SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : ACTIMAGE CONSULTING SAS, SAS, SIREN 479557894, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/479557894",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "29222": {
+      "societe": "infomaniak-network",
+      "titulaire_registre": "Infomaniak Network SA",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS29222 Infomaniak-AS, titulaire Infomaniak Network SA, pays d'enregistrement CH",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "8784": {
+      "societe": "odigo",
+      "titulaire_registre": "Odigo SASU",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS8784 AS8784, titulaire Odigo SASU, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : ODIGO, SAS, SIREN 529038978, siège à Boulogne-Billancourt, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/529038978",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "50474": {
+      "societe": "o2switch",
+      "titulaire_registre": "O2SWITCH SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS50474 O2SWITCH, titulaire O2SWITCH SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : O2SWITCH, SAS, SIREN 510909807, siège à Clermont-Ferrand, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/510909807",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "41653": {
+      "societe": "aqua-ray",
+      "titulaire_registre": "Aqua Ray SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS41653 AQUARAY, titulaire Aqua Ray SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : AQUA RAY, SAS, SIREN 447997099, siège à Ivry-sur-Seine, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/447997099",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "5410": {
+      "societe": "bouygues-telecom",
+      "titulaire_registre": "Bouygues Telecom SA",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS5410 BOUYGTEL-ISP, titulaire Bouygues Telecom SA, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : BOUYGUES TELECOM, société anonyme, SIREN 397480930, siège à Meudon, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/397480930",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "8677": {
+      "societe": "worldline",
+      "titulaire_registre": "Worldline SA",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS8677 WORLDLINE, titulaire Worldline SA, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : WORLDLINE, société anonyme, SIREN 378901946, siège à Puteaux, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/378901946",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "8075": {
+      "societe": "microsoft-corporation",
+      "titulaire_registre": "Microsoft Corporation",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS8075 MICROSOFT-CORP-MSN-AS-BLOCK, titulaire Microsoft Corporation, pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : MICROSOFT CORPORATION, LEI INR2EJN1ERAN0W5ZP974, société de l'État de Washington, bureaux à Redmond (États-Unis)",
+          "url": "https://search.gleif.org/#/record/INR2EJN1ERAN0W5ZP974",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "8304": {
+      "societe": "ecritel",
+      "titulaire_registre": "Ecritel SASU",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS8304 ECRITEL-FRANCE, titulaire Ecritel SASU, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : ECRITEL, SAS, SIREN 332484021, siège à Arradon, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/332484021",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "30781": {
+      "societe": "free-pro",
+      "titulaire_registre": "Free Pro SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS30781 JAGUAR-AS, titulaire Free Pro SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : FREE PRO (JAGUAR NETWORK), SAS, SIREN 439099656, siège à Marseille, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/439099656",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "47583": {
+      "societe": "hostinger-operations",
+      "titulaire_registre": "Hostinger Operations UAB",
+      "sources": [
+        {
+          "titre": "Base du RIPE, fichiers « split » aut-num et organisation du 20/11/2026 (fiche 22) : AS47583 AS-HOSTINGER, organisation ORG-HOU2-RIPE, Hostinger Operations UAB, LT (IPtoASN, fichier daté du 01/11/2026, donnait encore Hostinger International Limited, CY)",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : HOSTINGER operations, UAB, LEI 894500QM0U6LWXLTOR14 (échu depuis le 23/09/2025), siège à Vilnius (Lituanie), registre 306308157",
+          "url": "https://search.gleif.org/#/record/894500QM0U6LWXLTOR14",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "8560": {
+      "societe": "ionos-se",
+      "titulaire_registre": "IONOS SE",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS8560 IONOS-AS, titulaire IONOS SE, pays d'enregistrement DE",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : IONOS SE, LEI 54930038KPLOYRDHV375, siège à Montabaur (Allemagne), HRB 24498",
+          "url": "https://search.gleif.org/#/record/54930038KPLOYRDHV375",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "50954": {
+      "societe": "eyona",
+      "titulaire_registre": "Eyona SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS50954 Eyona, titulaire Eyona SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        }
+      ],
+      "note": "Lien « probable » : le titulaire du registre, « Eyona SAS », n'est rapproché d'une société de Sirene que par son nom (une seule « Eyona », d'activité principale sans rapport apparent avec un réseau) ; ce rapprochement n'est pas une seconde source."
+    },
+    "60362": {
+      "societe": "alwaysdata",
+      "titulaire_registre": "alwaysdata SARL",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS60362 alwaysdata, titulaire alwaysdata SARL, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : ALWAYSDATA, SARL, SIREN 492893490, siège à Paris, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/492893490",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "396982": {
+      "societe": "google-llc",
+      "titulaire_registre": "Google LLC",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS396982 GOOGLE-CLOUD-PLATFORM, titulaire Google LLC, pays d'enregistrement US",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "GLEIF : GOOGLE LLC, LEI 7ZW8QJWVPR4P1J1KQY45, société du Delaware (États-Unis)",
+          "url": "https://search.gleif.org/#/record/7ZW8QJWVPR4P1J1KQY45",
+          "lu_le": "2026-11-22"
+        }
+      ]
+    },
+    "197696": {
+      "societe": "evolix",
+      "titulaire_registre": "Evolix SARL",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS197696 EVOLIX-AS, titulaire Evolix SARL, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-22"
+        },
+        {
+          "titre": "Sirene : EVOLIX, SARL, SIREN 451952295, siège à Marseille, active",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/451952295",
+          "lu_le": "2026-11-22"
         }
       ]
     }
