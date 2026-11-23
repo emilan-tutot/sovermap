@@ -10,6 +10,7 @@ Chaque fichier `liste-dinum-AAAA-MM-JJ.csv` est une copie nettoyée de la liste 
 - Copie de 2024 : à sa première lecture, un contrôle de forme trop strict avait écarté 125 noms accentués ; la seconde lecture, permise une seule fois par le propriétaire (point 02), les garde sous leur forme ASCII (punycode). 59 lignes en moins, car le même nom accentué y figure sous ses deux écritures.
 - Liste à jour : 58 lignes en moins, car le même nom accentué y figure sous ses deux écritures.
 - Dans chaque liste, 2 noms (le domaine d'une commune et son `www.`) sont écartés à la main : ils contiennent un motif que le contrôle de vie privée du dépôt (`npm run scan:prive`) refuse. Ils ne sont ni mesurés ni publiés.
+- Colonne `type` : seulement les 18 types de la liste (`TYPES_LISTE`, `pipeline/liste.ts`) ; toute autre valeur est vidée à la lecture. Le 22/11/2026, une valeur « Ajout Manuel » suivie du nom d'un contributeur, une fois dans chaque copie, a été retirée ainsi (type vide) : Sovermap ne garde jamais le nom d'un contributeur.
 - Ensemble : 122 209 noms distincts. 102 995 sont dans les deux listes, 18 872 seulement dans la liste à jour et 342 seulement dans la copie de 2024.
 
 **Licence** : Licence Ouverte 2.0 (Etalab) ; la forge affiche « etalab-2.0 ». **Attribution** : « Source : DINUM, liste des noms de domaine des organismes publics, version du <date>, Licence Ouverte 2.0 ». Voir `docs/sources.md`, fiches 1 et 2.

@@ -1,7 +1,7 @@
 name: Collecte
 
 # The daily collection (brief B of chantier 2, plan § 4 to § 13): at 03:17 UTC, and again at 09:47 UTC, which does
-# nothing once the day is published. The measuring job has read-only rights; only the publishing job may write (the
+# nothing once the day's measurement has started. The measuring job has read-only rights; only the publishing job may write (the
 # « donnees » branch and the « donnees-courant » release), and only the alerting job may open or comment an issue.
 # A pull request that touches the collection runs the measuring job alone, on a sample (LIMITE_ESSAI), as a trial:
 # nothing is published, nothing is kept for tomorrow, no issue is opened; it never measures during, or around the
@@ -80,14 +80,18 @@ jobs:
           # measurement, never by the run of 09:47 (brief B.7). A failed publication is redone by « Re-run failed jobs ».
           gardees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-veille-$DATE-" --json key --jq 'length')
           echo "Mesures du jour gardées pour demain : ${gardees:-0}"
-          if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
+          # A day is measured once (the owner's rule, point 13, § 8): a measurement that started today, even one a guard
+          # stopped or a time limit cut, also ends the day.
+          commencees=$(gh cache list --repo "$REPO" --ref refs/heads/main --key "collecte-commencee-$DATE-" --json key --jq 'length')
+          echo "Mesures du jour commencées : ${commencees:-0}"
+          if [ "$ESSAI" != "true" ] && { [ "$publie" = "$DATE" ] || [ "${gardees:-0}" -gt 0 ] || [ "$commencees" != "0" ]; }; then echo "faite=true"; else echo "faite=false"; fi >> "$GITHUB_OUTPUT"
 
   mesurer:
     needs: jour
     if: needs.jour.outputs.faite != 'true'
     runs-on: ubuntu-24.04
     # A trial is capped (it never runs into a day's collection: pipeline/creneau.ts counts on it).
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 240 }}
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}
     # One measurement at a time of each kind: a trial never takes the place of a day's waiting measurement (GitHub keeps
     # one waiting job per group). A trial never measures during, or around the start of, a day's collection (its first
     # step below): two measurements at once would double the questions to the shared servers (brief B.3).
@@ -109,7 +113,7 @@ jobs:
           cache: npm
       - run: npm ci
       # A trial waits for its slot (pipeline/creneau.ts): stopped, in red with a sentence, while a day's collection runs
-      # or waits, or within 45 minutes of 03:17 and 09:47 UTC; it is then run again later.
+      # or waits, or within 60 minutes before 03:17 and 09:47 UTC or 120 minutes after; it is then run again later.
       - if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -184,16 +188,68 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download sources-iptoasn --repo "$GITHUB_REPOSITORY" --pattern 'ip2asn-combined-*.tsv.gz' --dir releves || true
+      # A day is measured once (the owner's rule, point 13, § 8): the mark « measurement started » is saved before the
+      # first question, so that neither the run of 09:47 nor a re-run of this job asks the servers again that day, even
+      # after a guard blocked the publication or a time limit cut the job. An error of GitHub's API stops here; so does
+      # a re-run after midnight (the day of « jour » must be the clock's), so does a measurement that could not end
+      # before midnight (it starts after 18:30 UTC, and may last 330 minutes: it would meet the next day's), and so does
+      # a run outside « main ».
+      - if: env.ESSAI != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATE: ${{ needs.jour.outputs.date }}
+        run: |
+          if [ "$(date -u +%F)" != "$DATE" ]; then
+            echo "mesurer : le jour à mesurer ($DATE) n'est plus celui de l'horloge ; rien n'est mesuré (une relance après minuit)." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+            exit 1
+          fi
+          if [ "$(date -u +%H%M)" -ge 1830 ]; then
+            echo "mesurer : après 18:30 UTC, une mesure du jour pourrait finir après minuit et croiser celle du lendemain ; rien n'est mesuré." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+            exit 1
+          fi
+          commencees=$(gh cache list --repo "$GITHUB_REPOSITORY" --ref refs/heads/main --key "collecte-commencee-$DATE-" --json key --jq 'length')
+          if [ "$commencees" != "0" ]; then
+            echo "mesurer : la mesure du $DATE a déjà commencé une fois ; rien n'est remesuré (une seule interrogation des serveurs par jour)." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+            exit 1
+          fi
+          mkdir -p commencee
+          echo "$DATE" > commencee/date
+      - if: env.ESSAI != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: commencee
+          key: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+      # actions/cache/save never fails its step: the mark is read back under « main », or nothing is measured. An error
+      # of the API is read as « not yet », six times, 20 seconds apart.
+      - if: env.ESSAI != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLE: collecte-commencee-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+        run: |
+          for essai in 1 2 3 4 5 6; do
+            trouvee=$(gh cache list --repo "$GITHUB_REPOSITORY" --ref refs/heads/main --key "$CLE" --json key --jq 'map(select(.key == env.CLE)) | length') || trouvee=""
+            if [ "$trouvee" = "1" ]; then
+              echo "Témoin « mesure commencée » enregistré."
+              exit 0
+            fi
+            if [ "$essai" != "6" ]; then sleep 20; fi
+          done
+          {
+            echo "mesurer : le témoin « mesure commencée » n'a pas pu être relu ; rien n'est mesuré."
+            echo "S'il apparaît plus tard, la collecte de 09:47 croira le jour commencé : supprimer l'entrée « $CLE » (Actions › Caches), puis « Run workflow » avant 18:30 UTC."
+          } | tee -a "$GITHUB_STEP_SUMMARY" >&2
+          exit 1
       - id: collecte
         env:
-          # The day the « jour » job checked, never the clock's: a re-run after midnight measures the same day.
+          # The day the « jour » job checked, never the clock's (a day's measurement re-run after midnight is refused
+          # above; a trial's is measured on the same day).
           DATE: ${{ needs.jour.outputs.date }}
         run: |
           args=(--travail travail --veille veille --conteneur knot --date "$DATE")
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
-          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1); fi
+          if [ "$ESSAI" = "true" ]; then args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 35 --fin-reprises-minutes 45 --fin-controles-minutes 48); fi
           if [ "$ESSAI_DISJONCTEUR" = "true" ]; then args+=(--essai-disjoncteur); fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"
@@ -212,6 +268,8 @@ jobs:
           docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
           docker rm -f knot > /dev/null 2>&1 || true
 
+      # The artifact also keeps the day's failing domains (diagnostic.json: what the published files already say of them,
+      # with the layer that failed), for the diagnosis of a degraded day; the publication copies « sortie » only.
       - if: steps.collecte.outputs.publiable != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -220,6 +278,7 @@ jobs:
             travail/sortie
             travail/resume.md
             travail/rapport.json
+            travail/diagnostic.json
           retention-days: 7
           if-no-files-found: error
 
@@ -351,9 +410,9 @@ jobs:
             if [ "$ESSAI" = "true" ]; then echo "**Essai** (déclenché exprès, rien n'a été publié, la série des jours n'est pas cassée)."; echo; fi
             publication_ratee=false
             if [ "$PUBLICATION" = "failure" ] || [ "$PUBLICATION" = "cancelled" ]; then publication_ratee=true; fi
-            if [ "$JOUR" = "failure" ]; then echo "**La vérification du jour a échoué** (l'état publié n'a pas pu être lu) : rien n'a été mesuré. La collecte de 09:47 réessaie ; sinon, Actions › Collecte › « Run workflow »."; echo; fi
+            if [ "$JOUR" = "failure" ]; then echo "**La vérification du jour a échoué** (l'état publié n'a pas pu être lu) : rien n'a été mesuré. La collecte de 09:47 réessaie ; sinon, Actions › Collecte › « Run workflow », avant 18:30 UTC."; echo; fi
             if [ "$publication_ratee" = true ]; then echo "**La publication a échoué ou a été interrompue** (branche donnees ou Release) : la mesure s'est bien passée. Pour la publier : Actions › cette exécution › « Re-run failed jobs », seulement si aucun jour plus récent n'a été publié depuis (la publication refuse un jour qui n'est pas plus récent que le jour publié)."; echo; fi
-            if [ -f collecte/resume.md ]; then cat collecte/resume.md; elif [ "$JOUR" != "failure" ]; then echo "La tâche de mesure a échoué avant de rendre son résumé."; fi
+            if [ -f collecte/resume.md ]; then cat collecte/resume.md; elif [ "$JOUR" != "failure" ]; then echo "La tâche de mesure s'est arrêtée avant de rendre son résumé : sa raison est dans le résumé de l'exécution (par exemple, le témoin « mesure commencée » refuse une seconde mesure du même jour)."; fi
             echo
             if [ "$publication_ratee" = true ]; then echo "Voir dans l'exécution ce qui a été envoyé. Exécution n° $RUN (Actions › Collecte)."; else echo "L'état de la veille reste publié. Exécution n° $RUN (Actions › Collecte)."; fi
           } > corps.md

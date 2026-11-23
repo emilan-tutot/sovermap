@@ -123,6 +123,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Producteur** : Direction interministérielle du numérique (DINUM).
 - **Adresse** : https://gitlab.adullact.net/dinum/noms-de-domaine-organismes-secteur-public
 - **Ce qu'on en tire** : la liste de référence à jour (nom, type, provenance).
+  - **Piège** (22/11/2026) : la colonne `type` a contenu, pour une ligne, « Ajout Manuel » suivi du nom d'un contributeur. Seuls les 18 types connus sont gardés (`TYPES_LISTE`, `pipeline/liste.ts`) ; toute autre valeur est vidée à la lecture.
 - **Licence ou conditions** :
   - etalab-2.0, d'après la forge, vue par le propriétaire dans un navigateur le 18/11/2026. Non relue par un robot.
   - L'ancienne copie porte la Licence Ouverte 2.0 (fiche 2).
@@ -198,7 +199,10 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Limites de débit** : aucune annoncée. Des réponses 302 vides ont été vues par moments ; rejouées 2 à 3 secondes plus tard, elles ont abouti.
 - **Attribution à afficher** : « Source : Service d'information du Gouvernement (SIG), Observatoire de l'écosystème numérique de l'État – Sites internet, mise à jour du <date> — Licence Ouverte 2.0. »
 - **Téléchargement automatique testé** : **oui**, par l'API tabulaire (`tabular-api.data.gouv.fr/api/resources/<id>/data/`, 15 pages de 50 lignes, `meta.total` = 742). Le fichier lui-même est sur static.data.gouv.fr, fermé aux robots.
-- **Décision : retenue.** La correspondance identifiant → nom de ministère reste à établir (le site source répond 403 aux robots : non vérifié).
+- **Piège** (C.5, 22/11/2026) : dans la copie du 01/11/2026, 15 consulats (`consulfrance.org`) portent l'identifiant ministériel du Premier ministre et de la DILA, quand les 17 autres et les 158 ambassades portent celui des Affaires étrangères. Le ministère d'un domaine est donc celui du Référentiel de la DILA quand elle lui en donne un (c'est le cas de `consulfrance.org`) ; celui du SIG ne sert qu'à défaut, et seulement les jours où le Référentiel est lu, qui seul nomme les ministères.
+- **Décision : retenue.** Les noms des ministères viennent du Référentiel de la DILA (fiche 4), qui emploie les mêmes identifiants.
+- **Copie datée** (C.5, 21/11/2026) : le fichier « audience-liste-sites » de l'édition d'octobre 2026 (mis en ligne le 01/11/2026 ; le jeu publie désormais cinq fichiers d'audience par mois), lu par l'API tabulaire (15 pages de 50 lignes) : 742 sites, dans `referentiels/perimetre/sig-2026-11-01.csv` (site, identifiant de ministère, type de site).
+- **Les noms des ministères** : les 15 identifiants de ministère du SIG sont ceux du Référentiel de la DILA, dont les entrées donnent les noms officiels : 15 sur 15 vérifiés le 21/11/2026.
 
 ### 6. Opérateurs de l'État (annexe « jaune » du projet de loi de finances 2026)
 - **Producteur** : l'État (direction du budget) ; la copie ouverte est déposée par un compte individuel sur data.gouv.fr.
@@ -212,6 +216,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Attribution à afficher** : « Source : projet de loi de finances pour 2026, annexe « Opérateurs de l'État », via data.gouv.fr — Licence Ouverte 2.0. »
 - **Téléchargement automatique testé** : oui, par l'API tabulaire (`meta.total` = 431).
 - **Décision : retenue en contrôle seulement.** Elle délimite le périmètre « opérateurs » (D1). Les domaines viennent d'un rapprochement par nom et par SIREN, à la main, sourcé (T3).
+- **Rapprochement** (21/11/2026) : 431 opérateurs lus par l'API tabulaire (9 pages). Par le nom, le sigle et le nom complet : 87 trouvés parmi les établissements du MESR (fiche 8), 148 au Référentiel de la DILA avec un site et 1 sans site (fiche 4) ; 195 restent à rattacher à leur domaine, à la main, avec une source pour chacun (certains sont déjà dans le périmètre par leur site, comme `ademe.fr` au SIG).
 
 ### 7. Relevés d'août 2026 sur 3 581 domaines publics
 - **Producteur** : un compte individuel sur data.gouv.fr. Son nom n'est pas reproduit ici.
@@ -231,7 +236,9 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Ce qu'on en tire** : 245 établissements, dont 243 avec `url`, plus le SIREN, l'UAI et le statut juridique.
 - **Licence ou conditions** : « Licence Ouverte / Open Licence » (`fr-lo`). Version 1 ou 2.0, l'obligation est la même : citer la source et la date.
 - **Téléchargement automatique testé** : oui, par l'API tabulaire (le portail d'origine est fermé aux robots).
+- **Attribution à afficher** : « Source : ministère de l'Enseignement supérieur, de la Recherche et de l'Espace, Principaux établissements d'enseignement supérieur, version du <date> — Licence Ouverte. »
 - **Décision : retenue** (filtre « enseignement supérieur » ; domaines des universités, qui sont des opérateurs de l'État).
+- **Copie datée** (C.5, 21/11/2026) : le fichier CSV du 21/11/2026, lu par l'API tabulaire (5 pages de 50 lignes) : 245 établissements ; les 152 établissements publics de l'État qui ont un site, dans `referentiels/perimetre/mesr-2026-11-21.csv` (site, nom, SIREN, type) ; les 85 établissements privés et 8 établissements publics locaux (7 écoles d'art en établissements publics de coopération culturelle, SIREN en 2… ; le CREPS de Toulouse, passé à la région en 2016) sont écartés ; aucune autre colonne n'est gardée (ni téléphone, ni adresse, ni compte de réseau social).
 
 ### 9. Établissements des premier et second degrés (Éducation nationale)
 - **Producteur** : ministère de l'Éducation nationale.
@@ -288,6 +295,13 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Conditions, mot pour mot** : « Anyone, including Internet Service Providers (ISPs) and large organizations, is free to use Google Public DNS, but we apply rate limits to each client to protect our service. » (https://developers.google.com/speed/public-dns/docs/isp).
 - **Ce qu'on en tire** : des essais du point de mesure, avec le paramètre `edns_client_subnet` (« Format is an IP address with a subnet mask. Examples: 1.2.3.4/24 », https://developers.google.com/speed/public-dns/docs/doh/json).
   - On passe toujours un sous-réseau explicite : sans lui, une partie de l'adresse de l'appelant est transmise.
+- **robots.txt** : lu le 23/11/2026 avec l'agent du projet : `https://dns.google/robots.txt` répond 404 (aucun fichier) ; selon la RFC 9309, rien n'est interdit. Le pilote le relit au départ.
+- **Le pilote (B.4, outil du 23/11/2026)** : `scripts/pilote-ecs.ts`, lancé une seule fois, à la main, sur les runners de GitHub (`.github/workflows/pilote-ecs.yml`, qui attend d'abord un créneau libre de toute collecte), jamais sur le PC.
+  - Les domaines : 300 au plus, tirés au hasard (une graine : le jour) parmi ceux dont le nom web répondait derrière un CDN à l'état publié.
+  - Les questions : une question A par nom web et par sous-réseau, deux sous-réseaux explicites (`90.0.0.0/24`, attribué en France au RIPE, réseau d'Orange ; `24.0.0.0/24`, attribué aux États-Unis à l'ARIN, réseau de Comcast), par le téléchargeur poli du projet : `robots.txt` lu d'abord et suivi (une erreur de serveur sur lui interdit tout), une question par seconde au plus, 15 secondes au plus chacune, agent du projet ; arrêt au premier refus de l'API (403, 429) ou à la première page qui n'est pas sa réponse, après 5 erreurs de suite, et à 20 minutes.
+  - La société : chaque réponse est classée par la méthode elle-même (le CDN d'abord, par son suffixe CNAME, une plage officielle ou un AS réservé ; l'AS de l'adresse seulement sans CDN), avec les listes officielles des CDN (fiche 27) téléchargées comme la collecte les télécharge ; un domaine « change » quand la comparaison de la méthode (celle de son résolveur de contrôle) n'est pas d'accord d'un sous-réseau à l'autre.
+  - La part : sur les domaines comparés (chaque sous-réseau a reçu une adresse) ; le seuil de 1 % se juge sur les comptes exacts ; sous 100 domaines comparés, un seul domaine pèserait plus de 1 % : « non déterminé ».
+  - Le rapport va dans l'artefact de l'exécution (gardé 30 jours, téléchargeable par tout compte GitHub, comme les données publiées), même si le pilote s'arrête avant la fin ; le journal public ne donne que des comptes.
 - **Décision : retenue en contrôle seulement** (pilote du point de mesure, en T2).
 
 ### 16. DNS4EU
@@ -592,7 +606,14 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
   - Aucune version ouverte n'existe sur data.gouv.fr (recherches « SecNumCloud », « ANSSI » : 0 résultat, au chantier T1).
 - **Relevé manuel daté** : le propriétaire a téléchargé le catalogue (PDF) et la page « Prestataires de services d'informatique en nuage (SecNumCloud) » dans un navigateur ordinaire, et les a déposés le 20/11/2026 ; le tableau a été relevé le 21/11/2026, ligne par ligne, dans `referentiels/secnumcloud.json` (30 services de 13 fournisseurs).
   - La page de l'ANSSI ne liste que des prestataires **en cours de qualification** (ceux qui ont accepté de le rendre public) : ils ne sont jamais repris. Seuls comptent les services qualifiés du catalogue.
-  - Le rapprochement des fournisseurs avec les sociétés du référentiel (par exemple « Cegedim » : le groupe, ou sa filiale Cegedim.cloud ?) demande deux sources : il se fait avec C.1.
+  - Le rapprochement des fournisseurs avec les sociétés du référentiel (par exemple « Cegedim » : le groupe, ou sa filiale Cegedim.cloud ?) demande deux sources : il est fait en C.4, ci-dessous (« Les décisions de qualification »).
+- **Les décisions de qualification** (rapprochement, C.4, 22/11/2026) : chaque service qualifié du catalogue porte le numéro de sa décision (`decision` dans `referentiels/secnumcloud.json`). La décision est un PDF de l'ANSSI, sur un autre hôte que le catalogue : `https://messervices.cyber.gouv.fr/visas/<année>_<numéro>_np.pdf` (par exemple la décision n° 3395 du 31/07/2026, déjà lue au chantier T1 pour `docs/juridique.md`).
+  - **`robots.txt`** de messervices.cyber.gouv.fr, lu le 22/11/2026 à 05:43 UTC (HTTP 200, 116 octets) : « User-agent: * », « Allow: / » ; seuls `/connexion` et `/oidc/` sont fermés. Aucune protection anti-robots sur cet hôte ; rien n'a été contourné.
+  - **Usage** : les décisions des seuls fournisseurs qui peuvent correspondre à une de nos sociétés (Cegedim, Ecritel, Orange Business Services, Outscale, OVH, Worldline : 10 décisions), lues une à une, deux secondes d'écart au moins, avec l'agent `Sovermap-bot/<version> (+https://sovermap.vercel.app)`. On n'en reprend que des faits : la société qui porte la qualification (sa raison sociale, son numéro d'immatriculation et sa ville), et le numéro et la date de la décision.
+  - **Deux sources par lien**, de deux producteurs : l'ANSSI (le catalogue donne le fournisseur et le numéro de la décision ; la décision, la raison sociale, le numéro d'immatriculation et la ville) et l'Insee, par Sirene (API Recherche d'entreprises, fiche 32), déjà dans les sources de nos sociétés, pour le SIREN.
+  - **Conditions de messervices.cyber.gouv.fr**, mot pour mot (page « Mentions légales », lue le 22/11/2026 à 07:37 UTC ; elles ne reprennent pas la licence etalab-2.0 de cyber.gouv.fr) : « Sauf mention expresse contraire, tous les contenus protégeables par le droit de la Propriété intellectuelle ne peuvent être reproduits ou réutilisés sans l'autorisation expresse de l'ANSSI. » Aucune décision n'est reproduite ni republiée : seuls des faits en sont repris (ci-dessus), qui ne sont pas protégeables, comme pour la fiche 47 (« faits seulement »).
+  - Une décision illisible ou introuvable, ou une raison sociale qui ne correspond à aucune de nos sociétés : le lien reste vide (`societe: null`), jamais deviné. Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse.
+  - **Résultat** (22/11/2026, `rapprochement` dans `referentiels/secnumcloud.json`) : 7 décisions lues, 3 introuvables à l'adresse attendue (HTTP 404 : Ecritel n° 4267 et 4268, OVH n° 559). 6 services liés à 4 sociétés : Cegedim.cloud, OVH SAS (2), Orange Business Services (2), Outscale (qualification valable jusqu'au 30/11/2026). Cegedim.cloud : la décision écrit « 790 163 066 R.C.S. Nanterre », qui n'est pas un SIREN (clé de Luhn fausse) ; la raison sociale et la ville décident, et concordent avec Sirene (790 173 066). Worldline : la décision nomme Worldline France (SIREN 509 750 105), absente du référentiel ; ni Worldline ni Worldline IGSA ne sont liées.
 - **Ce qu'on en tire** : la couche 8 (`docs/methode.md`), avec sa phrase obligatoire : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise. »
 - **Pièges** : une qualification a une date de fin (Outscale : 30/11/2026 ; OVH, Hosted Private Cloud : 29/12/2026) ; un service peut changer de nom d'une édition à l'autre ; l'extraction du PDF en texte mélange les cellules sur plusieurs lignes (relire le tableau en mode « table »).
 - **Mise à jour** : un nouveau relevé manuel à chaque nouvelle édition mensuelle, déposé par le propriétaire ; la date de l'édition est publiée avec la couche. Plus tard, et sur décision du propriétaire : demander à l'ANSSI une version ouverte de la liste.
@@ -636,6 +657,7 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **Limites de débit** : aucune chiffrée. Sovermap ne la télécharge pas à chaque collecte : une copie datée est épinglée dans `referentiels/psl/` et se met à jour par une PR (`pipeline/cli/epingler-psl.ts`).
 - **robots.txt** (https://publicsuffix.org/robots.txt, lu le 20/11/2026) : `Disallow: /images/` seulement.
 - **Téléchargement testé** : oui, le 20/11/2026 : HTTP 200, 342 725 octets, `Last-Modified: Thu, 19 Nov 2026 08:30:26 GMT` ; version `2026-11-19_08-30-20_UTC`, commit `f7796455091118a5617cc7588523b083a8223301`. Copie réduite : 149 382 octets.
+- **Copie renouvelée** le 22/11/2026 (robots.txt relu le même jour : « Disallow: /images/ » seulement) : version `2026-11-21_04-33-45_UTC`, commit `87a2c1b8de5886a133ff4da21b2aa6fec88d8739`, 342 871 octets, réduite par `pipeline/cli/epingler-psl.ts` dans `referentiels/psl/public_suffix_list-2026-11-21.dat` (l'ancienne copie retirée) ; 3 règles ajoutées (`fj.kg`, `wordsmithmcpcontent.com`, `staging.wordsmithmcpcontent.com`) et 1 retirée (`xihuan`) : aucune ne touche un suffixe des sites mesurés. Un changement de règles (sa version est dans `etat.json`).
 - **Données personnelles** : des noms et des adresses e-mail de contributeurs dans les commentaires ; écartés de la copie, jamais lus par la collecte.
 - **Attribution à afficher** : par courtoisie : « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> ».
 - **Décision : retenue** (outil de calcul ; rien de la liste n'est republié dans les données, sinon la copie épinglée dans le code source).

@@ -9,7 +9,8 @@ import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
 import type { Territoire } from "./territoires";
 import type { Categorie, Niveau } from "./types";
 
-export const VERSION_SCHEMA = 1;
+/** 2 since 21/11/2026: a domain's reasons of the « État » perimeter gain « sig » and « mesr » (brief C.5). */
+export const VERSION_SCHEMA = 2;
 export const TAILLE_MAX_FRAGMENT = 8 * 1024;
 export const SEUIL_DISJONCTEUR = 0.02;
 export const SEUIL_ECHECS = 0.02;

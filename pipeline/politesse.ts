@@ -91,17 +91,19 @@ export class ParZone {
   readonly #enCours = new Map<string, number>();
   readonly #attente = new Map<string, (() => void)[]>();
   constructor(private readonly max = 2) {}
-  async prendre(zone: string): Promise<void> {
+  /** Takes one of the key's permits, in turn: true when it had to wait for one. */
+  async prendre(zone: string): Promise<boolean> {
     const n = this.#enCours.get(zone) ?? 0;
     if (n < this.max) {
       this.#enCours.set(zone, n + 1);
-      return;
+      return false;
     }
     await new Promise<void>((resolve) => {
       const file = this.#attente.get(zone) ?? [];
       file.push(resolve);
       this.#attente.set(zone, file);
     });
+    return true;
   }
   rendre(zone: string): void {
     const file = this.#attente.get(zone);
