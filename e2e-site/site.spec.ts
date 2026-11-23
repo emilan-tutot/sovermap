@@ -313,6 +313,12 @@ test("territoires : une adresse au mauvais nom renvoie vers la bonne, un territo
   expect((await request.get("/groupements/123456789-inconnu")).status()).toBe(404);
 });
 
+test("territoires : la navigation y mène, de chaque page", async ({ page }) => {
+  await page.goto("/");
+  const lien = page.locator(".navigation a", { hasText: fr.coque.navigation.territoires });
+  await expect(lien).toHaveAttribute("href", "/territoires");
+});
+
 test("site complet : le curseur du temps montre chaque jour publié, au clavier", async ({ page }) => {
   await page.goto("/");
   const curseur = page.getByLabel(fr.atlas.temps.libelle);

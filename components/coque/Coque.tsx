@@ -9,6 +9,7 @@ const NAVIGATION = [
   { href: "/", texte: fr.coque.navigation.atlas },
   { href: "/ministeres", texte: fr.coque.navigation.ministeres },
   { href: "/societes", texte: fr.coque.navigation.societes },
+  { href: "/territoires", texte: fr.coque.navigation.territoires },
   { href: "/journal", texte: fr.coque.navigation.journal },
   { href: "/methode", texte: fr.coque.navigation.methode },
   { href: "/donnees", texte: fr.coque.navigation.donnees },
@@ -16,8 +17,8 @@ const NAVIGATION = [
 
 /**
  * The shell of every page (DESIGN.md §9): a skip link, the header with the wordmark, the content, the footer with the
- * served version. The navigation of the site (Atlas, Ministères, Sociétés, Journal, Méthode, Données, FR · EN) joins
- * the header when its pages exist: until the launch, production shows only the waiting page.
+ * served version. The navigation of the site (Atlas, Ministères, Sociétés, Territoires, Journal, Méthode, Données,
+ * FR · EN) joins the header when its pages exist: until the launch, production shows only the waiting page.
  */
 export function Coque({
   children,
