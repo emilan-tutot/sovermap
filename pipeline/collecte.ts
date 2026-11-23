@@ -73,6 +73,12 @@ export type OptionsCollecte = {
    */
   finReprises?: number;
   /**
+   * No domain of the first pass opens after this moment: what is left is not measured. A trial's (collecter.ts): its
+   * job has 60 minutes, and two emergency pauses at one domain a second took it past them on 23/11/2026 (07:07), cut
+   * by GitHub before its state, its diagnosis and its artifact were written. A day's collection has none.
+   */
+  finPremierePasse?: number;
+  /**
    * The emergency stop, in the first pass only. A domain fails as for the guard of 2 % (collecter.ts): its zone's
    * question, its MX question or its web name failed (`nomWebDe`; without it, any of its names). When `part` of the
    * last `fenetre` domains failed (a breach), the collection pauses `pauseMs`: every question is held (no domain opens,
@@ -126,6 +132,13 @@ export type ResultatCollecte = {
   fin: number;
   /** Why the collection stopped before its end (the emergency stop), or null: a stopped day is never published. */
   arret: string | null;
+  /**
+   * The domains under way when the collection stopped: their questions not yet asked got « ERREUR » without being
+   * asked, so their failures say nothing of their servers (the diagnosis marks them; Quad9 is not asked about them).
+   */
+  inacheves: Set<string>;
+  /** The domains of the first pass left unmeasured at a trial's deadline (`finPremierePasse`); 0 otherwise. */
+  premierePasseCoupee: number;
 };
 
 /** The pace at which the questions held by an emergency pause go out again, by default: the names' (POLITESSE). */
@@ -670,7 +683,11 @@ export async function collecter(
     debut: Date.now(),
     fin: 0,
     arret: null,
+    inacheves: new Set(),
+    premierePasseCoupee: 0,
   };
+  /** The first pass's domains opened and not yet counted: those still under way at a stop are « inachevés ». */
+  const ouverts = new Set<string>();
   const hotesEnCours = new Map<string, Promise<void>>();
   const essai = (cle: string) => resultat.essais.set(cle, (resultat.essais.get(cle) ?? 0) + 1);
 
@@ -720,6 +737,8 @@ export async function collecter(
       depassements = 0;
       return;
     }
+    // After a trial's deadline the first pass only ends: no pause (it would outlast the job's limit), no stop.
+    if (options.finPremierePasse !== undefined && Date.now() >= options.finPremierePasse) return;
     depassements += 1;
     if (depassements < options.arret.depassements && pauses < options.arret.pausesMax) {
       // A pause, then a new count.
@@ -741,6 +760,8 @@ export async function collecter(
           `suite (une pause de ${minutesPause} min après chacun des précédents)`
         : `arrêt d'urgence après ${mesuresPremierePasse} domaines : ${constat}, toutes les pauses du jour prises ` +
           `(${pauses} sur ${options.arret.pausesMax})`;
+    // The domain that brought the stop is counted; the others under way end without being asked any more.
+    for (const u of ouverts) if (u !== unite) resultat.inacheves.add(u);
     client.arreter();
     options.surArret?.(resultat.arret);
     options.suivi?.(`${resultat.arret} ; plus aucune question, le jour ne sera pas publié`);
@@ -763,11 +784,12 @@ export async function collecter(
     resultat.noms.set(nom, await mesurerNom(nom, client));
   };
 
+  /** Runs the tasks `enVol` at a time; returns how many were left untaken at its end time (0 when none was). */
   const passe = async (taches: readonly (() => Promise<void>)[], fin?: { a: number; etiquette: string }) => {
     const file = [...taches];
     const debut = horloge.maintenant();
     let faites = 0;
-    let coupee = false;
+    let laissees = 0;
     const ouvrier = async () => {
       for (let tache = file.shift(); tache !== undefined; tache = file.shift()) {
         // The emergency stop: no task is taken once the collection decided to stop (those under way end).
@@ -778,9 +800,10 @@ export async function collecter(
         // The wall clock, like `echeance` (the review of PR 20: the measuring clock counts from the process's start, and
         // compared with a date it never cut anything).
         if (fin !== undefined && Date.now() >= fin.a) {
-          if (!coupee)
-            options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${file.length + 1} tâches non reprises`);
-          coupee = true;
+          if (laissees === 0) {
+            laissees = file.length + 1;
+            options.suivi?.(`${fin.etiquette} arrêtée à l'heure limite : ${laissees} tâches laissées`);
+          }
           file.length = 0;
           break;
         }
@@ -795,6 +818,7 @@ export async function collecter(
       }
     };
     await Promise.all(Array.from({ length: Math.min(options.enVol, file.length) }, ouvrier));
+    return laissees;
   };
 
   // First pass, domain by domain, in random order: a domain opens at the domains' pace, its zone's NS question first
@@ -815,18 +839,30 @@ export async function collecter(
       options.aleatoire,
     ),
   ];
-  await passe(
+  const laisseesPremierePasse = await passe(
     ordreUnites.map((unite) => async () => {
       // The emergency pause: a domain whose turn comes during it waits for its end, then takes a slot of the domains'
       // pace again; after a stop, none opens. Only a domain opened after the last pause counts for the stop.
+      // A trial's deadline: a domain whose task was taken before it never opens after it (the review of PR 25: the
+      // tasks in flight would otherwise open hundreds of domains past it), nor waits for a slot of the pace after it.
+      const passee = () => options.finPremierePasse !== undefined && Date.now() >= options.finPremierePasse;
       for (;;) {
+        if (passee()) {
+          resultat.premierePasseCoupee += 1;
+          return;
+        }
         await cadenceDomaines.attendre();
         await options.frein?.(unite, options.zoneDe(unite), true);
         if (resultat.arret !== null) return;
         if (horloge.maintenant() >= pauseJusqua) break;
         await horloge.dormir(pauseJusqua - horloge.maintenant());
       }
+      if (passee()) {
+        resultat.premierePasseCoupee += 1;
+        return;
+      }
       const sonEpoque = epoque;
+      ouverts.add(unite);
       // The measurement is called first: its NS question is the zone's first (client per zone, above). Its names go a
       // few at a time: a large domain never takes every slot of the names' pace at once.
       await Promise.all([
@@ -837,8 +873,11 @@ export async function collecter(
         }),
       ]);
       noterUnite(unite, sonEpoque);
+      ouverts.delete(unite);
     }),
+    options.finPremierePasse === undefined ? undefined : { a: options.finPremierePasse, etiquette: "première passe" },
   );
+  resultat.premierePasseCoupee += laisseesPremierePasse;
   premierePasse = false;
   // The cap on the questions waiting through the parents' servers holds in the first pass only (PARENT_EN_VOL); the
   // job's log tells how its questions went, for a later decision on the retries.
