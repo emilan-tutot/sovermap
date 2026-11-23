@@ -79,5 +79,6 @@ describe("the démarches of the Observatoire (referentiels/demarches.json)", () 
       demarches.demarches.flatMap((d) => (d.domaine !== null && !liste.domaines.has(d.domaine) ? [d.domaine] : [])),
     );
     expect([...nouveaux].sort()).toEqual(["monespacesante.fr"]);
-  });
+    // The whole reference list is built from the real copies: beyond the default 5 s when the whole suite runs at once.
+  }, 30_000);
 });
