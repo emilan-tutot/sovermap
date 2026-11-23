@@ -33,7 +33,7 @@ import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
 import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
-import { ajouterEcarts, donneesPersonnelles, type Ecarts, garderTexteLibre } from "../personnelles";
+import { ajouterEcarts, donneesPersonnelles, type Ecarts, textesAs } from "../personnelles";
 import {
   controleDu,
   type EtatRegleInterne,
@@ -785,22 +785,24 @@ async function principal(): Promise<number> {
     ...fragments("domaines", b.etat.domaines),
     ...index(b.etat, {
       as: new Map(
-        [...asVus].map((a) => [
-          a,
-          {
-            // A description or a holder's name may name a person (an AS held by an individual): both are published
-            // only for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data).
-            description:
-              ref.tableAs.as[String(a)] === undefined
-                ? null
-                : garderTexteLibre(descriptions.get(a) ?? null, "iptoasn", ecartsAs),
-            paysEnregistrement: contexte.paysAs.get(a) ?? null,
-            titulaire:
-              ref.tableAs.as[String(a)] === undefined
-                ? null
-                : garderTexteLibre(ripe.get(a)?.orgName ?? null, "ripe", ecartsAs),
-          },
-        ]),
+        [...asVus].map((a) => {
+          // A description or a holder's name may name a person (an AS held by an individual): both are published only
+          // for the AS of the companies of referentiels/ (MEGA § 0.2, no personal data), after the control (P13).
+          const textes = textesAs(
+            ref.tableAs.as[String(a)] !== undefined,
+            descriptions.get(a) ?? null,
+            ripe.get(a)?.orgName ?? null,
+            ecartsAs,
+          );
+          return [
+            a,
+            {
+              description: textes.description,
+              paysEnregistrement: contexte.paysAs.get(a) ?? null,
+              titulaire: textes.titulaire,
+            },
+          ];
+        }),
       ),
       societes,
       organismes,
