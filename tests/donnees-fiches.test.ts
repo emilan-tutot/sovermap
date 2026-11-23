@@ -113,23 +113,29 @@ describe("the records for the pages (part D)", () => {
     });
   });
 
-  it("looks for a key in the numbered parts of its bucket, and stops where it is found", async () => {
-    const cles = memeSeau(30);
-    const fichiers = fragments(
-      "noms",
-      cles.map((n) => [n, nom(n)] as [string, EnregistrementNom]),
-    );
-    const parties = [...fichiers.keys()].filter((c) => !c.endsWith("sommes.json"));
-    expect(parties.length).toBeGreaterThan(1);
-    const { lire, lus } = lecteur(fichiers);
-    const derniere = [...cles].sort().at(-1) ?? "";
-    expect(await fiche(lire, "noms", derniere)).toMatchObject({ statut: "ok", donnees: { nom: derniere } });
-    expect(lus).toHaveLength(parties.length);
-    const premiere = [...cles].sort()[0] ?? "";
-    lus.length = 0;
-    expect(await fiche(lire, "noms", premiere)).toMatchObject({ statut: "ok" });
-    expect(lus).toHaveLength(1);
-  });
+  // Thirty names in one bucket out of 65 536: about two million SHA-256 to find them, a few seconds, more than the
+  // default 5 seconds on a loaded machine (seen on 23/11/2026 right after a build): 30 seconds.
+  it(
+    "looks for a key in the numbered parts of its bucket, and stops where it is found",
+    { timeout: 30_000 },
+    async () => {
+      const cles = memeSeau(30);
+      const fichiers = fragments(
+        "noms",
+        cles.map((n) => [n, nom(n)] as [string, EnregistrementNom]),
+      );
+      const parties = [...fichiers.keys()].filter((c) => !c.endsWith("sommes.json"));
+      expect(parties.length).toBeGreaterThan(1);
+      const { lire, lus } = lecteur(fichiers);
+      const derniere = [...cles].sort().at(-1) ?? "";
+      expect(await fiche(lire, "noms", derniere)).toMatchObject({ statut: "ok", donnees: { nom: derniere } });
+      expect(lus).toHaveLength(parties.length);
+      const premiere = [...cles].sort()[0] ?? "";
+      lus.length = 0;
+      expect(await fiche(lire, "noms", premiere)).toMatchObject({ statut: "ok" });
+      expect(lus).toHaveLength(1);
+    },
+  );
 
   it("refuses a fragment that does not match its schema, and passes on what the reader says", async () => {
     const chemin = cheminSeau("noms", "www.d0.example");

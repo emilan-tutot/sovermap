@@ -75,8 +75,14 @@ function surveiller(page: Page, origine: string) {
 }
 
 // The links (E.6): every link of the site's own pages leads to a page that answers, on every kind of page. The links
-// to other sites are never followed here (no request leaves the machine in a test).
-test("liens : chaque lien interne de chaque type de page mène à une page qui répond", async ({ page, request }) => {
+// to other sites are never followed here (no request leaves the machine in a test). A crawl of every kind of page,
+// long by nature: two minutes, and once only (the links are the same on a phone).
+test("liens : chaque lien interne de chaque type de page mène à une page qui répond", async ({
+  page,
+  request,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "les liens sont les mêmes sur téléphone");
+  test.setTimeout(120_000);
   const internes = new Map<string, string>();
   for (const [chemin] of PAGES) {
     await page.goto(chemin);
