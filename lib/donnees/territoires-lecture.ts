@@ -24,9 +24,13 @@ export async function indexTerritoiresDuJour(): Promise<IndexTerritoires> {
   return index;
 }
 
-/** index/territoires/<code>.json of the day, checked: the département's communes and groups. */
+/**
+ * index/territoires/<code>.json of the day, checked: the département's communes and groups. The file's name is in lower
+ * case (« 2a.json » for Corse-du-Sud, as the collection writes it: the data paths are lower case, lecture.ts); the code
+ * inside keeps its official case (the review of PR 18).
+ */
 export async function fichierDepartementDuJour(code: string): Promise<FichierDepartement> {
-  const lu = await lecteur.fichier(`index/territoires/${code}.json`);
+  const lu = await lecteur.fichier(`index/territoires/${code.toLowerCase()}.json`);
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
   const fichier = lu.statut === "ok" ? lireFichierDepartement(lu.donnees, code) : null;
   if (fichier === null) indisponible();
