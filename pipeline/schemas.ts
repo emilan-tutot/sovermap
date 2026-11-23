@@ -96,7 +96,7 @@ export const DOMAINE: Schema = objet(
     domaine: nomDns,
     nomWeb: nomDns,
     perimetre: { enum: ["État", "hors État"] },
-    raisons: liste({ enum: ["gouv.fr", "dila"] }, 5),
+    raisons: liste({ enum: ["gouv.fr", "dila", "sig", "mesr"] }, 5),
     plateforme: { type: "boolean" },
     organismes: { type: "integer", minimum: 0 },
     ministeres: liste(texte(80), 50),
