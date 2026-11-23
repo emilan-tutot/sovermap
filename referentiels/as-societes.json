@@ -1,7 +1,7 @@
 {
   "version": "0.4",
-  "date": "2026-11-22",
-  "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents), puis dans la collecte du jour 1 (version 0.3). La table complète est établie en T3.",
+  "date": "2026-11-23",
+  "statut": "Provisoire : les AS vus dans l'échantillon du chantier T1 (adresses servies, et serveurs de noms les plus fréquents), puis dans les collectes des jours 1 à 3 (version 0.4). La table complète est établie en T3.",
   "regle": "Une ligne relie un AS à la société qui l'exploite. Première source : le titulaire inscrit au registre régional (lu dans IPtoASN, vérifiable par le RDAP du registre). Seconde source : l'identité de la société dans un registre d'entreprises (Sirene, GLEIF) ou une liste officielle. Les deux concordent : « confirmé ». Une seule : « probable ».",
   "as": {
     "13335": {
@@ -889,11 +889,6 @@
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS53589 PLANETHOSTER-8, titulaire PlanetHoster, pays d'enregistrement CA",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-22"
-        },
-        {
-          "titre": "Fichier de délégation de l'ARIN du 21/11/2026 (fiche 21) : AS53589 attribué le 30/06/2010, pays d'enregistrement CA ; son titulaire (identifiant du fichier) détient aussi 3 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
-          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
-          "lu_le": "2026-11-22"
         }
       ]
     },
@@ -904,11 +899,6 @@
         {
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS20529 AS1_ALFA-SAFETY, titulaire Alfa-Safety SARL, pays d'enregistrement FR",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
-          "lu_le": "2026-11-22"
-        },
-        {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS20529 attribué le 23/03/2001, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 1 bloc IPv4 et 1 bloc IPv6, et aucun autre AS",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
           "lu_le": "2026-11-22"
         }
       ]
@@ -923,8 +913,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS8220 attribué le 24/02/1997, pays d'enregistrement GB ; son titulaire (identifiant du fichier) détient aussi 8 autres AS (AS6675, AS8372, AS9126, AS12640, AS12755, AS12761, AS12878, AS15404), 72 blocs IPv4 et 1 bloc IPv6",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "GLEIF : COLT TECHNOLOGY SERVICES GROUP LIMITED, siège à Londres (Royaume-Uni), Companies House 03232904 ; LEI non renouvelé depuis le 10/10/2016",
+          "url": "https://search.gleif.org/#/record/213800PIMH7Q7M27DB82",
           "lu_le": "2026-11-22"
         }
       ]
@@ -939,8 +929,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation de l'ARIN du 21/11/2026 (fiche 21) : AS14061 attribué le 25/09/2012, pays d'enregistrement US ; son titulaire (identifiant du fichier) détient aussi 4 autres AS (AS46652, AS62567, AS393406, AS394362), 68 blocs IPv4 et 1 bloc IPv6",
-          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "titre": "GLEIF : DigitalOcean, LLC, société du Delaware (n° 5118787), bureaux à New York (États-Unis)",
+          "url": "https://search.gleif.org/#/record/549300EDRXGWOG3MUL20",
           "lu_le": "2026-11-22"
         }
       ]
@@ -955,8 +945,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation de l'ARIN du 21/11/2026 (fiche 21) : AS15169 attribué le 30/03/2000, pays d'enregistrement US ; son titulaire (identifiant du fichier) détient aussi 8 autres AS (AS13949, AS19425, AS22577, AS22859, AS26684, AS36039, AS36040, AS40873), 28 blocs IPv4 et 5 blocs IPv6",
-          "url": "https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest",
+          "titre": "GLEIF : GOOGLE LLC, société du Delaware (États-Unis)",
+          "url": "https://search.gleif.org/#/record/7ZW8QJWVPR4P1J1KQY45",
           "lu_le": "2026-11-22"
         }
       ],
@@ -972,8 +962,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS15830 attribué le 20/10/2000, pays d'enregistrement NL ; son titulaire (identifiant du fichier) détient aussi 7 autres AS (AS5562, AS12600, AS13100, AS24938, AS28744, AS39003, AS39757), 47 blocs IPv4 et 4 blocs IPv6",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "GLEIF : Equinix (EMEA) Acquisition Enterprises B.V., fiche de catégorie succursale (« BRANCH »), adresse légale à Amsterdam (Pays-Bas), registre 63332248 ; LEI non renouvelé depuis le 22/09/2018",
+          "url": "https://search.gleif.org/#/record/549300PYU1L7U0OHTS42",
           "lu_le": "2026-11-22"
         }
       ]
@@ -988,8 +978,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS48613 attribué le 18/12/2008, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 1 bloc IPv4, et aucun autre AS",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "Sirene : CTRE INFORMATIQUE RECOUVREMENT SUD OUEST (CIRSO), organisme du régime général de la sécurité sociale, SIREN 776901142, siège à Toulouse, actif",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/776901142",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1002,11 +992,6 @@
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS28855 OCTOPUCE-AS, titulaire Octopuce s.a.r.l., pays d'enregistrement FR",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-22"
-        },
-        {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS28855 attribué le 18/03/2003, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 2 autres AS (AS51243, AS210770), 7 blocs IPv4 et 5 blocs IPv6",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-22"
         }
       ]
     },
@@ -1017,11 +1002,6 @@
         {
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS37153, titulaire Xneelo (Pty) Ltd, pays d'enregistrement ZA",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
-          "lu_le": "2026-11-22"
-        },
-        {
-          "titre": "Fichier de délégation de l'AFRINIC du 22/11/2026 (fiche 21) : AS37153 attribué le 26/10/2009, pays d'enregistrement ZA ; son titulaire (identifiant du fichier) détient aussi 13 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
-          "url": "https://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-extended-latest",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1036,8 +1016,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS21000 attribué le 24/07/2001, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 4 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "Sirene : ATOS FRANCE, SAS, SIREN 408024719, siège à Bezons, active (l'autre « ATOS FRANCE » de Sirene, SIREN 534714175, est une SARL d'une autre activité)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/408024719",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1052,8 +1032,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS50812 attribué le 29/03/2010, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 2 autres AS (AS39072, AS201516), 7 blocs IPv4 et 1 bloc IPv6",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "Sirene : AXESS ONLINE (AXESS NETWORK - AXESS TELECOM), SARL, SIREN 489548065, siège à Valence, active (seul résultat pour « Axess Online »)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/489548065",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1068,8 +1048,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS60068 attribué le 04/06/2014, pays d'enregistrement GB ; son titulaire (identifiant du fichier) détient aussi 3 autres AS (AS211612, AS212238, AS215989), 38 blocs IPv4 et 2 blocs IPv6",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "GLEIF : DataCamp Limited, siège à Londres (Royaume-Uni), Companies House 07489096",
+          "url": "https://search.gleif.org/#/record/315700H7VY11ZEYPCG73",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1084,12 +1064,12 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS1945 attribué le 01/09/1993, pays d'enregistrement EU ; identifiant de titulaire propre à cet AS, comme pour chacun des autres AS de Renater attribués le même jour (AS2060, AS2200, AS2202, AS2259)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-22"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS1945 FR-LyRES a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS2060, AS2200, AS2202 et AS2259, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 21/11/2026 (fiche 22) : AS1945 FR-LyRES a pour organisation « Renater », la même que AS2060, AS2200, AS2202 et AS2259, déjà reliés à renater."
     },
     "197562": {
       "societe": "boscop",
@@ -1098,11 +1078,6 @@
         {
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS197562 BOSCOP, titulaire Boscop SC, pays d'enregistrement FR",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
-          "lu_le": "2026-11-22"
-        },
-        {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS197562 attribué le 09/02/2011, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 2 blocs IPv4 et 1 bloc IPv6, et aucun autre AS",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1117,8 +1092,8 @@
           "lu_le": "2026-11-22"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 21/11/2026 (fiche 21) : AS21409 attribué le 30/11/2001, pays d'enregistrement FR ; son titulaire (identifiant du fichier) détient aussi 8 blocs IPv4 et 2 blocs IPv6, et aucun autre AS",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "Sirene : IKOULA NET (IKOULA), SAS, SIREN 417680618, siège à Paris, active, activité 63.11Z (traitement de données, hébergement et activités connexes) ; seule société de ce nom",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/417680618",
           "lu_le": "2026-11-22"
         }
       ]
@@ -1133,12 +1108,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1712 attribué le 01/12/1991, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1712 FR-RENATER-ENST a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà relié(s) à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1712 FR-RENATER-ENST a pour organisation « Renater », la même que AS1945 et AS2060, déjà relié(s) à renater."
     },
     "2269": {
       "societe": "renater",
@@ -1150,12 +1125,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2269 attribué le 01/09/1993, pays d'enregistrement EU",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2269 FR-U-PARISSUD-ORSAY a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà relié(s) à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2269 FR-U-PARISSUD-ORSAY a pour organisation « Renater », la même que AS1945 et AS2060, déjà relié(s) à renater."
     },
     "2457": {
       "societe": "renater",
@@ -1167,12 +1142,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2457 attribué le 01/09/1993, pays d'enregistrement EU",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2457 FR-RAIMU-2 a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà relié(s) à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2457 FR-RAIMU-2 a pour organisation « Renater », la même que AS1945 et AS2060, déjà relié(s) à renater."
     },
     "2280": {
       "societe": "orange",
@@ -1184,12 +1159,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2280 attribué le 01/09/1993, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : ORANGE, SIREN 380129866, siège à Issy-les-Moulineaux",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/380129866",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2280 OCBHoney a pour organisation ORG-FT2-RIPE, « Orange S.A. », LIR, FR, la même que AS3215, déjà relié(s) à orange."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2280 OCBHoney a pour organisation « Orange S.A. », la même que AS3215, déjà relié(s) à orange."
     },
     "14618": {
       "societe": "amazon-com-inc",
@@ -1218,12 +1193,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1715 attribué le 01/12/1991, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1715 FR-REMIP2000 a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1715 FR-REMIP2000 a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "209242": {
       "societe": "cloudflare-london-llc",
@@ -1233,14 +1208,9 @@
           "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS209242 CLOUDFLARESPECTRUM, titulaire Cloudflare London, LLC, pays d'enregistrement US",
           "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
           "lu_le": "2026-11-23"
-        },
-        {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS209242 attribué le 13/03/2019, pays d'enregistrement US",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS209242 CLOUDFLARESPECTRUM a pour organisation ORG-CLL6-RIPE, « Cloudflare London, LLC », LIR, US."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS209242 CLOUDFLARESPECTRUM a pour organisation « Cloudflare London, LLC »."
     },
     "1724": {
       "societe": "renater",
@@ -1252,12 +1222,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1724 attribué le 01/12/1991, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1724 FR-AMPLIVIA a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1724 FR-AMPLIVIA a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "1935": {
       "societe": "renater",
@@ -1269,12 +1239,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1935 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1935 FR-RENATER-LIMOUSIN a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1935 FR-RENATER-LIMOUSIN a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "2094": {
       "societe": "renater",
@@ -1286,12 +1256,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2094 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2094 FR-TELECOM-MANAGEMENT-SUDPARIS a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2094 FR-TELECOM-MANAGEMENT-SUDPARIS a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "2103": {
       "societe": "renater",
@@ -1303,12 +1273,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2103 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2103 FR-IFREMER-BREST a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2103 FR-IFREMER-BREST a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "2198": {
       "societe": "renater",
@@ -1320,12 +1290,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2198 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2198 FR-TOM-NOUVELLE-CALEDONIE a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2198 FR-TOM-NOUVELLE-CALEDONIE a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "2470": {
       "societe": "renater",
@@ -1337,12 +1307,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2470 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2470 FR-LAREUNION a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2470 FR-LAREUNION a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "2472": {
       "societe": "renater",
@@ -1354,12 +1324,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2472 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : Réseau national de télécommunication pour la technologie, l'enseignement et la recherche, GIP, SIREN 180089476, siège à Paris",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180089476",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2472 FR-DOM-GUYANE a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2472 FR-DOM-GUYANE a pour organisation « Renater », la même que AS1945 et AS2060, déjà reliés à renater."
     },
     "15404": {
       "societe": "colt-technology-services-group-limited",
@@ -1371,12 +1341,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS15404 attribué le 21/06/2000, pays d'enregistrement GB",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "GLEIF : COLT TECHNOLOGY SERVICES GROUP LIMITED, siège à Londres (Royaume-Uni), Companies House 03232904 ; LEI non renouvelé depuis le 10/10/2016",
+          "url": "https://search.gleif.org/#/record/213800PIMH7Q7M27DB82",
+          "lu_le": "2026-11-22"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS15404 UNSPECIFIED a pour organisation ORG-CI9-RIPE, « COLT Technology Services Group Limited », LIR, GB, la même que AS8220, déjà relié à colt-technology-services-group-limited."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS15404 UNSPECIFIED a pour organisation « COLT Technology Services Group Limited », la même que AS8220, déjà relié à colt-technology-services-group-limited."
     },
     "198682": {
       "societe": "eurofiber-france",
@@ -1388,12 +1358,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS198682 attribué le 13/04/2012, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
-          "lu_le": "2026-11-23"
+          "titre": "Sirene : EUROFIBER FRANCE, SAS, SIREN 530018639, siège à Issy-les-Moulineaux ; aucun LEI trouvé dans GLEIF",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/530018639",
+          "lu_le": "2026-11-19"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS198682 NETIWAN-AS a pour organisation ORG-EFS19-RIPE, « Eurofiber France SAS », LIR, FR, la même que AS24935 et AS35625, déjà reliés à eurofiber-france."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS198682 NETIWAN-AS a pour organisation « Eurofiber France SAS », la même que AS24935 et AS35625, déjà reliés à eurofiber-france."
     },
     "48703": {
       "societe": "cnam",
@@ -1405,12 +1375,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS48703 attribué le 13/01/2009, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "API Recherche d'entreprises (fiche 32) : CAISSE NATIONALE DE L'ASSURANCE MALADIE (CNAM), SIREN 180035024, siège à Paris (75020), active, catégorie juridique 7389 (établissement public national à caractère administratif)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/180035024",
           "lu_le": "2026-11-23"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS48703 CNAM-AS a pour organisation ORG-CA957-RIPE, « CAISSE NATIONALE DE L'ASSURANCE MALADIE », LIR, FR. Un organisme public : décrit par sa nature, jamais comme une société."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS48703 CNAM-AS a pour organisation « CAISSE NATIONALE DE L'ASSURANCE MALADIE ». Un organisme public : décrit par sa nature, jamais comme une société."
     },
     "202321": {
       "societe": "ina",
@@ -1422,12 +1392,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS202321 attribué le 04/06/2018, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "API Recherche d'entreprises (fiche 32) : INSTITUT NATIONAL DE L'AUDIOVISUEL (INA), SIREN 302421193, siège à Bry-sur-Marne (94360), actif, catégorie juridique 4120 (établissement public national à caractère industriel ou commercial)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/302421193",
           "lu_le": "2026-11-23"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS202321 INA a pour organisation ORG-INDL4-RIPE, « Institut National de l'Audiovisuel », LIR, FR. Un organisme public : décrit par sa nature, jamais comme une société."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS202321 INA a pour organisation « Institut National de l'Audiovisuel ». Un organisme public : décrit par sa nature, jamais comme une société."
     },
     "33930": {
       "societe": "cloud-temple",
@@ -1439,12 +1409,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS33930 attribué le 08/09/2004, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "API Recherche d'entreprises (fiche 32) : CLOUD TEMPLE, SIREN 825400336, siège à Puteaux (92800), active, catégorie juridique 5710 (SAS)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/825400336",
           "lu_le": "2026-11-23"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS33930 CLOUD-TEMPLE a pour organisation ORG-CTS49-RIPE, « Cloud Temple SAS », LIR, FR."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS33930 CLOUD-TEMPLE a pour organisation « Cloud Temple SAS »."
     },
     "208789": {
       "societe": "senat",
@@ -1456,12 +1426,12 @@
           "lu_le": "2026-11-23"
         },
         {
-          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS208789 attribué le 04/06/2019, pays d'enregistrement FR",
-          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "titre": "API Recherche d'entreprises (fiche 32) : SENAT, SIREN 110000023, siège à Paris (75006), actif, catégorie juridique 7111 (autorité constitutionnelle)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/110000023",
           "lu_le": "2026-11-23"
         }
       ],
-      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS208789 SENAT-AS a pour organisation ORG-SA4405-RIPE, « SENAT », LIR, FR. Une institution publique : décrite par sa nature, jamais comme une société."
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS208789 SENAT-AS a pour organisation « SENAT ». Une institution publique : décrite par sa nature, jamais comme une société."
     }
   }
 }

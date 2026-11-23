@@ -1,7 +1,7 @@
 {
   "version": "0.4",
-  "date": "2026-11-22",
-  "statut": "Provisoire : les sociétés vues dans l'échantillon du chantier T1, puis dans la collecte du jour 1 (version 0.3). La table complète est établie en T3.",
+  "date": "2026-11-23",
+  "statut": "Provisoire : les sociétés vues dans l'échantillon du chantier T1, puis dans les collectes des jours 1 à 3 (version 0.4). La table complète est établie en T3.",
   "regle": "« sources » établit l'identité et le pays du siège ; « sources_mere » établit le lien vers la maison mère, ou le fait qu'il n'y en a pas au-dessus. Deux producteurs différents : « confirmé » ; un seul : « probable » ; aucun : « non déterminé ». « non-determinee » marque une maison mère inconnue.",
   "societes": {
     "cloudflare-inc": {
@@ -649,6 +649,7 @@
       "nom": "FCB",
       "pays": "FR",
       "mere": null,
+      "controle": "personnes physiques (une famille), selon le document d'enregistrement universel 2025 de Cegedim",
       "lei": "9695008A28UP3TB2XW95",
       "sources": [
         {
@@ -1903,7 +1904,7 @@
         }
       ],
       "sources_mere": [],
-      "note": "Société non identifiée avec certitude (22/11/2026). Sirene donne deux SARL actives nommées OCTOPUCE : SIREN 480189067 (siège à Paris, créée le 03/01/2005, activité principale 70.22Z, conseil pour les affaires et autres conseils de gestion ; LEI 969500AESU8W36TYI473, exception « NATURAL_PERSONS » pour le parent ultime) et SIREN 411605777 (créée le 05/04/1997, siège à Saint-André-lez-Lille fermé, code d'activité de l'ancienne nomenclature 52.4Z). Aucune n'est retenue : la première, seule au siège actif, est née après l'attribution de l'AS (18/03/2003) et son activité principale est sans rapport apparent avec un réseau ; ce rapprochement par le nom n'est pas une source. Aucune source permise sur l'actionnariat."
+      "note": "Société non identifiée avec certitude (22/11/2026). Sirene donne deux sociétés de ce nom : l'une, seule au siège actif, est née après l'attribution de l'AS (18/03/2003) et son activité principale est sans rapport apparent avec un réseau ; l'autre a un siège fermé. Aucune n'est retenue : ce rapprochement par le nom n'est pas une source, et leurs numéros ne sont pas recopiés. Aucune source permise sur l'actionnariat."
     },
     "xneelo-pty-ltd": {
       "nom": "Xneelo (Pty) Ltd",
@@ -2022,7 +2023,7 @@
           "lu_le": "2026-11-22"
         }
       ],
-      "note": "GLEIF déclare aussi un parent direct d'Axess Groupe, une SAS de Valence (SIREN 914993795, LEI 969500549L761VB1JW50, fiche non renouvelée depuis le 13/10/2026 ; relation active depuis le 20/07/2022, déclarée par l'entité), elle-même en exception « NON_CONSOLIDATING » pour son parent ultime. Ces déclarations ne s'accordent pas avec l'exception « NON_PUBLIC » d'Axess Online et d'Axess Groupe : le sommet n'est pas retenu. Le nom de cette SAS n'est pas recopié, par prudence (il pourrait reprendre un prénom)."
+      "note": "GLEIF déclare aussi un parent direct d'Axess Groupe, une SAS de Valence (fiche non renouvelée depuis le 13/10/2026 ; relation active depuis le 20/07/2022, déclarée par l'entité), elle-même en exception « NON_CONSOLIDATING » pour son parent ultime. Ces déclarations ne s'accordent pas avec l'exception « NON_PUBLIC » d'Axess Online et d'Axess Groupe : le sommet n'est pas retenu. Ni le nom ni les numéros de cette SAS ne sont recopiés, par prudence (son nom pourrait reprendre un prénom)."
     },
     "datacamp-limited": {
       "nom": "DataCamp Limited",
@@ -2062,7 +2063,7 @@
         }
       ],
       "sources_mere": [],
-      "note": "Coopérative identifiée par le seul registre (« Boscop SC », base du RIPE) : plusieurs homonymes existent dans Sirene, et aucun écrit ne relie l'AS à l'un d'eux ; aucun SIREN n'est donc retenu (lecture stricte, 22/11/2026). Maison mère inconnue."
+      "note": "Organisation identifiée par le seul registre (« Boscop SC », base du RIPE) : plusieurs homonymes existent dans Sirene, et aucun écrit ne relie l'AS à l'un d'eux ; aucun SIREN n'est donc retenu (lecture stricte, 22/11/2026). Maison mère inconnue."
     },
     "ikoula-net": {
       "nom": "Ikoula Net",
