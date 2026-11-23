@@ -1445,6 +1445,23 @@
         }
       ],
       "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS33930 CLOUD-TEMPLE a pour organisation ORG-CTS49-RIPE, « Cloud Temple SAS », LIR, FR."
+    },
+    "208789": {
+      "societe": "senat",
+      "titulaire_registre": "SENAT",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS208789 SENAT-AS, titulaire SENAT, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS208789 attribué le 04/06/2019, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS208789 SENAT-AS a pour organisation ORG-SA4405-RIPE, « SENAT », LIR, FR. Une institution publique : décrite par sa nature, jamais comme une société."
     }
   }
 }

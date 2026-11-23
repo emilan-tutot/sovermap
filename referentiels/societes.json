@@ -2170,6 +2170,31 @@
       ],
       "sources_mere": [],
       "note": "GLEIF (23/11/2026) : CLOUD TEMPLE, LEI 969500ZF67WCYAIVXV54, fiche « LAPSED » (non renouvelée) ; parent direct NEURONES (LEI 9695008Y07TSG8SZCG57, FR) et parent ultime HOST DEVELOPPEMENT (LEI 969500RSMDKG0HN92504, FR). Une fiche échue peut avoir vieilli : la maison mère reste « non déterminée » jusqu'à une seconde source (le document d'enregistrement universel de Neurones, fiche 39)."
+    },
+    "senat": {
+      "nom": "Sénat",
+      "pays": "FR",
+      "mere": null,
+      "controle": "autorité constitutionnelle",
+      "sources": [
+        {
+          "titre": "API Recherche d'entreprises (fiche 32) : SENAT, SIREN 110000023, siège à Paris (75006), actif, catégorie juridique 7111 (autorité constitutionnelle)",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/110000023",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Base du RIPE, fichier « organisation » du 23/11/2026 (fiche 22) : ORG-SA4405-RIPE, SENAT, LIR, FR",
+          "url": "https://ftp.ripe.net/ripe/dbase/split/ripe.db.organisation.gz",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "sources_mere": [
+        {
+          "titre": "API Recherche d'entreprises (fiche 32) : catégorie juridique 7111, autorité constitutionnelle",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/110000023",
+          "lu_le": "2026-11-23"
+        }
+      ]
     }
   }
 }
