@@ -265,7 +265,7 @@ jobs:
           if [ "$ESSAI" = "true" ]; then
             args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10 --fin-reprises-minutes 18 --fin-controles-minutes 20)
           else
-            args+=(--echeance-minutes 115 --fin-reprises-minutes 135 --fin-controles-minutes 145)
+            args+=(--echeance-minutes 130 --fin-reprises-minutes 145 --fin-controles-minutes 150)
           fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"
@@ -384,7 +384,7 @@ jobs:
           if [ "$ESSAI" = "true" ]; then
             args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10 --fin-reprises-minutes 18 --fin-controles-minutes 20)
           else
-            args+=(--echeance-minutes 115 --fin-reprises-minutes 135 --fin-controles-minutes 145)
+            args+=(--echeance-minutes 130 --fin-reprises-minutes 145 --fin-controles-minutes 150)
           fi
           set +e
           npx tsx pipeline/cli/collecter.ts "${args[@]}"
