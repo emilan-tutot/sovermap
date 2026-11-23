@@ -88,6 +88,8 @@ describe("the territories' index (C.6, D.2)", () => {
         "69": { nom: "Rhône", region: "84", domaines: 1, conseil: [] },
         "977": { nom: "Saint-Barthélemy", region: null, domaines: 1, conseil: [] },
       },
+      // A group's page finds its département by its SIREN.
+      groupements: { "200000001": "01" },
     });
   });
 
@@ -131,6 +133,7 @@ describe("the territories' index (C.6, D.2)", () => {
     expect(JSON.parse(inconnu.get("index/territoires.json") ?? "null")).toEqual({
       regions: { "99": { nom: "99", nomInconnu: true, domaines: 1, conseil: [] } },
       departements: { "99": { nom: "99", nomInconnu: true, region: null, domaines: 1, conseil: ["x.example"] } },
+      groupements: {},
     });
   });
 

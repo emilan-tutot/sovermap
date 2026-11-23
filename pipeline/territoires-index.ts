@@ -132,6 +132,16 @@ export function indexTerritoires(etat: Etat, noms: NomsCog): Fichiers {
           ];
         }),
       ),
+      // A group's page is found by its SIREN (spec EX-26: /groupements/<SIREN>-<nom>): the département of its file.
+      groupements: Object.fromEntries(
+        trierCles(departements)
+          .flatMap((code) =>
+            [...(departements.get(code)?.groupements.values() ?? [])].flatMap((g) =>
+              g.siren === null ? [] : [[g.siren, code] as const],
+            ),
+          )
+          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+      ),
     })}\n`,
   );
   for (const code of trierCles(departements)) {
