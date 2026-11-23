@@ -20,6 +20,7 @@ import {
   lireCopieAnnuaire,
   lireFichier,
   memeCopie,
+  VERSION_LECTURE,
 } from "../annuaire-local";
 import type { Ecarts } from "../personnelles";
 import { agentUtilisateur, Telechargeur } from "../sources";
@@ -47,11 +48,17 @@ const obtenir = (adresse: string, entetes?: Record<string, string>) => telecharg
 
 const fichiers = await copieCourante(obtenir);
 const cheminPubliee = o.donnees === undefined ? null : path.join(o.donnees, "territoires", "annuaire", "copie.json");
-// Read back and checked: an unreadable description counts as no published copy (the new one is then read whole).
+// Read back and checked. An unreadable description never opens the guard of 10 % (a truncated copy would then replace
+// the good one): the copy is refused, unless a person who checked it accepts it (the review of PR 18).
 const publiee =
   cheminPubliee !== null && existsSync(cheminPubliee) ? lireCopieAnnuaire(readFileSync(cheminPubliee, "utf8")) : null;
 if (cheminPubliee !== null && existsSync(cheminPubliee) && publiee === null) {
-  console.log("annuaire : la description de la copie publiée est illisible ; elle est ignorée.");
+  if (!o["accepter-ecart"]) {
+    throw new Error(
+      "annuaire : la description de la copie publiée est illisible : la garde des 10 % ne peut pas se faire. Après vérification, relancer le workflow à la main avec « accepter_ecart ».",
+    );
+  }
+  console.log("annuaire : la description de la copie publiée est illisible ; acceptée à la main.");
 }
 if (!o.essai && memeCopie(fichiers, publiee)) {
   console.log("annuaire : la copie publiée est la copie courante ; rien à écrire.");
@@ -60,9 +67,11 @@ if (!o.essai && memeCopie(fichiers, publiee)) {
   const guichets: Guichet[] = [];
   // The free text left out (P13): counted by kind of personal datum, never copied, never printed (the log is public).
   const ecarts: Ecarts = {};
+  const etats: (string | null)[] = [];
   for (const fichier of fichiers) {
-    const { guichets: lus, autres } = await lireFichier(obtenir, fichier, ecarts);
+    const { guichets: lus, autres, etat } = await lireFichier(obtenir, fichier, ecarts);
     guichets.push(...lus);
+    etats.push(etat);
     console.log(
       `annuaire : ${fichier.chemin} (copie du ${fichier.date.slice(0, 10)}) : ${lus.length} guichets gardés ; ` +
         `${autres} d'un autre type (ni mairie, ni EPCI, ni conseil départemental ou régional), jamais copiés`,
@@ -91,8 +100,9 @@ if (!o.essai && memeCopie(fichiers, publiee)) {
     const copie: CopieAnnuaire & { ecarts: Ecarts } = {
       fichiers,
       guichets: guichets.length,
-      etat: dateEtat(guichets),
+      etat: dateEtat(etats),
       lue: new Date().toISOString(),
+      regles: VERSION_LECTURE,
       ecarts,
     };
     writeFileSync(path.join(dossier, "copie.json"), `${JSON.stringify(copie, null, 2)}\n`);

@@ -1,5 +1,6 @@
 // Tests of the territories' index (brief C.6 and D.2): made-up domains (RFC 2606) and made-up COG lines; no network.
 import { describe, expect, it } from "vitest";
+import { lireEtatPublie } from "../lib/donnees/lecture";
 import type { EnregistrementDomaine, EnregistrementNom, Etat } from "./publication";
 import type { Territoire } from "./territoires";
 import { indexTerritoires, lireNomsCog } from "./territoires-index";
@@ -123,6 +124,32 @@ describe("the territories' index (C.6, D.2)", () => {
       "index/territoires/69.json",
       "index/territoires/977.json",
     ]);
+  });
+
+  it("names each file in lower case, so that the site reads them all, Corsica's too (the review of PR 18)", () => {
+    const corse = indexTerritoires(
+      jour([
+        [
+          "mairie-corse.example",
+          territoire({ commune: { code: "2A004", nom: "Ajaccio" }, departement: "2A", region: "94" }),
+          "France",
+          false,
+        ],
+        ...[...etat.domaines.keys()].map((d): [string, Territoire | undefined, "France", false] => [
+          d,
+          etat.domaines.get(d)?.territoire,
+          "France",
+          false,
+        ]),
+      ]),
+      NOMS,
+    );
+    expect(corse.has("index/territoires/2a.json")).toBe(true);
+    expect(JSON.parse(corse.get("index/territoires/2a.json") ?? "null")).toMatchObject({ departement: "2A" });
+    // Every path the collection writes is one the site keeps from etat.json's checksums (lib/donnees/lecture.ts).
+    const sommes = Object.fromEntries([...corse.keys()].map((chemin) => [chemin, "a".repeat(64)]));
+    const lu = lireEtatPublie({ date: "2026-11-24", statut: "preparation", jours: 1, sommes });
+    expect(Object.keys(lu?.sommes ?? {}).sort()).toEqual([...corse.keys()].sort());
   });
 
   it("keeps a code the COG does not name, and says so", () => {

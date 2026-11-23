@@ -20,6 +20,7 @@ on:
     paths:
       - "pipeline/annuaire-local.ts"
       - "pipeline/cli/annuaire.ts"
+      - "pipeline/personnelles.ts"
       - "pipeline/sources.ts"
       - "package-lock.json"
       - ".github/workflows/annuaire.yml"
@@ -27,9 +28,11 @@ on:
 permissions:
   contents: read
 
+# One reading of Hugging Face at a time: the trials of every pull request share one group (a Dependabot burst never
+# reads the copy several times at once), and the weekly or manual run has its own.
 concurrency:
-  group: annuaire-${{ github.event_name == 'pull_request' && github.ref || 'courant' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: annuaire-${{ github.event_name == 'pull_request' && 'essai' || 'courant' }}
+  cancel-in-progress: false
 
 jobs:
   lire:
@@ -84,7 +87,9 @@ jobs:
 
   publier:
     needs: lire
-    if: needs.lire.outputs.nouvelle == 'true' && github.event_name != 'pull_request'
+    # Only the code of « main » ever writes « donnees », whose history is never rewritten: a manual run started on
+    # another branch reads, and writes nothing (the review of PR 18).
+    if: needs.lire.outputs.nouvelle == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

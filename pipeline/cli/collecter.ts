@@ -738,7 +738,12 @@ async function principal(): Promise<number> {
   // measured layer: computed again each day from these copies, after the comparison with yesterday, so it never enters
   // the journal or the circuit breaker; a domain without a territory has none.
   const annuaire = o.donnees === undefined ? null : path.join(o.donnees, "territoires", "annuaire", "guichets.jsonl");
-  const publies = lireGuichetsPublies(annuaire !== null && existsSync(annuaire) ? readFileSync(annuaire, "utf8") : "");
+  // The offices' free text passes the control of personal data again (P13), counted with the others in etat.json.
+  const ecartsGuichets: Ecarts = {};
+  const publies = lireGuichetsPublies(
+    annuaire !== null && existsSync(annuaire) ? readFileSync(annuaire, "utf8") : "",
+    ecartsGuichets,
+  );
   const nomsParDomaine = new Map<string, string[]>([...b.etat.domaines.keys()].map((d) => [d, [d]]));
   for (const [nom, e] of b.etat.noms) nomsParDomaine.get(e.domaine)?.push(nom);
   const territoires = territoiresDesDomaines(
@@ -1008,7 +1013,7 @@ async function principal(): Promise<number> {
       enregistrementsReduits: rapportJour.reduits,
       nomsDilaNeutralises: dila?.neutralises ?? 0,
       // The free text left out because it held an e-mail address, a phone or a person's name (P13), by source.
-      texteLibreEcarte: ajouterEcarts(dila?.ecarts ?? {}, ecartsAs),
+      texteLibreEcarte: ajouterEcarts(ajouterEcarts(dila?.ecarts ?? {}, ecartsAs), ecartsGuichets),
       enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,

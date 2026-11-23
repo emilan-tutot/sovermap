@@ -177,7 +177,8 @@ export function lieuDe(adresses: unknown): { commune: string | null; codePostal:
   if (!Array.isArray(liste)) return { commune: null, codePostal: null };
   for (const a of liste) {
     if (typeof a !== "object" || a === null) continue;
-    const commune = texte((a as Record<string, unknown>)["commune"], 120);
+    // 2,000 characters at most: the control of personal data reads it whole, then it is cut to 120 (guichetDe).
+    const commune = texte((a as Record<string, unknown>)["commune"], 2000);
     const code = texte((a as Record<string, unknown>)["code_postal"], 10);
     if (commune !== null) return { commune, codePostal: code !== null && /^\d{5}$/.test(code) ? code : null };
   }
@@ -215,19 +216,20 @@ export function nomDeRemplacement(type: string, commune: string | null): string 
  * One office from the values of its row (the useful columns only); null without a name, or of another kind. Its free
  * text (its name, its commune) passes the control of personal data (the owner's answer to point 13, P13): a name that
  * holds an e-mail address, a phone or a person's name is never kept, and counted in `ecarts`; the office is then named
- * by its kind and its commune.
+ * by its kind and its commune. Each text is controlled whole (2,000 characters at most), then cut (300 for the name,
+ * 120 for the commune): a datum cut in two is never published.
  */
 export function guichetDe(ligne: Partial<Record<Colonne, unknown>>, ecarts: Ecarts = {}): Guichet | null {
-  const brut = texte(ligne.name);
+  const brut = texte(ligne.name, 2000);
   const type = texte(ligne.types, 120);
   if (brut === null || type === null || !TYPES_GUICHET.includes(type)) return null;
   const siren = texte(ligne.siren, 20);
   const siret = texte(ligne.siret, 20);
   const modification = texte(ligne.modification_date, 40);
   const lieu = lieuDe(ligne.addresses);
-  const commune = garderTexteLibre(lieu.commune, "annuaire-local", ecarts);
+  const commune = garderTexteLibre(lieu.commune, "annuaire-local", ecarts)?.slice(0, 120).trim() ?? null;
   return {
-    nom: garderTexteLibre(brut, "annuaire-local", ecarts) ?? nomDeRemplacement(type, commune),
+    nom: garderTexteLibre(brut, "annuaire-local", ecarts)?.slice(0, 300).trim() ?? nomDeRemplacement(type, commune),
     type,
     hotes: hotesDe(ligne.urls),
     siren: siren !== null && /^\d{9}$/.test(siren) ? siren : null,
@@ -238,7 +240,11 @@ export function guichetDe(ligne: Partial<Record<Colonne, unknown>>, ecarts: Ecar
   };
 }
 
-const COMPRESSEURS = { ZSTD: (entree: Uint8Array) => new Uint8Array(zstdDecompressSync(entree)) };
+/** A page is decompressed to its announced size at most (the review of PR 18): never more, whatever its bytes say. */
+const COMPRESSEURS = {
+  ZSTD: (entree: Uint8Array, taille: number) =>
+    new Uint8Array(zstdDecompressSync(entree, { maxOutputLength: Math.max(1, taille) })),
+};
 
 /**
  * Reads one file of the copy: its footer, then each useful column on its own; returns its offices of the kinds kept,
@@ -249,7 +255,7 @@ export async function lireFichier(
   obtenir: Obtenir,
   fichier: FichierCopie,
   ecarts: Ecarts = {},
-): Promise<{ guichets: Guichet[]; autres: number }> {
+): Promise<{ guichets: Guichet[]; autres: number; etat: string | null }> {
   const adresse = `https://huggingface.co/datasets/${JEU}/resolve/${fichier.commit}/${fichier.chemin}`;
   const lire = async (debut: number, fin: number): Promise<ArrayBuffer> => {
     const r = await obtenir(adresse, { range: `bytes=${debut}-${fin - 1}` });
@@ -282,27 +288,44 @@ export async function lireFichier(
   const total = Number(meta.num_rows);
   const guichets: Guichet[] = [];
   let autres = 0;
+  const dates: string[] = [];
   for (let i = 0; i < total; i += 1) {
     const ligne: Partial<Record<Colonne, unknown>> = {};
     for (const colonne of COLONNES) ligne[colonne] = colonnes.get(colonne)?.[i];
     const g = guichetDe(ligne, ecarts);
     if (g !== null) guichets.push(g);
     else if (texte(ligne.name) !== null) autres += 1;
+    // The state's date is the most recent change among all the rows, not only the offices kept (card 50).
+    const modification = texte(ligne.modification_date, 40);
+    if (modification !== null && /^\d{4}-\d{2}-\d{2}/.test(modification)) dates.push(modification.slice(0, 10));
   }
-  return { guichets, autres };
+  return { guichets, autres, etat: dateEtat(dates) };
 }
 
 /**
- * What the « donnees » branch keeps of a copy: its files, its number of offices, the date of its state (its offices'
- * most recent change, which the attribution of card 50 names), and when it was read.
+ * The version of the reading's rules (the columns kept, the kinds of office, the control of personal data): a copy read
+ * under older rules is read again even when its files did not change, so that a correction reaches « donnees » at once
+ * (the review of PR 18). 2: the offices' free text passes P13 (23/11/2026).
  */
-export type CopieAnnuaire = { fichiers: FichierCopie[]; guichets: number; etat: string | null; lue: string };
+export const VERSION_LECTURE = 2;
 
-/** The date of the directory's state: its offices' most recent change (YYYY-MM-DD), or null. */
-export function dateEtat(guichets: readonly Guichet[]): string | null {
+/**
+ * What the « donnees » branch keeps of a copy: its files, its number of offices, the date of its state (the most
+ * recent change among all its rows, which the attribution of card 50 names), when it was read, and under which rules.
+ */
+export type CopieAnnuaire = {
+  fichiers: FichierCopie[];
+  guichets: number;
+  etat: string | null;
+  lue: string;
+  /** VERSION_LECTURE when the copy was read (1: before it was written). */
+  regles: number;
+};
+
+/** The date of the directory's state: the most recent change (YYYY-MM-DD) among the dates read, or null. */
+export function dateEtat(dates: Iterable<string | null>): string | null {
   let etat: string | null = null;
-  for (const g of guichets)
-    if (g.modification !== null && (etat === null || g.modification > etat)) etat = g.modification;
+  for (const d of dates) if (d !== null && (etat === null || d > etat)) etat = d;
   return etat;
 }
 
@@ -316,8 +339,10 @@ export function lireCopieAnnuaire(texte: string): CopieAnnuaire | null {
   }
   if (typeof brut !== "object" || brut === null || Array.isArray(brut)) return null;
   const o = brut as Record<string, unknown>;
-  const { fichiers, guichets, etat, lue } = o;
+  const { fichiers, guichets, etat, lue, regles } = o;
   if (!Array.isArray(fichiers) || typeof lue !== "string") return null;
+  // A copy described before the rules had a version was read under the first ones.
+  if (regles !== undefined && (typeof regles !== "number" || !Number.isSafeInteger(regles) || regles < 1)) return null;
   if (typeof guichets !== "number" || !Number.isSafeInteger(guichets) || guichets < 0) return null;
   if (etat !== undefined && etat !== null && (typeof etat !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(etat)))
     return null;
@@ -329,12 +354,20 @@ export function lireCopieAnnuaire(texte: string): CopieAnnuaire | null {
     if (typeof commit !== "string" || typeof date !== "string" || typeof taille !== "number") return null;
     lus.push({ chemin, taille, sha256, commit, date });
   }
-  return { fichiers: lus, guichets, etat: typeof etat === "string" ? etat : null, lue };
+  return {
+    fichiers: lus,
+    guichets,
+    etat: typeof etat === "string" ? etat : null,
+    lue,
+    regles: typeof regles === "number" ? regles : 1,
+  };
 }
 
 /** Is it the copy already published: the same files, with the same SHA-256? */
 export function memeCopie(fichiers: readonly FichierCopie[], publiee: CopieAnnuaire | null): boolean {
   if (publiee === null || publiee.fichiers.length !== fichiers.length) return false;
+  // Read under other rules: read again (a correction of the reading reaches « donnees » without a new copy).
+  if (publiee.regles !== VERSION_LECTURE) return false;
   const connues = new Map(publiee.fichiers.map((f) => [f.chemin, f.sha256]));
   return fichiers.every((f) => connues.get(f.chemin) === f.sha256);
 }

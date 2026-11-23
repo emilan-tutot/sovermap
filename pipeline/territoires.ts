@@ -4,8 +4,16 @@
 // never taken outside that département. A commune whose postcode is a neighbouring département's, or an office of an
 // overseas collectivity (absent from the communes' file), stays without a commune (« non déterminé »), unless that
 // département has a commune of the same name, which is then taken (a rare case, not measured: no postcode file).
-import { type Guichet, TYPE_DEPARTEMENT, TYPE_GROUPEMENT, TYPE_MAIRIE, TYPE_REGION } from "./annuaire-local";
+import {
+  type Guichet,
+  nomDeRemplacement,
+  TYPE_DEPARTEMENT,
+  TYPE_GROUPEMENT,
+  TYPE_MAIRIE,
+  TYPE_REGION,
+} from "./annuaire-local";
 import { lignesCsv } from "./liste";
+import { type Ecarts, garderTexteLibre } from "./personnelles";
 
 export type Commune = { code: string; nom: string; dep: string; reg: string };
 /** By comparable name, the communes that name may designate. */
@@ -164,8 +172,13 @@ export function territoireDe(
 /** A host name as the directory's addresses give it (lower case, ASCII); never an address, whose last label is digits. */
 const NOM_HOTE = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
 
-/** One office of the published copy, checked at the border; null for a line that is not one. */
-function guichetPublie(valeur: unknown): Guichet | null {
+/**
+ * One office of the published copy, checked at the border; null for a line that is not one. Its name and commune pass
+ * the control of personal data again (P13): a copy read under older rules is controlled here too, so that the day's
+ * state never carries what the control now leaves out (the review of PR 18); the office is then named by its kind and
+ * its commune, and the text left out is counted in `ecarts`.
+ */
+function guichetPublie(valeur: unknown, ecarts: Ecarts): Guichet | null {
   if (typeof valeur !== "object" || valeur === null || Array.isArray(valeur)) return null;
   const o = valeur as Record<string, unknown>;
   const texte = (v: unknown, max: number) => (typeof v === "string" && v !== "" && v.length <= max ? v : null);
@@ -187,21 +200,23 @@ function guichetPublie(valeur: unknown): Guichet | null {
   if (nom === null || type === null || hotes === null) return null;
   if (siren === undefined || siret === undefined || commune === undefined) return null;
   if (codePostal === undefined || modification === undefined) return null;
-  return { nom, type, hotes, siren, siret, commune, codePostal, modification };
+  const communeGardee = garderTexteLibre(commune, "annuaire-local", ecarts);
+  const nomGarde = garderTexteLibre(nom, "annuaire-local", ecarts) ?? nomDeRemplacement(type, communeGardee);
+  return { nom: nomGarde, type, hotes, siren, siret, commune: communeGardee, codePostal, modification };
 }
 
 /**
  * The offices of the published copy of the local directory (territoires/annuaire/guichets.jsonl, written by
  * annuaire.yml, one office per line), each checked: a line that is not an office is left out, and counted.
  */
-export function lireGuichetsPublies(texte: string): { guichets: Guichet[]; ecartees: number } {
+export function lireGuichetsPublies(texte: string, ecarts: Ecarts = {}): { guichets: Guichet[]; ecartees: number } {
   const guichets: Guichet[] = [];
   let ecartees = 0;
   for (const ligne of texte.split("\n")) {
     if (ligne.trim() === "") continue;
     let g: Guichet | null = null;
     try {
-      g = guichetPublie(JSON.parse(ligne));
+      g = guichetPublie(JSON.parse(ligne), ecarts);
     } catch {
       g = null;
     }

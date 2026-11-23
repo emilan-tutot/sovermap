@@ -147,8 +147,10 @@ export function indexTerritoires(etat: Etat, noms: NomsCog): Fichiers {
   for (const code of trierCles(departements)) {
     const dep = departements.get(code);
     if (dep === undefined) continue;
+    // The file's name in lower case (« 2a.json » for Corse-du-Sud): the site reads only such paths (MOTIF_CHEMIN,
+    // lib/donnees/lecture.ts); the code inside keeps its official case (the review of PR 18).
     fichiers.set(
-      `index/territoires/${code}.json`,
+      `index/territoires/${code.toLowerCase()}.json`,
       `${jsonStable({
         departement: code,
         conseil: liste(dep.conseil),

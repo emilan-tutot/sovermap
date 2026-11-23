@@ -2,6 +2,7 @@
 // not exist).
 import { describe, expect, it } from "vitest";
 import type { Guichet } from "./annuaire-local";
+import type { Ecarts } from "./personnelles";
 import { DOMAINE, valider } from "./schemas";
 import {
   communeDe,
@@ -187,6 +188,25 @@ describe("the territories of the day's domains, in the collection (C.6)", () => 
     );
     expect(ecartees).toBe(4);
     expect(guichets.map((g) => g.hotes)).toEqual([["www.mairie-exemple.example"], ["mairie-exemple.example"]]);
+  });
+
+  it("controls the published offices' free text again (P13): a copy read under older rules never reaches the day's state", () => {
+    const ecarts: Ecarts = {};
+    const { guichets, ecartees } = lireGuichetsPublies(
+      [
+        ligne({ ...mairie, nom: "Permanence de M. Exemple" }),
+        ligne({ ...mairie, nom: "Mairie", commune: "Chez Mme Exemple" }),
+        ligne(mairie),
+      ].join("\n"),
+      ecarts,
+    );
+    expect(ecartees).toBe(0);
+    expect(guichets.map((g) => [g.nom, g.commune])).toEqual([
+      ["Mairie d'Exemple-sur-Mer", "Exemple-sur-Mer"],
+      ["Mairie", null],
+      ["Mairie - Exemple-sur-Mer", "Exemple-sur-Mer"],
+    ]);
+    expect(ecarts).toEqual({ "annuaire-local": { "nom de personne": 2 } });
   });
 
   it("gives each domain the territory of the offices whose websites are among its names, and none otherwise", () => {

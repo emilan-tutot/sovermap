@@ -19,6 +19,7 @@ import {
   plagesPermises,
   sansStatistiques,
   TYPES_GUICHET,
+  VERSION_LECTURE,
 } from "./annuaire-local";
 import type { Ecarts } from "./personnelles";
 
@@ -196,7 +197,9 @@ describe("the local directory, read by ranges (C.6)", () => {
     // An office's usual name passes unchanged: « M. le maire » names no person.
     expect(guichetDe({ name: "Cabinet de M. le maire", types: "mairie" }, ecarts)?.nom).toBe("Cabinet de M. le maire");
     // The commune too: one that holds a person's name is left out, never copied.
-    expect(guichetDe({ name: "Mairie", types: "mairie", addresses: adresses("Chez Mme Exemple") }, ecarts)?.commune).toBeNull();
+    expect(
+      guichetDe({ name: "Mairie", types: "mairie", addresses: adresses("Chez Mme Exemple") }, ecarts)?.commune,
+    ).toBeNull();
     expect(ecarts).toEqual({ "annuaire-local": { "nom de personne": 2, "adresse e-mail": 1, téléphone: 1 } });
     expect(nomDeRemplacement("cg (Collectivité locale)", "Ain-Exemple")).toBe("Conseil départemental d'Ain-Exemple");
     expect(nomDeRemplacement("cr (Collectivité locale)", null)).toBe("Conseil régional");
@@ -249,17 +252,23 @@ describe("the publication of a copy of the local directory (C.6)", () => {
     guichets: 1000,
     etat: "2026-11-13",
     lue: "2026-11-15T13:23:00.000Z",
+    regles: VERSION_LECTURE,
   };
 
-  it("knows the copy already published, file by file", () => {
+  it("knows the copy already published, file by file, under the same rules of reading", () => {
     expect(memeCopie([...publiee.fichiers].reverse(), publiee)).toBe(true);
     expect(memeCopie([fichier("data/a.parquet", SHA), fichier("data/b.parquet", "d".repeat(64))], publiee)).toBe(false);
     expect(memeCopie([fichier("data/a.parquet", SHA)], publiee)).toBe(false);
     expect(memeCopie(publiee.fichiers, null)).toBe(false);
+    // Read under older rules: read again, so that a correction reaches « donnees » at once (the review of PR 18).
+    expect(memeCopie(publiee.fichiers, { ...publiee, regles: VERSION_LECTURE - 1 })).toBe(false);
   });
 
   it("reads the published copy's description back, checked: an unreadable one counts as none", () => {
     expect(lireCopieAnnuaire(JSON.stringify(publiee))).toEqual(publiee);
+    // A description written before the rules had a version: the first rules.
+    expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, regles: undefined }))).toEqual({ ...publiee, regles: 1 });
+    expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, regles: "2" }))).toBeNull();
     expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, etat: undefined }))).toEqual({ ...publiee, etat: null });
     expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, etat: "le 13 novembre" }))).toBeNull();
     expect(lireCopieAnnuaire(JSON.stringify({ ...publiee, guichets: "1000" }))).toBeNull();
@@ -277,19 +286,10 @@ describe("the publication of a copy of the local directory (C.6)", () => {
     expect(ecartVolume(85865, null)).toBeNull();
   });
 
-  it("dates the directory's state by its offices' most recent change", () => {
-    const g = (modification: string | null): Guichet => ({
-      nom: "Mairie",
-      type: "mairie",
-      hotes: [],
-      siren: null,
-      siret: null,
-      commune: null,
-      codePostal: null,
-      modification,
-    });
-    expect(dateEtat([g("2026-11-02"), g(null), g("2026-11-13"), g("2025-01-01")])).toBe("2026-11-13");
-    expect(dateEtat([g(null)])).toBeNull();
+  it("dates the directory's state by the most recent change among the dates read (every row's, card 50)", () => {
+    expect(dateEtat(["2026-11-02", null, "2026-11-13", "2025-01-01"])).toBe("2026-11-13");
+    expect(dateEtat([null])).toBeNull();
+    expect(dateEtat([])).toBeNull();
   });
 
   it("writes one office per line, sorted, so that a new copy changes only its changed lines", () => {
