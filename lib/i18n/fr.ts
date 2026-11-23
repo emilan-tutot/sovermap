@@ -191,6 +191,10 @@ export const fr = {
     surtitre: "Radiographie",
     chapo:
       "Les couches du site, de son nom au pays du siège de la société qui le sert. Chaque couche donne sa source, sa date et son niveau de confiance.",
+    /** What the page does not show (spec EX-25), under its chapô, which says what it shows. */
+    limites: `Cette fiche ne montre ni où se trouvent les serveurs, ni où sont stockées les données des usagers, ni si ce site respecte la loi${NBSP}; derrière un CDN, l’hébergeur d’origine n’est pas observable (voir `,
+    limitesLien: "ce que Sovermap montre, et ce qu’il ne montre pas",
+    limitesFin: ").",
     indisponible: "Les données de ce domaine n’ont pas pu être lues. Réessayez plus tard.",
     modes: { libelle: "Affichage", simple: "Simple", expert: "Expert" },
     collecte: (date: string) => `Collecte du ${date}`,
@@ -463,6 +467,14 @@ export const fr = {
     panneau: (n: string) => `${n}${NBSP}domaines du périmètre «${NBSP}État${NBSP}» servis depuis ce pays du siège`,
     voirPays: "Voir la page du pays",
     fermer: "Fermer",
+    /** What the site shows and does not show (spec EX-25), in short; the whole text is the Method's first section. */
+    limites: {
+      titre: "Ce que Sovermap montre, et ce qu’il ne montre pas",
+      montre: `Pour chaque site public de la liste, Sovermap montre qui le sert, couche par couche${NBSP}: ses serveurs de noms, ses adresses, son réseau, l’exploitant de ce réseau, sa maison mère et le pays de leurs sièges, avec la source, la date et le niveau de confiance de chaque couche.`,
+      neMontrePas: `Il ne montre ni où se trouvent les serveurs, ni où sont stockées les données des usagers, ni si un site respecte la loi${NBSP}: une dépendance n’est pas une faute (voir `,
+      lien: "la méthode",
+      fin: ").",
+    },
     /** The time slider (D.2), from two published days. */
     temps: {
       libelle: "Le chiffre, jour après jour",

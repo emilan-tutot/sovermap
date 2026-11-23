@@ -121,6 +121,17 @@ export async function Atlas() {
           </tbody>
         </table>
       </section>
+      <section className="releve" aria-labelledby="atlas-limites">
+        <h2 id="atlas-limites">{t.limites.titre}</h2>
+        <p>{t.limites.montre}</p>
+        <p>
+          {t.limites.neMontrePas}
+          <Link href="/methode#ce-que-sovermap-montre" prefetch={false}>
+            {t.limites.lien}
+          </Link>
+          {t.limites.fin}
+        </p>
+      </section>
     </Coque>
   );
 }

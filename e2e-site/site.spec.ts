@@ -228,6 +228,22 @@ test("site complet : un site servi par la filiale américaine d'un groupe franç
   await expect(page.locator("main")).toContainText("Relais Exemple, Inc.");
 });
 
+test("site complet : l'accueil et chaque Radiographie disent ce que le site montre et ne montre pas (EX-25)", async ({
+  page,
+}) => {
+  const versMethode = "/methode#ce-que-sovermap-montre";
+  await page.goto("/");
+  const limites = page.locator("section", { has: page.getByRole("heading", { name: fr.atlas.limites.titre }) });
+  await expect(limites).toContainText(fr.atlas.limites.montre);
+  await expect(limites.getByRole("link", { name: fr.atlas.limites.lien })).toHaveAttribute("href", versMethode);
+  await page.goto("/radiographie/relais.example");
+  const note = page.locator("p", { hasText: fr.radiographie.limites.trim() });
+  await expect(note.getByRole("link", { name: fr.radiographie.limitesLien })).toHaveAttribute("href", versMethode);
+  // The Method's section the links lead to.
+  await page.goto(versMethode);
+  await expect(page.locator("#ce-que-sovermap-montre")).toBeVisible();
+});
+
 test("site complet : le curseur du temps montre chaque jour publié, au clavier", async ({ page }) => {
   await page.goto("/");
   const curseur = page.getByLabel(fr.atlas.temps.libelle);

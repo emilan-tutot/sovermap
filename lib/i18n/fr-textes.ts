@@ -541,6 +541,11 @@ export const methode: PageDeTexte = soignee({
         },
         {
           paragraphe: [
+            "La question du site, « Qui héberge l’État ? », se lit au sens courant : qui sert ses sites aux visiteurs. Quand un réseau de diffusion (CDN) est placé devant un site, Sovermap écrit « diffusé par », et non « hébergé par » : le CDN sert le site, mais l’hébergeur d’origine, derrière lui, n’est pas observable depuis l’extérieur.",
+          ],
+        },
+        {
+          paragraphe: [
             "Une dépendance n’est pas une faute, et Sovermap ne juge jamais la légalité d’un choix : les règles dépendent de la sensibilité des données, qu’il ne voit pas (voir ",
             { lien: "Pourquoi ça compte", vers: "/pourquoi-ca-compte" },
             ").",
@@ -688,7 +693,8 @@ export const methode: PageDeTexte = soignee({
     ["La méthode de Sovermap, docs/methode.md (§ 1 à § 7, § 10 et § 11), dans son dépôt public."],
     ["Commission européenne, eGovernment Benchmark 2026 (rapport sous licence CC BY 4.0), lu le 18/11/2026."],
   ],
-  revision: REVISION,
+  // 23/11/2026: the reading of the site's question beside « diffusé par » (brief E.1).
+  revision: "2026-11-23",
   relu: false,
 });
 

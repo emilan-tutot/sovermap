@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
@@ -112,6 +113,13 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
         <Valeur texte={r.domaine} />
       </h1>
       <p className="chapo">{fr.radiographie.chapo}</p>
+      <p className="releve-note">
+        {fr.radiographie.limites}
+        <Link href="/methode#ce-que-sovermap-montre" prefetch={false}>
+          {fr.radiographie.limitesLien}
+        </Link>
+        {fr.radiographie.limitesFin}
+      </p>
       <VueRadiographie r={r} s={s} dates={dates} slugs={slugs} mode={vue} />
     </Coque>
   );
