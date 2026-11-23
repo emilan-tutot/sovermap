@@ -92,6 +92,13 @@ export const fr = {
     lead: "Cette adresse ne correspond à aucune page de Sovermap.",
     back: "Retour à l’accueil",
   },
+  /** « Citer cette page » (point 13, § 10): the page's title, the date of its data and its address, as plain text. */
+  citer: {
+    titre: "Citer cette page",
+    /** Before the address, which follows in its own element (it may wrap anywhere), then a full stop. */
+    modele: (titre: string, date: string) => `Sovermap, «${NBSP}${titre}${NBSP}», données du ${date}, `,
+    fin: ".",
+  },
   globe: {
     titre: "Les fils de la France vers les pays des sièges",
     honnetete:

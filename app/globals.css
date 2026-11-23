@@ -455,6 +455,18 @@
     color: var(--color-discret);
   }
 
+  /* « Citer cette page » (point 13, § 10): a reference to copy; its address alone may wrap anywhere on a phone. */
+  .citer p {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .citer-adresse {
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+
   .releve-table {
     width: 100%;
     border-collapse: collapse;

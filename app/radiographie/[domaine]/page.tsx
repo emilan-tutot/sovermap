@@ -5,6 +5,7 @@ import { ViewTransition } from "react";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { type Mode, VueRadiographie } from "@/components/radiographie/Radiographie";
+import { Citer } from "@/components/texte/Citer";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
 import { indisponible } from "@/lib/donnees/indisponible";
@@ -127,6 +128,7 @@ export default async function RadiographiePage({ params, searchParams }: Props) 
         {fr.radiographie.limitesFin}
       </p>
       <VueRadiographie r={r} s={s} dates={dates} slugs={slugs} mode={vue} />
+      <Citer titre={fr.radiographie.titre(r.domaine)} chemin={`/radiographie/${r.domaine}`} date={lu.date} />
     </Coque>
   );
 }

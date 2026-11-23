@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Constellation } from "@/components/ministeres/Constellation";
+import { Citer } from "@/components/texte/Citer";
 import { Valeur } from "@/components/texte/Valeur";
 import { fiche } from "@/lib/donnees/fiches";
 import { indisponible } from "@/lib/donnees/indisponible";
@@ -164,6 +165,9 @@ export default async function MinisterePage({ params }: Props) {
         ))}
         <p className="releve-note">{t.source}</p>
       </section>
+      {etat.statut === "ok" ? (
+        <Citer titre={t.titrePage(m.nom)} chemin={`/ministeres/${slug}`} date={etat.donnees.date} />
+      ) : null}
     </Coque>
   );
 }

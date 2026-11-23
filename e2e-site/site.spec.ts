@@ -359,6 +359,24 @@ test("site complet : la recherche charge son index une fois et trouve un domaine
   expect(chargements).toBe(1);
 });
 
+// « Citer cette page » (point 13, § 10): each kind of record gives its title, the date of its data and its address.
+test("citer : une Radiographie, un ministère, une société et un pays donnent la date de leurs données et leur adresse", async ({
+  page,
+}) => {
+  for (const chemin of [
+    "/radiographie/service.example",
+    "/ministeres/ministere-de-l-exemple",
+    "/societes/hebergeur-fr",
+    "/pays/etats-unis",
+  ]) {
+    await page.goto(chemin);
+    const bloc = page.locator("section.citer");
+    await expect(bloc.getByRole("heading", { name: fr.citer.titre })).toBeVisible();
+    await expect(bloc).toContainText(`données du ${dateFr("2026-11-21")}`);
+    await expect(bloc.locator(".citer-adresse")).toContainText(chemin);
+  }
+});
+
 // The Confidentiality page says that Sovermap writes nothing in the browser: no cookie, nothing in localStorage,
 // sessionStorage or IndexedDB. Proved on every kind of page, then after what a visitor does: the menu (on a phone), the
 // globe, the time slider, the search and its result, the Expert mode (the owner's correction 7 at point 17).

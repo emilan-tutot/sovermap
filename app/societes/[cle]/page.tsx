@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
+import { Citer } from "@/components/texte/Citer";
 import { Valeur } from "@/components/texte/Valeur";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
@@ -134,6 +135,9 @@ export default async function SocietePage({ params, searchParams }: Props) {
           </nav>
         ) : null}
       </section>
+      {etat.statut === "ok" ? (
+        <Citer titre={t.titrePage(s.nom)} chemin={`/societes/${cle}`} date={etat.donnees.date} />
+      ) : null}
     </Coque>
   );
 }

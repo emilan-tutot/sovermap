@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ViewTransition } from "react";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
+import { Citer } from "@/components/texte/Citer";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { lireIndexPays, paysDuSlug, societesDuPays } from "@/lib/donnees/pays";
@@ -81,6 +82,7 @@ export default async function PaysPage({ params }: Props) {
           </ul>
         )}
       </section>
+      <Citer titre={t.titrePage(p.nom)} chemin={`/pays/${(await params).slug}`} date={etat.donnees.date} />
     </Coque>
   );
 }
