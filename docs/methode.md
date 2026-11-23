@@ -214,6 +214,12 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
   - Deux codes disent qu'une question n'a pas été posée pendant un essai, et pourquoi : `ZONE_MUETTE` (le sommet de la zone a échoué trois fois de suite) et `SOUS_ZONE_MUETTE` (huit noms d'une même sous-zone ont échoué, et aucun n'a jamais répondu : souvent des noms internes). Chaque essai suivant les repose.
   - Un domaine qui n'existe pas (sa question NS reçoit NXDOMAIN, sans rien d'autre) n'est plus interrogé : rien n'existe sous un nom qui n'existe pas (RFC 8020). Son SOA, ses CAA, MX et TXT, et chacun de ses noms reçoivent ce NXDOMAIN sans question. Une question NS en échec rend le domaine « en échec », jamais « sans serveurs de noms ».
 - **Ordre de la mesure** : domaine par domaine : d'abord les domaines de 50 noms ou plus, du plus grand au plus petit (ce sont les plus longs à mesurer), puis les autres, dans un ordre tiré au hasard. Un domaine s'ouvre par sa question NS, au rythme des serveurs de son registre (6 zones nouvelles par seconde au plus pour les extensions de l'AFNIC, ensemble), à chaque essai ; puis ses noms sont mesurés, quatre à la fois, pendant que sa délégation est connue du résolveur.
+- **Trois tâches qui se suivent** (depuis le chantier 2, B.8) : une collecte qui approche 3 heures se découpe ; le jour 3 a duré 216 minutes.
+  - Chaque moitié de la liste est mesurée entièrement dans sa propre tâche : première passe, reprises, contrôles, confirmations. La moitié d'un domaine vient d'un hachage stable de son nom, pour que chaque moitié ait sa part de chaque sorte de domaine.
+  - Les deux moitiés passent l'une après l'autre, jamais en même temps : la charge sur les serveurs ne change pas.
+  - La première tâche télécharge les sources et vérifie la quatrième règle, une seule fois par jour, et les transmet à la suivante.
+  - Une dernière tâche assemble les deux moitiés et passe les garde-fous sur le jour entier.
+  - Un arrêt d'urgence dans la première moitié arrête la journée : la seconde ne part pas, et rien n'est publié.
 - **Politesse** :
   - débit limité, et respect des conditions de chaque source ;
   - un agent utilisateur qui s'identifie, sans adresse e-mail ni nom de compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 ;
