@@ -1,6 +1,18 @@
 // The collection refuses more than 200 names outside GitHub Actions (brief B.10).
 import { describe, expect, it } from "vitest";
-import { type Garde, gardesPannes, veilleUtilisable, verifierLimite } from "./garde";
+import { type Garde, gardesPannes, gardeTerme, veilleUtilisable, verifierLimite } from "./garde";
+
+describe("the emergency stop's guard", () => {
+  it("keeps a stopped day unpublished and never makes it tomorrow's yesterday, with the stop's reason", () => {
+    const raison = "arrêt d'urgence après 1200 domaines : 160 des 1000 derniers domaines en échec (seuil : 15 %)";
+    expect(gardeTerme(raison)).toEqual({ nom: "collecte menée à son terme", ok: false, detail: raison });
+    expect(gardeTerme(null)).toEqual({ nom: "collecte menée à son terme", ok: true, detail: "" });
+    // Every other guard green, the stopped day still does not become yesterday: this guard never compares with it.
+    const vertes: Garde[] = [{ nom: "témoins concordants", ok: true, detail: "" }];
+    expect(veilleUtilisable([...vertes, gardeTerme(raison)])).toBe(false);
+    expect(veilleUtilisable([...vertes, gardeTerme(null)])).toBe(true);
+  });
+});
 
 describe("the limit of a trial", () => {
   it("refuses more than 200 names outside GitHub Actions, and only there", () => {
