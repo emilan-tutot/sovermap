@@ -488,6 +488,12 @@ export const fr = {
     couches: { adresses: "Les adresses", serveursDeNoms: "Les serveurs de noms", messagerie: "La messagerie" },
     avantApres: (avant: string, apres: string) => `${avant} → ${apres}`,
     retour: "Tous les jours",
+    /** The Journal's Atom feed (point 13, § 10). */
+    flux: {
+      titre: "Sovermap, le journal",
+      auteur: "Sovermap",
+      lien: "Le journal en flux Atom",
+    },
   },
   /** A country (D.2, R7): the companies whose ultimate parent has its seat there. */
   pays: {

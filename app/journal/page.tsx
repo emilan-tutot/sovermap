@@ -9,13 +9,18 @@ import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { dateFr, nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
+import { CHEMIN_FLUX } from "@/lib/journal-flux";
 import { partageDe } from "@/lib/referencement";
 import { sitePublic } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: fr.journal.titre,
   description: fr.journal.description,
-  alternates: { canonical: "/journal" },
+  // The Atom feed of the journal (point 13, § 10), announced to feed readers.
+  alternates: {
+    canonical: "/journal",
+    types: { "application/atom+xml": [{ url: CHEMIN_FLUX, title: fr.journal.flux.titre }] },
+  },
   openGraph: partageDe("accueil", fr.meta.titre(fr.journal.titre), fr.journal.description),
 };
 
@@ -42,6 +47,12 @@ export default async function JournalPage() {
       <FilAriane miettes={[{ nom: fr.coque.navigation.journal, chemin: "/journal" }]} />
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
+      {/* A file, not a page: a plain link (no prefetch, no navigation of the app). */}
+      <p className="releve-note">
+        <a href={CHEMIN_FLUX} type="application/atom+xml">
+          {t.flux.lien}
+        </a>
+      </p>
       <ul className="liste-societes">
         {jours.map(({ date, jour }) => (
           <li key={date}>

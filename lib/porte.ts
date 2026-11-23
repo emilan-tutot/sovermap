@@ -103,6 +103,7 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/pays/etats-unis", famille: "pages des pays", attendu: "introuvable" },
   { chemin: "/pays/etats-unis", famille: "page d'un pays, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/journal/2026-11-21", famille: "jours du journal", attendu: "introuvable" },
+  { chemin: "/journal/flux.xml", famille: "flux Atom du journal", attendu: "introuvable" },
   { chemin: "/journal/2026-11-21", famille: "jour du journal, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/ministeres/ministere-de-la-culture", famille: "pages des ministères", attendu: "introuvable" },
   { chemin: "/ministeres/ministere-de-la-culture", famille: "page d'un ministère, navigation interne", attendu: "introuvable", entetes: RSC },

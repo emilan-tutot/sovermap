@@ -377,6 +377,29 @@ test("citer : une Radiographie, un ministère, une société et un pays donnent 
   }
 });
 
+// The Journal's Atom feed (point 13, § 10): served as Atom, well formed, announced by the journal's page.
+test("flux : le journal a un flux Atom bien formé, annoncé par sa page", async ({ page, request }) => {
+  const reponse = await request.get("/journal/flux.xml");
+  expect(reponse.status()).toBe(200);
+  expect(reponse.headers()["content-type"]).toContain("application/atom+xml");
+  const texte = await reponse.text();
+  await page.goto("/journal");
+  const lecture = await page.evaluate((xml) => {
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    return {
+      erreur: doc.getElementsByTagName("parsererror").length,
+      entrees: [...doc.getElementsByTagName("entry")].map((e) => e.getElementsByTagName("id")[0]?.textContent ?? ""),
+    };
+  }, texte);
+  expect(lecture.erreur).toBe(0);
+  expect(lecture.entrees[0]).toMatch(/[/]journal[/]2026-11-21$/);
+  await expect(page.locator('link[rel="alternate"][type="application/atom+xml"]')).toHaveAttribute(
+    "href",
+    /[/]journal[/]flux[.]xml$/,
+  );
+  await expect(page.getByRole("link", { name: fr.journal.flux.lien })).toHaveAttribute("href", "/journal/flux.xml");
+});
+
 // « Partager » (point 13, § 10): the browser's own share sheet only; no button without one.
 test("partager : le bouton n'apparaît qu'avec la feuille de partage du navigateur, et lui passe l'adresse de la page", async ({
   context,
