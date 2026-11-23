@@ -63,6 +63,7 @@ import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
 import { indexCommunes, lireGuichetsPublies, territoiresDesDomaines } from "../territoires";
+import { indexTerritoires, lireNomsCog } from "../territoires-index";
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
 
@@ -670,9 +671,14 @@ async function principal(): Promise<number> {
       ] as const;
     }),
   );
+  // The territories' index (D.2): the régions and départements with their official names, then each département's
+  // communes and groups of communes (pipeline/territoires-index.ts).
+  const cog = (fichier: string) => readFileSync(path.join(RACINE, "referentiels", "cog", fichier), "utf8");
+  const nomsCog = lireNomsCog(cog("regions-2026.csv"), cog("departements-2026.csv"), cog("comer-2026.csv"));
   const fichiers: Fichiers = new Map([
     ...fragments("noms", b.etat.noms),
     ...fragments("domaines", b.etat.domaines),
+    ...indexTerritoires(b.etat, nomsCog),
     ...index(b.etat, {
       as: new Map(
         [...asVus].map((a) => [
