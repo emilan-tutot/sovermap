@@ -155,11 +155,13 @@ export function chaineDepuisAs(
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const PAYS = /^[A-Z]{2}$/;
 
-function verifierSources(sources: unknown, ou: string, erreurs: string[]): void {
+function verifierSources(sources: unknown, ou: string, erreurs: string[], auMoins = 0): void {
   if (!Array.isArray(sources)) {
     erreurs.push(`${ou} : sources absentes`);
     return;
   }
+  // No link without a dated source (brief C.10); two producers make it « confirmé » (niveauSources).
+  if (sources.length < auMoins) erreurs.push(`${ou} : aucune source datée`);
   sources.forEach((s: Partial<Source>, i) => {
     if (typeof s.titre !== "string" || s.titre === "") erreurs.push(`${ou}, source ${i + 1} : titre absent`);
     if (typeof s.url !== "string" || !/^https:\/\//.test(s.url))
@@ -181,8 +183,9 @@ export function validerReferentiels(
     if (!PAYS.test(s.pays)) erreurs.push(`société ${cle} : pays invalide`);
     if (s.mere !== null && s.mere !== MERE_INCONNUE && societes.societes[s.mere] === undefined)
       erreurs.push(`société ${cle} : maison mère ${s.mere} absente de la table`);
-    verifierSources(s.sources, `société ${cle}`, erreurs);
-    verifierSources(s.sources_mere, `société ${cle} (maison mère)`, erreurs);
+    verifierSources(s.sources, `société ${cle}`, erreurs, 1);
+    // The link to the parent, or the fact that there is none above, needs a source; an unknown parent, none.
+    verifierSources(s.sources_mere, `société ${cle} (maison mère)`, erreurs, s.mere === MERE_INCONNUE ? 0 : 1);
     let courante: Societe | undefined = s;
     let pas = 0;
     while (courante && courante.mere !== null && courante.mere !== MERE_INCONNUE && pas <= 10) {
@@ -195,7 +198,7 @@ export function validerReferentiels(
     if (!/^\d+$/.test(asn)) erreurs.push(`AS ${asn} : numéro invalide`);
     if (societes.societes[ligne.societe] === undefined)
       erreurs.push(`AS ${asn} : société ${ligne.societe} absente de la table`);
-    verifierSources(ligne.sources, `AS ${asn}`, erreurs);
+    verifierSources(ligne.sources, `AS ${asn}`, erreurs, 1);
   }
   for (const f of cdn.fournisseurs) {
     if (societes.societes[f.societe] === undefined)

@@ -692,6 +692,9 @@ export const methode: PageDeTexte = soignee({
             [
               "0.2.4 (22/11/2026) : le résolveur demande les noms entiers (plus de minimisation), ce qui lui fait poser moins de questions ; sans effet sur le chiffre.",
             ],
+            [
+              "0.2.5 (22/11/2026) : un service qualifié SecNumCloud n'est relié à une société que par sa décision de qualification, et seules comptent les qualifications en cours ; le sommet d'une chaîne est la société qu'aucune autre ne consolide.",
+            ],
           ],
         },
       ],

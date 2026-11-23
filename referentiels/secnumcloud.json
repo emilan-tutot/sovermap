@@ -7,16 +7,24 @@
     "releve": "relevé manuel : catalogue téléchargé par le propriétaire dans un navigateur ordinaire, déposé le 2026-11-20, lu le 2026-11-21"
   },
   "phrase": "Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise.",
-  "note": "Les fournisseurs sont écrits comme dans le catalogue. Leur rapprochement avec les sociétés de referentiels/societes.json (champ societe) demande deux sources et se fait avec C.1 : null jusque-là. Les prestataires « en cours de qualification » de la page de l'ANSSI ne sont jamais repris.",
+  "note": "Les fournisseurs sont écrits comme dans le catalogue. Le champ « societe » les lie aux sociétés de referentiels/societes.json selon la règle de « rapprochement » ; il reste null quand la décision n'est pas lue, est introuvable, ou nomme une société absente du référentiel. Les prestataires « en cours de qualification » de la page de l'ANSSI ne sont jamais repris.",
   "services": [
     {
       "fournisseur": "Cegedim",
-      "societe": null,
+      "societe": "cegedim-cloud",
       "service": "CegNumCloud Secured IaaS",
       "types": ["IaaS"],
       "debut": "2024-12-04",
       "fin": "2027-12-04",
-      "decision": "1951"
+      "decision": "1951",
+      "titulaire": {
+        "raisonSociale": "CEGEDIM.CLOUD",
+        "siren": "790163066",
+        "ville": "Boulogne-Billancourt",
+        "dateDecision": "2024-12-04",
+        "note": "La décision écrit « 790 163 066 R.C.S. Nanterre », qui n'est pas un numéro SIREN : sa clé de Luhn est fausse. La raison sociale et la ville sont celles de Cegedim.cloud au répertoire Sirene (SIREN 790 173 066).",
+        "luLe": "2026-11-22"
+      }
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -25,7 +33,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2820"
+      "decision": "2820",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -34,7 +43,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2816"
+      "decision": "2816",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -43,7 +53,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2818"
+      "decision": "2818",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -52,7 +63,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2822"
+      "decision": "2822",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -61,7 +73,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2821"
+      "decision": "2821",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -70,7 +83,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2817"
+      "decision": "2817",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -79,7 +93,8 @@
       "types": ["SaaS"],
       "debut": "2026-05-18",
       "fin": "2029-05-19",
-      "decision": "2819"
+      "decision": "2819",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Solutions",
@@ -88,7 +103,8 @@
       "types": ["SaaS"],
       "debut": "2026-07-03",
       "fin": "2029-05-18",
-      "decision": "3110"
+      "decision": "3110",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Temple",
@@ -97,7 +113,8 @@
       "types": ["PaaS"],
       "debut": "2025-05-30",
       "fin": "2028-05-30",
-      "decision": "919"
+      "decision": "919",
+      "titulaire": null
     },
     {
       "fournisseur": "Cloud Temple",
@@ -106,7 +123,8 @@
       "types": ["IaaS"],
       "debut": "2026-07-31",
       "fin": "2028-05-30",
-      "decision": "3389"
+      "decision": "3389",
+      "titulaire": null
     },
     {
       "fournisseur": "Ecritel",
@@ -115,7 +133,8 @@
       "types": ["IaaS"],
       "debut": "2026-09-22",
       "fin": "2029-09-22",
-      "decision": "4267"
+      "decision": "4267",
+      "titulaire": null
     },
     {
       "fournisseur": "Ecritel",
@@ -124,7 +143,8 @@
       "types": ["SaaS"],
       "debut": "2026-11-10",
       "fin": "2029-09-22",
-      "decision": "4268"
+      "decision": "4268",
+      "titulaire": null
     },
     {
       "fournisseur": "Index Education",
@@ -133,7 +153,8 @@
       "types": ["SaaS"],
       "debut": "2025-05-05",
       "fin": "2027-06-18",
-      "decision": "795"
+      "decision": "795",
+      "titulaire": null
     },
     {
       "fournisseur": "Index Education",
@@ -142,7 +163,8 @@
       "types": ["SaaS"],
       "debut": "2025-05-05",
       "fin": "2027-06-18",
-      "decision": "796"
+      "decision": "796",
+      "titulaire": null
     },
     {
       "fournisseur": "Index Education",
@@ -151,7 +173,8 @@
       "types": ["SaaS"],
       "debut": "2025-05-05",
       "fin": "2027-06-18",
-      "decision": "797"
+      "decision": "797",
+      "titulaire": null
     },
     {
       "fournisseur": "Index Education",
@@ -160,7 +183,8 @@
       "types": ["SaaS"],
       "debut": "2025-05-05",
       "fin": "2027-06-18",
-      "decision": "798"
+      "decision": "798",
+      "titulaire": null
     },
     {
       "fournisseur": "Numspot",
@@ -169,16 +193,24 @@
       "types": ["IaaS"],
       "debut": "2026-07-31",
       "fin": "2029-07-31",
-      "decision": "3395"
+      "decision": "3395",
+      "titulaire": null
     },
     {
       "fournisseur": "OVH",
-      "societe": null,
+      "societe": "ovh-sas",
       "service": "Hosted Private Cloud powered by VMware",
       "types": ["IaaS"],
       "debut": "2023-12-28",
       "fin": "2026-12-29",
-      "decision": "2279"
+      "decision": "2279",
+      "titulaire": {
+        "raisonSociale": "OVH SAS",
+        "siren": "424761419",
+        "ville": "Roubaix",
+        "dateDecision": "2023-12-28",
+        "luLe": "2026-11-22"
+      }
     },
     {
       "fournisseur": "OVH",
@@ -187,16 +219,24 @@
       "types": ["IaaS"],
       "debut": "2025-03-24",
       "fin": "2028-03-24",
-      "decision": "559"
+      "decision": "559",
+      "titulaire": null
     },
     {
       "fournisseur": "OVH",
-      "societe": null,
+      "societe": "ovh-sas",
       "service": "SNC Cloud Platform",
       "types": ["IaaS"],
       "debut": "2026-07-31",
       "fin": "2029-07-31",
-      "decision": "3393"
+      "decision": "3393",
+      "titulaire": {
+        "raisonSociale": "OVH SAS",
+        "siren": "424761419",
+        "ville": "Roubaix",
+        "dateDecision": "2026-07-31",
+        "luLe": "2026-11-22"
+      }
     },
     {
       "fournisseur": "Oodrive",
@@ -205,7 +245,8 @@
       "types": ["SaaS"],
       "debut": "2026-11-10",
       "fin": "2028-01-25",
-      "decision": "4260"
+      "decision": "4260",
+      "titulaire": null
     },
     {
       "fournisseur": "Oodrive",
@@ -214,7 +255,8 @@
       "types": ["SaaS"],
       "debut": "2025-01-20",
       "fin": "2028-01-25",
-      "decision": "243"
+      "decision": "243",
+      "titulaire": null
     },
     {
       "fournisseur": "Oodrive",
@@ -223,34 +265,56 @@
       "types": ["SaaS"],
       "debut": "2025-01-20",
       "fin": "2028-01-25",
-      "decision": "241"
+      "decision": "241",
+      "titulaire": null
     },
     {
       "fournisseur": "Orange Business Services",
-      "societe": null,
+      "societe": "orange-business-services",
       "service": "Cloud Avenue SecNum",
       "types": ["IaaS"],
       "debut": "2025-07-11",
       "fin": "2028-07-11",
-      "decision": "1147"
+      "decision": "1147",
+      "titulaire": {
+        "raisonSociale": "ORANGE BUSINESS SERVICES",
+        "siren": "345039416",
+        "ville": "Saint-Denis",
+        "dateDecision": "2025-07-11",
+        "luLe": "2026-11-22"
+      }
     },
     {
       "fournisseur": "Orange Business Services",
-      "societe": null,
+      "societe": "orange-business-services",
       "service": "Cloud Avenue Secnum Dynamic",
       "types": ["IaaS"],
       "debut": "2026-09-22",
       "fin": "2029-09-22",
-      "decision": "4111"
+      "decision": "4111",
+      "titulaire": {
+        "raisonSociale": "ORANGE BUSINESS SERVICES",
+        "siren": "345039416",
+        "ville": "Saint-Denis",
+        "dateDecision": "2026-09-22",
+        "luLe": "2026-11-22"
+      }
     },
     {
       "fournisseur": "Outscale",
-      "societe": null,
+      "societe": "outscale",
       "service": "IaaS Cloud on Demand",
       "types": ["IaaS"],
       "debut": "2023-11-30",
       "fin": "2026-11-30",
-      "decision": "2118"
+      "decision": "2118",
+      "titulaire": {
+        "raisonSociale": "OUTSCALE SAS",
+        "siren": "527594493",
+        "ville": "Saint-Cloud",
+        "dateDecision": "2023-11-30",
+        "luLe": "2026-11-22"
+      }
     },
     {
       "fournisseur": "Thales Cloud Sécurisé",
@@ -259,7 +323,8 @@
       "types": ["PaaS", "CaaS", "IaaS"],
       "debut": "2025-12-17",
       "fin": "2028-12-17",
-      "decision": "2057"
+      "decision": "2057",
+      "titulaire": null
     },
     {
       "fournisseur": "Whaller",
@@ -268,7 +333,8 @@
       "types": ["SaaS"],
       "debut": "2024-08-02",
       "fin": "2027-08-02",
-      "decision": "1369"
+      "decision": "1369",
+      "titulaire": null
     },
     {
       "fournisseur": "Worldline",
@@ -277,7 +343,22 @@
       "types": ["IaaS"],
       "debut": "2025-03-24",
       "fin": "2028-03-31",
-      "decision": "561"
+      "decision": "561",
+      "titulaire": {
+        "raisonSociale": "WORLDLINE FRANCE",
+        "siren": "509750105",
+        "ville": "Puteaux",
+        "dateDecision": "2025-03-24",
+        "note": "Worldline France n'est pas dans le référentiel des sociétés : ni Worldline (SIREN 378 901 946) ni Worldline IGSA (SIREN 317 218 758) n'héritent de sa qualification.",
+        "luLe": "2026-11-22"
+      }
     }
-  ]
+  ],
+  "rapprochement": {
+    "date": "2026-11-22",
+    "regle": "Un service n'est lié à une société du référentiel que par sa décision de qualification, lue (fiche 40) : le SIREN qu'elle écrit, s'il est valide (clé de Luhn), est celui de la société au répertoire Sirene (fiche 32) ; sinon, sa raison sociale et sa ville sont celles de Sirene. Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse.",
+    "decisionsLues": ["561", "1147", "1951", "2118", "2279", "3393", "4111"],
+    "decisionsIntrouvables": ["559", "4267", "4268"],
+    "nonLues": "Les décisions des autres fournisseurs (Cloud Solutions, Cloud Temple, Index Education, Numspot, Oodrive, Thales Cloud Sécurisé, Whaller) ne sont pas lues : aucune société du référentiel ne porte leur nom. Le catalogue nomme Thales Cloud Sécurisé, qui n'est pas la société Thales du référentiel ; sans sa décision, aucun lien n'est fait. Leur lien reste vide."
+  }
 }

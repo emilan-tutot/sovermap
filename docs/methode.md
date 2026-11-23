@@ -115,6 +115,7 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
   - Toutes les sociétés n'ont pas de LEI : le 18/11/2026, deux sociétés d'essai sur trois n'en avaient pas.
   - Une « exception de déclaration » de GLEIF marque souvent le sommet d'une chaîne, ou un contrôle par des personnes. Elle ne veut pas dire « maison mère inconnue ».
   - Chaque lien de la chaîne est donc confirmé par un rapport annuel ou un registre, avec sa date.
+- **Le sommet d'une chaîne** : la dernière société qu'aucune autre ne consolide (le critère des relations « parent ultime » de GLEIF, et des comptes consolidés). Une personne physique n'est jamais un maillon, ni les sociétés de détention qui portent son nom : la chaîne s'arrête à la société qu'elles contrôlent, et son champ « contrôle » le dit, sans nommer personne.
 - **À la main** : https://search.gleif.org/ (recherche par nom de société, onglet des relations), puis le rapport annuel de la tête de groupe (« filiales », « organigramme », « Exhibit 21 »).
 
 ### Couche 7 — Les pays des sièges
@@ -129,8 +130,9 @@ Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance (§
 
 ### Couche 8 — SecNumCloud
 - **Valeur** : la société a-t-elle au moins une offre qualifiée SecNumCloud ?
-- **Source** : la liste officielle de l'ANSSI. Le site cyber.gouv.fr est protégé contre les robots (constat du 18/11/2026). La liste est donc relevée à la main par une personne, avec sa date. Aucun relevé n'est automatique.
+- **Source** : la liste officielle de l'ANSSI. Le site cyber.gouv.fr est protégé contre les robots (constat du 18/11/2026). La liste est donc relevée à la main par une personne, avec sa date. Les décisions de qualification, sur messervices.cyber.gouv.fr (ouvert aux robots), sont lues par l'agent de Sovermap, une à une, pour le rapprochement ci-dessous.
 - **Phrase obligatoire** : « Cette société a au moins une offre qualifiée SecNumCloud. Cela ne veut pas dire que ce site l'utilise. »
+- **Rapprochement** : un service du catalogue n'est lié à une société du référentiel que par sa décision de qualification, lue sur le site de l'ANSSI. Le SIREN qu'elle écrit, s'il est valide, est celui de la société au répertoire Sirene ; sinon, sa raison sociale et sa ville. Un groupe n'hérite jamais de la qualification d'une filiale, ni l'inverse. Seules comptent les qualifications en cours le jour de la mesure, entre leurs dates de début et de fin.
 
 ### Couche 9 — Le CDN
 - **Valeur** : le CDN placé devant le site, s'il y en a un.
@@ -325,3 +327,4 @@ Vérifiés le 18/11/2026. Ces travaux sont cités pour situer Sovermap, pas copi
 | 0.2.2 | 21/11/2026 | Périmètre « État » (§ 3, C.5) : l'Observatoire du SIG et les établissements publics d'enseignement supérieur du MESR, en copies datées ; les raisons de chaque domaine publiées (schéma 2). |
 | 0.2.3 | 22/11/2026 | La règle « outil technique » n'écarte jamais un site que l'Observatoire du SIG recense (§ 3, point 09 du chantier 2) : 2 noms de plus mesurés. |
 | 0.2.4 | 22/11/2026 | Politesse (§ 7) : le résolveur ne minimise plus les noms qu'il demande (`minimize: false`, dans une vue de Knot Resolver) ; le poids d'un nom intermédiaire nouveau reste, par marge. Sans effet sur la règle du chiffre. Publication (§ 7) : la provenance d'un nom venu du Référentiel de la DILA ne porte plus le fichier du jour (« dila » seulement ; le fichier est dans etat.json) : chaque fiche de la DILA est réécrite une fois. |
+| 0.2.5 | 22/11/2026 | Couche 8 (C.4) : un service qualifié SecNumCloud n'est lié à une société que par sa décision de qualification, lue sur messervices.cyber.gouv.fr (le SIREN qu'elle écrit, s'il est valide ; sinon sa raison sociale et sa ville, comparés au répertoire Sirene) ; seules comptent les qualifications en cours. Couche 6 : le sommet d'une chaîne écrit (aucune société ne le consolide ; ni une personne physique ni ses sociétés de détention ne sont des maillons). |
