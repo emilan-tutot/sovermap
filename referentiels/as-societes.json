@@ -1241,6 +1241,159 @@
         }
       ],
       "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS209242 CLOUDFLARESPECTRUM a pour organisation ORG-CLL6-RIPE, « Cloudflare London, LLC », LIR, US."
+    },
+    "1724": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS1724 FR-AMPLIVIA, titulaire Renater, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1724 attribué le 01/12/1991, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1724 FR-AMPLIVIA a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "1935": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS1935 FR-RENATER-LIMOUSIN, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS1935 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS1935 FR-RENATER-LIMOUSIN a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "2094": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2094 FR-TELECOM-MANAGEMENT-SUDPARIS, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2094 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2094 FR-TELECOM-MANAGEMENT-SUDPARIS a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "2103": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2103 FR-IFREMER-BREST, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2103 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2103 FR-IFREMER-BREST a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "2198": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2198 FR-TOM-NOUVELLE-CALEDONIE, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2198 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2198 FR-TOM-NOUVELLE-CALEDONIE a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "2470": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2470 FR-LAREUNION, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2470 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2470 FR-LAREUNION a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "2472": {
+      "societe": "renater",
+      "titulaire_registre": "Renater",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS2472 FR-DOM-GUYANE, titulaire Renater, pays d'enregistrement EU",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS2472 attribué le 01/09/1993, pays d'enregistrement EU (code du RIPE NCC pour l'Europe)",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS2472 FR-DOM-GUYANE a pour organisation ORG-RA8-RIPE, « Renater », LIR, FR, la même que AS1945 et AS2060, déjà reliés à renater."
+    },
+    "15404": {
+      "societe": "colt-technology-services-group-limited",
+      "titulaire_registre": "COLT Technology Services Group Limited",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS15404 COLT Technology Services Group Limited, titulaire COLT Technology Services Group Limited, pays d'enregistrement GB",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS15404 attribué le 21/06/2000, pays d'enregistrement GB",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS15404 UNSPECIFIED a pour organisation ORG-CI9-RIPE, « COLT Technology Services Group Limited », LIR, GB, la même que AS8220, déjà relié à colt-technology-services-group-limited."
+    },
+    "198682": {
+      "societe": "eurofiber-france",
+      "titulaire_registre": "Eurofiber France SAS",
+      "sources": [
+        {
+          "titre": "IPtoASN, copie du relevé du 20/11/2026 (fichier daté du 01/11/2026) : AS198682 NETIWAN-AS Eurofiber France SAS, titulaire Eurofiber France SAS, pays d'enregistrement FR",
+          "url": "https://iptoasn.com/data/ip2asn-combined.tsv.gz",
+          "lu_le": "2026-11-23"
+        },
+        {
+          "titre": "Fichier de délégation du RIPE NCC du 22/11/2026 (fiche 21) : AS198682 attribué le 13/04/2012, pays d'enregistrement FR",
+          "url": "https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-extended-latest",
+          "lu_le": "2026-11-23"
+        }
+      ],
+      "note": "Base du RIPE, fichiers « split » aut-num et organisation du 23/11/2026 (fiche 22) : AS198682 NETIWAN-AS a pour organisation ORG-EFS19-RIPE, « Eurofiber France SAS », LIR, FR, la même que AS24935 et AS35625, déjà reliés à eurofiber-france."
     }
   }
 }
