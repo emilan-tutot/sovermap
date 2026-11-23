@@ -48,7 +48,7 @@ describe("the collection's workflow", () => {
   });
 
   it("ends a trial's first pass at its deadline, so that a trial always writes its diagnosis in its 60 minutes", () => {
-    // Trap 66 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit.
+    // Trap 67 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit.
     expect(tache("mesurer")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
     expect(workflow).toContain("--echeance-minutes 35");
     const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
