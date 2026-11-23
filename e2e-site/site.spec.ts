@@ -377,6 +377,37 @@ test("citer : une Radiographie, un ministère, une société et un pays donnent 
   }
 });
 
+// « Partager » (point 13, § 10): the browser's own share sheet only; no button without one.
+test("partager : le bouton n'apparaît qu'avec la feuille de partage du navigateur, et lui passe l'adresse de la page", async ({
+  context,
+}) => {
+  const sans = await context.newPage();
+  await sans.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  });
+  await sans.goto("/radiographie/service.example");
+  await expect(sans.locator("section.citer")).toBeVisible();
+  await expect(sans.getByRole("button", { name: fr.citer.partager })).toHaveCount(0);
+
+  const avec = await context.newPage();
+  await avec.addInitScript(() => {
+    const appels: unknown[] = [];
+    Object.defineProperty(window, "__partages", { value: appels });
+    Object.defineProperty(navigator, "share", {
+      value: (donnees: unknown) => {
+        appels.push(donnees);
+        return Promise.resolve();
+      },
+      configurable: true,
+    });
+  });
+  await avec.goto("/radiographie/service.example");
+  await avec.getByRole("button", { name: fr.citer.partager }).click();
+  const partages = await avec.evaluate(() => (window as unknown as { __partages: { url: string }[] }).__partages);
+  expect(partages).toHaveLength(1);
+  expect(partages[0]?.url).toMatch(/[/]radiographie[/]service[.]example$/);
+});
+
 // Printing a Radiographie (point 13, § 10): the layers and the reference, without the header, the modes or the footer.
 test("impression : une Radiographie s'imprime sans en-tête, modes ni pied de page, ses couches et sa référence gardées", async ({
   page,

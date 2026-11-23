@@ -98,6 +98,8 @@ export const fr = {
     /** Before the address, which follows in its own element (it may wrap anywhere), then a full stop. */
     modele: (titre: string, date: string) => `Sovermap, «${NBSP}${titre}${NBSP}», données du ${date}, `,
     fin: ".",
+    /** The browser's own share sheet, when it has one (point 13, § 10). */
+    partager: "Partager",
   },
   globe: {
     titre: "Les fils de la France vers les pays des sièges",
