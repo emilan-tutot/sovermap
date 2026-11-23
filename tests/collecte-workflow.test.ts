@@ -14,6 +14,62 @@ const tache = (nom: string) => {
 };
 
 describe("the collection's workflow", () => {
+  it("enables the scheduled workflows again from two places, with the least rights, never on a pull request", () => {
+    const boucle = "for fichier in collecte.yml fraicheur.yml archives.yml copies.yml; do";
+    const enable = 'gh api -X PUT "repos/$REPO/actions/workflows/$fichier/enable"';
+    /** One branch of the loop's « case », up to its end. */
+    const branche = (texte: string, etiquette: string) => {
+      const debut = texte.indexOf(`${etiquette})`);
+      expect(debut).toBeGreaterThan(0);
+      return texte.slice(debut, texte.indexOf(";;", debut));
+    };
+    const verifier = (texte: string) => {
+      expect(texte).toContain(boucle);
+      // Only a workflow GitHub disabled for inactivity is enabled again: never one disabled by hand (the politeness
+      // lever, point 17, § 3), never an active one (the robot would become the recipient of its runs' e-mails).
+      expect(branche(texte, "disabled_inactivity")).toContain(enable);
+      expect(branche(texte, "disabled_manually")).not.toContain("PUT");
+      expect(branche(texte, "active")).not.toContain("PUT");
+      expect(texte.split(enable)).toHaveLength(2);
+    };
+    const entretien = tache("entretien");
+    expect(entretien).toContain("if: github.event_name != 'pull_request'");
+    expect(entretien).toMatch(/permissions:\n {6}actions: write\n {4}env:/);
+    verifier(entretien);
+    // This job never turns the collection red: a failure is a warning.
+    expect(entretien).not.toContain("exit 1");
+    // The freshness check does the same every 6 hours, and opens an issue when one cannot be enabled.
+    const fraicheur = readFileSync(".github/workflows/fraicheur.yml", "utf8");
+    expect(fraicheur).toContain('titre="Workflow planifié désactivé"');
+    verifier(fraicheur);
+    expect(branche(fraicheur, "disabled_manually")).not.toContain("echec=");
+    // An unreadable state is an error of GitHub's API, never an alarm; a workflow enabled again is said in the issue
+    // (its e-mails may go to the robot), and the issue closes once every one is active and readable (the second and
+    // third reviews of PR 25), read in the freshness check's own maintenance job.
+    const debutEntretien = fraicheur.indexOf("\n  entretien:\n");
+    expect(debutEntretien).toBeGreaterThan(0);
+    const entretienFraicheur = fraicheur.slice(debutEntretien);
+    expect(branche(entretienFraicheur, "*")).not.toContain("echec=");
+    expect(branche(entretienFraicheur, "disabled_inactivity")).toContain('reactives="$reactives $fichier"');
+    expect(entretienFraicheur).toContain("ont été réactivés :$reactives.");
+    expect(entretienFraicheur).toMatch(/elif \[ -n "\$n" \] && \[ -z "\$illisibles" \]; then\n\s+gh issue close "\$n"/);
+    // Red only when a workflow could not be enabled: every « exit 1 » of the job stands behind that test.
+    const sorties = entretienFraicheur.match(/exit 1/g) ?? [];
+    expect(sorties.length).toBeGreaterThan(0);
+    expect(entretienFraicheur.match(/if \[ -n "\$echec" \]; then exit 1; fi/g) ?? []).toHaveLength(sorties.length);
+    // A third chance for the day's collection, which does nothing once the day has started.
+    expect(workflow).toContain('- cron: "17 15 * * *"');
+  });
+
+  it("ends a trial's first pass at its deadline (20 minutes), so that a degraded trial still ends in its 60 minutes", () => {
+    // Trap 67 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit; the
+    // domains already open at the deadline may still take 14 to 20 minutes on a harder day (the third review of PR 25).
+    expect(tache("mesurer")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
+    expect(workflow).toContain("--echeance-minutes 20");
+    const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
+    expect(collecter).toContain("...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),");
+  });
+
   it("never reads an error of GitHub's API as « today is not done » (the day would be measured twice)", () => {
     const jour = tache("jour");
     expect(jour).toContain('grep -q "HTTP 404"');
@@ -21,6 +77,15 @@ describe("the collection's workflow", () => {
     expect(jour).not.toMatch(/\|\| echo 0/);
     // A failed check of the day opens the issue too.
     expect(tache("alerter")).toContain("needs.jour.result == 'failure'");
+  });
+
+  it("keeps the failures' diagnosis in the run's artifact only: never in « donnees » nor in the release", () => {
+    // The artifact takes it beside « sortie » (pipeline/diagnostic.ts writes it in the work folder).
+    expect(tache("mesurer")).toContain("travail/diagnostic.json");
+    // The publication copies « sortie » only, and the release archives what was copied.
+    const publier = tache("publier");
+    expect(publier).toContain("cp -a ../collecte/sortie/. ./");
+    expect(publier).not.toContain("diagnostic");
   });
 
   it("measures the day the check named, never the clock's", () => {

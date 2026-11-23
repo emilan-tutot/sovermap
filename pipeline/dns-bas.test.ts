@@ -128,16 +128,29 @@ describe("the low-level DNS client", () => {
   });
 
   it("ends a TCP question when the server closes without a whole answer, well before the time limit", async () => {
-    const udp = dgram.createSocket("udp4");
-    await new Promise<void>((ok) => udp.bind(0, "127.0.0.1", () => ok()));
+    // One port for UDP and TCP. Windows keeps some ports for TCP alone (listen: EACCES, 23/11/2026, trap 68): another
+    // port is tried, never a test left waiting.
+    let udp: dgram.Socket | null = null;
+    let tcp: net.Server | null = null;
+    for (let essai = 0; essai < 20 && tcp === null; essai += 1) {
+      const u = dgram.createSocket("udp4");
+      await new Promise<void>((ok) => u.bind(0, "127.0.0.1", () => ok()));
+      const t = net.createServer((s) => s.end());
+      const ouvert = await new Promise<boolean>((ok) => {
+        t.once("error", () => ok(false));
+        t.listen(u.address().port, "127.0.0.1", () => ok(true));
+      });
+      if (ouvert) [udp, tcp] = [u, t];
+      else u.close();
+    }
+    if (udp === null || tcp === null) throw new Error("aucun port libre à la fois en UDP et en TCP");
     const port = udp.address().port;
     // The UDP answer is truncated: the client asks again over TCP, where the server closes at once.
-    udp.on("message", (q, client) => {
+    const serveurUdp = udp;
+    serveurUdp.on("message", (q, client) => {
       const id = dnsPacket.decode(q).id ?? 0;
-      udp.send(reponse(id, "a.example", "TXT", [], dnsPacket.TRUNCATED_RESPONSE), client.port, client.address);
+      serveurUdp.send(reponse(id, "a.example", "TXT", [], dnsPacket.TRUNCATED_RESPONSE), client.port, client.address);
     });
-    const tcp = net.createServer((s) => s.end());
-    await new Promise<void>((ok) => tcp.listen(port, "127.0.0.1", () => ok()));
     // Three bounds far apart (the client's limit, 30 s; the expected end, under 8 s even on a loaded machine; the test's
     // own limit, 15 s): a client that waited for its limit fails, and a slow machine alone does not.
     const client = new ClientUdp("essai", "127.0.0.1", port, 30_000);
