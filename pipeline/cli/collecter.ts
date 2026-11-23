@@ -24,6 +24,7 @@ import {
 } from "../controle";
 import { coucheAdresses, type ContexteV1, coucheReseauPubliable } from "../couches";
 import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
+import { diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
@@ -672,6 +673,11 @@ async function principal(): Promise<number> {
   // The day's observations, kept as tomorrow's yesterday when the day is trustworthy, with its breakdowns' share.
   observations.tauxPannes = tauxPannes;
   writeFileSync(path.join(travail, "observations.json.gz"), gzipSync(JSON.stringify(observations)));
+  // The failing domains, for the diagnosis of a degraded day: beside the output, never in it (the run's artifact only).
+  writeFileSync(
+    path.join(travail, "diagnostic.json"),
+    `${JSON.stringify({ date, essai: o.essai, domaines: diagnosticDesEchecs(jour) })}\n`,
+  );
 
   const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
   const veille =
