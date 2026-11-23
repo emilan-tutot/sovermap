@@ -61,6 +61,24 @@ describe("the reference list", () => {
     expect(liste.exclus.get("environnement")).toBe(1);
   });
 
+  it("measures the démarches' addresses (fiche 55) with their provenance: a change of list, never a unit moved into the perimeter", () => {
+    const copies = [{ date: "2026-11-19", csv: "name,type\nwww.caisse.example,Organisme\n" }];
+    const sans = construireListe(copies, null, suffixes, plateformes, ".gouv.example");
+    const avec = construireListe(copies, null, suffixes, plateformes, ".gouv.example", undefined, [], {
+      date: "2026-10-20",
+      hotes: ["www.caisse.example", "teleservice.caisse.example", "recette.caisse.example", "assure.nouveau.example"],
+    });
+    // A name already listed keeps it, with one more provenance; a new one enters; an internal one stays out.
+    expect(avec.noms.get("www.caisse.example")?.provenances).toEqual(["dinum:2026-11-19", "observatoire:2026-10-20"]);
+    expect(avec.noms.get("teleservice.caisse.example")?.provenances).toEqual(["observatoire:2026-10-20"]);
+    expect(avec.noms.has("recette.caisse.example")).toBe(false);
+    expect(sans.noms.has("teleservice.caisse.example")).toBe(false);
+    // A new unit stays outside the perimeter, and a listed one keeps its own: the Observatoire gives no reason.
+    expect(avec.domaines.get("nouveau.example")?.perimetre).toBe("hors État");
+    expect(avec.domaines.get("caisse.example")?.raisons).toEqual(sans.domaines.get("caisse.example")?.raisons);
+    expect(avec.domaines.get("caisse.example")?.perimetre).toBe(sans.domaines.get("caisse.example")?.perimetre);
+  });
+
   it("counts a name set aside once, keeps it, and measures it when the fourth rule is suspended", () => {
     const copies = [
       { date: "2024-12-11", csv: "name,type\nx.in.phm.ministere.gouv.example,\nin.ministere.gouv.example,\n" },

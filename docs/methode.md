@@ -48,6 +48,7 @@ Une dépendance n'est pas une faute. Un site public peut légalement passer par 
   - au départ, la liste des noms de domaine des organismes publics tenue par la DINUM ;
   - Sovermap part de sa copie archivée, datée du 11/12/2024 (103 398 noms), car la copie à jour n'est pas accessible aux robots (voir `docs/sources.md` et `specs/001-sovermap/pieges-connus.md`) ;
   - d'autres sources ouvertes la complètent (annuaire de l'administration, sites de l'État recensés par le SIG, opérateurs de l'État) ;
+  - les adresses des démarches en ligne de l'Observatoire de la qualité des démarches de la DINUM (fiche 55, relevé manuel daté, une édition par trimestre) y entrent aussi, pour dire qui sert chaque démarche : au jour 2, 95 de leurs 99 adresses étaient déjà mesurées ; il en manquait 4. Elles suivent les mêmes règles d'exclusion, gardent leur provenance (`observatoire:` et la date de l'édition), et ne changent jamais le périmètre d'un domaine. Une édition qui apporte des adresses nouvelles est un changement de liste (B.7 bis), jamais un déménagement ;
   - chaque nom garde sa provenance.
 - **Noms internes ou techniques** : ils ne sont ni mesurés ni affichés (décision du 19/11/2026). Un nom est exclu si l'une de ces règles s'applique :
   1. **zone interne** : il appartient au réseau interministériel de l'État (`rie.gouv.fr` et ses sous-domaines) ;

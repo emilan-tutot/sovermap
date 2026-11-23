@@ -16,7 +16,7 @@ export type EntreeNom = {
   nom: string;
   /** Its unit: the registrable domain, or the name itself on a third-party platform. */
   domaine: string;
-  /** « dinum:AAAA-MM-JJ », « sig:AAAA-MM-JJ », « mesr:AAAA-MM-JJ », « dila » (its day's file is in etat.json), « domaine » (the apex, added as the web name of its unit). */
+  /** « dinum:AAAA-MM-JJ », « sig:AAAA-MM-JJ », « mesr:AAAA-MM-JJ », « observatoire:AAAA-MM-JJ » (a démarche's address), « dila » (its day's file is in etat.json), « domaine » (the apex, added as the web name of its unit). */
   provenances: string[];
   types: string[];
   organismes: string[];
@@ -44,6 +44,9 @@ export type ListeReference = {
 };
 
 export type CopieListe = { date: string; csv: string };
+
+/** The démarches' addresses of an edition of the Observatoire (referentiels/demarches.json), and its publication date. */
+export type AdressesDemarches = { date: string; hotes: readonly string[] };
 
 /** The reasons of the « État » perimeter (decision D1, a2; brief C.5). */
 export type RaisonEtat = "gouv.fr" | "dila" | "sig" | "mesr";
@@ -127,6 +130,12 @@ export function construireListe(
   regles: ReglesExclusion = REGLES_EXCLUSION,
   /** The dated copies of the perimeter's open lists (brief C.5). */
   perimetre: readonly CopiePerimetre[] = [],
+  /**
+   * The addresses of the démarches of the DINUM's Observatoire (fiche 55, C.8), with their edition's publication date:
+   * measured, so that each démarche says who serves its address. A change of list when an edition brings new ones
+   * (brief B.7 bis), never a move; they add no reason to a unit's perimeter.
+   */
+  demarches: AdressesDemarches | null = null,
 ): ListeReference {
   const noms = new Map<string, EntreeNom>();
   const ecartes = new Map<Exclusion, Set<string>>();
@@ -195,6 +204,8 @@ export function construireListe(
         ministeresDuNom.set(nom, (ministeresDuNom.get(nom) ?? new Set<string>()).add(ministere));
     }
   }
+  // The démarches' addresses: the same rules of exclusion as any name.
+  if (demarches !== null) for (const hote of demarches.hotes) ajouter(hote, `observatoire:${demarches.date}`, null, null);
 
   // Units, their web name (added to the measured names when it is not listed) and their perimeter.
   const parDomaine = new Map<string, EntreeNom[]>();
