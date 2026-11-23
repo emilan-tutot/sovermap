@@ -8,6 +8,7 @@ import {
   type EnregistrementDomaine,
   type EnregistrementNom,
   type Etat,
+  domaineAJour,
   fragments,
   historique,
   historiqueRelu,
@@ -15,8 +16,10 @@ import {
   jsonStable,
   joursDeChangement,
   journal,
+  nomAJour,
   seau,
 } from "./publication";
+import { DOMAINE, NOM, valider } from "./schemas";
 
 const nom = (n: string, domaine: string, societe: string, horsUE: boolean): EnregistrementNom => ({
   nom: n,
@@ -246,17 +249,42 @@ describe("the hysteresis, the journal and the circuit breaker", () => {
 
   it("compares a layer whose category is not determined but which depends on a seat outside the EU (rule C2-4)", () => {
     const hier = etat(10, 0);
-    // Yesterday, d0 was served by a company outside the EU whose parent is unknown: no category, but outside the EU.
+    // Yesterday, d0 was served by a British company whose parent is unknown: outside the EU by its own seat, but its
+    // farther seat, so its category, is not known (classer gives « non déterminé » with horsUE true).
     const n = hier.noms.get("www.d0.example") as EnregistrementNom;
     hier.noms.set(n.nom, {
       ...n,
-      exploitants: n.exploitants.map((e) => ({ ...e, societe: "relais-il" })),
+      exploitants: n.exploitants.map((e) => ({ ...e, societe: "societe-gb" })),
       categorie: "non déterminé",
       horsUE: true,
       niveau: "probable",
     });
     // Today, a French host serves it: that move is a change, counted by the circuit breaker.
     expect(bilan(etat(10, 0), hier, hier, false).disjoncteur).toEqual({ compares: 10, changes: 1, part: 0.1 });
+  });
+
+  it("reads a record published before schema 3 with each exploitant's level as its own seat's (never higher)", () => {
+    // A record of schema 2: no niveauSociete. Kept as published on a day of failed layers or of new rules without
+    // yesterday's cache, it must still be valid in today's schema, or that day would stay red.
+    const ancien = { role: "hébergé par", societe: "cloud-us", preuve: "AS64496", niveau: "confirmé" as const };
+    const n = { ...nom("www.d0.example", "d0.example", "cloud-us", true), exploitants: [ancien] } as EnregistrementNom;
+    expect(valider(n, NOM).length).toBeGreaterThan(0);
+    const lu = nomAJour(n);
+    expect(lu.exploitants[0]?.niveauSociete).toBe(lu.exploitants[0]?.niveau);
+    expect(valider(lu, NOM)).toEqual([]);
+    const d = domaine("d0.example");
+    const hote = {
+      hote: "ns1.d0.example",
+      etat: "ok" as const,
+      as: [64496],
+      exploitants: [ancien],
+      categorie: "France" as const,
+      horsUE: false,
+      niveau: "probable" as const,
+    };
+    const ancienDomaine = { ...d, serveursDeNoms: { ...d.serveursDeNoms, hotes: [hote] } } as EnregistrementDomaine;
+    expect(domaineAJour(ancienDomaine).serveursDeNoms.hotes[0]?.exploitants[0]?.niveauSociete).toBe("confirmé");
+    expect(valider(domaineAJour(ancienDomaine), DOMAINE)).toEqual([]);
   });
 
   it("never compares a reduced record, and never publishes it in place of the published one", () => {

@@ -173,6 +173,7 @@ describe("the open data of the day (F.1)", () => {
       operator_countries: "US",
       parents: "cloud-us",
       parent_countries: "US",
+      retained_countries: "US",
       unknown_networks: 0,
       category: "outside_europe",
       outside_eu: true,
@@ -196,6 +197,7 @@ describe("the open data of the day (F.1)", () => {
       roles: "hosted_by;hosted_by",
       operators: "hebergeur-fr;cloud-us",
       parent_countries: "FR;US",
+      retained_countries: "FR;US",
       unknown_networks: 1,
     });
     expect(lignes[4]).toMatchObject({ web_status: "nxdomain" });
@@ -225,6 +227,51 @@ describe("the open data of the day (F.1)", () => {
     ]);
   });
 
+  it("counts a domain under its operators' retained seats: an American subsidiary of a French group, the US", () => {
+    // ARRÊT 2: the farther of a company's seat and its parent's gives its category and its country; a company whose
+    // parent is unknown has none (PR 19's rule: a country only for an established seat).
+    const filiale: Societe = {
+      nom: "Filiale Exemple, Inc.",
+      pays: "US",
+      mere: "groupe-fr",
+      paysMere: "FR",
+      paysRetenu: "US",
+      categorie: "hors d'Europe",
+      maillons: [{ cle: "groupe-fr", nom: "Groupe Exemple SA", pays: "FR" }],
+      controle: null,
+    };
+    const refsFiliale: Referentiels = { ...refs, societes: new Map([...refs.societes, ["filiale-us", filiale]]) };
+    const etatFiliale: Etat = {
+      domaines: new Map([["d0.example", domaine("d0.example", "État", [])]]),
+      noms: new Map([
+        [
+          "www.d0.example",
+          nom(
+            "www.d0.example",
+            "d0.example",
+            { role: "hébergé par", societe: "filiale-us" },
+            "hors d'Europe",
+            "probable",
+          ),
+        ],
+      ]),
+    };
+    const lignes = lignesDomaines(etatFiliale, refsFiliale);
+    expect(lignes[0]).toMatchObject({
+      operator_countries: "US",
+      parent_countries: "FR",
+      retained_countries: "US",
+      category: "outside_europe",
+      outside_eu: true,
+    });
+    expect(lignesPays(lignes)).toEqual([{ country: "US", domains: 1, state_domains: 1 }]);
+    expect(lignesSocietes(lignes, refsFiliale).find((l) => l["operator"] === "filiale-us")).toMatchObject({
+      parent_country: "FR",
+      retained_country: "US",
+      category: "outside_europe",
+    });
+  });
+
   it("publishes each table as CSV and JSON, their data package and their checksums, « en préparation »", () => {
     const fichiers = fichiersOuverts(etat, refs, JOUR);
     expect([...fichiers.keys()].sort()).toEqual([
@@ -240,7 +287,7 @@ describe("the open data of the day (F.1)", () => {
       "sovermap-operators.json",
     ]);
     const operateurs = fichiers.get("sovermap-operators.csv") ?? "";
-    expect(operateurs.split("\r\n")[2]).toBe('filiale,"Filiale ""Exemple""",NL,,,undetermined,,0,0');
+    expect(operateurs.split("\r\n")[2]).toBe('filiale,"Filiale ""Exemple""",NL,,,,undetermined,,0,0');
     const paquet = JSON.parse(fichiers.get("datapackage.json") ?? "{}") as {
       created: string;
       resources: { path: string; schema: { fields: { name: string; description: string }[] } }[];

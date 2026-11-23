@@ -187,6 +187,9 @@ export function classer(
     estHorsUE = null;
     niveau = "non déterminé";
   }
+  // Outside the EU, but by a company whose farther seat is not known (its parent unknown, its own seat in Europe outside
+  // the EU): the farthest category is not known either, never « France » beside a French host (second review of 0.3).
+  const categorieFinale = estHorsUE === true && !HORS_UE.has(categorie) ? "non déterminé" : categorie;
   return {
     ...vide,
     cdn: base.cdn,
@@ -194,7 +197,7 @@ export function classer(
     servants: liste,
     hebergePar: base.cdn ? "non observable" : "voir les sociétés",
     controle: accord,
-    categorie,
+    categorie: categorieFinale,
     horsUE: estHorsUE,
     niveau,
   };

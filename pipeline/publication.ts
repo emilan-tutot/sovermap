@@ -8,7 +8,11 @@ import { createHash } from "node:crypto";
 import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
 import type { Categorie, Niveau } from "./types";
 
-/** 2 since 21/11/2026: a domain's reasons of the « État » perimeter gain « sig » and « mesr » (brief C.5). */
+/**
+ * 2 since 21/11/2026: a domain's reasons of the « État » perimeter gain « sig » and « mesr » (brief C.5). 3 with
+ * method 0.3: each exploitant gains `niveauSociete` (rule C2-4); a record of schema 2 reads again with its `niveau`
+ * (aJour, below).
+ */
 export const VERSION_SCHEMA = 3;
 export const TAILLE_MAX_FRAGMENT = 8 * 1024;
 export const SEUIL_DISJONCTEUR = 0.02;
@@ -126,6 +130,33 @@ export function seau(cle: string): string {
   const h = sha256(cle);
   return `${h.slice(0, 2)}/${h.slice(2, 4)}`;
 }
+
+/**
+ * A record published before schema 3 has no `niveauSociete` in its exploitants: it takes their `niveau`, which is never
+ * higher (the whole chain, the company's own seat included), so that a day that keeps a published record (a failed
+ * layer, or a change of rules without yesterday's cache) never publishes an invalid one (second review of method 0.3).
+ */
+const exploitantsAJour = (exploitants: readonly Exploitant[]): Exploitant[] =>
+  exploitants.map((e) =>
+    typeof (e as Partial<Exploitant>).niveauSociete === "string" ? e : { ...e, niveauSociete: e.niveau },
+  );
+const hotesAJour = (hotes: readonly Hote[]): Hote[] =>
+  hotes.map((h) => ({ ...h, exploitants: exploitantsAJour(h.exploitants ?? []) }));
+
+/** A published name's record, read again in today's schema. */
+export const nomAJour = (n: EnregistrementNom): EnregistrementNom =>
+  Array.isArray(n.exploitants) ? { ...n, exploitants: exploitantsAJour(n.exploitants) } : n;
+
+/** A published domain's record, read again in today's schema (its name servers' and mail exchangers' hosts). */
+export const domaineAJour = (d: EnregistrementDomaine): EnregistrementDomaine => ({
+  ...d,
+  ...(Array.isArray(d.serveursDeNoms?.hotes)
+    ? { serveursDeNoms: { ...d.serveursDeNoms, hotes: hotesAJour(d.serveursDeNoms.hotes) } }
+    : {}),
+  ...(Array.isArray(d.messagerie?.hotes)
+    ? { messagerie: { ...d.messagerie, hotes: hotesAJour(d.messagerie.hotes) } }
+    : {}),
+});
 
 export const exploitantsDe = (couche: { exploitants: Exploitant[] }): Exploitant[] =>
   couche.exploitants.map((e) => ({

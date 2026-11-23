@@ -40,7 +40,7 @@ Ce qui distingue Sovermap :
 - Étant donné que la dernière collecte a plus de 36 h, quand elle ouvre l'accueil, alors la date de la dernière collecte s'affiche bien en vue, avec la mention que les données ne sont pas à jour.
 
 **R2. La Radiographie d'un site.** Un agent public veut comprendre comment un site de son ministère est servi.
-- Étant donné un domaine de la liste, quand il ouvre sa fiche, alors il voit les couches de haut en bas : domaine, serveurs de noms, adresses, réseau, société exploitante, maison mère, pays, offres SecNumCloud, CDN ; puis la messagerie (serveurs MX et expéditeurs SPF, avec la même chaîne : C2-1). Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance.
+- Étant donné un domaine de la liste, quand il ouvre sa fiche, alors il voit les couches de haut en bas : domaine, serveurs de noms, adresses, réseau, société exploitante, maison mère, pays, offres SecNumCloud, CDN ; puis la messagerie (les serveurs MX avec la même chaîne, et les expéditeurs SPF par leurs réseaux : C2-1). Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance.
 - Étant donné le mode « Simple », quand il bascule en « Expert », alors il voit les données brutes (police mono, tableaux), sans changer de page.
 - Étant donné un site placé derrière un CDN ou un relais de sécurité, alors la fiche dit « diffusé par » (le CDN ou le relais) et « hébergé par : non observable ».
 - Étant donné un site servi par une société dont le siège est hors de l'UE et dont la maison mère est dans l'UE (le cas Imperva), alors la fiche montre les deux sièges, sa catégorie et son fil suivent le plus éloigné (décision de l'ARRÊT 2), et le site compte comme dépendant d'un siège hors de l'UE (C2-4).
@@ -85,13 +85,13 @@ Ce qui distingue Sovermap :
   - Les noms internes ou techniques (réseau interministériel `rie.gouv.fr`, préproduction, recette, outils internes) ne sont ni mesurés ni affichés, selon les règles versionnées de `docs/methode.md` § 3.
   - Sur la copie du 11/12/2024, il reste 90 803 noms publics sur 103 398, répartis en 34 068 domaines enregistrés.
   - Le chiffre compte chaque domaine une fois, par son nom web. Ses autres noms publics sont mesurés et affichés dans sa fiche.
-- **EX-02** Pour chaque nom, elle note la chaîne CNAME, les adresses A et AAAA, les serveurs de noms de la zone, l'état DNSSEC, le résolveur utilisé et l'heure. Pour chaque domaine, elle note aussi ses serveurs de messagerie (MX) et ses expéditeurs autorisés (SPF), avec la même chaîne jusqu'au pays des sièges (C2-1, D3 modifiée le 20/11/2026).
+- **EX-02** Pour chaque nom, elle note la chaîne CNAME, les adresses A et AAAA, les serveurs de noms de la zone, l'état DNSSEC, le résolveur utilisé et l'heure. Pour chaque domaine, elle note aussi ses serveurs de messagerie (MX), avec la même chaîne jusqu'au pays des sièges, et ses expéditeurs autorisés (SPF), réduits à leurs réseaux (AS) (C2-1, D3 modifiée le 20/11/2026).
 - **EX-02 bis** Chaque jour, tous les domaines du périmètre « État » sont reposés au résolveur public de contrôle, ainsi que 3 % des autres domaines, pour permettre le niveau « confirmé » de la couche adresse.
 - **EX-03** Chaque adresse est rattachée à son préfixe et à son AS d'origine par au moins deux sources indépendantes (registre `docs/sources.md`).
 - **EX-04** Chaque AS est rattaché à une société exploitante, puis à sa maison mère ultime et au pays de chaque siège. Ce rattachement passe par une table tenue à la main, où chaque ligne a sa source et sa date.
 - **EX-05** Un CDN est reconnu par ses CNAME ou ses AS, d'après une liste tenue à la main et sourcée. Un site derrière un CDN est « diffusé par » ce CDN, et son hébergeur d'origine est « non observable ».
 - **EX-06** Aucune géolocalisation d'adresse IP n'est utilisée.
-- **EX-07** Chaque couche reçoit un niveau de confiance : « confirmé », « probable » ou « non déterminé » (cahier §4.5). Le niveau d'un domaine compté hors de l'UE est celui de ce qui le prouve : toute la chaîne jusqu'à la maison mère, ou, quand seule la société qui le sert a son siège hors de l'UE, la couche des adresses, le lien vers cette société et les sources de son siège (C2-4, méthode 0.3).
+- **EX-07** Chaque couche reçoit un niveau de confiance : « confirmé », « probable » ou « non déterminé » (cahier §4.5). Le niveau d'un domaine compté hors de l'UE est le meilleur de ce qui le prouve : toute la chaîne jusqu'à la maison mère, ou, pour le siège de la société qui le sert, la couche des adresses, le lien vers cette société et les sources de son siège (C2-4, méthode 0.3).
   - Le chiffre-titre ne compte que le « confirmé » : il se lit « au moins X % ».
   - Il affiche à côté la part hors UE au niveau « probable » et la part « non déterminé ».
 - **EX-08** Un changement n'est publié qu'après deux collectes successives concordantes (hystérésis).

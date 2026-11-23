@@ -545,6 +545,140 @@ describe("observation et classement", () => {
     }
   });
 
+  /**
+   * One network of 192.0.2.0/24 for AS 64505 (RIS agrees unless `sansRis`), held by the company `cle`, with the
+   * companies given; and the CDN of the test fixtures plus the ones given.
+   */
+  const contexteAs = (
+    cle: string,
+    lesSocietes: ReferentielSocietes["societes"],
+    { sourcesAs = deux, sansRis = false, fournisseurs = [] as ReferentielCdn["fournisseurs"] } = {},
+  ): Contexte => ({
+    ...contexte,
+    iptoasn: new TableIpToAsn("192.0.2.0\t192.0.2.255\t64505\tUS\tEXEMPLE-RESEAU"),
+    ris: new TableRis([sansRis ? "64499\t198.51.100.0/24\t300" : "64505\t192.0.2.0/24\t300"]),
+    tableAs: {
+      ...tableAs,
+      as: { ...tableAs.as, "64505": { societe: cle, titulaire_registre: "EXEMPLE-RESEAU", sources: sourcesAs } },
+    },
+    societes: { ...societes, societes: { ...societes.societes, ...lesSocietes } },
+    cdn: { ...cdn, fournisseurs: [...cdn.fournisseurs, ...fournisseurs] },
+  });
+
+  it("proves a parent's seat with the whole chain's level, never with the company's own (rule C2-4)", async () => {
+    // A German subsidiary of an American group, its link to the group with one source: « probable », not « confirmé ».
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    const c = classer(
+      o,
+      o,
+      "État",
+      contexteAs("filiale-de", {
+        "filiale-de": { nom: "Filiale Exemple GmbH", pays: "DE", mere: "groupe-us", sources: deux, sources_mere: une },
+        "groupe-us": { nom: "Groupe Exemple, Inc.", pays: "US", mere: null, sources: deux, sources_mere: deux },
+      }),
+    );
+    expect([c.categorie, c.horsUE, c.niveau]).toEqual(["hors d'Europe", true, "probable"]);
+  });
+
+  it("takes the best of a servant's two proofs: a company at the top, its seat proved better than its chain", async () => {
+    // The Fastly case: its seat has two sources, « no parent above it » one: its own seat proves it « confirmé ».
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    const c = classer(
+      o,
+      o,
+      "État",
+      contexteAs("sommet-us", {
+        "sommet-us": { nom: "Sommet Exemple, Inc.", pays: "US", mere: null, sources: deux, sources_mere: une },
+      }),
+    );
+    expect([c.servants[0]?.niveau, c.horsUE, c.niveau]).toEqual(["probable", true, "confirmé"]);
+  });
+
+  it("proves a company's own seat no better than its link: a relay found by its AS only, or an AS alone in IPtoASN", async () => {
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    // A relay whose seat has two sources, but recognised by its AS only: « probable ».
+    const relais = classer(
+      o,
+      o,
+      "État",
+      contexteAs(
+        "relais-as",
+        { "relais-as": { nom: "Relais Exemple, Inc.", pays: "US", mere: null, sources: deux, sources_mere: deux } },
+        {
+          fournisseurs: [
+            {
+              id: "relais-as",
+              nom: "Relais par son AS",
+              societe: "relais-as",
+              suffixes: [],
+              as: [{ numero: 64505, suffit_seul: true, source: "https://relais.example/doc", lu_le: "2026-11-19" }],
+            },
+          ],
+        },
+      ),
+    );
+    expect([relais.cdn?.id, relais.horsUE, relais.niveau]).toEqual(["relais-as", true, "probable"]);
+    // An American subsidiary of a French group, its AS known to IPtoASN only (RIS does not see it): « probable ».
+    const filiale = classer(
+      o,
+      o,
+      "État",
+      contexteAs(
+        "filiale-us",
+        {
+          "groupe-fr": { nom: "Groupe Exemple SA", pays: "FR", mere: null, sources: deux, sources_mere: deux },
+          "filiale-us": {
+            nom: "Filiale Exemple, Inc.",
+            pays: "US",
+            mere: "groupe-fr",
+            sources: deux,
+            sources_mere: deux,
+          },
+        },
+        { sansRis: true },
+      ),
+    );
+    expect([filiale.horsUE, filiale.niveau]).toEqual([true, "probable"]);
+  });
+
+  it("never shows « France » for a domain outside the EU by a company whose farther seat is not known", async () => {
+    // A French host, and a British company whose parent is unknown: outside the EU by that company's seat, but its
+    // farther seat may be in Europe or beyond it: the domain's category is not determined.
+    const o = {
+      ...(await observer("www.ministere.example", resolveur, fixe)),
+      a: ["192.0.2.10", "192.0.2.200"],
+      aaaa: [],
+    };
+    const c = classer(o, o, "État", {
+      ...contexte,
+      iptoasn: new TableIpToAsn(
+        [
+          "192.0.2.0\t192.0.2.127\t64496\tFR\tEXEMPLE-HEBERGEUR",
+          "192.0.2.128\t192.0.2.255\t64507\tGB\tEXEMPLE-GB",
+        ].join("\n"),
+      ),
+      ris: new TableRis([["64496\t192.0.2.0/25\t300", "64507\t192.0.2.128/25\t300"].join("\n")]),
+      tableAs: {
+        ...tableAs,
+        as: { ...tableAs.as, "64507": { societe: "societe-gb", titulaire_registre: "EXEMPLE-GB", sources: deux } },
+      },
+      societes: {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "societe-gb": {
+            nom: "Société Exemple Ltd",
+            pays: "GB",
+            mere: MERE_INCONNUE,
+            sources: deux,
+            sources_mere: [],
+          },
+        },
+      },
+    });
+    expect([c.servants.length, c.horsUE, c.categorie]).toEqual([2, true, "non déterminé"]);
+  });
+
   it("reads the headline figure as « au moins X % », with the probable and undetermined shares beside it", async () => {
     const a = classer(await observer("www.ministere.example", resolveur, fixe), null, "État", contexte);
     const b = classer(

@@ -90,6 +90,12 @@ const CHAMPS_DOMAINES: readonly Champ[] = [
       "Les pays des sièges de ces maisons mères, dans le même ordre, séparés par « ; » ; un élément vide quand la maison mère n'est pas établie.",
   },
   {
+    name: "retained_countries",
+    type: "string",
+    description:
+      "Les pays de leurs sièges retenus (pour chacun, le plus éloigné de son propre siège et de celui de sa maison mère ultime : décision de l'ARRÊT 2, méthode 0.3), dans le même ordre, séparés par « ; » ; un élément vide quand il n'est pas établi (maison mère inconnue).",
+  },
+  {
     name: "unknown_networks",
     type: "integer",
     description: "Le nombre de réseaux (AS) du nom web dont l'exploitant n'est pas dans les référentiels de Sovermap.",
@@ -98,13 +104,13 @@ const CHAMPS_DOMAINES: readonly Champ[] = [
     name: "category",
     type: "string",
     description:
-      "La catégorie de la couche web, selon la règle du chiffre (D1) : la plus lointaine parmi les pays des sièges des maisons mères de ses exploitants (un seul hors de l'Union européenne suffit) : france, eu_outside_france (Union européenne hors France), europe_outside_eu, outside_europe ou undetermined.",
+      "La catégorie de la couche web, selon la règle du chiffre (D1 modifiée par C2-4, méthode 0.3) : la plus lointaine parmi les sièges retenus de ses exploitants (pour chacun, le plus éloigné de son propre siège et de celui de sa maison mère ultime) : france, eu_outside_france (Union européenne hors France), europe_outside_eu, outside_europe ou undetermined.",
   },
   {
     name: "outside_eu",
     type: "boolean",
     description:
-      "Vrai si au moins un exploitant de la couche web a sa maison mère hors de l'Union européenne ; vide si ce n'est pas déterminé.",
+      "Vrai si au moins un exploitant de la couche web a son siège, ou sa maison mère ultime le sien, hors de l'Union européenne (règle C2-4, méthode 0.3) ; vide si ce n'est pas déterminé.",
   },
   {
     name: "level",
@@ -137,7 +143,17 @@ const CHAMPS_SOCIETES: readonly Champ[] = [
   { name: "country", type: "string", description: "Le pays de son siège (code ISO 3166-1 alpha-2)." },
   { name: "parent", type: "string", description: "La clé de sa maison mère ultime ; vide si elle n'est pas établie." },
   { name: "parent_country", type: "string", description: "Le pays du siège de la maison mère ultime." },
-  { name: "category", type: "string", description: "La catégorie de ce pays (voir sovermap-domains, champ category)." },
+  {
+    name: "retained_country",
+    type: "string",
+    description:
+      "Le pays de son siège retenu : le plus éloigné du sien et de celui de sa maison mère ultime (décision de l'ARRÊT 2) ; vide quand il n'est pas établi (maison mère inconnue).",
+  },
+  {
+    name: "category",
+    type: "string",
+    description: "La catégorie de son siège retenu (voir sovermap-domains, champ category).",
+  },
   {
     name: "chain",
     type: "string",
@@ -163,12 +179,17 @@ const CHAMPS_MINISTERES: readonly Champ[] = [
 ];
 
 const CHAMPS_PAYS: readonly Champ[] = [
-  { name: "country", type: "string", description: "Le pays du siège des maisons mères (code ISO 3166-1 alpha-2)." },
+  {
+    name: "country",
+    type: "string",
+    description:
+      "Le pays d'un siège retenu, établi (code ISO 3166-1 alpha-2 ; voir sovermap-operators, champ retained_country).",
+  },
   {
     name: "domains",
     type: "integer",
     description:
-      "Le nombre de domaines dont le nom web est servi par au moins un exploitant dont la maison mère établie a son siège dans ce pays (les serveurs de noms et la messagerie ne sont pas comptés ici).",
+      "Le nombre de domaines dont le nom web est servi par au moins un exploitant dont le siège retenu, établi, est dans ce pays (le plus éloigné du sien et de celui de sa maison mère ultime) (les serveurs de noms et la messagerie ne sont pas comptés ici).",
   },
   { name: "state_domains", type: "integer", description: "Dont ceux du périmètre « État »." },
 ];
@@ -189,7 +210,15 @@ function servants(web: EnregistrementNom | undefined) {
 }
 
 /** The domain fields that hold one value per known operator, in the same order, « ; » between two. */
-const ALIGNES = ["roles", "operators", "operator_names", "operator_countries", "parents", "parent_countries"] as const;
+const ALIGNES = [
+  "roles",
+  "operators",
+  "operator_names",
+  "operator_countries",
+  "parents",
+  "parent_countries",
+  "retained_countries",
+] as const;
 
 /** A list as one field: its elements separated by « ; », null when it is empty; a « ; » inside a value (a company's
  * name) becomes a comma, so the lists stay aligned. */
@@ -224,6 +253,7 @@ export function lignesDomaines(etat: Etat, refs: Referentiels): Ligne[] {
         operator_countries: liste(societes.map((s) => s?.pays ?? "")),
         parents: liste(societes.map((s) => s?.mere ?? "")),
         parent_countries: liste(societes.map((s) => (s?.mere === null || s === undefined ? "" : (s.paysMere ?? "")))),
+        retained_countries: liste(societes.map((s) => s?.paysRetenu ?? "")),
         unknown_networks: (web?.exploitants ?? []).filter((e) => e.societe === null).length,
         category: web === undefined ? CATEGORIES_EN["non déterminé"] : CATEGORIES_EN[web.categorie],
         outside_eu: web?.horsUE ?? null,
@@ -257,6 +287,7 @@ export function lignesSocietes(domaines: readonly Ligne[], refs: Referentiels): 
       country: s.pays,
       parent: s.mere,
       parent_country: s.paysMere,
+      retained_country: s.paysRetenu,
       category: CATEGORIES_EN[s.categorie],
       chain: s.maillons.map((m) => m.cle).join(";"),
       domains: compte.get(cle)?.tous ?? 0,
@@ -299,13 +330,15 @@ export function lignesMinisteres(etat: Etat, refs: Referentiels): Ligne[] {
     }));
 }
 
-/** The rows of the countries' file: a country counted once a domain, only for an established ultimate parent's seat. */
+/**
+ * The rows of the countries' file: a country counted once a domain, only for an established retained seat (the farther
+ * of an operator's own and its ultimate parent's, ARRÊT 2; none when the parent is unknown), as index/pays.json does.
+ */
 export function lignesPays(domaines: readonly Ligne[]): Ligne[] {
   const parPays = new Map<string, { tous: number; etat: number }>();
   for (const d of domaines) {
-    const parents = typeof d["parents"] === "string" ? d["parents"].split(";") : [];
-    const pays = typeof d["parent_countries"] === "string" ? d["parent_countries"].split(";") : [];
-    const etablis = new Set(pays.filter((p, i) => p !== "" && (parents[i] ?? "") !== ""));
+    const retenus = typeof d["retained_countries"] === "string" ? d["retained_countries"].split(";") : [];
+    const etablis = new Set(retenus.filter((p) => p !== ""));
     for (const p of etablis) {
       const c = parPays.get(p) ?? { tous: 0, etat: 0 };
       c.tous += 1;
@@ -354,7 +387,7 @@ export function fichiersOuverts(
       CHAMPS_MINISTERES,
       lignesMinisteres(etat, refs),
     ],
-    ["countries", "Chaque pays de siège de maison mère, avec ses domaines du jour.", CHAMPS_PAYS, lignesPays(domaines)],
+    ["countries", "Chaque pays d'un siège retenu, avec ses domaines du jour.", CHAMPS_PAYS, lignesPays(domaines)],
   ];
   const fichiers = new Map<string, string>();
   for (const [nom, , champs, lignes] of tables) {
@@ -367,7 +400,7 @@ export function fichiersOuverts(
   const paquet = {
     name: "sovermap",
     title: "Sovermap : qui héberge les sites publics français",
-    description: `L'état publié du ${jour.date} : pour chaque site public mesuré, l'exploitant qui le sert et le pays du siège de sa maison mère.`,
+    description: `L'état publié du ${jour.date} : pour chaque site public mesuré, l'exploitant qui le sert, et les pays de son siège et de celui de sa maison mère.`,
     version: jour.date,
     created: jour.heure,
     sovermap: { method: jour.methode, status: "preparation", warning: AVERTISSEMENT },

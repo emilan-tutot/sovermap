@@ -60,6 +60,8 @@ import {
   SEUIL_ECHECS,
   sha256,
   VERSION_SCHEMA,
+  domaineAJour,
+  nomAJour,
 } from "../publication";
 import { paysDesAs, titulairesRipe } from "../registres";
 import { TableIpToAsn, TableRis } from "../reseau";
@@ -317,8 +319,9 @@ function lirePublie(dossier: string | undefined): { etat: Etat; meta: EtatJson }
         if (!/^[0-9a-f]{2}(\.\d+)?\.json$/.test(f)) continue;
         const contenu = json<Record<string, unknown[]>>(racine, haut, f);
         for (const e of contenu[sorte] ?? []) {
-          if (sorte === "noms") noms.set((e as EnregistrementNom).nom, e as EnregistrementNom);
-          else domaines.set((e as EnregistrementDomaine).domaine, e as EnregistrementDomaine);
+          // Read again in today's schema (a record of schema 2 has no niveauSociete).
+          if (sorte === "noms") noms.set((e as EnregistrementNom).nom, nomAJour(e as EnregistrementNom));
+          else domaines.set((e as EnregistrementDomaine).domaine, domaineAJour(e as EnregistrementDomaine));
         }
       }
     }
