@@ -94,10 +94,31 @@ export type Controle = { couche: string; verdict: Verdict; publie: string; indep
 const nomPropre = (n: string) => n.toLowerCase().replace(/\.$/, "");
 const ensemble = (noms: readonly string[]) => [...new Set(noms.map(nomPropre))].sort();
 
-/** Two lists of names (servers, exchangers, a chain's links): they agree when they hold the same names. */
-export function comparerNoms(publies: readonly string[], independants: readonly string[] | null): Verdict {
+/**
+ * Two lists of names (servers, exchangers, a chain's links): they agree when they hold the same names. A record too
+ * large for its fragment keeps the first of its sorted lists only (« tronque », pipeline/borner.ts): its names agree
+ * when each of them is found elsewhere (the review of C.9). null: the independent path failed (never « agrees »).
+ */
+export function comparerNoms(
+  publies: readonly string[],
+  independants: readonly string[] | null,
+  tronque = false,
+): Verdict {
   if (independants === null) return "non vérifiable";
-  return ensemble(publies).join(" ") === ensemble(independants).join(" ") ? "concorde" : "diffère";
+  const trouves = ensemble(independants);
+  if (tronque) return ensemble(publies).every((n) => trouves.includes(n)) ? "concorde" : "diffère";
+  return ensemble(publies).join(" ") === trouves.join(" ") ? "concorde" : "diffère";
+}
+
+/**
+ * The category of the country of a company's ultimate parent: the published one (index/exploitants.json of the state)
+ * against the one found elsewhere. A category the site publishes as « non déterminé » cannot be checked.
+ */
+export function comparerCategorie(publiee: string | null, trouvee: string | null): Verdict {
+  if (publiee === null || publiee === "non déterminé" || trouvee === null || trouvee === "non déterminé") {
+    return "non vérifiable";
+  }
+  return publiee === trouvee ? "concorde" : "diffère";
 }
 
 /** The AS of a name's addresses: they agree when every AS found elsewhere is one of the published ones. */
@@ -106,7 +127,10 @@ export function comparerAs(publies: readonly number[], independants: readonly nu
   return independants.every((a) => publies.includes(a)) ? "concorde" : "diffère";
 }
 
-/** The share of the layers that agree, among those that could be checked; null when none could. */
+/**
+ * The share of the checks that agree, among those that could be made; null when none could. One check per layer and
+ * domain (one source for the AS: Team Cymru), and one per company for its ultimate parent, whatever its domains.
+ */
 export function partConcordante(controles: readonly Controle[]): {
   concordent: number;
   verifies: number;
