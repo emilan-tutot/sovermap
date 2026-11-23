@@ -107,7 +107,13 @@ jobs:
                 ;;
             esac
           done
-          n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty")
+          # A list that cannot be read is an error of GitHub's API: nothing opened nor closed this time (never a second
+          # issue), read again in 6 hours; a workflow that could not be enabled still turns the run red.
+          if ! n=$(gh issue list --repo "$REPO" --state open --search "\"$titre\" in:title" --json number,title --jq "map(select(.title == \"$titre\")) | .[0].number // empty"); then
+            echo "::warning::La liste des issues n'a pas pu être lue ; rien n'est ouvert ni fermé ce passage-ci (relu dans 6 heures)."
+            if [ -n "$echec" ]; then exit 1; fi
+            exit 0
+          fi
           if [ -n "$echec" ] || [ -n "$reactives" ]; then
             {
               if [ -n "$echec" ]; then
@@ -124,6 +130,6 @@ jobs:
             if [ -n "$n" ]; then gh issue comment "$n" --repo "$REPO" --body-file corps.md; else gh issue create --repo "$REPO" --title "$titre" --body-file corps.md; fi
             if [ -n "$echec" ]; then exit 1; fi
           elif [ -n "$n" ] && [ -z "$illisibles" ]; then
-            gh issue close "$n" --repo "$REPO" --comment "Les quatre workflows planifiés sont de nouveau actifs (ou désactivés à la main, à dessein)."
+            gh issue close "$n" --repo "$REPO" --comment "Les quatre workflows planifiés sont de nouveau actifs (ou désactivés à la main, à dessein)." || echo "::warning::L'issue n° $n n'a pas pu être fermée (relu dans 6 heures)."
           fi
           echo "Workflows planifiés vérifiés : collecte.yml, fraicheur.yml, archives.yml, copies.yml (ceux désactivés à la main sont laissés)."

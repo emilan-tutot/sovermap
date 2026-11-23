@@ -44,19 +44,28 @@ describe("the collection's workflow", () => {
     verifier(fraicheur);
     expect(branche(fraicheur, "disabled_manually")).not.toContain("echec=");
     // An unreadable state is an error of GitHub's API, never an alarm; a workflow enabled again is said in the issue
-    // (its e-mails may go to the robot), and the issue closes once every one is active (the second review of PR 25).
-    expect(branche(fraicheur, "*")).not.toContain("echec=");
-    expect(branche(fraicheur, "disabled_inactivity")).toContain('reactives="$reactives $fichier"');
-    expect(fraicheur).toContain("ont été réactivés :$reactives.");
-    expect(fraicheur).toContain('gh issue close "$n"');
+    // (its e-mails may go to the robot), and the issue closes once every one is active and readable (the second and
+    // third reviews of PR 25), read in the freshness check's own maintenance job.
+    const debutEntretien = fraicheur.indexOf("\n  entretien:\n");
+    expect(debutEntretien).toBeGreaterThan(0);
+    const entretienFraicheur = fraicheur.slice(debutEntretien);
+    expect(branche(entretienFraicheur, "*")).not.toContain("echec=");
+    expect(branche(entretienFraicheur, "disabled_inactivity")).toContain('reactives="$reactives $fichier"');
+    expect(entretienFraicheur).toContain("ont été réactivés :$reactives.");
+    expect(entretienFraicheur).toMatch(/elif \[ -n "\$n" \] && \[ -z "\$illisibles" \]; then\n\s+gh issue close "\$n"/);
+    // Red only when a workflow could not be enabled: every « exit 1 » of the job stands behind that test.
+    const sorties = entretienFraicheur.match(/exit 1/g) ?? [];
+    expect(sorties.length).toBeGreaterThan(0);
+    expect(entretienFraicheur.match(/if \[ -n "\$echec" \]; then exit 1; fi/g) ?? []).toHaveLength(sorties.length);
     // A third chance for the day's collection, which does nothing once the day has started.
     expect(workflow).toContain('- cron: "17 15 * * *"');
   });
 
-  it("ends a trial's first pass at its deadline, so that a trial always writes its diagnosis in its 60 minutes", () => {
-    // Trap 67 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit.
+  it("ends a trial's first pass at its deadline (20 minutes), so that a degraded trial still ends in its 60 minutes", () => {
+    // Trap 67 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit; the
+    // domains already open at the deadline may still take 14 to 20 minutes on a harder day (the third review of PR 25).
     expect(tache("mesurer")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
-    expect(workflow).toContain("--echeance-minutes 30");
+    expect(workflow).toContain("--echeance-minutes 20");
     const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
     expect(collecter).toContain("...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),");
   });

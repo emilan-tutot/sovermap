@@ -843,16 +843,21 @@ export async function collecter(
     ordreUnites.map((unite) => async () => {
       // The emergency pause: a domain whose turn comes during it waits for its end, then takes a slot of the domains'
       // pace again; after a stop, none opens. Only a domain opened after the last pause counts for the stop.
+      // A trial's deadline: a domain whose task was taken before it never opens after it (the review of PR 25: the
+      // tasks in flight would otherwise open hundreds of domains past it), nor waits for a slot of the pace after it.
+      const passee = () => options.finPremierePasse !== undefined && Date.now() >= options.finPremierePasse;
       for (;;) {
+        if (passee()) {
+          resultat.premierePasseCoupee += 1;
+          return;
+        }
         await cadenceDomaines.attendre();
         await options.frein?.(unite, options.zoneDe(unite), true);
         if (resultat.arret !== null) return;
         if (horloge.maintenant() >= pauseJusqua) break;
         await horloge.dormir(pauseJusqua - horloge.maintenant());
       }
-      // A trial's deadline: a domain whose task was taken before it never opens after it (the review of PR 25: the
-      // tasks in flight would otherwise open hundreds of domains past it).
-      if (options.finPremierePasse !== undefined && Date.now() >= options.finPremierePasse) {
+      if (passee()) {
         resultat.premierePasseCoupee += 1;
         return;
       }
