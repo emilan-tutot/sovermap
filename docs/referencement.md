@@ -38,8 +38,8 @@ Documentation de Google Search Central, lue le 22/11/2026 (les pages n'affichaie
 | `BreadcrumbList` | Montre la place de la page dans le site, dans les résultats sur ordinateur | Gardé, sur chaque page sauf l'accueil |
 | `WebSite` | Donne le nom du site dans les résultats (ordinateur et mobile) ; seulement sur la page d'accueil ; `name` et `url` exigés | Ajouté sur l'accueil, avec `name` et `url`. Sans `alternateName` : la question « Qui héberge l'État ? » n'est pas un autre nom du site |
 | Champ de recherche des liens annexes (`SearchAction`) | Retiré des résultats de Google le 21/11/2024 ; le balisage n'est plus utilisé | Pas ajouté |
-| `Organization` | Aide Google à reconnaître l'organisation, son logo dans les résultats et son panneau de connaissances | **Pas encore** : il présenterait Sovermap comme une organisation, alors que l'éditeur du site se décide en E.4 (mentions légales). Question au point 11 |
-| `Dataset` | Rend un jeu de données visible dans Google Dataset Search ; `name` et `description` (50 à 5 000 caractères) exigés ; `license`, `creator`, `distribution` recommandés | Sur la page Données (partie F), quand elle existera |
+| `Organization` | Aide Google à reconnaître l'organisation, son logo dans les résultats et son panneau de connaissances | **Pas ajouté** : il présenterait Sovermap comme une organisation. Décision du propriétaire (point 11, Q4, réponse du point 13) : pas de balise `Organization` tant qu'aucune structure juridique n'existe ; un test le vérifie (`tests/referencement.test.ts`) |
+| `Dataset` | Rend un jeu de données visible dans Google Dataset Search ; `name` et `description` (50 à 5 000 caractères) exigés ; `license`, `creator`, `distribution` recommandés | Ajouté sur la page Données (`app/donnees/page.tsx`, `jsonLdDataset` de `lib/referencement.ts`) ; test : `tests/donnees-ouvertes.test.ts` |
 
 ## 3. La politique d'indexation
 
@@ -85,8 +85,7 @@ Les recherches viennent du brief et du propriétaire, jamais d'un outil de Googl
 ## 6. Ce qui reste
 
 **Avant l'ouverture (chantier 2) :**
-- la préversion, porte ouverte : les plans du site, les images de partage et le cache du CDN, vérifiés dans Edge ;
-- `Dataset` sur la page Données (F) ; la décision sur `Organization` (point 11, E.4).
+- la préversion, porte ouverte : les plans du site, les images de partage, le cache du CDN et les données `Dataset` de la page Données, vérifiés dans Edge.
 
 **Au chantier 3 (l'ouverture) :**
 - `NEXT_PUBLIC_SITE_URL=https://sovermap.com`, puis `SITE_INDEXING=open`, sur décision du propriétaire ;
