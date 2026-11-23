@@ -24,6 +24,15 @@ export function gardesPannes(taux: number, veille: number | null): { plafond: bo
 export type Garde = { nom: string; ok: boolean; detail: string; relatifALaVeille?: boolean };
 
 /**
+ * The emergency stop's guard (collecte.ts): a collection stopped before its end is never published, and never becomes
+ * tomorrow's yesterday (it never compares with yesterday). The 2 % guard does not always double it: a late stop, after
+ * tens of thousands of sound domains, can leave a day under 2 %, and its domains not measured would be lost.
+ */
+export function gardeTerme(arret: string | null): Garde {
+  return { nom: "collecte menée à son terme", ok: arret === null, detail: arret ?? "" };
+}
+
+/**
  * Does today's measurement become tomorrow's yesterday? When every guard is green but, maybe, those that compare with
  * yesterday (the circuit breaker, the day-to-day rise of the breakdowns): a real, lasting change is then confirmed the
  * next day, against this measurement, instead of keeping the guard red for ever.
