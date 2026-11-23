@@ -62,6 +62,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 38 | Wikidata | Pays du siège, maison mère (indices) | CC0 | **Non** : robots.txt (SPARQL, API) | Contrôle seulement (lecture manuelle) |
 | 39 | Rapports annuels des groupes | Confirmation des maisons mères | Faits seulement, aucune reproduction | Au cas par cas | **Retenue** (méthode) |
 | 56 | Légifrance (DILA) | — | — | **Non** : défi anti-robots sur le `robots.txt` | Écartée |
+| 57 | DECP (données essentielles de la commande publique) | Marchés des acheteurs publics et leurs titulaires | Licence Ouverte 2.0 | **Non** : `static.data.gouv.fr/resources` fermé aux robots | Piste |
 | 40 | Catalogue des services qualifiés SecNumCloud de l'ANSSI | Services qualifiés, fournisseur, dates, décision | Licence etalab-2.0 (mention du site de l'ANSSI) | **Non** : anti-robots | **Retenue** (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
 | 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
@@ -247,6 +248,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Licence ou conditions** : « Licence Ouverte / Open Licence version 2.0 ».
 - **Téléchargement automatique testé** : oui, par l'API tabulaire.
 - **Données personnelles** : noms des présidents, jamais copiés.
+- **Piste (brief C.8, 23/11/2026)** : publier les domaines de ses 790 sites demanderait d'abord de changer cette décision. Les sites des groupements (EPCI) entrent déjà par l'annuaire local de service-public.fr (fiche 50, PR n° 18) ; la décision ne change pas au chantier 2.
 - **Décision : retenue en contrôle seulement.**
 
 ### 11. FINESS — structures (Agence du Numérique en Santé)
@@ -581,6 +583,15 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **`robots.txt`** (lu le 21/11/2026) : HTTP 403, une page de défi anti-robots (« Just a moment... ») à la place du fichier : le site est **fermé aux robots**. Rien d'autre n'y a été demandé.
 - **Écart corrigé** : `referentiels/societes.json` citait, pour le rattachement de la DINUM à l'État, le décret n° 2019-1088 du 25 octobre 2019 (lu le 19/11/2026, pendant la partie B), sans fiche au registre. La citation est retirée le 21/11/2026 (C.1) : ce rattachement repose sur le Référentiel de l'organisation administrative de l'État (fiche 4) et sur Sirene (fiche 32).
 - **Décision : écartée** (fermée aux robots). Si un texte devenait nécessaire, une personne le lirait dans un navigateur ordinaire, pour un relevé manuel daté.
+
+### 57. DECP : données essentielles de la commande publique
+- **Producteur** : les acheteurs publics, qui doivent publier les données essentielles de leurs marchés ; la consolidation quotidienne publiée sur data.gouv.fr est celle d'un réutilisateur (jeu `608c055b35eb4e6ee20eb325`, « Données essentielles de la commande publique consolidées (format tabulaire) »).
+- **Ce qu'on en tirerait** : les marchés passés par les organismes publics avec les sociétés qui hébergent ou servent leurs sites, un fait de plus sur les exploitants (brief C.8).
+- **Licence** : `lov2` (Licence Ouverte 2.0), d'après les métadonnées du jeu sur data.gouv.fr, lues le 23/11/2026 par son API.
+- **Accès** : `decp.parquet` (278 534 136 octets) et `decp.csv.gz` (438 062 877 octets), mis à jour chaque jour, sous `static.data.gouv.fr/resources`, que le `robots.txt` de l'hôte ferme à tout agent (`Disallow: /resources`, lu le 23/11/2026, fichier daté du 03/08/2026). **Aucun accès automatique permis.**
+- **Données personnelles** : un titulaire peut être une personne physique (un entrepreneur individuel) : jamais repris.
+- **Les conditions du brief (C.8)** : un accès automatique propre, puis un rapprochement avec les exploitants juste à 95 % sur un échantillon vérifié à la main, jamais pour un titulaire personne physique. Le premier manque ; le second n'a donc pas été tenté.
+- **Décision : piste.** À rouvrir au chantier 3 si un accès automatique permis existe (une API des DECP est annoncée sur data.gouv.fr : ses conditions et son `robots.txt` d'abord).
 
 ## E. Qualification et fond de carte
 
