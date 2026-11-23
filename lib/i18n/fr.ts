@@ -94,7 +94,7 @@ export const fr = {
     titre: "Les fils de la France vers les pays des sièges",
     honnetete:
       "Les fils vont vers le pays du siège retenu, le plus éloigné de celui de la société et de celui de sa maison mère, pas vers l’emplacement d’un serveur.",
-    descriptionScene: `Globe${NBSP}: des fils partent de la France vers les pays des sièges des maisons mères. La liste des pays suit.`,
+    descriptionScene: `Globe${NBSP}: des fils partent de la France vers les pays des sièges retenus des sociétés. La liste des pays suit.`,
     chargement: "Chargement de la carte en relief",
     recentrer: "Recentrer",
     explorer: "Explorer le globe",
