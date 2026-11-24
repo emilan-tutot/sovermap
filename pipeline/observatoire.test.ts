@@ -122,6 +122,8 @@ describe("the reading of the Observatoire (C.8)", () => {
     expect(lignesOds(CONTENU.replace("DEX", "&lt;script&gt;DEX&#60;/script&#x3E;")).lignes[1]?.[3]?.texte).toBe(
       "scriptDEX/script",
     );
+    // A tag never closed is removed to the end of its paragraph: no « < » survives the removal of the tags.
+    expect(lignesOds(CONTENU.replace("DEX", "DEX<script")).lignes[1]?.[3]?.texte).toBe("DEX");
   });
 
   it("refuses an edition with a cell's comment or note, and drops control or direction characters", () => {
