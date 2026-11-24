@@ -528,7 +528,7 @@ export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): s
     };
   });
   return `${jsonStable({
-    source: { fiche: 55, edition: referentiel.edition, publiee: referentiel.publiee },
+    source: { fiche: 55, edition: referentiel.edition, periode: referentiel.periode, publiee: referentiel.publiee },
     demarches,
   })}\n`;
 }
