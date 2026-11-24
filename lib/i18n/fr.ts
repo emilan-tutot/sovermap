@@ -393,30 +393,43 @@ export const fr = {
     pagination: "Pages de la liste",
     source: (version: string) => `Source${NBSP}: référentiels de Sovermap, version ${version}, et collecte du jour.`,
   },
-  /** The ministries (D.2, R8): the sites the DILA's Référentiel links to each ministry, and who serves them. */
   /** The démarches' page (C.8, D.2): the online démarches of the DINUM's Observatoire, the most used first. */
   demarches: {
     titre: "Les démarches en ligne",
     description: `Les démarches en ligne les plus utilisées, suivies par l’Observatoire de la DINUM${NBSP}: le nom de leur adresse, et qui le sert ce jour-là.`,
     chapo:
-      "Les démarches en ligne que suit l’Observatoire de la qualité des démarches en ligne de la DINUM, les plus utilisées d’abord, d’après le volume de l’édition. Pour chacune, le nom de son adresse et l’exploitant qui le sert le jour de la collecte. Sovermap ne dit rien de la qualité d’une démarche.",
+      "Les démarches en ligne que suit l’Observatoire de la qualité des démarches en ligne de la DINUM, les plus utilisées d’abord, d’après la volumétrie de l’édition. Pour chacune, le nom de son adresse et l’exploitant qui le sert le jour de la collecte. Sovermap ne dit rien de la qualité d’une démarche.",
     entete: (n: string, edition: string, periode: string) =>
       `${n}${NBSP}démarches, d’après l’édition ${edition} (${periode})`,
     colonnes: {
       demarche: "Démarche",
-      ministere: "Ministère",
-      volume: "Volume annuel",
+      perimetre: "Périmètre de l’Observatoire",
+      volume: "Volumétrie",
       adresse: "Nom de son adresse",
       servie: "Servie par",
       siege: "Siège retenu",
     },
-    sansVolume: "non donné",
-    sansAdresse: "sans adresse en ligne",
-    nonMesuree: "non mesuré ce jour-là",
+    sansVolume: "non donnée",
+    sansAdresse: "aucune adresse utilisable dans l’édition",
+    nonMesure: "nom non mesuré",
     sansSociete: "exploitant non déterminé",
+    /** The state of the name of its address, when it does not answer with addresses. */
+    etats: {
+      nxdomain: "le nom n’existe pas",
+      nodata: "le nom existe, sans adresse",
+      echec: "question en échec ce jour-là",
+    },
+    partiel: "fiche partielle ce jour-là",
+    /** Between two companies that serve one name. */
+    separateur: ", ",
+    /** A note after a value: « (nom non mesuré) ». */
+    note: (texte: string) => `(${texte})`,
     source: (edition: string, periode: string) =>
       `Source${NBSP}: DINUM, Observatoire de la qualité des démarches en ligne, édition ${edition} (${periode}), Licence Ouverte 2.0${NBSP}; la mesure des noms, Sovermap.`,
+    /** The link from the ministries' list. */
+    lien: "Voir aussi les démarches en ligne les plus utilisées, et qui sert chacune.",
   },
+  /** The ministries (D.2, R8): the sites the DILA's Référentiel links to each ministry, and who serves them. */
   ministeres: {
     titre: "Les ministères",
     description: `Les ministères et les services de l’État auxquels le Référentiel de la DILA rattache des sites${NBSP}: qui les héberge ou les diffuse, et le pays de son siège ou de sa maison mère.`,

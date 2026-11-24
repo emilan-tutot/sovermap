@@ -66,6 +66,9 @@ export const donneesOuvertes = {
       `Source${NBSP}: Service d’information du Gouvernement (SIG), Observatoire de l’écosystème numérique de l’État – Sites internet, mise à jour du ${date} — Licence Ouverte${NBSP}2.0.`,
     mesr: (date: string) =>
       `Source${NBSP}: ministère de l’Enseignement supérieur, de la Recherche et de l’Espace, Principaux établissements d’enseignement supérieur, mis à jour le ${date} — Licence Ouverte.`,
+    /** Card 55: when the démarches are shown (their page). */
+    observatoire: (edition: string, periode: string) =>
+      `Source${NBSP}: DINUM, Observatoire de la qualité des démarches en ligne, édition ${edition} (${periode}), Licence Ouverte${NBSP}2.0.`,
     sirene: (periode: string) => `Source${NBSP}: Insee, base Sirene (www.insee.fr), données lues ${periode}.`,
     ripe: (date: string) =>
       `Noms des organisations de la région du RIPE${NBSP}: RIPE Database (RIPE NCC), copie du ${date}, soumise aux RIPE Database Terms and Conditions.`,

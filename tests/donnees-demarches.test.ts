@@ -35,7 +35,12 @@ describe("the démarches' index, as the site reads it (C.8, D.2)", () => {
       ],
     });
     expect(lu?.demarches.map((d) => d.id)).toEqual(["3", "1", "2"]);
-    expect(lu?.demarches[0]?.mesure).toEqual(mesure);
+    expect(lu?.demarches[0]?.mesure).toEqual({ ...mesure, partiel: false });
+    // A record reduced or shortened that day: its measure says so.
+    expect(
+      lireIndexDemarches({ source, demarches: [demarche("8", 1, "www.service.example", { ...mesure, partiel: true })] })
+        ?.demarches[0]?.mesure?.partiel,
+    ).toBe(true);
     expect(lu).toMatchObject({ edition: 15, periode: "octobre 2026", publiee: "2026-10-20" });
   });
 

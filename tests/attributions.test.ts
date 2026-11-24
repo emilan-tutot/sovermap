@@ -43,6 +43,11 @@ describe("the sources' attributions (F.1)", () => {
     expect(exigees).toContain("Sites internet, mise à jour du 01/11/2026");
     expect(exigees).toContain("mis à jour le 21/11/2026");
     expect(exigees).toContain("RIPE Database (RIPE NCC), copie du 20/11/2026");
+    // The Observatoire of the démarches (card 55): only when their page is published, with the edition and its period.
+    expect(exigees).not.toContain("Observatoire de la qualité des démarches");
+    expect(attributionsDe(complet, { edition: 15, periode: "octobre 2026" }).exigees.join("\n")).toContain(
+      "DINUM, Observatoire de la qualité des démarches en ligne, édition 15 (octobre 2026), Licence Ouverte",
+    );
     const courtoisie = a.courtoisie.join("\n");
     expect(courtoisie).toContain("(RIPE NCC, ARIN, APNIC, LACNIC, AFRINIC), du 20/11/2026 au 21/11/2026.");
     expect(courtoisie).toContain("relevé du 20/11/2026");

@@ -11,6 +11,8 @@ export type MesureDemarche = {
   /** The keys of the companies that serve its web name, as index/exploitants.json names them. */
   societes: string[];
   cdn: string | null;
+  /** The record of its name was reduced or shortened that day: what it says is partial. */
+  partiel: boolean;
 };
 
 export type DemarcheServie = {
@@ -63,6 +65,7 @@ function mesureDe(v: unknown): MesureDemarche | null {
     niveau,
     societes,
     cdn: typeof m["cdn"] === "string" && CLE.test(m["cdn"]) ? m["cdn"] : null,
+    partiel: m["partiel"] === true,
   };
 }
 

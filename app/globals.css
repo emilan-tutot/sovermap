@@ -829,7 +829,10 @@
 
   .texte-section p,
   /* An attribution holds a long address: it wraps anywhere rather than scroll sideways. */
-  .attributions li {
+  .attributions li,
+  /* A démarche's host name (up to 40 characters without a space) wraps too, rather than widen its table past the
+     page's frame (the review of the démarches' page). */
+  .releve-table .hote {
     overflow-wrap: anywhere;
   }
 

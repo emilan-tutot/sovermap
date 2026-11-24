@@ -71,11 +71,7 @@ export type AdressePorte = {
 /** The headers of an internal navigation of Next.js 16 (App Router), and of its two kinds of prefetch. */
 const RSC = { RSC: "1" } as const;
 const PRECHARGEMENT = { RSC: "1", "Next-Router-Prefetch": "1" } as const;
-const PRECHARGEMENT_SEGMENTS = {
-  RSC: "1",
-  "Next-Router-Prefetch": "1",
-  "Next-Router-Segment-Prefetch": "/_tree",
-} as const;
+const PRECHARGEMENT_SEGMENTS = { RSC: "1", "Next-Router-Prefetch": "1", "Next-Router-Segment-Prefetch": "/_tree" } as const;
 
 /**
  * The addresses that `npm run probe:prod` and the e2e tests ask while the door is closed: at least one REAL address of
@@ -109,47 +105,18 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: "/pays/etats-unis", famille: "page d'un pays, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/journal/2026-11-21", famille: "jours du journal", attendu: "introuvable" },
   { chemin: "/journal/flux.xml", famille: "flux Atom du journal", attendu: "introuvable" },
-  {
-    chemin: "/journal/2026-11-21",
-    famille: "jour du journal, navigation interne",
-    attendu: "introuvable",
-    entetes: RSC,
-  },
+  { chemin: "/journal/2026-11-21", famille: "jour du journal, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/ministeres/ministere-de-la-culture", famille: "pages des ministères", attendu: "introuvable" },
-  {
-    chemin: "/ministeres/ministere-de-la-culture",
-    famille: "page d'un ministère, navigation interne",
-    attendu: "introuvable",
-    entetes: RSC,
-  },
+  { chemin: "/ministeres/ministere-de-la-culture", famille: "page d'un ministère, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/territoires", famille: "carte des territoires", attendu: "introuvable" },
   { chemin: "/regions/53-bretagne", famille: "pages des régions", attendu: "introuvable" },
   { chemin: "/departements/35-ille-et-vilaine", famille: "pages des départements", attendu: "introuvable" },
   { chemin: "/communes/35238-rennes", famille: "pages des communes", attendu: "introuvable" },
-  {
-    chemin: "/communes/35238-rennes",
-    famille: "page d'une commune, navigation interne",
-    attendu: "introuvable",
-    entetes: RSC,
-  },
-  {
-    chemin: "/groupements/243500139-rennes-metropole",
-    famille: "pages des groupements de communes",
-    attendu: "introuvable",
-  },
+  { chemin: "/communes/35238-rennes", famille: "page d'une commune, navigation interne", attendu: "introuvable", entetes: RSC },
+  { chemin: "/groupements/243500139-rennes-metropole", famille: "pages des groupements de communes", attendu: "introuvable" },
   { chemin: "/societes/celeste", famille: "pages des sociétés", attendu: "introuvable" },
-  {
-    chemin: "/societes/celeste",
-    famille: "page d'une société, navigation interne",
-    attendu: "introuvable",
-    entetes: RSC,
-  },
-  {
-    chemin: "/radiographie/impots.gouv.fr",
-    famille: "fiche d'un domaine, navigation interne",
-    attendu: "introuvable",
-    entetes: RSC,
-  },
+  { chemin: "/societes/celeste", famille: "page d'une société, navigation interne", attendu: "introuvable", entetes: RSC },
+  { chemin: "/radiographie/impots.gouv.fr", famille: "fiche d'un domaine, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas", famille: "navigation interne de Next.js", attendu: "introuvable", entetes: RSC },
   { chemin: "/page-qui-n-existe-pas", famille: "préchargement", attendu: "introuvable", entetes: PRECHARGEMENT },
   {
@@ -162,12 +129,7 @@ export const ADRESSES_PORTE: readonly AdressePorte[] = [
   { chemin: CHEMIN_FERME, famille: "cible de la porte", attendu: "introuvable" },
   { chemin: CHEMIN_FERME, famille: "cible de la porte, navigation interne", attendu: "introuvable", entetes: RSC },
   { chemin: "/globe/monde.json", famille: "fichiers publics hors de la page d'attente", attendu: "introuvable" },
-  {
-    chemin: "/globe/monde.json",
-    famille: "fichier public, préchargement",
-    attendu: "introuvable",
-    entetes: PRECHARGEMENT,
-  },
+  { chemin: "/globe/monde.json", famille: "fichier public, préchargement", attendu: "introuvable", entetes: PRECHARGEMENT },
   { chemin: "/globe/repli.svg", famille: "images hors de la page d'attente", attendu: "introuvable" },
   { chemin: "/_next/image?url=%2Ficon.svg&w=64&q=75", famille: "images optimisées", attendu: "refusee" },
   { chemin: "/ROBOTS.TXT", famille: "liste blanche en capitales", attendu: "introuvable", laisseeParLaRegle: true },

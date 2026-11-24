@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
-import { lireIndexDemarches } from "@/lib/donnees/demarches";
+import { type DemarcheServie, lireIndexDemarches } from "@/lib/donnees/demarches";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
-import { lireIndexSocietes } from "@/lib/donnees/radiographie";
+import { type IndexSocietes, lireIndexSocietes } from "@/lib/donnees/radiographie";
 import { nombre } from "@/lib/i18n/format";
 import { fr } from "@/lib/i18n/fr";
 import { partageDe } from "@/lib/referencement";
@@ -22,6 +22,49 @@ export const metadata: Metadata = {
 };
 
 const t = fr.demarches;
+
+/** The name of its address: plain text (a démarche's name may not be its domain's web name, which a Radiographie shows). */
+function Adresse({ d }: { d: DemarcheServie }) {
+  if (d.hote === null) return <>{t.sansAdresse}</>;
+  return (
+    <>
+      <span className="hote">{d.hote}</span>
+      {d.mesure === null ? <span className="releve-note"> {t.note(t.nonMesure)}</span> : null}
+    </>
+  );
+}
+
+/** Who serves it: the companies of the day's index (by their key when the index does not name one), or why none. */
+function Servie({ d, societes }: { d: DemarcheServie; societes: IndexSocietes }) {
+  const m = d.mesure;
+  if (m === null) return null;
+  if (m.etat !== "ok") {
+    const etat = m.etat === "nxdomain" || m.etat === "nodata" || m.etat === "echec" ? t.etats[m.etat] : t.etats.echec;
+    return <>{etat}</>;
+  }
+  return (
+    <>
+      {m.societes.length === 0
+        ? t.sansSociete
+        : m.societes.map((cle, i) => {
+            const nom = societes.get(cle)?.nom;
+            return (
+              <span key={cle}>
+                {i > 0 ? t.separateur : null}
+                {nom === undefined ? (
+                  cle
+                ) : (
+                  <Link href={`/societes/${cle}`} prefetch={false}>
+                    {nom}
+                  </Link>
+                )}
+              </span>
+            );
+          })}
+      {m.partiel ? <span className="releve-note"> {t.note(t.partiel)}</span> : null}
+    </>
+  );
+}
 
 // The démarches (C.8, D.2): those the DINUM's Observatoire follows, the most used first (the volume of its edition:
 // what D.2 asks here, never a ranking of hosts), each with the name of its address and the companies that serve it that
@@ -49,7 +92,7 @@ export default async function DemarchesPage() {
         <thead>
           <tr>
             <th scope="col">{t.colonnes.demarche}</th>
-            <th scope="col">{t.colonnes.ministere}</th>
+            <th scope="col">{t.colonnes.perimetre}</th>
             <th scope="col" className="nombre">
               {t.colonnes.volume}
             </th>
@@ -59,49 +102,22 @@ export default async function DemarchesPage() {
           </tr>
         </thead>
         <tbody>
-          {index.demarches.map((d) => {
-            const servants = (d.mesure?.societes ?? []).flatMap((cle) => {
-              const s = societes.get(cle);
-              return s === undefined ? [] : [{ cle, nom: s.nom }];
-            });
-            return (
-              <tr key={d.id}>
-                <th scope="row">{d.nom}</th>
-                <td>{d.perimetre}</td>
-                <td className="nombre valeur">{d.volumeTotal === null ? t.sansVolume : nombre(d.volumeTotal)}</td>
-                <td>
-                  {d.hote === null || d.domaine === null ? (
-                    t.sansAdresse
-                  ) : d.mesure === null ? (
-                    <>
-                      {d.hote} <span className="releve-note">({t.nonMesuree})</span>
-                    </>
-                  ) : (
-                    <Link href={`/radiographie/${d.domaine}`} prefetch={false}>
-                      {d.hote}
-                    </Link>
-                  )}
-                </td>
-                <td>
-                  {d.mesure === null
-                    ? null
-                    : servants.length === 0
-                      ? t.sansSociete
-                      : servants.map((s, i) => (
-                          <span key={s.cle}>
-                            {i > 0 ? ", " : null}
-                            <Link href={`/societes/${s.cle}`} prefetch={false}>
-                              {s.nom}
-                            </Link>
-                          </span>
-                        ))}
-                </td>
-                <td className={d.mesure?.horsUE === true ? "hors-ue" : undefined}>
-                  {d.mesure === null ? null : fr.radiographie.categories[d.mesure.categorie]}
-                </td>
-              </tr>
-            );
-          })}
+          {index.demarches.map((d) => (
+            <tr key={d.id}>
+              <th scope="row">{d.nom}</th>
+              <td>{d.perimetre}</td>
+              <td className="nombre valeur">{d.volumeTotal === null ? t.sansVolume : nombre(d.volumeTotal)}</td>
+              <td>
+                <Adresse d={d} />
+              </td>
+              <td>
+                <Servie d={d} societes={societes} />
+              </td>
+              <td className={d.mesure?.etat === "ok" && d.mesure.horsUE === true ? "hors-ue" : undefined}>
+                {d.mesure === null || d.mesure.etat !== "ok" ? null : fr.radiographie.categories[d.mesure.categorie]}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
       <p className="releve-note">{t.source(String(index.edition), index.periode)}</p>

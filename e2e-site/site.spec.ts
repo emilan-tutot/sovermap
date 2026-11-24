@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { dateFr } from "../lib/i18n/format";
+import { dateFr, nombre } from "../lib/i18n/format";
 import { fr } from "../lib/i18n/fr";
 import { donneesOuvertes } from "../lib/i18n/fr-donnees";
 import { erreur } from "../lib/i18n/fr-erreur";
@@ -379,6 +379,40 @@ test("citer : une Radiographie, un ministère, une société et un pays donnent 
   }
 });
 
+// The démarches (C.8, D.2): the most used first; a measured name with the company that serves it and the country of
+// its seat, a name the day does not measure, a démarche without a usable address; reached from the ministries' list,
+// and credited on the open data's page with its edition.
+test("démarches : les plus utilisées d'abord, chacune avec le nom de son adresse et qui le sert", async ({ page }) => {
+  const t = fr.demarches;
+  await page.goto("/demarches");
+  const lignes = page.locator("table.releve-table tbody tr");
+  await expect(lignes.locator("th")).toHaveText([
+    "Déclarer un exemple",
+    "Demander un document d’exemple",
+    "Une démarche sans adresse",
+  ]);
+  const [mesuree, nonMesuree, sansAdresse] = [lignes.nth(0), lignes.nth(1), lignes.nth(2)];
+  // Columns after the démarche's name: its perimeter, its volume, its address, who serves it, the seat.
+  await expect(mesuree.locator("td").nth(1)).toHaveText(nombre(1_200_000));
+  await expect(mesuree.locator("td").nth(2)).toHaveText("www.service.example");
+  await expect(mesuree.locator("td").nth(3).getByRole("link", { name: "Hébergeur Exemple" })).toHaveAttribute(
+    "href",
+    "/societes/hebergeur-fr",
+  );
+  await expect(mesuree.locator("td").nth(4)).toHaveText(fr.radiographie.categories.France);
+  await expect(nonMesuree.locator("td").nth(2)).toHaveText(`demarche.ailleurs.example ${t.note(t.nonMesure)}`);
+  await expect(nonMesuree.locator("td").nth(3)).toBeEmpty();
+  await expect(sansAdresse.locator("td").nth(1)).toHaveText(t.sansVolume);
+  await expect(sansAdresse.locator("td").nth(2)).toHaveText(t.sansAdresse);
+  await expect(page.locator("main")).toContainText(t.source("15", "octobre 2026"));
+  await page.goto("/ministeres");
+  await expect(page.getByRole("link", { name: t.lien })).toHaveAttribute("href", "/demarches");
+  await page.goto("/donnees");
+  await expect(page.locator(".attributions").first()).toContainText(
+    "Observatoire de la qualité des démarches en ligne, édition 15 (octobre 2026)",
+  );
+});
+
 // The Journal's Atom feed (point 13, § 10): served as Atom, well formed, announced by the journal's page.
 test("flux : le journal a un flux Atom bien formé, annoncé par sa page", async ({ page, request }) => {
   const reponse = await request.get("/journal/flux.xml");
@@ -439,8 +473,7 @@ test("impression : une Radiographie s'imprime sans en-tête, modes ni pied de pa
 }) => {
   await page.goto("/radiographie/service.example");
   await page.emulateMedia({ media: "print" });
-  for (const masque of [".entete", ".radiographie-modes", ".pied"])
-    await expect(page.locator(masque).first()).toBeHidden();
+  for (const masque of [".entete", ".radiographie-modes", ".pied"]) await expect(page.locator(masque).first()).toBeHidden();
   await expect(page.locator(".couche").first()).toBeVisible();
   await expect(page.locator("section.citer")).toBeVisible();
   await page.emulateMedia({ media: "screen" });

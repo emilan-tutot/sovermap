@@ -6,6 +6,7 @@ import { FilAriane } from "@/components/coque/FilAriane";
 import { ListeAttributions } from "@/components/donnees/ListeAttributions";
 import { SourcesDuJour } from "@/components/donnees/SourcesDuJour";
 import { attributionsDe } from "@/lib/donnees/attributions";
+import { lireIndexDemarches } from "@/lib/donnees/demarches";
 import { adresseFichierOuvert, donneesOuvertesDe, FICHIERS_OUVERTS } from "@/lib/donnees/ouvertes";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
@@ -34,6 +35,11 @@ export default async function DonneesPage() {
   if (etat.statut === "porte fermée" || etat.statut === "absent") notFound();
   if (etat.statut !== "ok") indisponible();
   const d = donneesOuvertesDe(etat.donnees);
+  // The démarches' edition, when their index is published: card 55 asks its attribution here.
+  const luDemarches = await lecteur.fichier("index/demarches.json");
+  const indexDemarches = luDemarches.statut === "ok" ? lireIndexDemarches(luDemarches.donnees) : null;
+  const demarches =
+    indexDemarches === null ? null : { edition: indexDemarches.edition, periode: indexDemarches.periode };
   const compte = process.env["SOVERMAP_GITHUB_OWNER"];
   const fichiers = FICHIERS_OUVERTS.map((f) => ({ fichier: f, adresse: adresseFichierOuvert(f, compte) }));
   return (
@@ -69,7 +75,7 @@ export default async function DonneesPage() {
         </ul>
       </section>
       <SourcesDuJour donnees={d} />
-      <ListeAttributions attributions={attributionsDe(etat.donnees)} />
+      <ListeAttributions attributions={attributionsDe(etat.donnees, demarches)} />
       <section className="texte-section" aria-labelledby="donnees-verifier">
         <h2 id="donnees-verifier">{t.verifier}</h2>
         <p>{t.verifierTexte}</p>

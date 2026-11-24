@@ -38,7 +38,11 @@ function lectures(producteur: string): (string | null)[] {
 }
 
 /** The attributions of the day's state, those the licences or the conditions require first, then by courtesy. */
-export function attributionsDe(etat: EtatPublie): Attributions {
+export function attributionsDe(
+  etat: EtatPublie,
+  /** The démarches' edition and its period (index/demarches.json), when their page is published (card 55). */
+  demarches: { edition: number; periode: string } | null = null,
+): Attributions {
   const t = donneesOuvertes.attributions;
   const versions = objet(etat.brut["versions"]);
   const regles = objet(versions?.["regles"]);
@@ -81,6 +85,7 @@ export function attributionsDe(etat: EtatPublie): Attributions {
         : null,
       sig === undefined ? null : t.sig(dateFr(sig)),
       mesr === undefined ? null : t.mesr(dateFr(mesr)),
+      demarches === null ? null : t.observatoire(String(demarches.edition), demarches.periode),
       sirene === null ? null : t.sirene(sirene),
       ripe === undefined ? null : t.ripe(dateFr(ripe)),
       t.ue(dateFr(pays.version)),

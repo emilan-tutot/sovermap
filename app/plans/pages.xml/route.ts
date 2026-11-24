@@ -1,3 +1,4 @@
+import { lireIndexDemarches } from "@/lib/donnees/demarches";
 import { lecteur } from "@/lib/donnees/lecture";
 import { PAGES_DE_TEXTE } from "@/lib/i18n/fr-textes";
 import { lireMinisteres } from "@/lib/donnees/ministeres";
@@ -33,8 +34,10 @@ export async function GET(): Promise<Response> {
   if (luTerritoires.statut !== "ok" && luTerritoires.statut !== "absent") return INDISPONIBLE();
   const territoires = luTerritoires.statut === "ok" ? lireIndexTerritoires(luTerritoires.donnees) : null;
   if (luTerritoires.statut === "ok" && territoires === null) return INDISPONIBLE();
-  // The démarches' page, once their index is published (C.8, D.2); an index published but unreadable is an error.
+  // The démarches' page, once their index is published (C.8, D.2); an index published but unreadable, or that does not
+  // read as one, is an error: never a page in the plan that answers an error (the review of the démarches' page).
   if (luDemarches.statut !== "ok" && luDemarches.statut !== "absent") return INDISPONIBLE();
+  if (luDemarches.statut === "ok" && lireIndexDemarches(luDemarches.donnees) === null) return INDISPONIBLE();
   const adresses: AdressePlan[] = [
     { chemin: "/" },
     { chemin: "/ministeres" },
