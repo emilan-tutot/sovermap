@@ -85,17 +85,7 @@ export const NOM: Schema = objet(
     categorie,
     horsUE,
     niveau,
-    controle: {
-      ...objet(
-        {
-          resolveur: texte(60),
-          accord: { type: "boolean" },
-          le: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
-        },
-        ["le"],
-      ),
-      type: ["object", "null"],
-    },
+    controle: { ...objet({ resolveur: texte(60), accord: { type: "boolean" } }), type: ["object", "null"] },
     tronque: { enum: [true] },
     reduit: { enum: [true] },
   },

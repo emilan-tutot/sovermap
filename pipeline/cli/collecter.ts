@@ -27,7 +27,15 @@ import { CompteurServeurs, type DebitServeurs } from "../debit-serveurs";
 import { cheminDiagnostic, diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
-import { accordsReportables, construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
+import {
+  type AccordReporte,
+  construireEtat,
+  type Controles,
+  type Mesures,
+  type ObservationsDuJour,
+  type Pannes,
+  veilleEtAccords,
+} from "../etat-du-jour";
 import { type Garde, gardesPannes, gardeTerme, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
@@ -334,18 +342,39 @@ type Observations = {
   pannes?: { noms: string[]; zones: string[] };
   /** The day's share of domains with a confirmed breakdown: tomorrow's guard compares with it. */
   tauxPannes?: number;
+  /** The agreements the day's names carried (B.6): tomorrow classifies this day again with them. */
+  reports?: [string, AccordReporte][];
 };
 
-function lireObservations(
-  dossier: string,
-): { mesures: Mesures; controles: Controles; pannes: Pannes; date: string; tauxPannes: number | null } | null {
+/** The agreements a day carried (B.6), read back from its observations: only what has their form. */
+function lireReports(valeur: unknown): Map<string, AccordReporte> {
+  const reports = new Map<string, AccordReporte>();
+  if (!Array.isArray(valeur)) return reports;
+  for (const paire of valeur as unknown[]) {
+    if (!Array.isArray(paire) || paire.length !== 2) continue;
+    const [nom, a] = paire as [unknown, unknown];
+    if (typeof nom !== "string" || typeof a !== "object" || a === null) continue;
+    const { resolveur, le, servi } = a as Record<string, unknown>;
+    if (typeof resolveur !== "string" || typeof servi !== "string") continue;
+    if (typeof le !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(le)) continue;
+    reports.set(nom, { resolveur: resolveur.slice(0, 60), le, servi: servi.slice(0, 2000) });
+  }
+  return reports;
+}
+
+function lireObservations(dossier: string): (ObservationsDuJour & { tauxPannes: number | null }) | null {
   const fichier = path.join(dossier, "observations.json.gz");
   if (!existsSync(fichier)) return null;
   const o = JSON.parse(gunzipSync(readFileSync(fichier)).toString("utf8")) as Observations;
   return {
     date: o.date,
     mesures: { noms: new Map(o.noms), domaines: new Map(o.domaines), hotes: new Map(o.hotes), spf: new Map(o.spf) },
-    controles: { noms: new Map(o.controleNoms), mx: new Map(o.controleMx) },
+    controles: {
+      noms: new Map(o.controleNoms),
+      mx: new Map(o.controleMx),
+      jour: o.date,
+      reports: lireReports(o.reports),
+    },
     pannes: { noms: new Set(o.pannes?.noms ?? []), zones: new Set(o.pannes?.zones ?? []), resolveur: "quad9" },
     tauxPannes:
       typeof o.tauxPannes === "number" && Number.isFinite(o.tauxPannes) && o.tauxPannes >= 0 && o.tauxPannes <= 1
@@ -800,14 +829,26 @@ async function principal(): Promise<number> {
     inacheves: new Set(r.inacheves),
     premierePasseCoupee: r.premierePasseCoupee,
   };
-  // The published state (yesterday's, as a rule): its agreements may be carried today by the names not controlled
-  // today, while what serves them is the same (B.6).
+  // The published state (yesterday's, as a rule): the base of the hysteresis and of the journal.
   const publie = lirePublie(o.donnees);
+  // Yesterday's observations, classified again with today's rules, with their own day and the agreements they carried
+  // (B.6): the hysteresis compares today with them, and the agreements they hold may be carried today by the names not
+  // controlled today, while what serves them is the same.
+  const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
+  const { etat: veille, accords } =
+    veilleObs === null || o.veille === undefined
+      ? { etat: null, accords: new Map<string, AccordReporte>() }
+      : veilleEtAccords(
+          liste,
+          veilleObs,
+          contexteDe(o.veille, ref, true, path.join(travail, "sources", "iptoasn")),
+          heure,
+        );
   const controles: Controles = {
     noms: new Map(r.controleNoms),
     mx: new Map(r.controleMx),
     jour: date,
-    reports: publie === null ? new Map() : accordsReportables(publie.etat, publie.meta.date),
+    reports: accords,
   };
   const pannes: Pannes = { noms: new Set(r.pannes.noms), zones: new Set(r.pannes.zones), resolveur: "quad9" };
   const pannesMx = new Set(r.pannesMx);
@@ -826,6 +867,7 @@ async function principal(): Promise<number> {
     controleNoms: r.controleNoms,
     controleMx: r.controleMx,
     pannes: r.pannes,
+    reports: [...accords],
   };
 
   // Today's state.
@@ -888,18 +930,6 @@ async function principal(): Promise<number> {
     })}\n`,
   );
 
-  const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
-  const veille =
-    veilleObs === null || o.veille === undefined
-      ? null
-      : construireEtat(
-          liste,
-          veilleObs.mesures,
-          veilleObs.controles,
-          contexteDe(o.veille, ref, true, copieIptoasn),
-          heure,
-          veilleObs.pannes,
-        );
   // The rules: the lists and referentials of the repository, and the date of the IPtoASN copy.
   // A suspended fourth rule changes the rules of the day (B.7 bis): its names coming back are never moves.
   const regles = { ...ref.regles, iptoasn: source("iptoasn")?.date ?? null, sousZoneInterne: regleInterne.etat };

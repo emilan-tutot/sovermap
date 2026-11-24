@@ -65,8 +65,10 @@ export type Controles = {
 
 /**
  * An agreement of the control resolver that a name not controlled today may carry (B.6; methode § 5): its last one,
- * published, while what serves the name is the same (its CDN and the AS numbers of its addresses), and for 40 days at
- * most from that control (a cycle of 33 days, and a week for a control missed); never a disagreement.
+ * while what serves the name is the same (its CDN and the AS numbers of its addresses), and for 40 days at most from
+ * that control (a cycle of 33 days, and a week for a control missed); never a disagreement. The agreements travel from
+ * day to day in the day's observations (the Actions cache), never in the published state: the day of a control would
+ * change the record at each control, and a record kept by the hysteresis would carry a stale day.
  */
 export type AccordReporte = { resolveur: string; le: string; servi: string };
 
@@ -87,19 +89,40 @@ function servi(cdn: string | null, reseaux: readonly { as: number }[]): string {
 }
 
 /**
- * The agreements a published state lets today's names carry (B.6): each name's published agreement, with the day of
- * its control (`date`, the day of that state, for an agreement published before that day was written).
+ * The agreements a day's state lets the next day's names carry (B.6): each name whose control agreed that day (`jour`),
+ * or that carried an agreement that day (with the day of its control), and what served it; never a disagreement, nor
+ * an agreement on a name that failed or a reduced record.
  */
-export function accordsReportables(publie: Etat, date: string): Map<string, AccordReporte> {
+export function accordsDuJour(etat: Etat, controles: Controles, jour: string): Map<string, AccordReporte> {
   const accords = new Map<string, AccordReporte>();
-  for (const [nom, e] of publie.noms) {
+  for (const [nom, e] of etat.noms) {
     const c = e.controle;
-    if (c === null || c.accord !== true || e.etat !== "ok" || typeof c.resolveur !== "string") continue;
-    const le = c.le ?? date;
-    if (!JOUR.test(le)) continue;
+    if (c === null || c.accord !== true || e.etat !== "ok" || e.reduit === true) continue;
+    const le = controles.noms.has(nom) ? jour : controles.reports?.get(nom)?.le;
+    if (le === undefined || !JOUR.test(le)) continue;
     accords.set(nom, { resolveur: c.resolveur.slice(0, 60), le, servi: servi(e.cdn?.id ?? null, e.reseaux) });
   }
   return accords;
+}
+
+/** A day's observations, as the next day reads them (the Actions cache): its day, its facts, its controls. */
+export type ObservationsDuJour = { date: string; mesures: Mesures; controles: Controles; pannes: Pannes };
+
+/**
+ * Yesterday's state as today classifies it again (B.6, B.7 bis), and the agreements it lets today's names carry:
+ * today's rules (`contexte`), but its own day and the agreements it carried, so that it is the state it was. The
+ * hysteresis compares today's records with it; null without yesterday's observations.
+ */
+export function veilleEtAccords(
+  liste: ListeReference,
+  veille: ObservationsDuJour | null,
+  contexte: ContexteV1,
+  heure: string,
+): { etat: Etat | null; accords: Map<string, AccordReporte> } {
+  if (veille === null) return { etat: null, accords: new Map() };
+  const controles = { ...veille.controles, jour: veille.date };
+  const etat = construireEtat(liste, veille.mesures, controles, contexte, heure, veille.pannes);
+  return { etat, accords: accordsDuJour(etat, controles, veille.date) };
 }
 
 /** The failures the control resolver confirmed after every attempt (methode § 7): names and zones. */
@@ -146,7 +169,7 @@ export function construireEtat(
     const construire = () => {
       const duJour = controles.noms.get(entree.nom) ?? null;
       let c = coucheAdresses(m, duJour, domaine.perimetre, contexte, heure);
-      let controle = c.controle === null ? null : { ...c.controle, ...(JOUR.test(jour) ? { le: jour } : {}) };
+      let controle = c.controle;
       const report = duJour === null ? controles.reports?.get(entree.nom) : undefined;
       const age = report === undefined ? Number.NaN : joursEntre(report.le, jour);
       if (
@@ -159,7 +182,7 @@ export function construireEtat(
         // Its last control agreed, and what serves the name has not changed since: that agreement still holds, and the
         // name is classified as if the control resolver had answered the same today (methode § 5).
         c = coucheAdresses(m, { resolveur: report.resolveur, mesure: m }, domaine.perimetre, contexte, heure);
-        controle = { resolveur: report.resolveur, accord: true, le: report.le };
+        controle = { resolveur: report.resolveur, accord: true };
       }
       return bornerNom({
         nom: entree.nom,

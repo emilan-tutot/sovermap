@@ -13,10 +13,9 @@ import type { Categorie, Niveau } from "./types";
 /**
  * 2 since 21/11/2026: a domain's reasons of the « État » perimeter gain « sig » and « mesr » (brief C.5). 3 with
  * method 0.3: each exploitant gains `niveauSociete` (rule C2-4); a record of schema 2 reads again with its `niveau`
- * (aJour, below). 4 with B.6: a name's `controle` gains `le`, the day of its control (an agreement is carried); a
- * record of schema 3, without it, reads as controlled on the day of its state (etat-du-jour.ts, accordsReportables).
+ * (aJour, below). B.6 keeps it: the day of a control travels in the day's observations, never in a record.
  */
-export const VERSION_SCHEMA = 4;
+export const VERSION_SCHEMA = 3;
 export const TAILLE_MAX_FRAGMENT = 8 * 1024;
 export const SEUIL_DISJONCTEUR = 0.02;
 export const SEUIL_ECHECS = 0.02;
@@ -52,10 +51,11 @@ export type EnregistrementNom = {
   horsUE: boolean | null;
   niveau: Niveau;
   /**
-   * The control resolver's agreement, and the day of that control (B.6: an agreement is carried while what serves the
-   * name is the same, 40 days at most; `le` is absent from the records published before schema 4).
+   * The control resolver's agreement: the day's, or the last one carried while what serves the name is the same (B.6;
+   * the day of that control stays in the day's observations, never published: it would change the record at each
+   * control).
    */
-  controle: { resolveur: string; accord: boolean; le?: string } | null;
+  controle: { resolveur: string; accord: boolean } | null;
   /** The record was shortened to stay within its size (borner.ts): its lists are partial. */
   tronque?: true;
   /**
