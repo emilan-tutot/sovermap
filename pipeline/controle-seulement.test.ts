@@ -4,7 +4,8 @@
 // - of the files the collection downloads, RIS's two tables are the only ones kept for control;
 // - a control resolver (Quad9, Cloudflare 1.1.1.1) leaves in a published name its own name and whether it agreed,
 //   nothing else: the published schema refuses any other value there, an address or an AS above all;
-// - the collection never asks RIPEstat, an RDAP server or Team Cymru: none of their addresses is in its code.
+// - the collection never asks RIPEstat, an RDAP server or Team Cymru: none of their addresses is in its code (the
+//   counter-check of C.9, a tool run apart that publishes nothing, is the only file that names Team Cymru).
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -54,13 +55,21 @@ describe("nothing republished from a source kept for control only (F.3)", () => 
   });
 
   it("never asks RIPEstat, an RDAP server or Team Cymru: none of their addresses is in the collection's code", () => {
+    // The counter-check (C.9, docs/contre-verification.md) asks Team Cymru on purpose: a tool run by hand, apart from the
+    // collection, that publishes nothing. It is the only file allowed to name them, and no file of the collection may
+    // import it or its module.
+    const outil = path.join("pipeline", "cli", "contre-verifier.ts");
     const fichiers = [
       ...lister(path.join(RACINE, "pipeline")).filter((f) => /\.m?ts$/.test(f) && !/\.test\.m?ts$/.test(f)),
       ...lister(path.join(RACINE, ".github/workflows")),
-    ];
+    ].filter((f) => path.relative(RACINE, f) !== outil);
     expect(fichiers.length).toBeGreaterThan(20);
     const adresses = /stat\.ripe\.net|rdap\.[a-z]|cymru\.com/;
     expect(fichiers.filter((f) => adresses.test(readFileSync(f, "utf8"))).map((f) => path.relative(RACINE, f))).toEqual(
+      [],
+    );
+    const importe = /from ["'][./]+(?:cli\/)?contre-verifi/;
+    expect(fichiers.filter((f) => importe.test(readFileSync(f, "utf8"))).map((f) => path.relative(RACINE, f))).toEqual(
       [],
     );
   });

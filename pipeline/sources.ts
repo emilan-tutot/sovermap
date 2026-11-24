@@ -106,7 +106,7 @@ export class RefusRobots extends Error {}
 
 /** One polite downloader for a whole collection: it remembers each host's robots.txt and last request. */
 export class Telechargeur {
-  readonly #robots = new Map<string, Robots>();
+  readonly #robots = new Map<string, Promise<Robots>>();
   readonly #derniere = new Map<string, number>();
   readonly #agent: string;
   readonly #fetch: typeof fetch;
@@ -131,17 +131,31 @@ export class Telechargeur {
     this.#dormir = options.dormir ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   }
 
-  /** At least one second (or the host's Crawl-delay, if longer) between two requests to one host. */
+  /**
+   * At least one second (or the host's Crawl-delay, if longer) between two requests to one host. The slot is reserved
+   * before the wait: requests asked at once (a reader that asks several ranges together) get one slot each, a spacing
+   * apart, never the same (the review of PR 18).
+   */
   async #attendre(hote: string, delaiSecondes: number | null): Promise<void> {
     const espacement = Math.max(1000, (delaiSecondes ?? 0) * 1000);
-    const attente = (this.#derniere.get(hote) ?? 0) + espacement - Date.now();
+    const prevue = Math.max(Date.now(), (this.#derniere.get(hote) ?? 0) + espacement);
+    this.#derniere.set(hote, prevue);
+    const attente = prevue - Date.now();
     if (attente > 0) await this.#dormir(attente);
-    this.#derniere.set(hote, Date.now());
   }
 
-  async #robotsDe(url: URL): Promise<Robots> {
+  /** A host's robots.txt, read once: requests asked at once wait for the same reading (never two). */
+  #robotsDe(url: URL): Promise<Robots> {
     const connu = this.#robots.get(url.host);
     if (connu) return connu;
+    const lecture = this.#lireRobots(url);
+    this.#robots.set(url.host, lecture);
+    // A reading that failed is not kept: the next request tries again (as before the reading was shared).
+    lecture.catch(() => this.#robots.delete(url.host));
+    return lecture;
+  }
+
+  async #lireRobots(url: URL): Promise<Robots> {
     await this.#attendre(url.host, null);
     const reponse = await this.#fetch(`${url.protocol}//${url.host}/robots.txt`, {
       headers: { "user-agent": this.#agent },
@@ -154,7 +168,6 @@ export class Telechargeur {
         : reponse.ok
           ? lireRobots(await reponse.text())
           : { regles: [], delaiSecondes: null };
-    this.#robots.set(url.host, robots);
     return robots;
   }
 

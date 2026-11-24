@@ -1,0 +1,101 @@
+ctcd,reg,cheflieu,libelle
+01D,84,01053,Conseil départemental de L'Ain
+02D,32,02408,Conseil départemental de L'Aisne
+03D,84,03190,Conseil départemental de L'Allier
+04D,93,04070,Conseil départemental des Alpes-de-Haute-Provence
+05D,93,05061,Conseil départemental des Hautes-Alpes
+06D,93,06088,Conseil départemental des Alpes-Maritimes
+07D,84,07186,Conseil départemental de L'Ardèche
+08D,44,08105,Conseil départemental des Ardennes
+09D,76,09122,Conseil départemental de L'Ariège
+10D,44,10387,Conseil départemental de L'Aube
+11D,76,11069,Conseil départemental de L'Aude
+12D,76,12202,Conseil départemental de L'Aveyron
+13D,93,13055,Conseil départemental des Bouches-du-Rhône
+14D,28,14118,Conseil départemental du Calvados
+15D,84,15014,Conseil départemental du Cantal
+16D,75,16015,Conseil départemental de La Charente
+17D,75,17300,Conseil départemental de La Charente-Maritime
+18D,24,18033,Conseil départemental du Cher
+19D,75,19272,Conseil départemental de La Corrèze
+20R,94,2A004,Collectivité de Corse
+21D,27,21231,Conseil départemental de La Côte-d'Or
+22D,53,22278,Conseil départemental des Côtes-d'Armor
+23D,75,23096,Conseil départemental de La Creuse
+24D,75,24322,Conseil départemental de La Dordogne
+25D,27,25056,Conseil départemental du Doubs
+26D,84,26362,Conseil départemental de La Drôme
+27D,28,27229,Conseil départemental de L'Eure
+28D,24,28085,Conseil départemental d'Eure-et-Loir
+29D,53,29232,Conseil départemental du Finistère
+30D,76,30189,Conseil départemental du Gard
+31D,76,31555,Conseil départemental de La Haute-Garonne
+32D,76,32013,Conseil départemental du Gers
+33D,75,33063,Conseil départemental de La Gironde
+34D,76,34172,Conseil départemental de L'Hérault
+35D,53,35238,Conseil départemental d'Ille-et-Vilaine
+36D,24,36044,Conseil départemental de L'Indre
+37D,24,37261,Conseil départemental d'Indre-et-Loire
+38D,84,38185,Conseil départemental de L'Isère
+39D,27,39300,Conseil départemental du Jura
+40D,75,40192,Conseil départemental des Landes
+41D,24,41018,Conseil départemental du Loir-et-Cher
+42D,84,42218,Conseil départemental de La Loire
+43D,84,43157,Conseil départemental de La Haute-Loire
+44D,52,44109,Conseil départemental de La Loire-Atlantique
+45D,24,45234,Conseil départemental du Loiret
+46D,76,46042,Conseil départemental du Lot
+47D,75,47001,Conseil départemental du Lot-et-Garonne
+48D,76,48095,Conseil départemental de La Lozère
+49D,52,49007,Conseil départemental du Maine-et-Loire
+50D,28,50502,Conseil départemental de La Manche
+51D,44,51108,Conseil départemental de La Marne
+52D,44,52121,Conseil départemental de La Haute-Marne
+53D,52,53130,Conseil départemental de La Mayenne
+54D,44,54395,Conseil départemental de Meurthe-et-Moselle
+55D,44,55029,Conseil départemental de La Meuse
+56D,53,56260,Conseil départemental du Morbihan
+57D,44,57463,Conseil départemental de La Moselle
+58D,27,58194,Conseil départemental de La Nièvre
+59D,32,59350,Conseil départemental du Nord
+60D,32,60057,Conseil départemental de L'Oise
+61D,28,61001,Conseil départemental de L'Orne
+62D,32,62041,Conseil départemental du Pas-de-Calais
+63D,84,63113,Conseil départemental du Puy-de-Dôme
+64D,75,64445,Conseil départemental des Pyrénées-Atlantiques
+65D,76,65440,Conseil départemental des Hautes-Pyrénées
+66D,76,66136,Conseil départemental des Pyrénées-Orientales
+69D,84,69123,Conseil départemental du Rhône
+69M,84,69123,Métropole de Lyon
+6AE,44,67482,Collectivité européenne d'Alsace
+70D,27,70550,Conseil départemental de La Haute-Saône
+71D,27,71270,Conseil départemental de Saône-et-Loire
+72D,52,72181,Conseil départemental de La Sarthe
+73D,84,73065,Conseil départemental de La Savoie
+74D,84,74010,Conseil départemental de La Haute-Savoie
+75C,11,75056,Ville de Paris
+76D,28,76540,Conseil départemental de La Seine-Maritime
+77D,11,77288,Conseil départemental de Seine-et-Marne
+78D,11,78646,Conseil départemental des Yvelines
+79D,75,79191,Conseil départemental des Deux-Sèvres
+80D,32,80021,Conseil départemental de La Somme
+81D,76,81004,Conseil départemental du Tarn
+82D,76,82121,Conseil départemental du Tarn-et-Garonne
+83D,93,83137,Conseil départemental du Var
+84D,93,84007,Conseil départemental du Vaucluse
+85D,52,85191,Conseil départemental de La Vendée
+86D,75,86194,Conseil départemental de La Vienne
+87D,75,87085,Conseil départemental de La Haute-Vienne
+88D,44,88160,Conseil départemental des Vosges
+89D,27,89024,Conseil départemental de L'Yonne
+90D,27,90010,Conseil départemental du Territoire de Belfort
+91D,11,91228,Conseil départemental de L'Essonne
+92D,11,92050,Conseil départemental des Hauts-de-Seine
+93D,11,93008,Conseil départemental de La Seine-Saint-Denis
+94D,11,94028,Conseil départemental du Val-de-Marne
+95D,11,95500,Conseil départemental du Val-d'Oise
+971D,01,97105,Conseil départemental de La Guadeloupe
+972R,02,97209,Collectivité territoriale unique de La Martinique
+973R,03,97302,Collectivité territoriale unique de La Guyane
+974D,04,97411,Conseil départemental de La Réunion
+976R,06,97611,Département-Région de Mayotte

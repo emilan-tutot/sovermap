@@ -73,6 +73,11 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 47 | Cellar (Office des publications) | Numéros, dates et titres des décisions | Aucune licence propre écrite ; faits seulement | Oui, par SPARQL | **Retenue** (faits) |
 | 48 | COG de l'INSEE, pays et territoires étrangers 2026 | Contrôle des codes ISO | Licence Ouverte | Oui, par l'API tabulaire | Contrôle seulement |
 | 49 | EUR-Lex, AELE, ISO | — | — | **Non** (anti-robots ; robots.txt fermé aux agents d'IA ; non consultée) | Écartées ou non lues |
+| 50 | Annuaire de l'administration, base locale (DILA), copie de la DINUM sur Hugging Face | 86 201 guichets locaux : nom, types, sites, SIREN, SIRET, commune, code postal | Licence Ouverte 2.0 ; attribution DILA exigée | Oui, par plages (1,2 % des octets) | **Retenue** |
+| 51 | API Découpage administratif (geo.api.gouv.fr, DINUM) | SIREN → commune → EPCI → département → région | Aucune licence écrite pour les données ; 50 appels/s/IP | Oui | **Retenue sous réserve** (outil de rattachement ; jamais les contours) |
+| 52 | COG de l'INSEE au 01/01/2026 (communes, départements, régions, outre-mer) | Codes et noms officiels (34 875 communes) | Licence Ouverte | Oui, par l'API tabulaire | **Retenue** |
+| 53 | ADMIN EXPRESS COG CARTO PE 2026 (IGN) | Fond de carte : 18 régions, 101 départements, métropole et DROM | Licence Ouverte 2.0 | Oui, par le WFS de la Géoplateforme | **Retenue** |
+| 54 | Contours administratifs (data.gouv.fr), Natural Earth admin-1, pages de l'IGN | — | ODbL ; domaine public ; non lues | Voir la fiche | Écartées ou non retenues |
 | 55 | Observatoire de la qualité des démarches en ligne (DINUM) | Démarches, ministère, volumes, adresses | Licence Ouverte 2.0 | **Non** : `robots.txt` (`/resources`) | **Retenue** (relevé manuel daté, par édition) |
 
 ## Constats qui valent pour tout le projet
@@ -167,6 +172,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Téléchargement automatique testé** : **non**. Son robots.txt (HTTP 200) porte `Disallow: /api/` et `Disallow: /explore/dataset/*/download`. Aucun appel n'a été fait.
   - L'export en masse de la base locale (`lecomarquage.service-public.gouv.fr/donnees_locales_v4/all_latest.tar.bz2`) : 366 264 179 octets, mis à jour le 18/11/2026 (requête HEAD seulement). Le robots.txt de cet hôte répond 403 : le statut de cet accès n'est pas tranché.
 - **Décision : écartée comme canal d'appel.** Les données nationales viennent du Référentiel (fiche 4). La base locale (mairies) reste à ouvrir, avec l'accord de la DILA, plus tard.
+- **Complément du 21/11/2026 (C.6)** : la base locale est lue dans la copie publiée par la DINUM (fiche 50), sous Licence Ouverte 2.0 ; l'accès direct au serveur de la DILA reste non tranché.
 
 ### 4. Référentiel de l'organisation administrative de l'État (DILA)
 - **Producteur** : DILA.
@@ -877,7 +883,237 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
   - **Parade** : ensuite, aucune redirection n'a plus été suivie automatiquement ; chaque saut a été lu, puis vérifié contre le `robots.txt` de son hôte.
 - Les réponses 429 de commission.europa.eu ont été respectées : une seule nouvelle tentative, une dizaine de minutes plus tard, puis plus rien sur ce chemin.
 
-## H. Démarches en ligne
+## H. Territoires : annuaire local, codes officiels, fond de carte
+
+Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026**, entre 18:36 et 18:50 UTC, avec l'agent `Sovermap-bot/0.1.0 (+https://sovermap.vercel.app)`, avec `curl` sans `-L` : aucune redirection n'a été suivie automatiquement. Le `robots.txt` de chaque hôte a été lu d'abord, dans une requête à part. En tout : 39 requêtes, au moins 6 secondes entre deux requêtes vers un même hôte, aucune réponse de plus de 1 778 584 octets.
+
+### 50. Annuaire de l'administration, base de données locales (DILA), copie retraitée par la DINUM sur Hugging Face
+- **Producteur** : Direction de l'information légale et administrative (DILA), jeu « Service-public.gouv.fr - Annuaire de l’administration - Base de données locales » (data.gouv.fr, jeu `53699fe4a3a729239d206227`, publié sous l'organisation « Premier ministre »).
+- **Relais** : organisation `AgentPublic` sur Hugging Face, projet MediaTech.
+  - Le README renvoie au code du projet sur `github.com/etalab-ia/mediatech` (Etalab, à la DINUM) et à un questionnaire sur `grist.numerique.gouv.fr`.
+  - La page de l'organisation ne nomme aucune administration, et Hugging Face ne l'a pas vérifiée (`isVerified: false`, API `/api/organizations/AgentPublic/overview`).
+  - La DINUM comme relais vient donc du brief et de ces deux indices, pas d'une déclaration lue.
+- **Adresse** : https://huggingface.co/datasets/AgentPublic/local-administrations-directory
+  - Métadonnées : `https://huggingface.co/api/datasets/AgentPublic/local-administrations-directory?blobs=true`.
+  - Jeu source cité par le README : https://www.data.gouv.fr/datasets/service-public-fr-annuaire-de-l-administration-base-de-donnees-locales/ ; ce nom redirige (HTTP 308) vers `…/service-public-gouv-fr-annuaire-de-ladministration-base-de-donnees-locales/`.
+  - Fichier d'origine de la DILA, d'après data.gouv.fr : https://lecomarquage.service-public.gouv.fr/donnees_locales_v4/all_latest.tar.bz2 (mis à jour le 21/11/2026 à 03:38 UTC). Il n'a pas été contacté (fiche 3).
+- **Ce qu'on en tire** :
+  - **L'état courant** (configuration `latest`, celle par défaut) : dossier `data/local-administrations-directory-latest/`, deux fichiers Parquet, commit `6c62e5089ef2266a30246ac91fda44816d779377` du 14/11/2026 à 00:38:54 UTC (« Updating local-administrations-directory dataset ») :
+
+    | Fichier | Octets | SHA-256 | Lignes | Groupes de lignes | Pied de page |
+    |---|---|---|---|---|---|
+    | `local_administrations_directory_part_0.parquet` | 260 729 184 | `ef21b3f90768ae2fab1289f89f9eb863b70987d5058c475897d5b09baa3c378e` | 50 000 | 1 | 8 451 octets |
+    | `local_administrations_directory_part_1.parquet` | 188 820 189 | `b14872e951bc4ae77edc2da0c61da0b5a182c4871d3230434a75902e073d0dd0` | 36 201 | 1 | 8 531 octets |
+
+  - Total : 449 549 373 octets et **86 201 lignes**. La DILA annonce « plus de 86 000 guichets publics locaux ». Le brief disait 85 865 lignes au 20/11/2026 : écart non expliqué.
+  - **Les copies datées** : 33. Une en août 2025, en un seul fichier de 614 888 247 octets ; puis 32 en deux fichiers, du 24/10/2025 au 30/10/2026. Depuis le 06/03/2026, une copie tous les 14 jours, deux fois 21 jours. Le dossier `-latest` est réécrit à chaque copie ; la copie du 14/11/2026 n'a pas encore son dossier daté. Le dépôt pèse 19 856 696 429 octets en tout.
+  - **La fraîcheur** : la colonne `modification_date` du second fichier va du 2023-08-09 au **2026-11-12**. La copie reprend donc un fichier de la DILA du 12/11/2026 au plus tôt (le premier fichier n'a pas été lu).
+  - **Les 24 colonnes**, lues dans le pied de page (dans l'ordre du fichier) : `chunk_id`, `doc_id`, `chunk_xxh64`, `types`, `name`, `mission_description`, `addresses`, `phone_numbers` (liste), `mails` (liste), `urls` (liste), `social_medias` (liste), `mobile_applications` (liste), `opening_hours`, `contact_forms` (liste), `additional_information`, `modification_date`, `siret`, `siren`, `people_in_charge`, `organizational_chart` (liste), `hierarchy`, `directory_url`, `chunk_text`, `embeddings_bge-m3`. Toutes les valeurs sont du texte UTF-8, seules ou en listes, et peuvent être vides.
+  - **Les colonnes utiles** (brief) : `name`, `types`, `urls`, `siren`, `siret`, `addresses` (pour la commune et le code postal), `hierarchy`, `modification_date`. Elles pèsent 1,2 % des octets (voir « Lecture des colonnes utiles »). Le lecteur (`pipeline/annuaire-local.ts`) en lit sept : `hierarchy` n'est pas lue, car elle ne servirait qu'avec `chunk_id` (voir plus bas).
+  - **Essai sur le second fichier** :
+    - `types` : 228 valeurs distinctes, aucune vide ; les plus fréquentes : `mairie` 14 938, `ccas` 5 056, `police_municipale` 1 507, `france_services` 1 299, `gendarmerie` 1 282, `epci` 528 ; aussi `cg (Collectivité locale)` 45 et `cr (Collectivité locale)` 12. Les valeurs mêlent un code (`mairie`) et, parfois, une catégorie entre parenthèses ;
+    - `hierarchy` : 35 856 lignes sur 36 201 sans lien ; 345 lignes avec des liens `{type_hierarchie, service}` : « Service Fils » 1 396 liens, « Autre hiérarchie » 125.
+- **Licence ou conditions, mot pour mot** :
+  - jeu Hugging Face : `license: etalab-2.0` (métadonnées de la fiche) ; README : « **Open License (Etalab)** — This dataset is publicly available and can be reused under the conditions of the Etalab open license. » ;
+  - jeu source de la DILA (https://www.data.gouv.fr/api/1/datasets/service-public-gouv-fr-annuaire-de-ladministration-base-de-donnees-locales/) : `"license": "fr-lo"` ; dans la description :
+    - « Les données sont réutilisables gratuitement sous licence ouverte v2.0. » ;
+    - « Les réutilisateurs s’obligent à mentionner : * la paternité des données ( Service-Public.gouv.fr /DILA ) ; * l’url d’accès longue de téléchargement ; * le nom du fichier téléchargé ainsi que la date du fichier. » ;
+    - « Le réutilisateur s’oblige à prendre en compte les demandes de mise à jour de données publiées ponctuellement par la DILA dans le forum de discussion du jeu de données sur data.gouv.fr. »
+  - Réserve : `fr-lo` désigne la Licence Ouverte sans version ; la description dit « v2.0 » (même écart qu'à la fiche 48).
+- **Pourquoi c'est une publication ouverte, et pas un contournement de la fiche 3** :
+  - la fiche 3 écarte un **canal** : l'API Annuaire, fermée par son `robots.txt` (`Disallow: /api/`), et le serveur de la DILA, dont le statut n'est pas tranché. Sovermap n'appelle ni l'un ni l'autre ;
+  - les **données**, elles, sont sous Licence Ouverte 2.0 : la DILA en permet la réutilisation, rediffusion comprise, sans autorisation préalable, contre la mention exigée ci-dessus. Ses conditions ne réservent pas la diffusion à son propre serveur ;
+  - la copie est une **publication distincte**, sous la même licence, faite par une administration (avec la réserve sur le relais), sur un hôte ouvert aux robots (`Allow: /`), sans compte ni condition d'accès (`gated: false`, `private: false`), et faite pour être réutilisée (le README montre comment la charger) ;
+  - un `robots.txt` protège le serveur qui le publie : lire la copie ne sollicite pas les serveurs de la DILA ;
+  - les obligations de la DILA suivent les données : Sovermap affiche l'attribution exigée et tient compte des demandes de mise à jour publiées sur le forum du jeu ;
+  - limite honnête : la copie est **retraitée** (champs regroupés en JSON, texte et vecteurs ajoutés) ; elle peut s'écarter du fichier d'origine. La provenance publiée le dit : « annuaire local (DILA, copie DINUM du <date>) ».
+- **Limites de débit** : annoncées par les en-têtes de Hugging Face, sans compte :
+  - `RateLimit-Policy: "fixed window";"api";q=500;w=300` : 500 appels d'API par fenêtre de 5 minutes ;
+  - `RateLimit-Policy: "fixed window";"resolvers";q=3000;w=300` : 3 000 téléchargements par fenêtre de 5 minutes ;
+  - `X-HF-Warning: unauthenticated; Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.` Aucun jeton n'est nécessaire ; Sovermap n'en utilise pas.
+- **robots.txt** :
+  - https://huggingface.co/robots.txt (HTTP 200, 68 octets) : `User-agent: *`, `Allow: /` ;
+  - les fichiers redirigent (HTTP 302, adresse signée) vers `us.aws.cdn.hf.co` (stockage Xet, `x-hf-cdn-pop: aws-eu-west-3`) ; son `robots.txt` répond 404 : rien n'y est interdit.
+- **Téléchargement automatique testé** : **oui, par plages, sans jamais un fichier entier** :
+  - métadonnées (HTTP 200, 21 716 octets), README épinglé au commit (9 705 octets), liste du dossier `-latest` avec `?expand=true` (2 121 octets : tailles, SHA-256, commit et date) ;
+  - `HEAD` sur `…/resolve/<commit>/<fichier>` : HTTP 302, `X-Linked-Size`, `X-Linked-ETag` (le SHA-256), `X-Xet-Hash`, `X-Repo-Commit`, `Location` vers le CDN ;
+  - plages sur le CDN : HTTP 206, `content-range` exact, `accept-ranges: bytes` ; pieds de page des deux fichiers et trois colonnes utiles du second (`types` 22 727 octets, `hierarchy` 38 908, `modification_date` 44 654), décodées.
+- **Pièges** :
+  - le README annonce `addresses`, `hierarchy` et `people_in_charge` en listes de dictionnaires ; dans le Parquet, ce sont **des chaînes JSON**. On ne peut donc pas lire seulement la commune et le code postal : il faut lire toute la colonne `addresses` (adresse, code postal, commune, pays, longitude, latitude des guichets), puis n'en garder que la commune et le code postal ;
+  - **le pied de page contient des données personnelles** : ses statistiques min/max gardent une valeur de chaque colonne (jusqu'à 256 octets), y compris de `mails`, `phone_numbers` et `people_in_charge`. Des adresses e-mail y ont été trouvées. Le lecteur les écarte dès la lecture du pied (la bibliothèque hyparquet les décode alors en mémoire, le temps de cette lecture), sans jamais les garder ni les écrire ;
+  - toujours lire par le commit (`resolve/<commit>/…`), jamais par `main` : les positions des colonnes ne valent que pour un fichier donné ;
+  - l'adresse signée du CDN expire (durée non mesurée) : la demander juste avant les plages ;
+  - fichiers écrits par DuckDB 1.3.2 : compression ZSTD, un seul groupe de lignes par fichier, pas d'index de pages, pages de données « v1 », encodage par dictionnaire pour les colonnes répétitives ;
+  - `chunk_id` et `doc_id` sont identiques (README) ; `hierarchy.service` désigne vraisemblablement le `chunk_id` d'une autre ligne (non vérifié). Pour suivre `hierarchy`, il faudrait aussi lire `chunk_id` ;
+  - aucun code Insee de commune dans les colonnes : le rattachement passe par le SIREN (fiche 51) ou par la commune et le code postal (fiche 52) ;
+  - le README commence par un bandeau de questionnaire : sans effet sur les données.
+- **Données personnelles** : `people_in_charge` (noms, titres et grades de responsables), `mails`, `phone_numbers`, `chunk_text` (qui reprend les responsables) et `embeddings_bge-m3` (vecteurs calculés sur `chunk_text`). Jamais lues, jamais recopiées. Voir aussi le piège du pied de page. **Le texte libre gardé** (le nom du guichet et sa commune) passe par le contrôle de la consigne P13 (`pipeline/personnelles.ts`, 23/11/2026).
+  - Un nom qui contient une adresse e-mail, un téléphone ou une forme de nom de personne n'est jamais gardé. Le guichet est alors nommé par sa nature et sa commune (« Mairie d'Exemple »). Une commune dans ce cas est laissée vide.
+  - L'écart est compté dans `copie.json`, par sorte, jamais recopié.
+  - Le texte est contrôlé en entier (2 000 caractères au plus), avant d'être coupé (300 pour le nom, 120 pour la commune).
+  - La collecte quotidienne rejoue le même contrôle en relisant `guichets.jsonl`, et compte ses écarts dans `etat.json`.
+  - `copie.json` porte la version des règles de lecture (`regles`). Une copie lue sous d'autres règles est relue, même si ses fichiers n'ont pas changé : une correction atteint `donnees` sans attendre une nouvelle copie.
+  - La date de l'état est la modification la plus récente de toutes les lignes lues.
+- **Attribution à afficher** : « Source : Service-Public.gouv.fr / DILA — Annuaire de l'administration, Base de données locales, fichier all_latest.tar.bz2 (https://lecomarquage.service-public.gouv.fr/donnees_locales_v4/all_latest.tar.bz2) dans son état du <date>, repris dans la copie retraitée par la DINUM (https://huggingface.co/datasets/AgentPublic/local-administrations-directory/resolve/<commit>/data/local-administrations-directory-latest/local_administrations_directory_part_0.parquet et …_part_1.parquet, copie du <date du commit>) — Licence Ouverte 2.0. » La date de l'état est la plus récente `modification_date` lue.
+- **Décision : retenue**, lue par un workflow à chaque nouvelle copie (SHA-256 changé), colonnes utiles seulement, par plages ; provenance « annuaire local ».
+
+### Lecture des colonnes utiles (méthode pour le workflow)
+
+Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque copie : le pied de page se relit à chaque fois.
+
+1. **Repérer une nouvelle copie** : `GET https://huggingface.co/api/datasets/AgentPublic/local-administrations-directory/tree/main/data/local-administrations-directory-latest?expand=true` donne, pour chaque fichier, sa taille, son SHA-256 (`lfs.oid`) et son commit (`lastCommit.id`, `lastCommit.date`). SHA-256 inchangés : on s'arrête là.
+2. **Ouvrir chaque fichier par son commit** : `GET …/resolve/<commit>/<fichier>` répond 302 vers `us.aws.cdn.hf.co` (adresse signée) ; `X-Linked-Size` donne la taille.
+3. **Lire la longueur du pied** : `Range: bytes=<taille-8>-<taille-1>`, soit 8 octets : la longueur sur 4 octets, puis `PAR1`.
+4. **Lire exactement le pied** : 8 451 octets pour le premier fichier, 8 531 pour le second. Il donne le schéma, le nombre de lignes, et pour chaque colonne sa position (`dictionary_page_offset` ou `data_page_offset`) et sa taille (`total_compressed_size`). Écarter aussitôt les statistiques.
+5. **Lire seulement les colonnes utiles** : le lecteur demande une plage par colonne et par groupe de lignes, jamais à cheval sur une autre colonne ; le pied n'est pas cru, et une plage utile qui chevaucherait une autre colonne est refusée. Le tableau suivant, relevé pendant l'étude, regroupait les colonnes voisines et comptait `hierarchy` :
+
+   | Fichier | Plage (octets) | Taille | Colonnes |
+   |---|---|---|---|
+   | part_0 | 2305432-2815688 | 510 257 | `types` + `name` |
+   | part_0 | 2875266-4722733 | 1 847 468 | `addresses` |
+   | part_0 | 5432276-5795784 | 363 509 | `urls` |
+   | part_0 | 6811008-7163526 | 352 519 | `modification_date` + `siret` + `siren` |
+   | part_0 | 7359358-7424559 | 65 202 | `hierarchy` |
+   | part_1 | 1670078-2045964 | 375 887 | `types` + `name` |
+   | part_1 | 2096304-3437294 | 1 340 991 | `addresses` |
+   | part_1 | 3954797-4224803 | 270 007 | `urls` |
+   | part_1 | 4949551-5209515 | 259 965 | `modification_date` + `siret` + `siren` |
+   | part_1 | 5351675-5390582 | 38 908 | `hierarchy` |
+
+6. **Décoder** : pages ZSTD (Node 26 : `zlib.zstdDecompressSync`), encodage par dictionnaire ou simple ; `addresses` et `hierarchy` sont du JSON à analyser ; ne garder de `addresses` que `commune` et `code_postal`.
+
+- **Bilan de l'étude** : 10 plages et **5 424 713 octets** au lieu de 449 549 373, soit 1,21 % ; environ 17 requêtes par copie (1 liste, puis par fichier : 1 redirection, 2 pour le pied, 5 plages). Le lecteur, sans `hierarchy` et une plage par colonne, en fait un peu plus, pour un peu moins d'octets.
+- Les colonnes exclues pèsent 435 911 120 octets (96,97 %), dont 432 809 548 pour les seuls vecteurs.
+- Avec `chunk_id` en plus (pour suivre `hierarchy`) : 12 plages, 7 057 818 octets (1,57 %).
+- **Prouvé** : `types`, `hierarchy` et `modification_date` du second fichier, lus par plage et décodés (pages « v1 », dictionnaire, aucune valeur vide).
+- **Pas encore essayé** : `name`, `addresses`, `siren`, `siret` (pages sans dictionnaire, à vérifier) et `urls`, colonne de listes : il faut décoder aussi les niveaux de répétition. Une bibliothèque Parquet (dépendance à choisir) ou un petit lecteur maison (environ 150 lignes pour l'essai) suffit.
+
+### 51. API Découpage administratif (geo.api.gouv.fr)
+- **Producteur** : Direction interministérielle du numérique (DINUM), d'après le catalogue des API de data.gouv.fr (fiche `672cf6946a8456f417812b0f`, « API Découpage Administratif - (API Geo) », du 07/11/2024).
+- **Adresse** : https://geo.api.gouv.fr ; fiche : https://www.data.gouv.fr/dataservices/api-decoupage-administratif-api-geo ; documentation : https://geo.api.gouv.fr/decoupage-administratif ; définition OpenAPI : https://geo.api.gouv.fr/definition.yml (non lue).
+- **Ce qu'on en tire** :
+  - les 18 régions (13 de métropole ; 01 Guadeloupe, 02 Martinique, 03 Guyane, 04 La Réunion, 06 Mayotte) ;
+  - les 101 départements, avec leur région et leur `zone` : `metro` 96, `drom` 5 (971, 972, 973, 974, 976) ;
+  - pour chaque commune : code Insee, nom, codes postaux, **SIREN**, **code de l'EPCI** (son SIREN), département et région. Essai : les 17 communes de Mayotte, toutes avec un SIREN et un EPCI ;
+  - c'est la clé du rattachement : SIREN de la mairie (fiche 50) → commune → EPCI → département → région ;
+  - les EPCI ont aussi leur point d'entrée, d'après le catalogue (non testé).
+- **Licence ou conditions, mot pour mot** :
+  - catalogue de data.gouv.fr : `"license": null` ; `"access_type": "open"` ;
+  - « [Toutes les données utilisées](https://github.com/etalab/api-communes#données-sources) sont sous licences Open Data. » ;
+  - « Partenaires de l'API » : « Direction interminstérielle du numérique », « Insee », « OpenStreetMap » ;
+  - le README du code (https://raw.githubusercontent.com/etalab/api-communes/master/README.md, lu le 21/11/2026) n'a plus de section sur les sources ; il dit seulement « # Licence » « MIT », pour le code. La page de documentation ne parle ni des sources ni des licences ;
+  - **aucune licence n'est donc écrite pour les données de l'API.**
+- **Limites de débit, mot pour mot** : « 50 appels / seconde / IP » ; « L'API est disponible à hauteur de 50 appels par seconde et par adresse IP. » Réponses en `cache-control: public, max-age=3600, immutable`.
+- **robots.txt** (https://geo.api.gouv.fr/robots.txt, HTTP 200, 43 octets) : `User-agent: *`, `Disallow: # your rules here`. Le `Disallow` est vide : tout est ouvert.
+- **Téléchargement automatique testé** : **oui** (HTTP 200) :
+  - `/regions` : 653 octets ;
+  - `/departements?fields=code,nom,codeRegion,zone` : 6 593 octets ;
+  - `/communes?codeDepartement=976&fields=nom,code,codesPostaux,siren,codeEpci,codeDepartement,codeRegion&format=json` : 2 458 octets ;
+  - toutes les communes en un seul appel : non essayé (sans doute plus de 2 Mo) ; un appel par département (101) suffirait.
+- **Pièges** :
+  - les contours servis par l'API viennent du jeu « Contours administratifs », sous ODbL (fiche 54) : **jamais** `geometry`, `contour` ni la position des mairies ;
+  - les codes postaux viennent sans doute de la base de La Poste, dont la licence n'a pas été lue : ne pas les publier ; le SIREN suffit au rattachement ;
+  - les collectivités d'outre-mer (Saint-Pierre-et-Miquelon, Saint-Barthélemy, Saint-Martin, Wallis-et-Futuna, Polynésie française, Nouvelle-Calédonie) ne sont pas dans `/departements` ;
+  - les codes de département sont des chaînes (`2A`, `2B`, `976`).
+- **Données personnelles** : aucune dans les champs lus. L'adresse de contact de la fiche n'est pas reprise.
+- **Attribution à afficher** : aucune exigée (aucune licence écrite). Par courtoisie : « Rattachements : API Découpage administratif (geo.api.gouv.fr), DINUM ».
+- **Décision : retenue sous réserve, comme outil de rattachement** (SIREN → commune → EPCI → département → région).
+  - Rien de l'API n'est republié tel quel : les codes et les noms affichés viennent du COG (fiche 52).
+  - Jamais les contours, la position des mairies ni les codes postaux.
+  - Réserve à lever : une licence écrite pour les données de l'API (question à la DINUM, plus tard, par une adresse sur sovermap.com).
+
+### 52. Code officiel géographique au 01/01/2026 : communes, départements, régions, outre-mer (INSEE)
+- **Producteur** : Institut national de la statistique et des études économiques (INSEE).
+- **Adresse** : https://www.data.gouv.fr/datasets/code-officiel-geographique-1 (jeu `58c984b088ee386cdb1261f3`, déjà cité à la fiche 48 ; mis à jour le 07/11/2026). Ressources du 24/02/2026, lisibles par l'API tabulaire :
+
+  | Ressource | Fichier sur insee.fr | Identifiant |
+  |---|---|---|
+  | Communes, arrondissements municipaux, communes déléguées et associées | `v_commune_2026.csv` | `c5800591-813b-4ce2-9a3f-739a9c5d9558` |
+  | Départements | `v_departement_2026.csv` | `e5f32177-5841-4a46-9c17-f8ff94bd38fc` |
+  | Régions | `v_region_2026.csv` | `f7057d4e-0078-45de-95b7-2a0ce6594807` |
+  | Collectivités territoriales ayant les compétences départementales | `v_ctcd_2026.csv` | `2f280951-f937-46c3-a695-cefd72d1e687` |
+  | Collectivités et territoires d'outre-mer | `v_comer_2026.csv` | `62cf1ca1-f3db-4f49-bfa1-69aca93d34f1` |
+  | Communes des collectivités d'outre-mer | `v_commune_comer_2026.csv` | `f47969be-310d-4871-b6c4-6005dbf46a00` |
+
+- **Ce qu'on en tire** :
+  - **34 875 communes** au 01/01/2026 (`TYPECOM` = `COM`) ;
+  - colonnes : `TYPECOM`, `COM` (code Insee), `REG`, `DEP`, `CTCD`, `ARR`, `TNCC`, `NCC`, `NCCENR`, `LIBELLE`, `CAN`, `COMPARENT` ;
+  - les codes et les noms officiels, et le rattachement de chaque commune à son département et à sa région ;
+  - ni SIREN ni code postal : d'où la fiche 51.
+- **Licence ou conditions, mot pour mot** : « Licence Ouverte / Open Licence » (`fr-lo`), comme à la fiche 48.
+- **robots.txt** :
+  - www.insee.fr ferme `*.csv` (fiche 48) : les fichiers ne se téléchargent pas sur insee.fr ;
+  - www.data.gouv.fr (relu le 21/11/2026) laisse ouverte l'API de métadonnées `/api/1/datasets/<id>/` ;
+  - tabular-api.data.gouv.fr : pas de `robots.txt` (404, relu le 21/11/2026).
+- **Téléchargement automatique testé** : **oui**, par l'API tabulaire : `…/api/resources/c5800591-813b-4ce2-9a3f-739a9c5d9558/data/?TYPECOM__exact=COM&page_size=3`, HTTP 200, 1 197 octets, `meta.total` = 34 875.
+- **Pièges** :
+  - un même fichier mêle communes, arrondissements municipaux (Paris, Lyon, Marseille), communes déléguées et associées : filtrer par `TYPECOM` ;
+  - l'outre-mer hors DROM est dans deux fichiers à part ;
+  - des pages de 200 lignes ont été acceptées par l'API tabulaire (lecture du 21/11/2026, `referentiels/cog/LISEZMOI.md`), soit environ 175 requêtes pour les 34 875 lignes des communes. Le COG change une fois par an : une copie épinglée dans `referentiels/`, mise à jour par PR comme la PSL (fiche 42), est plus simple.
+- **Données personnelles** : aucune.
+- **Attribution à afficher** : « Source : Insee, Code officiel géographique au 01/01/2026 (communes, départements, régions), Licence Ouverte ».
+- **Décision : retenue** : codes et noms officiels, base de tout rattachement territorial ; copie annuelle épinglée.
+
+### 53. ADMIN EXPRESS COG CARTO PE, édition 2026 (IGN) : fond de carte des régions et des départements
+- **Producteur** : Institut national de l'information géographique et forestière (IGN), établissement public.
+- **Adresse** :
+  - fiche data.gouv.fr de l'IGN : https://www.data.gouv.fr/datasets/admin-express-admin-express-cog-admin-express-cog-carto-admin-express-cog-carto-pe-admin-express-cog-carto-plus-pe (jeu `5808de39c751df1e0679df72`, moissonné du catalogue de la Géoplateforme, identifiant `IGNF_ADMIN-EXPRESS`, mis à jour le 19/11/2026) ;
+  - service WFS de la Géoplateforme : https://data.geopf.fr/wfs/ows, couches `ADMINEXPRESS-COG-CARTO-PE.2026:region` et `ADMINEXPRESS-COG-CARTO-PE.2026:departement` (aussi en `.LATEST` et `.2025`) ;
+  - fiche produit https://geoservices.ign.fr/adminexpress : non lue (voir robots.txt).
+- **Ce qu'on en tire** (GeoJSON, WGS 84, `urn:ogc:def:crs:EPSG::4326`) :
+
+  | Couche | Entités | Octets | Compressé (gzip) | Points |
+  |---|---|---|---|---|
+  | Régions | 18 : 13 de métropole et 5 d'outre-mer | 772 459 | 303 410 | 30 445 |
+  | Départements | 101 : 96 de métropole et 971, 972, 973, 974, 976 | 1 778 584 | 694 278 | 69 726 |
+
+  - propriétés : `cleabs`, `code_insee`, `code_insee_de_la_region` (départements), `code_siren`, `nom_officiel`, `nom_officiel_en_majuscules` ; Corse en `2A` et `2B` ;
+  - les DROM sont à leur vraie place (Mayotte vers 45° E et 13° S) : des encarts restent à dessiner ;
+  - résolution : « 1/500000 » ; dernière édition : « ADMIN EXPRESS - Edition Novembre 2026 » (métadonnées) ;
+  - les collectivités d'outre-mer n'y sont pas : le produit couvre « le territoire métropolitain et les départements d'outre-mer ».
+- **Licence ou conditions, mot pour mot** :
+  - data.gouv.fr : `"license": "lov2"` ;
+  - catalogue de l'IGN (champs `license` et `rights`) : « Licence Ouverte / Open License (compatible ODC-BY, CC-BY 2.0) https://www.etalab.gouv.fr/wp-content/uploads/2018/11/open-licence.pdf » ; `accessRights` : `…/LimitationsOnPublicAccess/noLimitations` ;
+  - provenance : « Depuis la version 4.0, plusieurs améliorations : ajout d'une généralisation petite échelle, transformation des pseudo-cantons en vrai cantons, cohérence géométrique avec les strates administratives. »
+- **Limites de débit** : aucune lue.
+- **robots.txt** :
+  - https://data.geopf.fr/robots.txt : 404 (rien d'interdit) ;
+  - https://geoservices.ign.fr/robots.txt : 301 vers https://cartes.gouv.fr/robots.txt. Saut non suivi : aucune page de ces deux hôtes n'a été lue.
+- **Téléchargement automatique testé** : **oui**. WFS 2.0.0 `GetFeature`, `OUTPUTFORMAT=application/json`, `SRSNAME=EPSG:4326` : HTTP 200, réponse en morceaux (sans `Content-Length`), `numberMatched` = `numberReturned` (18 et 101).
+- **Pour une version simplifiée servie par le site, il faudrait** :
+  1. une copie datée des deux couches dans `referentiels/`, une par millésime (`.2026`, jamais `.LATEST`), avec sa date et son SHA-256, mise à jour par PR comme la PSL ;
+  2. une simplification qui garde les frontières communes (arcs partagés, par exemple en TopoJSON), puis l'arrondi des coordonnées. Ordre de grandeur mesuré par un essai grossier (Douglas-Peucker anneau par anneau, sans topologie, 3 décimales) :
+     - départements à 0,005° (environ 500 m) : 18 731 points, 300 627 octets (89 291 compressés) ;
+     - départements à 0,01° : 11 031 points, 184 831 octets (54 579 compressés) ;
+     - régions à 0,005° : 124 583 octets (37 697 compressés) ;
+  3. des encarts pour les cinq DROM : un choix visible, donc trois propositions (règle du projet) ;
+  4. un fichier statique, sans lecture de données à la demande. S'il ouvre une famille d'adresses nouvelle : une adresse réelle dans `ADRESSES_PORTE` (`lib/porte.ts`), vérifiée par `probe:prod` et `e2e/porte.spec.ts` ;
+  5. l'outil de simplification : une dépendance à choisir (licence à lire) ou un petit script maison ;
+  6. l'attribution sur la page Données, qui dit que les contours sont simplifiés.
+- **Pièges** :
+  - le jeu dérivé « Contours administratifs » de data.gouv.fr, déjà simplifié, est sous **ODbL** (fiche 54) : ne jamais le prendre à sa place ;
+  - `.LATEST` change sans prévenir : toujours un millésime ;
+  - coordonnées très précises : 1,78 Mo brut pour les départements.
+- **Données personnelles** : aucune.
+- **Attribution à afficher** : « Fond de carte : IGN, ADMIN EXPRESS COG CARTO PE, édition <mois année>, Licence Ouverte 2.0 ; contours simplifiés par Sovermap ».
+- **Décision : retenue** : fond de carte des régions et des départements, métropole et DROM. Natural Earth (fiche 41) reste le fond du monde.
+- **Copie épinglée le 23/11/2026** (`referentiels/fond-de-carte/`, sa notice) : la couche des départements seule, `.2026`, 1 778 584 octets (la taille lue le 21/11/2026), SHA-256 `70edeac239cb3363edda6e045a2650c7b4bdeb211aca09a1b453969b466aba2c`, trois propriétés gardées. Les régions ne sont pas téléchargées : leurs frontières se tirent de celles des départements (chacun porte le code de sa région), si bien que les deux ne peuvent jamais différer ; la décision ne change pas. Simplification : un petit script maison (`pipeline/carte.ts`), sans dépendance, qui garde les frontières communes (chaque frontière simplifiée une seule fois pour les deux voisins). Encarts des DROM : dans une colonne à gauche, chacun à sa propre échelle (la meilleure version, montrée en planche au propriétaire ; elle se défait).
+
+### 54. Sources écartées ou non retenues pour les territoires (21/11/2026)
+- **Contours administratifs** (data.gouv.fr, jeu `683424e996857155175d4f68`, organisation « data.gouv.fr », mis à jour le 04/05/2026) : **écartée**.
+  - Licence : `"license": "odc-odbl"`.
+  - Mot pour mot : « Le jeu de données a été constitué sur https://github.com/datagouv/contours-administratifs à partir : du produit Admin Express de l’IGN ; des données OpenStreetMap (OSM) pour les communes et zonages couvrant les COM, à l’exception des Îles de la Polynésie française […] et de la Nouvelle Calédonie […] » ; et : « Ce jeu de données est utilisé par l’API Découpage Administratif ».
+  - Il serait commode (versions toutes prêtes à 1000 m : départements 337 867 octets, 99 413 compressés ; régions 147 941 octets, 42 566 compressés), mais l'ODbL est exclue. Conséquence : jamais les contours de geo.api.gouv.fr (fiche 51).
+- **Natural Earth au 1:10m, admin-1** (`ne_10m_admin_1_states_provinces.zip`) : **non retenue pour l'instant**.
+  - Requête `HEAD` seulement : HTTP 200, 14 909 524 octets, `Last-Modified: Fri, 13 May 2022 05:20:49 GMT`.
+  - robots.txt de naciscdn.org : HTTP 403 (objet absent ; un 4xx n'interdit rien).
+  - Domaine public (fiche 41). Contenu pour la France non lu (trop gros pour cet essai) : découpage et date des limites non vérifiés.
+  - ADMIN EXPRESS (fiche 53), officiel et de novembre 2026, suffit. Natural Earth reste le recours pour les collectivités d'outre-mer, au niveau du pays (fichier de la fiche 41).
+- **Pages de l'IGN** (geoservices.ign.fr, cartes.gouv.fr) : non lues (`robots.txt` redirigé). La licence vient de la fiche data.gouv.fr de l'IGN (fiche 53).
+- **Base locale sur le serveur de la DILA** (`lecomarquage.service-public.gouv.fr`) et **API « compétence géographique des services locaux »** (`api-lannuaire.service-public.gouv.fr`, fermée par `Disallow: /api/`, fiche 3) : pas contactées.
+- **Codes postaux de La Poste** : non lus ; licence inconnue ; pas utilisés.
+
+## I. Démarches en ligne
 
 ### 55. Observatoire de la qualité des démarches en ligne (DINUM)
 - **Producteur** : Direction interministérielle du numérique (DINUM), observatoire « Vos Démarches Essentielles » (VDE).
@@ -912,6 +1148,9 @@ Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers ut
 - **Office des publications de l'Union européenne** (fiches 43 et 44) : « Source : Office des publications de l'Union européenne, EU Vocabularies (table « Countries and territories ») et Code de rédaction interinstitutionnel, lus le <date> ».
 - **Union européenne, CC BY 4.0** (fiches 45 et 46) : « © Union européenne, <date>, CC BY 4.0 » (liste des États membres, décisions d'adéquation de la Commission).
 - **Insee, Licence Ouverte** (fiche 48), si le contrôle des codes est cité : « Insee, Code officiel géographique, pays et territoires étrangers au 01/01/2026 ».
+- **DILA** (fiche 50) : « Source : Service-Public.gouv.fr / DILA — Annuaire de l'administration, Base de données locales, fichier all_latest.tar.bz2 (https://lecomarquage.service-public.gouv.fr/donnees_locales_v4/all_latest.tar.bz2) dans son état du <date>, repris dans la copie retraitée par la DINUM (Hugging Face, AgentPublic/local-administrations-directory, copie du <date du commit>) — Licence Ouverte 2.0 ».
+- **Insee** (fiche 52) : « Source : Insee, Code officiel géographique au 01/01/2026 (communes, départements, régions), Licence Ouverte ».
+- **IGN** (fiche 53) : « Fond de carte : IGN, ADMIN EXPRESS COG CARTO PE, édition <mois année>, Licence Ouverte 2.0 ; contours simplifiés par Sovermap ».
 - **DINUM** (fiche 55), si les démarches sont montrées : « Source : DINUM, Observatoire de la qualité des démarches en ligne, édition <n> (<mois année>), Licence Ouverte 2.0 ».
 
 **De courtoisie :**
@@ -921,3 +1160,4 @@ Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers ut
 - « Fond de carte : Natural Earth (domaine public) » ;
 - « Domaines enregistrés : Public Suffix List (publicsuffix.org), MPL 2.0, version du <date> » ;
 - « Références des décisions de l'UE : Cellar, Office des publications de l'Union européenne » (fiche 47).
+- « Rattachements : API Découpage administratif (geo.api.gouv.fr), DINUM » (fiche 51).
