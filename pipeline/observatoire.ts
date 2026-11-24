@@ -175,7 +175,7 @@ export function demarchesDe(lignes: readonly Cellule[][], suffixes: ListeSuffixe
 }
 
 /** The démarches' referential (referentiels/demarches.json): its edition, the day it was published, its démarches. */
-export type ReferentielDemarches = { edition: number; publiee: string; demarches: Demarche[] };
+export type ReferentielDemarches = { edition: number; periode: string; publiee: string; demarches: Demarche[] };
 
 const JOUR = /^\d{4}-\d{2}-\d{2}$/;
 const ID = /^\d{1,9}$/;
@@ -192,12 +192,15 @@ export function lireReferentielDemarches(brut: unknown): ReferentielDemarches {
   const source = objet(racine?.["source"]);
   const edition = source?.["edition"];
   const publiee = source?.["publiee"];
+  const periode = source?.["periode"];
   const liste = racine?.["demarches"];
   if (
     typeof edition !== "number" ||
     !Number.isSafeInteger(edition) ||
     edition < 1 ||
     typeof publiee !== "string" ||
+    typeof periode !== "string" ||
+    !/^\p{L}+ \d{4}$/u.test(periode) ||
     !JOUR.test(publiee) ||
     !Array.isArray(liste) ||
     liste.length > 2000
@@ -240,5 +243,5 @@ export function lireReferentielDemarches(brut: unknown): ReferentielDemarches {
   const ids = demarches.map((d) => Number(d.id));
   if (new Set(ids).size !== ids.length || ids.some((n, i) => i > 0 && n <= (ids[i - 1] ?? 0)))
     throw new Error("referentiels/demarches.json : identifiants en double ou hors d'ordre");
-  return { edition, publiee, demarches };
+  return { edition, periode, publiee, demarches };
 }

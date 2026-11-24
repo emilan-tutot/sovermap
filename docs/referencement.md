@@ -50,6 +50,7 @@ Proposée au point 11 du chantier 2, appliquée en attendant la réponse du prop
 | Accueil (Atlas) | `index, follow` | Le chiffre, sa définition, les pays |
 | Ministères : la liste et chaque ministère | `index, follow` | Répond à « Ministère des Armées : qui héberge ses sites ? », avec ces mots dans le titre |
 | Sociétés : la liste et chaque société | `index, follow` | Répond à « quels sites publics sert telle société » |
+| Démarches : la liste (C.8) | `index, follow` | Répond à « qui héberge le site de telle démarche en ligne », une seule page, avec le nom de chaque démarche |
 | Pays qui servent au moins un domaine | `index, follow` | Répond à « quels sites publics dépendent d'une société des États-Unis » |
 | Pays sans aucun domaine | `noindex, follow` | Une page vide n'apporte rien à qui cherche |
 | Radiographies du périmètre « État » | `index, follow` | La fiche d'un site de l'État, sourcée couche par couche (environ 1 900) |

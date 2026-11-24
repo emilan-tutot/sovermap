@@ -17,11 +17,12 @@ export async function GET(): Promise<Response> {
   if (!indexingOpen()) return ABSENT();
   const etat = await lecteur.etat();
   if (etat.statut !== "ok") return etat.statut === "indisponible" ? INDISPONIBLE() : ABSENT();
-  const [luMinisteres, luSocietes, luPays, luTerritoires] = await Promise.all([
+  const [luMinisteres, luSocietes, luPays, luTerritoires, luDemarches] = await Promise.all([
     lecteur.fichier("index/ministeres.json"),
     lecteur.fichier("index/exploitants.json"),
     lecteur.fichier("index/pays.json"),
     lecteur.fichier("index/territoires.json"),
+    lecteur.fichier("index/demarches.json"),
   ]);
   const ministeres = luMinisteres.statut === "ok" ? lireMinisteres(luMinisteres.donnees) : null;
   const societes = luSocietes.statut === "ok" ? lireIndexSocietes(luSocietes.donnees) : null;
@@ -32,9 +33,12 @@ export async function GET(): Promise<Response> {
   if (luTerritoires.statut !== "ok" && luTerritoires.statut !== "absent") return INDISPONIBLE();
   const territoires = luTerritoires.statut === "ok" ? lireIndexTerritoires(luTerritoires.donnees) : null;
   if (luTerritoires.statut === "ok" && territoires === null) return INDISPONIBLE();
+  // The démarches' page, once their index is published (C.8, D.2); an index published but unreadable is an error.
+  if (luDemarches.statut !== "ok" && luDemarches.statut !== "absent") return INDISPONIBLE();
   const adresses: AdressePlan[] = [
     { chemin: "/" },
     { chemin: "/ministeres" },
+    ...(luDemarches.statut === "ok" ? [{ chemin: "/demarches" }] : []),
     ...ministeres.map((m) => ({ chemin: `/ministeres/${m.slug}` })),
     { chemin: "/societes" },
     ...[...societes.keys()].map((cle) => ({ chemin: `/societes/${cle}` })),

@@ -20,6 +20,7 @@ const PAGES: [string, string][] = [
   ["/societes/hebergeur-fr", "Hébergeur Exemple"],
   ["/ministeres", fr.ministeres.titre],
   ["/ministeres/ministere-de-l-exemple", "Ministère de l’Exemple"],
+  ["/demarches", fr.demarches.titre],
   ["/journal", fr.journal.titre],
   ["/journal/2026-11-21", fr.journal.jour("21/11/2026")],
   ["/pays/etats-unis", "États-Unis"],
@@ -154,6 +155,7 @@ test("plans du site : un index de deux sous-plans, qui ne listent que les pages 
       "/",
       "/ministeres",
       "/ministeres/ministere-de-l-exemple",
+      "/demarches",
       "/societes",
       "/societes/hebergeur-fr",
       "/pays/etats-unis",
@@ -437,7 +439,8 @@ test("impression : une Radiographie s'imprime sans en-tête, modes ni pied de pa
 }) => {
   await page.goto("/radiographie/service.example");
   await page.emulateMedia({ media: "print" });
-  for (const masque of [".entete", ".radiographie-modes", ".pied"]) await expect(page.locator(masque).first()).toBeHidden();
+  for (const masque of [".entete", ".radiographie-modes", ".pied"])
+    await expect(page.locator(masque).first()).toBeHidden();
   await expect(page.locator(".couche").first()).toBeVisible();
   await expect(page.locator("section.citer")).toBeVisible();
   await page.emulateMedia({ media: "screen" });

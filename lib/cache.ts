@@ -29,6 +29,7 @@ const AGREGATS = [
   "/societes/:cle",
   "/ministeres",
   "/ministeres/:slug",
+  "/demarches",
   "/pays/:slug",
   "/journal",
   "/qualite",
