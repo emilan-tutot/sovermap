@@ -81,6 +81,8 @@ import {
 import { agentUtilisateur, Telechargeur } from "../sources";
 import type { ResultatSpf } from "../spf";
 import { type EtatSource, releverManuel, telechargerSources } from "../telechargements";
+import { indexCommunes, lireGuichetsPublies, territoiresDesDomaines } from "../territoires";
+import { indexTerritoires, lireNomsCog } from "../territoires-index";
 import { validerListeFastly } from "../valider";
 import { lireZip } from "../zip";
 
@@ -758,6 +760,31 @@ async function principal(): Promise<number> {
   const gardePannes = gardesPannes(tauxPannes, pannesVeille);
   const b = bilan(jour, veille, publie?.etat ?? null, reglesChangees);
 
+  // The territories (C.6): each domain's, from the local directory's offices whose websites are among its names
+  // (territoires/annuaire/, published by annuaire.yml) and the official communes of the COG (referentiels/cog/). Not a
+  // measured layer: computed again each day from these copies, after the comparison with yesterday, so it never enters
+  // the journal or the circuit breaker; a domain without a territory has none.
+  const annuaire = o.donnees === undefined ? null : path.join(o.donnees, "territoires", "annuaire", "guichets.jsonl");
+  // The offices' free text passes the control of personal data again (P13), counted with the others in etat.json.
+  const ecartsGuichets: Ecarts = {};
+  const publies = lireGuichetsPublies(
+    annuaire !== null && existsSync(annuaire) ? readFileSync(annuaire, "utf8") : "",
+    ecartsGuichets,
+  );
+  const nomsParDomaine = new Map<string, string[]>([...b.etat.domaines.keys()].map((d) => [d, [d]]));
+  for (const [nom, e] of b.etat.noms) nomsParDomaine.get(e.domaine)?.push(nom);
+  const territoires = territoiresDesDomaines(
+    nomsParDomaine,
+    publies.guichets,
+    indexCommunes(readFileSync(path.join(RACINE, "referentiels", "cog", "communes-2026.csv"), "utf8")),
+  );
+  for (const [domaine, d] of b.etat.domaines) {
+    const sans = { ...d };
+    delete sans.territoire;
+    const t = territoires.get(domaine);
+    b.etat.domaines.set(domaine, t === undefined ? sans : { ...sans, territoire: t });
+  }
+
   // The files.
   const asVus = new Set<number>();
   for (const n of b.etat.noms.values()) for (const r of n.reseaux) asVus.add(r.as);
@@ -798,6 +825,10 @@ async function principal(): Promise<number> {
       ] as const;
     }),
   );
+  // The territories' index (D.2): the régions and départements with their official names, then each département's
+  // communes and groups of communes (pipeline/territoires-index.ts).
+  const cog = (fichier: string) => readFileSync(path.join(RACINE, "referentiels", "cog", fichier), "utf8");
+  const nomsCog = lireNomsCog(cog("regions-2026.csv"), cog("departements-2026.csv"), cog("comer-2026.csv"));
   const figures = chiffres(b.etat, METHODE);
   // The day of each domain's last change on the site (D.7, the sitemaps' lastmod).
   const jours = joursDeChangement(
@@ -810,6 +841,7 @@ async function principal(): Promise<number> {
   const fichiers: Fichiers = new Map([
     ...fragments("noms", b.etat.noms),
     ...fragments("domaines", b.etat.domaines),
+    ...indexTerritoires(b.etat, nomsCog),
     ...index(b.etat, {
       as: new Map(
         [...asVus].map((a) => {
@@ -1008,7 +1040,7 @@ async function principal(): Promise<number> {
       enregistrementsReduits: rapportJour.reduits,
       nomsDilaNeutralises: dila?.neutralises ?? 0,
       // The free text left out because it held an e-mail address, a phone or a person's name (P13), by source.
-      texteLibreEcarte: ajouterEcarts(dila?.ecarts ?? {}, ecartsAs),
+      texteLibreEcarte: ajouterEcarts(ajouterEcarts(dila?.ecarts ?? {}, ecartsAs), ecartsGuichets),
       enregistrementsEnErreur: rapportJour.erreurs,
       domainesEnEchec,
       echecsNonConfirmes,
@@ -1048,6 +1080,18 @@ async function principal(): Promise<number> {
               seconde: debitServeurs.seconde,
             },
       disjoncteur: b.disjoncteur,
+    },
+    // The territories' coverage (C.6): the published offices read, and the domains given a territory, by kind.
+    territoires: {
+      guichets: publies.guichets.length,
+      lignesEcartees: publies.ecartees,
+      domaines: territoires.size,
+      communes: [...territoires.values()].filter((t) => t.commune !== null).length,
+      groupements: [...territoires.values()].filter((t) => t.groupement !== null).length,
+      departementsSeuls: [...territoires.values()].filter(
+        (t) => t.commune === null && t.groupement === null && t.departement !== null,
+      ).length,
+      regionsSeules: [...territoires.values()].filter((t) => t.departement === null && t.region !== null).length,
     },
     journal: { etatInitial: b.etatInitial, reglesChangees: b.reglesChangees, changements: b.changements.length },
     jours:
