@@ -38,11 +38,18 @@ function decoder(texte: string): string {
 
 /**
  * The text of a cell: its paragraphs, their spaces, tabs and line breaks as one space each; every tag removed; the
- * control and format characters (direction marks, zero-width spaces, soft hyphens) removed (the review of C.8).
+ * control and format characters (direction marks, zero-width spaces, soft hyphens) removed (the review of C.8). No
+ * angle bracket is kept, even one a character reference wrote (`&lt;script`): the text of a démarche never holds a
+ * tag for whoever reads the published data as HTML (CodeQL, 24/11/2026; edition 15 has none).
  */
 function texteCellule(xml: string): string {
   return [...xml.matchAll(/<text:p\b[^>]*>([\s\S]*?)<\/text:p>/g)]
-    .map((p) => decoder((p[1] ?? "").replace(/<text:(?:s|tab|line-break)\b[^>]*\/>/g, " ").replace(/<[^>]*>/g, "")))
+    .map((p) =>
+      decoder((p[1] ?? "").replace(/<text:(?:s|tab|line-break)\b[^>]*\/>/g, " ").replace(/<[^>]*>/g, "")).replace(
+        /[<>]/g,
+        "",
+      ),
+    )
     .join(" ")
     .replace(/\s+/g, " ")
     .replace(/[\p{Cc}\p{Cf}]/gu, "")
@@ -206,10 +213,17 @@ export function lireReferentielDemarches(brut: unknown): ReferentielDemarches {
     liste.length > 2000
   )
     throw new Error("referentiels/demarches.json : édition, date ou démarches illisibles");
-  const texte = (v: unknown, max: number): string | null =>
-    typeof v === "string" && v.trim() !== "" && v.length <= max ? v : null;
+  // A text as the reader of the edition writes it: trimmed, not empty, bounded, without any control or format
+  // character; anything else is undefined, never quietly emptied (the review of the index).
+  const texte = (v: unknown, max: number): string | undefined =>
+    typeof v === "string" && v !== "" && v === v.trim() && v.length <= max && !/[\p{Cc}\p{Cf}]/u.test(v)
+      ? v
+      : undefined;
   const volume = (v: unknown): number | null | undefined =>
     v === null ? null : typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : undefined;
+  // A name exactly as nomValide writes it: an invalid or a differently written one is undefined, never null.
+  const nomOuNul = (v: unknown): string | null | undefined =>
+    v === null ? null : typeof v === "string" && nomValide(v) === v ? v : undefined;
   const demarches = liste.map((brute, i): Demarche => {
     const d = objet(brute);
     const id = d?.["id"];
@@ -218,14 +232,13 @@ export function lireReferentielDemarches(brut: unknown): ReferentielDemarches {
     const administration = d?.["administration"] === null ? null : texte(d?.["administration"], 120);
     const volumeTotal = volume(d?.["volumeTotal"]);
     const volumeEnLigne = volume(d?.["volumeEnLigne"]);
-    const hote = d?.["hote"] === null ? null : typeof d?.["hote"] === "string" ? nomValide(d["hote"]) : undefined;
-    const domaine =
-      d?.["domaine"] === null ? null : typeof d?.["domaine"] === "string" ? nomValide(d["domaine"]) : undefined;
+    const hote = nomOuNul(d?.["hote"]);
+    const domaine = nomOuNul(d?.["domaine"]);
     if (
       typeof id !== "string" ||
       !ID.test(id) ||
-      nom === null ||
-      perimetre === null ||
+      nom === undefined ||
+      perimetre === undefined ||
       administration === undefined ||
       volumeTotal === undefined ||
       volumeEnLigne === undefined ||

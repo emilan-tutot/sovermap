@@ -6,6 +6,7 @@
 // change of rules or of the list; on the first day the initial state is published, without changes.
 import { createHash } from "node:crypto";
 import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
+import { raisonExclusion } from "./noms";
 import type { ReferentielDemarches } from "./observatoire";
 import type { Territoire } from "./territoires";
 import type { Categorie, Niveau } from "./types";
@@ -504,12 +505,15 @@ export function index(
  * index/demarches.json (C.8, D.2): each démarche of the Observatoire's edition, in the order of its identifier, with
  * what the edition says of it (never its marks) and, when the name of its address was measured that day, what serves
  * it: the state of its web name, its category, outside the EU or not, the level, the companies that serve it (their
- * keys, as index/exploitants.json names them) and its CDN. An address outside the list (set aside by a rule) or with no
- * record that day: « mesure » null.
+ * keys, as index/exploitants.json names them) and its CDN. An address with no record that day: « mesure » null. An
+ * address the method calls internal or technical is never published (docs/methode.md § 3: « ni mesurés ni affichés »;
+ * the review of the démarches' page).
  */
 export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): string {
   const demarches = referentiel.demarches.map((d) => {
-    const web = d.hote === null ? undefined : etat.noms.get(d.hote);
+    const exclue = d.hote !== null && d.domaine !== null && raisonExclusion(d.hote, d.domaine) !== null;
+    const hote = exclue ? null : d.hote;
+    const web = hote === null ? undefined : etat.noms.get(hote);
     return {
       id: d.id,
       nom: d.nom,
@@ -517,8 +521,8 @@ export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): s
       administration: d.administration,
       volumeTotal: d.volumeTotal,
       volumeEnLigne: d.volumeEnLigne,
-      hote: d.hote,
-      domaine: d.domaine,
+      hote,
+      domaine: exclue ? null : d.domaine,
       mesure:
         web === undefined
           ? null
@@ -529,6 +533,9 @@ export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): s
               niveau: web.niveau,
               societes: [...new Set(web.exploitants.flatMap((e) => (e.societe === null ? [] : [e.societe])))].sort(),
               cdn: web.cdn?.id ?? null,
+              // A record reduced or shortened that day: what it says is partial, as its Radiographie says (the review of
+              // the index).
+              partiel: web.reduit === true || web.tronque === true,
             },
     };
   });
