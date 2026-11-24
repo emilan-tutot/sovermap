@@ -5,6 +5,7 @@
 // its volumes, and the name its address is on with its registered domain; never its marks (satisfaction,
 // accessibility, clear language…): Sovermap describes dependencies, not the quality of a démarche. Pure.
 import { nomValide } from "./liste";
+import { motifsPersonnels } from "./personnelles";
 import { domaineEnregistrable, type ListeSuffixes } from "./psl";
 
 export type Demarche = {
@@ -171,4 +172,73 @@ export function demarchesDe(lignes: readonly Cellule[][], suffixes: ListeSuffixe
     });
   }
   return demarches.sort((a, b) => Number(a.id) - Number(b.id));
+}
+
+/** The démarches' referential (referentiels/demarches.json): its edition, the day it was published, its démarches. */
+export type ReferentielDemarches = { edition: number; publiee: string; demarches: Demarche[] };
+
+const JOUR = /^\d{4}-\d{2}-\d{2}$/;
+const ID = /^\d{1,9}$/;
+
+/**
+ * referentiels/demarches.json, read and checked at the border (C.8, D.2): each field typed and bounded, names and
+ * domains valid, in the order of the identifiers. Its free texts (a démarche's name, its perimeter, its administration)
+ * pass the control of personal data (P13): one found refuses the referential, to be read by hand, never published.
+ */
+export function lireReferentielDemarches(brut: unknown): ReferentielDemarches {
+  const objet = (v: unknown): Record<string, unknown> | null =>
+    typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+  const racine = objet(brut);
+  const source = objet(racine?.["source"]);
+  const edition = source?.["edition"];
+  const publiee = source?.["publiee"];
+  const liste = racine?.["demarches"];
+  if (
+    typeof edition !== "number" ||
+    !Number.isSafeInteger(edition) ||
+    edition < 1 ||
+    typeof publiee !== "string" ||
+    !JOUR.test(publiee) ||
+    !Array.isArray(liste) ||
+    liste.length > 2000
+  )
+    throw new Error("referentiels/demarches.json : édition, date ou démarches illisibles");
+  const texte = (v: unknown, max: number): string | null =>
+    typeof v === "string" && v.trim() !== "" && v.length <= max ? v : null;
+  const volume = (v: unknown): number | null | undefined =>
+    v === null ? null : typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : undefined;
+  const demarches = liste.map((brute, i): Demarche => {
+    const d = objet(brute);
+    const id = d?.["id"];
+    const nom = texte(d?.["nom"], 300);
+    const perimetre = texte(d?.["perimetre"], 120);
+    const administration = d?.["administration"] === null ? null : texte(d?.["administration"], 120);
+    const volumeTotal = volume(d?.["volumeTotal"]);
+    const volumeEnLigne = volume(d?.["volumeEnLigne"]);
+    const hote = d?.["hote"] === null ? null : typeof d?.["hote"] === "string" ? nomValide(d["hote"]) : undefined;
+    const domaine =
+      d?.["domaine"] === null ? null : typeof d?.["domaine"] === "string" ? nomValide(d["domaine"]) : undefined;
+    if (
+      typeof id !== "string" ||
+      !ID.test(id) ||
+      nom === null ||
+      perimetre === null ||
+      administration === undefined ||
+      volumeTotal === undefined ||
+      volumeEnLigne === undefined ||
+      hote === undefined ||
+      domaine === undefined ||
+      (hote === null) !== (domaine === null) ||
+      (hote !== null && domaine !== null && hote !== domaine && !hote.endsWith(`.${domaine}`))
+    )
+      throw new Error(`referentiels/demarches.json : démarche ${i + 1} illisible`);
+    for (const t of [nom, perimetre, administration ?? ""])
+      if (motifsPersonnels(t).length > 0)
+        throw new Error(`referentiels/demarches.json : démarche ${id}, un texte qui peut nommer une personne`);
+    return { id, nom, perimetre, administration, volumeTotal, volumeEnLigne, hote, domaine };
+  });
+  const ids = demarches.map((d) => Number(d.id));
+  if (new Set(ids).size !== ids.length || ids.some((n, i) => i > 0 && n <= (ids[i - 1] ?? 0)))
+    throw new Error("referentiels/demarches.json : identifiants en double ou hors d'ordre");
+  return { edition, publiee, demarches };
 }

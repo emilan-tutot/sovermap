@@ -6,6 +6,7 @@
 // change of rules or of the list; on the first day the initial state is published, without changes.
 import { createHash } from "node:crypto";
 import type { CoucheAdresses, CoucheHotes, CoucheSpf } from "./couches";
+import type { ReferentielDemarches } from "./observatoire";
 import type { Territoire } from "./territoires";
 import type { Categorie, Niveau } from "./types";
 
@@ -408,6 +409,8 @@ export function index(
     organismesDe: ReadonlyMap<string, readonly string[]>;
     /** The day of each domain's last change on the site (joursDeChangement), for the sitemaps' lastmod (D.7). */
     jours?: ReadonlyMap<string, string>;
+    /** The démarches of the Observatoire's edition (C.8), for their page (D.2): index/demarches.json. */
+    demarches?: ReferentielDemarches;
   },
 ): Fichiers {
   const fichiers: Fichiers = new Map();
@@ -488,7 +491,46 @@ export function index(
     "index/ministeres.json",
     `${jsonStable(Object.fromEntries([...parMinistere.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([m, v]) => [m, { nom: details.organismes.get(m)?.nom ?? null, domaines: trie(v) }])))}\n`,
   );
+  if (details.demarches !== undefined) fichiers.set("index/demarches.json", indexDemarches(etat, details.demarches));
   return fichiers;
+}
+
+/**
+ * index/demarches.json (C.8, D.2): each démarche of the Observatoire's edition, in the order of its identifier, with
+ * what the edition says of it (never its marks) and, when the name of its address was measured that day, what serves
+ * it: the state of its web name, its category, outside the EU or not, the level, the companies that serve it (their
+ * keys, as index/exploitants.json names them) and its CDN. An address outside the list (set aside by a rule) or with no
+ * record that day: « mesure » null.
+ */
+export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): string {
+  const demarches = referentiel.demarches.map((d) => {
+    const web = d.hote === null ? undefined : etat.noms.get(d.hote);
+    return {
+      id: d.id,
+      nom: d.nom,
+      perimetre: d.perimetre,
+      administration: d.administration,
+      volumeTotal: d.volumeTotal,
+      volumeEnLigne: d.volumeEnLigne,
+      hote: d.hote,
+      domaine: d.domaine,
+      mesure:
+        web === undefined
+          ? null
+          : {
+              etat: web.etat,
+              categorie: web.categorie,
+              horsUE: web.horsUE,
+              niveau: web.niveau,
+              societes: [...new Set(web.exploitants.flatMap((e) => (e.societe === null ? [] : [e.societe])))].sort(),
+              cdn: web.cdn?.id ?? null,
+            },
+    };
+  });
+  return `${jsonStable({
+    source: { fiche: 55, edition: referentiel.edition, publiee: referentiel.publiee },
+    demarches,
+  })}\n`;
 }
 
 export type Part = {
