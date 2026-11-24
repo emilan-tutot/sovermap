@@ -417,6 +417,11 @@ export function index(
     jours?: ReadonlyMap<string, string>;
     /** The démarches of the Observatoire's edition (C.8), for their page (D.2): index/demarches.json. */
     demarches?: ReferentielDemarches;
+    /**
+     * The names the day's list set aside, every rule together (ListeReference.ecartes): a démarche's address among them
+     * is never published (the final review of the site: the day's rules decide, the fourth one suspended or not).
+     */
+    nomsEcartes?: ReadonlySet<string>;
   },
 ): Fichiers {
   const fichiers: Fichiers = new Map();
@@ -497,7 +502,8 @@ export function index(
     "index/ministeres.json",
     `${jsonStable(Object.fromEntries([...parMinistere.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([m, v]) => [m, { nom: details.organismes.get(m)?.nom ?? null, domaines: trie(v) }])))}\n`,
   );
-  if (details.demarches !== undefined) fichiers.set("index/demarches.json", indexDemarches(etat, details.demarches));
+  if (details.demarches !== undefined)
+    fichiers.set("index/demarches.json", indexDemarches(etat, details.demarches, details.nomsEcartes));
   return fichiers;
 }
 
@@ -509,9 +515,17 @@ export function index(
  * address the method calls internal or technical is never published (docs/methode.md § 3: « ni mesurés ni affichés »;
  * the review of the démarches' page).
  */
-export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): string {
+export function indexDemarches(
+  etat: Etat,
+  referentiel: ReferentielDemarches,
+  /** The names the day's list set aside (its own rules); without it, the method's rules by default. */
+  nomsEcartes?: ReadonlySet<string>,
+): string {
   const demarches = referentiel.demarches.map((d) => {
-    const exclue = d.hote !== null && d.domaine !== null && raisonExclusion(d.hote, d.domaine) !== null;
+    const exclue =
+      d.hote !== null &&
+      d.domaine !== null &&
+      (nomsEcartes === undefined ? raisonExclusion(d.hote, d.domaine) !== null : nomsEcartes.has(d.hote));
     const hote = exclue ? null : d.hote;
     const web = hote === null ? undefined : etat.noms.get(hote);
     return {

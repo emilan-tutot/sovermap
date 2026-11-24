@@ -1114,6 +1114,7 @@ async function principal(): Promise<number> {
       organismesDe: new Map([...liste.domaines].map(([cle, d]) => [cle, d.organismes])),
       jours,
       demarches: ref.observatoire,
+      nomsEcartes: new Set([...liste.ecartes.values()].flatMap((noms) => [...noms])),
     }),
     ["agregats/chiffres.json", `${jsonStable(figures)}\n`],
     [

@@ -530,6 +530,25 @@ describe("the index of the démarches (C.8, D.2)", () => {
     expect(lu.demarches[0]?.mesure).toBeNull();
     // An address the method calls internal or technical (a test environment) is never published (methode § 3).
     expect(lu.demarches[3]).toMatchObject({ hote: null, domaine: null, mesure: null });
+    // The day's list decides, with its own rules (the final review of the site): a name it set aside is never
+    // published, one it kept is (a site the SIG lists, a suspended fourth rule).
+    const avecListe = (ecartes: string[]) =>
+      (
+        JSON.parse(
+          indexDemarches(
+            e,
+            {
+              edition: 15,
+              periode: "octobre 2026",
+              publiee: "2026-10-20",
+              demarches: [demarche("1764", "www.service.example"), demarche("2001", "recette.service.example")],
+            },
+            new Set(ecartes),
+          ),
+        ) as { demarches: { hote: unknown }[] }
+      ).demarches.map((d) => d.hote);
+    expect(avecListe(["www.service.example"])).toEqual([null, "recette.service.example"]);
+    expect(avecListe([])).toEqual(["www.service.example", "recette.service.example"]);
     expect(lu.demarches[1]?.mesure).toEqual({
       etat: "ok",
       categorie: "France",
