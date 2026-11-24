@@ -1,12 +1,15 @@
 // The démarches' page (C.8, D.2): the online démarches the DINUM's Observatoire follows, the most used first (the
 // volume its edition gives), each with the name of its address and what serves it that day. From the day's index
 // (index/demarches.json, checked here, entry by entry). Pure.
-import { raisonExclusion } from "@/pipeline/noms";
+import type { Etat } from "@/pipeline/mesure";
 import type { Lecture } from "./lecture";
 import type { Categorie, Niveau } from "./radiographie";
 
 /** The state of a name, as the collection publishes it (pipeline/mesure.ts): never another word. */
-export type EtatNom = "ok" | "nxdomain" | "nodata" | "echec";
+export type EtatNom = Etat;
+/** Every state, checked by the type: a state added to the collection must be added here (the final review). */
+const ETATS_CONNUS: Record<EtatNom, true> = { ok: true, nxdomain: true, nodata: true, echec: true };
+const ETATS = Object.keys(ETATS_CONNUS) as EtatNom[];
 
 export type MesureDemarche = {
   etat: EtatNom;
@@ -43,7 +46,6 @@ const CATEGORIES: readonly Categorie[] = [
   "non déterminé",
 ];
 const NIVEAUX: readonly Niveau[] = ["confirmé", "probable", "non déterminé"];
-const ETATS: readonly EtatNom[] = ["ok", "nxdomain", "nodata", "echec"];
 const NOM = /^[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]*[a-z0-9_])?)+$/;
 const CLE = /^[a-z0-9-]{1,80}$/;
 
@@ -79,7 +81,8 @@ function mesureDe(v: unknown): MesureDemarche | null {
 /**
  * index/demarches.json, checked: an entry that is not a démarche is left out; the most used first (the edition's
  * total volume; a démarche the edition gives no volume comes after), then in the alphabetical order of their names. An
- * address the method calls internal or technical is never shown (docs/methode.md § 3: « ni mesurés ni affichés »).
+ * address the method calls internal or technical is never published in the index: the collection decides it, with the
+ * day's rules (docs/methode.md § 3: « ni mesurés ni affichés »; the final review: the site never guesses it again).
  */
 export function lireIndexDemarches(valeur: unknown): IndexDemarches | null {
   const racine = objet(valeur);
@@ -107,7 +110,7 @@ export function lireIndexDemarches(valeur: unknown): IndexDemarches | null {
       continue;
     const hote = nom(d["hote"]);
     const domaine = nom(d["domaine"]);
-    const adresse = hote !== null && domaine !== null && raisonExclusion(hote, domaine) === null;
+    const adresse = hote !== null && domaine !== null;
     demarches.push({
       id,
       nom: nomDemarche,

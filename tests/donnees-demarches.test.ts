@@ -70,18 +70,14 @@ describe("the démarches' index, as the site reads it (C.8, D.2)", () => {
     expect(lireIndexDemarches("index")).toBeNull();
   });
 
-  it("never tells an unknown state as a failure, and never shows an address the method excludes", () => {
-    // The review of the démarches' page: a state the collection does not publish is no measure; an address the method
-    // calls internal or technical (here a test environment) is neither measured nor shown (docs/methode.md § 3).
+  it("never tells an unknown state as a failure", () => {
+    // The review of the démarches' page: a state the collection does not publish is no measure. (An address the method
+    // excludes never reaches the index: the collection decides it with the day's rules, pipeline/publication.ts.)
     const lu = lireIndexDemarches({
       source,
-      demarches: [
-        demarche("1", 3, "www.service.example", { ...mesure, etat: "reduit" }),
-        demarche("2", 2, "recette.service.example", mesure),
-      ],
+      demarches: [demarche("1", 3, "www.service.example", { ...mesure, etat: "reduit" })],
     });
     expect(lu?.demarches.find((d) => d.id === "1")?.mesure).toBeNull();
-    expect(lu?.demarches.find((d) => d.id === "2")).toMatchObject({ hote: null, domaine: null, mesure: null });
   });
 });
 

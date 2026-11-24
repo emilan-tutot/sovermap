@@ -78,3 +78,8 @@ Mesuré par `scripts/design/vitesse.ts` (Pixel 7, « Fast 4G », processeur × 4
 Budgets (DESIGN.md § 13) : LCP 1,8 s, CLS 0,02, INP 100 ms au plus : tenus. Contrôles sur 11 pages : 0 défilement horizontal, 0 erreur de console, 0 requête vers un autre domaine ; axe : 0, après la correction des blocs de commandes de la Radiographie (`scrollable-region-focusable`, six fois à 390 px avant). Le serveur local lit les données sur GitHub : le premier rendu d'une page n'est pas compté (une requête de mise en route avant les passages).
 
 Images par seconde du globe de l'Atlas, avec les fils du jour 1 (`scripts/design/fps.ts`, Edge sans fenêtre, ANGLE Intel UHD Graphics, Direct3D 11, 12 s de rotation lente) : ordinateur 240 (au plus bas 240, densité 1,5) ; Pixel 9 émulé, processeur × 4 : 234 (au plus bas 225, densité 2). Cibles : 60 et 30.
+
+## Chantier 2 : la page des démarches (24/11/2026, build local porte ouverte, données d'essai et vrai référentiel)
+
+- Le tableau des démarches suit DESIGN.md § 6 : un nom d'hôte ne se coupe qu'après un point (`Valeur`, police à chasse fixe), jamais au milieu d'un mot. Avec le vrai référentiel (édition 15), le plus long morceau d'un nom fait 35 signes, environ 294 px à 14 px : entre 641 et environ 850 px de large, le tableau dépasse son cadre et y défile de côté (un cadre nommé, atteignable au clavier) ; au-delà, il tient ; au téléphone (40 rem ou moins), les lignes s'empilent et rien ne défile. C'est le prix voulu de la règle des coupures (la relecture finale de la PR du site).
+- Au téléphone, l'accent « hors UE » reste sur la colonne du siège (DESIGN.md § 1.2) : cela vaut aussi pour les tableaux des domaines des communes, des départements et des groupements.
