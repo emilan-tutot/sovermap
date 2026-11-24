@@ -118,6 +118,10 @@ describe("the reading of the Observatoire (C.8)", () => {
     ).toBe("Je déclare l'exemple");
     // An unknown entity stays text, even one named like a property of every object.
     expect(lignesOds(CONTENU.replace("DEX", "&constructor;")).lignes[1]?.[3]?.texte).toBe("&constructor;");
+    // No angle bracket is kept, even one a character reference wrote: never a tag in the published text (CodeQL).
+    expect(lignesOds(CONTENU.replace("DEX", "&lt;script&gt;DEX&#60;/script&#x3E;")).lignes[1]?.[3]?.texte).toBe(
+      "scriptDEX/script",
+    );
   });
 
   it("refuses an edition with a cell's comment or note, and drops control or direction characters", () => {

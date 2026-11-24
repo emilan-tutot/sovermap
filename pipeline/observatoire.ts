@@ -38,11 +38,18 @@ function decoder(texte: string): string {
 
 /**
  * The text of a cell: its paragraphs, their spaces, tabs and line breaks as one space each; every tag removed; the
- * control and format characters (direction marks, zero-width spaces, soft hyphens) removed (the review of C.8).
+ * control and format characters (direction marks, zero-width spaces, soft hyphens) removed (the review of C.8). No
+ * angle bracket is kept, even one a character reference wrote (`&lt;script`): the text of a démarche never holds a
+ * tag for whoever reads the published data as HTML (CodeQL, 24/11/2026; edition 15 has none).
  */
 function texteCellule(xml: string): string {
   return [...xml.matchAll(/<text:p\b[^>]*>([\s\S]*?)<\/text:p>/g)]
-    .map((p) => decoder((p[1] ?? "").replace(/<text:(?:s|tab|line-break)\b[^>]*\/>/g, " ").replace(/<[^>]*>/g, "")))
+    .map((p) =>
+      decoder((p[1] ?? "").replace(/<text:(?:s|tab|line-break)\b[^>]*\/>/g, " ").replace(/<[^>]*>/g, "")).replace(
+        /[<>]/g,
+        "",
+      ),
+    )
     .join(" ")
     .replace(/\s+/g, " ")
     .replace(/[\p{Cc}\p{Cf}]/gu, "")
