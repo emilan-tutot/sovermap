@@ -62,6 +62,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 | 38 | Wikidata | Pays du siège, maison mère (indices) | CC0 | **Non** : robots.txt (SPARQL, API) | Contrôle seulement (lecture manuelle) |
 | 39 | Rapports annuels des groupes | Confirmation des maisons mères | Faits seulement, aucune reproduction | Au cas par cas | **Retenue** (méthode) |
 | 56 | Légifrance (DILA) | — | — | **Non** : défi anti-robots sur le `robots.txt` | Écartée |
+| 57 | DECP (données essentielles de la commande publique) | Marchés des acheteurs publics et leurs titulaires | Licence Ouverte 2.0 | **Non** : `static.data.gouv.fr/resources` fermé aux robots | Piste |
 | 40 | Catalogue des services qualifiés SecNumCloud de l'ANSSI | Services qualifiés, fournisseur, dates, décision | Licence etalab-2.0 (mention du site de l'ANSSI) | **Non** : anti-robots | **Retenue** (relevé manuel daté) |
 | 41 | Natural Earth | Fond de carte | Domaine public | Oui | **Retenue** |
 | 42 | Public Suffix List (Mozilla et contributeurs) | Le domaine enregistré de chaque nom | MPL 2.0 | Oui (copie datée épinglée, mise à jour par PR) | **Retenue** (outil de calcul) |
@@ -247,6 +248,7 @@ Version du 18/11/2026 (chantier T1, partie A), mise à jour le 19/11/2026 avec l
 - **Licence ou conditions** : « Licence Ouverte / Open Licence version 2.0 ».
 - **Téléchargement automatique testé** : oui, par l'API tabulaire.
 - **Données personnelles** : noms des présidents, jamais copiés.
+- **Piste (brief C.8, 23/11/2026)** : publier les domaines de ses 790 sites demanderait d'abord de changer cette décision. Les sites des groupements (EPCI) entrent déjà par l'annuaire local de service-public.fr (fiche 50, PR n° 18) ; la décision ne change pas au chantier 2.
 - **Décision : retenue en contrôle seulement.**
 
 ### 11. FINESS — structures (Agence du Numérique en Santé)
@@ -590,6 +592,15 @@ Chaque suffixe est lu dans la documentation du fournisseur, le 18/11/2026 :
 - **Écart corrigé** : `referentiels/societes.json` citait, pour le rattachement de la DINUM à l'État, le décret n° 2019-1088 du 25 octobre 2019 (lu le 19/11/2026, pendant la partie B), sans fiche au registre. La citation est retirée le 21/11/2026 (C.1) : ce rattachement repose sur le Référentiel de l'organisation administrative de l'État (fiche 4) et sur Sirene (fiche 32).
 - **Décision : écartée** (fermée aux robots). Si un texte devenait nécessaire, une personne le lirait dans un navigateur ordinaire, pour un relevé manuel daté.
 
+### 57. DECP : données essentielles de la commande publique
+- **Producteur** : les acheteurs publics, qui doivent publier les données essentielles de leurs marchés ; la consolidation quotidienne publiée sur data.gouv.fr est celle d'un réutilisateur (jeu `608c055b35eb4e6ee20eb325`, « Données essentielles de la commande publique consolidées (format tabulaire) »).
+- **Ce qu'on en tirerait** : les marchés passés par les organismes publics avec les sociétés qui hébergent ou servent leurs sites, un fait de plus sur les exploitants (brief C.8).
+- **Licence** : `lov2` (Licence Ouverte 2.0), d'après les métadonnées du jeu sur data.gouv.fr, lues le 23/11/2026 par son API.
+- **Accès** : `decp.parquet` (278 534 136 octets) et `decp.csv.gz` (438 062 877 octets), mis à jour chaque jour, sous `static.data.gouv.fr/resources`, que le `robots.txt` de l'hôte ferme à tout agent (`Disallow: /resources`, lu le 23/11/2026, fichier daté du 03/08/2026). **Aucun accès automatique permis.**
+- **Données personnelles** : un titulaire peut être une personne physique (un entrepreneur individuel) : jamais repris.
+- **Les conditions du brief (C.8)** : un accès automatique propre, puis un rapprochement avec les exploitants juste à 95 % sur un échantillon vérifié à la main, jamais pour un titulaire personne physique. Le premier manque ; le second n'a donc pas été tenté.
+- **Décision : piste.** À rouvrir au chantier 3 si un accès automatique permis existe (une API des DECP est annoncée sur data.gouv.fr : ses conditions et son `robots.txt` d'abord).
+
 ## E. Qualification et fond de carte
 
 ### 40. Catalogue des services qualifiés SecNumCloud de l'ANSSI
@@ -874,16 +885,18 @@ Toutes les pages, API et fichiers de cette section ont été lus le **21/11/2026
 - **Licence** : Licence Ouverte 2.0 (champ `license` du jeu : « lov2 »).
 - **Fichiers** : une édition par trimestre, en ODS, une seule feuille (`T_VDE`).
   - Dernière édition : « Observatoire 2 - édition 15 (octobre-2026) », publiée le 20/10/2026, 43 521 octets.
-  - Précédente : édition 14 (juillet-2026), publiée le 28/09/2026, 43 045 octets ; 245 démarches.
+  - Précédente : édition 14 (juillet-2026), publiée le 28/09/2026, 43 045 octets ; 243 démarches (compte du 22/11/2026, ligne par ligne ; « 245 », écrit ici le 21/11/2026, était faux).
 - **Téléchargement automatique testé** : **non**, et il ne se fera pas.
   - Le `robots.txt` de static.data.gouv.fr (le même que celui de www.data.gouv.fr, lu le 21/11/2026) ferme `/resources` à tous les robots.
   - L'API (`/api/1/datasets/`) reste ouverte, sauf `/api/1/datasets/r/` (les redirections vers les fichiers) : elle sert seulement à connaître la dernière édition et sa date.
-- **Relevé manuel daté** : le propriétaire dépose le fichier de chaque édition. Le 20/11/2026, il a déposé l'édition 14, alors que l'édition 15 existait : celle-ci reste à déposer.
+- **Relevé manuel daté** : le propriétaire dépose le fichier de chaque édition. Le 20/11/2026, il a déposé l'édition 14 ; le 22/11/2026, l'édition 15 (43 521 octets, la taille annoncée par data.gouv.fr).
 - **Ce qu'on en tire** : pour chaque démarche, son nom, son identifiant, son périmètre ministériel, son administration, sa volumétrie (totale et en ligne) et son adresse (« URL Démarche »), pour relier la démarche au nom mesuré qui la sert.
+  - Depuis la méthode 0.3.1 (24/11/2026), le nom de chaque adresse entre aussi dans la liste mesurée chaque jour, avec sa provenance (`observatoire:` et la date de l'édition) : un changement de liste (B.7 bis), qui n'ajoute aucune raison au périmètre « État ». À chaque édition, un domaine nouveau est regardé avant d'être mesuré (une plateforme, un service de vidéo ou de formulaires serait un tiers, jamais une unité) : le test `tests/referentiels-demarches.test.ts` les nomme.
   - Les colonnes de notes (satisfaction, accessibilité, clarté du langage, autonomie, DLNUF) ne sont pas reprises : Sovermap décrit des dépendances, pas la qualité d'une démarche.
 - **Pièges** : des volumétries vides ou « À venir » ; des adresses sur des noms absents de la liste de la DINUM (les mesurer est un changement de liste, B.7 bis, jamais un déménagement).
 - **Attribution à afficher** : « Source : DINUM, Observatoire de la qualité des démarches en ligne, édition <n> (<mois année>), Licence Ouverte 2.0 ».
-- **Décision : retenue (relevé manuel daté, par édition)** ; en attente de l'édition 15.
+- **Décision : retenue (relevé manuel daté, par édition)**.
+- **Versé** (22/11/2026, C.8) : l'édition 15 (octobre 2026, publiée le 20/10/2026), déposée le 22/11/2026, à la place de l'édition 14 (les mêmes démarches ; des volumes mis à jour), lue par `pipeline/cli/observatoire.ts` (sans bibliothèque XML : une déclaration de type ou d'entité est refusée), dans `referentiels/demarches.json` : 243 démarches, dont 234 avec une adresse, sur 67 domaines. 66 de ces domaines étaient déjà dans la liste mesurée (jour 1) ; seul `monespacesante.fr` n'y était pas : il y entre avec la méthode 0.3.1, hors État (la démarche « Mon espace santé », que l'édition range au périmètre « Affaires sociales » ; aucune raison de D1 ne met ce domaine dans l'État). Les notes des démarches ne sont pas reprises. À chaque nouvelle édition déposée : relancer l'outil, puis le test `tests/referentiels-demarches.test.ts`.
 
 ## Attributions à afficher sur la page Données
 

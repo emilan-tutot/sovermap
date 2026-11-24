@@ -28,17 +28,18 @@ import { cheminDiagnostic, diagnosticDesEchecs } from "../diagnostic";
 import { lireDila, type ReferentielDila } from "../dila";
 import { ClientUdp } from "../dns-bas";
 import { construireEtat, type Controles, type Mesures, type Pannes } from "../etat-du-jour";
-import {
-  type Garde,
-  gardesPannes,
-  gardeTerme,
-  veilleUtilisable as veilleUtilisableDe,
-  verifierLimite,
-} from "../garde";
+import { type Garde, gardesPannes, gardeTerme, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
-import { construireListe, type CopieListe, type CopiePerimetre, lireCopiePerimetre } from "../perimetre";
+import {
+  type AdressesDemarches,
+  cleDemarches,
+  construireListe,
+  type CopieListe,
+  type CopiePerimetre,
+  lireCopiePerimetre,
+} from "../perimetre";
 import { ajouterEcarts, donneesPersonnelles, type Ecarts, textesAs } from "../personnelles";
 import {
   controleDu,
@@ -97,7 +98,7 @@ const VERSION_CLASSEMENT = 1;
 const CONFIRMATIONS_APRES_ARRET = 50;
 
 /** The method's version (docs/methode.md § 11): 0.2 until the rule C2-4 of chantier 2 (part C). */
-const METHODE = "0.3";
+const METHODE = "0.3.1";
 const RACINE = process.cwd();
 
 const { values: o } = parseArgs({
@@ -202,9 +203,40 @@ function referentiels() {
   const tableAs = json<ReferentielAs>(RACINE, "referentiels/as-societes.json");
   const erreurs = validerReferentiels(cdn, tableAs, societes);
   if (erreurs.length > 0) throw new Error(`référentiels invalides :\n- ${erreurs.join("\n- ")}`);
+  // The démarches' addresses of the Observatoire's latest edition (fiche 55, C.8), read and checked here: each one a
+  // host name (pipeline/perimetre.ts checks it again), its edition dated.
+  const observatoire = json<{ source?: { publiee?: unknown; edition?: unknown }; demarches?: unknown }>(
+    RACINE,
+    "referentiels/demarches.json",
+  );
+  const publiee = observatoire.source?.publiee;
+  const edition = observatoire.source?.edition;
+  if (
+    typeof publiee !== "string" ||
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(publiee) ||
+    typeof edition !== "number" ||
+    !Number.isSafeInteger(edition) ||
+    edition < 1 ||
+    !Array.isArray(observatoire.demarches)
+  )
+    throw new Error("referentiels/demarches.json : édition, date de l'édition ou démarches illisibles");
+  const demarches: AdressesDemarches = {
+    date: publiee,
+    hotes: [
+      ...new Set(
+        observatoire.demarches.flatMap((d: unknown) => {
+          const hote = typeof d === "object" && d !== null ? (d as { hote?: unknown }).hote : undefined;
+          return typeof hote === "string" && hote.length <= 253 ? [hote] : [];
+        }),
+      ),
+    ].sort(),
+  };
   const regles = {
     listes: copies.map((c) => c.date),
     perimetre: perimetre.map((c) => `${c.source}:${c.date}:${c.empreinte}`),
+    // A new edition, or the same one read again with other addresses, is a change of list (B.7 bis): nothing goes to
+    // the journal that day (pipeline/perimetre.ts, cleDemarches).
+    demarches: cleDemarches(edition, demarches),
     psl: psl.version,
     plateformes: plateformes.version,
     cdn: cdn.version,
@@ -217,6 +249,7 @@ function referentiels() {
   return {
     copies,
     perimetre,
+    demarches,
     psl,
     plateformes: new Set(plateformes.domaines),
     temoins,
@@ -469,6 +502,7 @@ async function principal(): Promise<number> {
     ".gouv.fr",
     REGLES_EXCLUSION,
     ref.perimetre,
+    ref.demarches,
   );
   const nomsRegle = [...(listeAvecRegle.ecartes.get("sous-zone interne") ?? [])];
   const derniereListe = ref.copies.at(-1)?.date ?? "";
@@ -500,6 +534,7 @@ async function principal(): Promise<number> {
           ".gouv.fr",
           { sousZoneInterne: false },
           ref.perimetre,
+          ref.demarches,
         )
       : listeAvecRegle;
   const zoneDe = (nom: string) => domaineEnregistrable(nom, ref.psl) ?? nom;
