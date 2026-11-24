@@ -133,12 +133,16 @@ describe("the halves of the collection (B.8)", () => {
       ],
       pannes: { noms: ["www.y.example"], zones: ["z.example"] },
       arret: "15 % de domaines en échec, trois fenêtres de suite",
-      controle: { noms: 2, mx: 1, hotes: 2 },
+      // The witness, asked by this half too (its own resolver is checked): in its plan, so 3 names.
+      temoinsKnot: [["temoin.example", nom("temoin.example")]],
+      controle: { noms: 3, mx: 1, hotes: 2 },
       aConfirmer: 1,
       urgence: { pauses: 2, depassements: 1 },
       minutes: 80,
     };
     a.controleNoms.push(["ns1.hebergeur.example", { resolveur: "quad9", mesure: nom("ns1.hebergeur.example") }]);
+    for (const t of [a, b])
+      t.controleNoms.push(["temoin.example", { resolveur: "quad9", mesure: nom("temoin.example") }]);
     const jour = fusionnerTranches(a, b);
     expect(jour.noms.map(([n]) => n)).toEqual(["www.a.example", "www.b.example"]);
     expect(jour.domaines.map(([d]) => d)).toEqual(["a.example", "b.example"]);
@@ -147,8 +151,9 @@ describe("the halves of the collection (B.8)", () => {
     expect(new Map(jour.hotes).get("ns2.hebergeur.example")?.etat).toBe("ok");
     expect(jour.pannes).toEqual({ noms: ["www.y.example"], zones: ["z.example"] });
     expect(jour.arret).toBe("15 % de domaines en échec, trois fenêtres de suite");
+    // The witness, asked by both halves, kept once; the shared host and the witness counted once (the reviews of B.8):
+    // names 3 + 3 - 1, hosts 2 + 2 - 1.
     expect(jour.temoinsKnot.map(([n]) => n)).toEqual(["temoin.example"]);
-    // The shared host counted once (the review of B.8): 2 + 2 - 1.
     expect(jour.controle).toEqual({ noms: 5, mx: 2, hotes: 3 });
     expect(jour.controleNoms.filter(([n]) => n === "ns1.hebergeur.example")).toHaveLength(1);
     expect(jour.aConfirmer).toBe(3);

@@ -4,9 +4,11 @@ import { describe, expect, it } from "vitest";
 import { collecter, POLITESSE } from "./collecte";
 import { contexteEssai } from "./essai-contexte";
 import { accordsDuJour, construireEtat, type ObservationsDuJour, veilleEtAccords } from "./etat-du-jour";
+import type { MesureNom, MesureZone } from "./mesure";
 import type { ListeReference } from "./perimetre";
 import { generateur } from "./politesse";
 import { bilan, type EnregistrementNom, type Etat, fragments, jsonStable, signatures } from "./publication";
+import { TableIpToAsn } from "./reseau";
 import { ResolveurSimule } from "./resolveur-simule";
 import { NOM, schemaDe, valider } from "./schemas";
 
@@ -393,6 +395,70 @@ describe("the records of a day", () => {
     // 40 days of its first control, since its control of day 38 gave the agreement again.
     expect(changes.get("www.commune.example")).toEqual([6]);
     expect(avecAccord).toEqual(Array.from({ length: 41 }, (_, i) => i + 6));
+  });
+
+  it("reads a failed control as a missed one, and compares what serves a name on its whole layer (B.6)", () => {
+    // The second review of B.6. A name of 22 networks, its last one in another AS, beyond the 20 a record keeps.
+    const WEB = "www.ministere.example";
+    const mesure: MesureNom = {
+      nom: WEB,
+      etat: "ok",
+      echec: null,
+      cname: [],
+      a: [
+        ...Array.from({ length: 21 }, (_, i) => ({ adresse: `192.0.2.${i + 1}`, ttl: 60 })),
+        { adresse: "203.0.113.7", ttl: 60 },
+      ],
+      aaaa: [],
+      ad: false,
+    };
+    const lignes = [
+      ...Array.from({ length: 21 }, (_, i) => `192.0.2.${i + 1}\t192.0.2.${i + 1}\t64496\tFR\tEXEMPLE-HEBERGEUR`),
+      "203.0.113.0\t203.0.113.255\t64501\tUS\tEXEMPLE-CLOUD",
+    ];
+    const ctx = { ...contexteEssai(), iptoasn: new TableIpToAsn(lignes.join("\n")) };
+    const zoneVide: MesureZone = {
+      domaine: "ministere.example",
+      etat: "ok",
+      echec: null,
+      ns: [],
+      soa: null,
+      ad: false,
+      caa: [],
+      mx: [],
+      mxEtat: "aucun",
+      spf: null,
+      echecs: [],
+    };
+    const mesures = {
+      noms: new Map([[WEB, mesure]]),
+      domaines: new Map([["ministere.example", zoneVide]]),
+      hotes: new Map(),
+      spf: new Map(),
+    };
+    const sansPanne = { noms: new Set<string>(), zones: new Set<string>(), resolveur: "quad9" };
+    // Day 1: its control agrees; the agreements come from the whole layer (veilleEtAccords), not the bounded record.
+    const veille: ObservationsDuJour = {
+      date: "2026-12-05",
+      mesures,
+      controles: { noms: new Map([[WEB, { resolveur: "quad9", mesure }]]), mx: new Map() },
+      pannes: sansPanne,
+    };
+    const v = veilleEtAccords(liste, veille, ctx, "2026-12-05T03:17:00.000Z");
+    expect(v.etat?.noms.get(WEB)?.reseaux).toHaveLength(20);
+    expect(v.accords.get(WEB)).toMatchObject({ le: "2026-12-05", servi: "|64496,64501" });
+    // Day 2: Quad9's answer failed (a control missed, not a disagreement): the agreement of day 1 holds, with its day.
+    const enEchec: MesureNom = { ...mesure, etat: "echec", echec: "TIMEOUT", a: [] };
+    const controles2 = {
+      noms: new Map([[WEB, { resolveur: "quad9", mesure: enEchec }]]),
+      mx: new Map<string, string[] | null>(),
+      jour: "2026-12-06",
+      reports: v.accords,
+    };
+    const jour2 = construireEtat(liste, mesures, controles2, ctx, "2026-12-06T03:17:00.000Z", sansPanne);
+    expect(jour2.noms.get(WEB)?.controle).toEqual({ resolveur: "quad9", accord: true });
+    expect(jour2.noms.get(WEB)?.niveau).toBe(v.etat?.noms.get(WEB)?.niveau);
+    expect(accordsDuJour(jour2, controles2, "2026-12-06").get(WEB)?.le).toBe("2026-12-05");
   });
 
   it("keeps the networks behind a CDN by their AS only, and the ranges of the others (B.6)", async () => {

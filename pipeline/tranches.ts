@@ -213,6 +213,8 @@ export function fusionnerDebits(a: DebitServeurs | null, b: DebitServeurs | null
 export function fusionnerTranches(a: ResultatTranche, b: ResultatTranche): ResultatTranche {
   if (a.tranche !== 1 || b.tranche !== 2) throw new Error("la tranche 1, puis la tranche 2");
   if (a.date !== b.date) throw new Error(`deux jours différents : ${a.date} et ${b.date}`);
+  // Each half asks the witnesses (its own resolver is checked, collecter.ts): they are in both, kept and counted once.
+  const temoinsCommuns = communes(a.temoinsKnot, b.temoinsKnot);
   return {
     tranche: 1,
     date: a.date,
@@ -232,14 +234,16 @@ export function fusionnerTranches(a: ResultatTranche, b: ResultatTranche): Resul
     arret: a.arret ?? b.arret,
     inacheves: [...new Set([...a.inacheves, ...b.inacheves])].sort(),
     premierePasseCoupee: a.premierePasseCoupee + b.premierePasseCoupee,
-    temoinsKnot: disjointes("le témoin", a.temoinsKnot, b.temoinsKnot),
-    temoinsCloudflare: disjointes("le témoin", a.temoinsCloudflare, b.temoinsCloudflare),
+    temoinsKnot: partagees(a.temoinsKnot, b.temoinsKnot, enEchec),
+    temoinsCloudflare: partagees(a.temoinsCloudflare, b.temoinsCloudflare, enEchec),
     controle: {
-      noms: a.controle.noms + b.controle.noms,
+      // The witnesses are in both plans: counted once. A plan's other names never are (a domain, and its web name,
+      // belong to one half).
+      noms: a.controle.noms + b.controle.noms - temoinsCommuns,
       mx: a.controle.mx + b.controle.mx,
-      // A host of the « État » that serves domains of both halves was given to Quad9 by each: counted once (the review
-      // of B.8). The plans' names never are (a domain, and its web name, belong to one half).
-      hotes: a.controle.hotes + b.controle.hotes - communes(a.controleNoms, b.controleNoms),
+      // A host of the « État » that serves domains of both halves, if both gave it to Quad9: counted once (the review of
+      // B.8; the second half gives it no more).
+      hotes: a.controle.hotes + b.controle.hotes - (communes(a.controleNoms, b.controleNoms) - temoinsCommuns),
     },
     debit: fusionnerDebits(a.debit, b.debit),
     attentes: {

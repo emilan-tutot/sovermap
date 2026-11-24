@@ -89,18 +89,38 @@ function servi(cdn: string | null, reseaux: readonly { as: number }[]): string {
 }
 
 /**
+ * The control resolver's answer about a name, unless it failed (TIMEOUT, SERVFAIL, REFUSED, ERREUR): a failed answer
+ * is a control missed, never a disagreement, so that a carried agreement still holds (the method gives a missed control
+ * a week; the second review of B.6).
+ */
+function controleDe(controles: Controles, nom: string): { resolveur: string; mesure: MesureNom } | null {
+  const c = controles.noms.get(nom);
+  return c === undefined || c.mesure.etat === "echec" ? null : c;
+}
+
+/**
  * The agreements a day's state lets the next day's names carry (B.6): each name whose control agreed that day (`jour`),
  * or that carried an agreement that day (with the day of its control), and what served it; never a disagreement, nor
- * an agreement on a name that failed or a reduced record.
+ * an agreement on a name that failed or a reduced record. `servis`: what served each name, from its whole address layer
+ * (construireEtat), as today compares it; without it, from the record, whose networks are bounded.
  */
-export function accordsDuJour(etat: Etat, controles: Controles, jour: string): Map<string, AccordReporte> {
+export function accordsDuJour(
+  etat: Etat,
+  controles: Controles,
+  jour: string,
+  servis?: ReadonlyMap<string, string>,
+): Map<string, AccordReporte> {
   const accords = new Map<string, AccordReporte>();
   for (const [nom, e] of etat.noms) {
     const c = e.controle;
     if (c === null || c.accord !== true || e.etat !== "ok" || e.reduit === true) continue;
-    const le = controles.noms.has(nom) ? jour : controles.reports?.get(nom)?.le;
+    const le = controleDe(controles, nom) !== null ? jour : controles.reports?.get(nom)?.le;
     if (le === undefined || !JOUR.test(le)) continue;
-    accords.set(nom, { resolveur: c.resolveur.slice(0, 60), le, servi: servi(e.cdn?.id ?? null, e.reseaux) });
+    accords.set(nom, {
+      resolveur: c.resolveur.slice(0, 60),
+      le,
+      servi: servis?.get(nom) ?? servi(e.cdn?.id ?? null, e.reseaux),
+    });
   }
   return accords;
 }
@@ -121,8 +141,11 @@ export function veilleEtAccords(
 ): { etat: Etat | null; accords: Map<string, AccordReporte> } {
   if (veille === null) return { etat: null, accords: new Map() };
   const controles = { ...veille.controles, jour: veille.date };
-  const etat = construireEtat(liste, veille.mesures, controles, contexte, heure, veille.pannes);
-  return { etat, accords: accordsDuJour(etat, controles, veille.date) };
+  // What served each name, from its whole address layer: the same base as today's comparison (a record keeps 20
+  // networks at most; the second review of B.6).
+  const servis = new Map<string, string>();
+  const etat = construireEtat(liste, veille.mesures, controles, contexte, heure, veille.pannes, undefined, servis);
+  return { etat, accords: accordsDuJour(etat, controles, veille.date, servis) };
 }
 
 /** The failures the control resolver confirmed after every attempt (methode § 7): names and zones. */
@@ -138,6 +161,8 @@ export function construireEtat(
   heure: string,
   pannes: Pannes = AUCUNE_PANNE,
   rapport: RapportConstruction = { erreurs: 0, reduits: 0 },
+  /** Filled, when given, with what serves each name from its whole address layer (B.6: the agreements' base). */
+  servis?: Map<string, string>,
 ): Etat {
   const noms = new Map<string, EnregistrementNom>();
   const jour = controles.jour ?? heure.slice(0, 10);
@@ -167,15 +192,17 @@ export function construireEtat(
       reduit: true,
     });
     const construire = () => {
-      const duJour = controles.noms.get(entree.nom) ?? null;
+      const duJour = controleDe(controles, entree.nom);
       let c = coucheAdresses(m, duJour, domaine.perimetre, contexte, heure);
       let controle = c.controle;
+      const sert = servi(c.cdn?.id ?? null, c.reseaux);
+      if (c.etat === "ok") servis?.set(entree.nom, sert);
       const report = duJour === null ? controles.reports?.get(entree.nom) : undefined;
       const age = report === undefined ? Number.NaN : joursEntre(report.le, jour);
       if (
         report !== undefined &&
         c.etat === "ok" &&
-        servi(c.cdn?.id ?? null, c.reseaux) === report.servi &&
+        sert === report.servi &&
         age >= 0 &&
         age <= VALIDITE_ACCORD_JOURS
       ) {

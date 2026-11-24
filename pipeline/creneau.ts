@@ -5,12 +5,12 @@
 /** The day's collections are scheduled at these minutes of the UTC day (collecte.yml): 03:17, 09:47 and 15:17. */
 export const DEPARTS_MINUTES = [3 * 60 + 17, 9 * 60 + 47, 15 * 60 + 17];
 /**
- * A trial lasts about 45 minutes, 90 at worst (the limits of its three jobs add up to 90, collecte.yml; brief B.8 and
- * its review: a half's job keeps 20 minutes for its domains still open): none starts within 90 minutes before a
- * scheduled collection, so that it ends before it (the day's collection also waits 15 minutes at most for a trial that
- * still measures). Stricter than the owner's 60 minutes (point 17, § 3).
+ * A trial lasts about 45 minutes, 100 at worst (the limits of its three jobs add up to 100, collecte.yml; brief B.8 and
+ * its reviews: a half's job keeps room for its downloads and its domains still open): none starts within 100 minutes
+ * before a scheduled collection, so that it ends before it (the day's collection also waits 15 minutes at most for a
+ * trial that still measures). Stricter than the owner's 60 minutes (point 17, § 3).
  */
-export const MARGE_AVANT_MINUTES = 90;
+export const MARGE_AVANT_MINUTES = 100;
 /**
  * GitHub may start a scheduled run late (1 h 38 on 22/11/2026), and the run created late is not seen yet: no trial
  * starts within 120 minutes after a scheduled time (the review of 22/11/2026).

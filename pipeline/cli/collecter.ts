@@ -664,7 +664,9 @@ async function principal(): Promise<number> {
     const [hote, port] = adresseEtPort(o.resolveur);
     const knot = new ClientUdp("knot", hote, port, 12_000);
     const cloudflare = new ClientCadence(new ClientUdp("cloudflare", o.temoins, 53, 8_000), 2);
-    const nomsTemoins = tranche === 2 ? [] : ref.temoins.temoins.map((t) => t.nom);
+    // The witnesses, asked in each half: each half's resolver, on its own machine and network, must find them (the
+    // second review of B.8; methode § 7).
+    const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);
     // The day's turn in the control cycle (B.6): the same domains every 33 days, whatever the run or its tranche.
     const plan = planDeControle(domainesDeLaTranche, nomsTemoins, date);
     // Only the ICANN section's suffixes (such as gouv.fr) name a server: never the private section's, which are
@@ -683,8 +685,11 @@ async function principal(): Promise<number> {
     // retry starts until 255 minutes, and none of its tasks is taken after 290 (one already taken may still end); the
     // options were checked as soon as they were read (LIMITES).
     const [echeanceMinutes, finReprisesMinutes, finControlesMinutes] = LIMITES;
-    // The time limits are the job's own: each half has its job's (collecte.yml).
-    const minutesDe = (minutes: number) => debutJob.getTime() + minutes * 60_000;
+    // A day's time limits are its job's own (each half has its job's, collecte.yml: --debut-tache). A trial's count from
+    // the start of its measurement, so that the first half's downloads never eat its first pass (the second review of
+    // B.8); its job keeps room for them.
+    const origine = o.essai ? Date.now() : debutJob.getTime();
+    const minutesDe = (minutes: number) => origine + minutes * 60_000;
     // The emergency stop brings the controls' deadline to its instant: Quad9 is asked nothing more for a lost day.
     let finControles = minutesDe(finControlesMinutes);
     const finDesControles = () => finControles;
@@ -830,18 +835,22 @@ async function principal(): Promise<number> {
       ? lireTranche(gunzipSync(readFileSync(fichierTranche(t))).toString("utf8"), t, date)
       : null;
   let r: ResultatTranche;
+  /** The day's halves as measured (one for a single job): each one's witnesses are checked on their own. */
+  let tranchesDuJour: ResultatTranche[];
   if (o.assembler) {
     const premiere = lireFichierTranche(1);
     const seconde = lireFichierTranche(2);
     if (premiere === null) throw new Error("assemblage : le fichier de la tranche 1 manque");
     if (seconde === null && premiere.arret === null) throw new Error("assemblage : le fichier de la tranche 2 manque");
     r = seconde === null ? premiere : fusionnerTranches(premiere, seconde);
+    tranchesDuJour = seconde === null ? [premiere] : [premiere, seconde];
   } else {
     // The second half starts from the first: its emergency counts (the day has 3 pauses, not 3 per half, methode § 7),
     // and the hosts it measured and controlled, never asked again.
     const premiere = TRANCHE === 2 ? lireFichierTranche(1) : null;
     if (TRANCHE === 2 && premiere === null) throw new Error("tranche 2 : le fichier de la tranche 1 manque");
     r = await mesurerTranche(TRANCHE, premiere ?? undefined);
+    tranchesDuJour = [r];
   }
   if (TRANCHE !== null) {
     writeFileSync(fichierTranche(TRANCHE), gzipSync(JSON.stringify(r)));
@@ -870,6 +879,12 @@ async function principal(): Promise<number> {
   // (B.6): the hysteresis compares today with them, and the agreements they hold may be carried today by the names not
   // controlled today, while what serves them is the same.
   const veilleObs = o.veille === undefined ? null : lireObservations(o.veille);
+  // A « yesterday » of the same day, or of a later one, is the day itself: a re-run of the assembly after the day was
+  // kept as tomorrow's yesterday. Compared with itself, the day would pass the circuit breaker and the hysteresis at
+  // once (the second review of B.8): refused, the run stops in red.
+  if (veilleObs !== null && !(veilleObs.date < date)) {
+    throw new Error(`veille du ${veilleObs.date} pour le jour du ${date} : jamais le jour comparé à lui-même`);
+  }
   const { etat: veille, accords } =
     veilleObs === null || o.veille === undefined
       ? { etat: null, accords: new Map<string, AccordReporte>() }
@@ -888,9 +903,6 @@ async function principal(): Promise<number> {
   const pannes: Pannes = { noms: new Set(r.pannes.noms), zones: new Set(r.pannes.zones), resolveur: "quad9" };
   const pannesMx = new Set(r.pannesMx);
   const demandes = new Set(r.demandes);
-  const temoinsKnot = new Map(r.temoinsKnot);
-  const temoinsQuad9 = new Map(r.controleNoms.map(([n, c]) => [n, c.mesure]));
-  const temoinsCloudflare = new Map(r.temoinsCloudflare);
   const debitServeurs = r.debit;
   const attentesFrein = r.attentes;
   const observations: Observations = {
@@ -917,15 +929,24 @@ async function principal(): Promise<number> {
     const c = coucheAdresses(m, null, "hors État", contexte, heure);
     return { etat: m.etat, cdn: c.cdn?.id ?? null, as: [...new Set(c.reseaux.map((r) => r.as))] };
   };
-  const temoins = verifierTemoins(
-    ref.temoins.temoins,
-    [
-      { resolveur: "knot", noms: temoinsKnot },
-      { resolveur: "quad9", noms: temoinsQuad9 },
-      { resolveur: "cloudflare", noms: temoinsCloudflare },
-    ],
-    profil,
-  );
+  // The witnesses, half by half (B.8 and its second review): each half's resolver ran on its own machine and network,
+  // and each must find them, as one job had to; a half that never ran (after an emergency stop) has nothing to check.
+  const verdictsParTranche = tranchesDuJour.map((t) => {
+    const moitie = tranchesDuJour.length > 1 ? `, moitié ${t.tranche}` : "";
+    return verifierTemoins(
+      ref.temoins.temoins,
+      [
+        { resolveur: `knot${moitie}`, noms: new Map(t.temoinsKnot) },
+        { resolveur: `quad9${moitie}`, noms: new Map(t.controleNoms.map(([n, c]) => [n, c.mesure])) },
+        { resolveur: `cloudflare${moitie}`, noms: new Map(t.temoinsCloudflare) },
+      ],
+      profil,
+    );
+  });
+  const temoins = {
+    concordants: verdictsParTranche.length > 0 && verdictsParTranche.every((v) => v.concordants),
+    verdicts: verdictsParTranche.flatMap((v) => v.verdicts),
+  };
   const mesuresNoms = [...jour.noms.values()];
   const echecs = mesuresNoms.filter((n) => n.etat === "echec").length;
   // The names that work with one family of addresses while the other's question failed (never asked again).
