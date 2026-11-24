@@ -534,9 +534,58 @@ describe("the index of the démarches (C.8, D.2)", () => {
       niveau: "confirmé",
       societes: ["hebergeur-fr"],
       cdn: null,
+      partiel: false,
     });
     // An address the day's list does not hold (set aside by a rule, or no record that day): nothing measured.
     expect(lu.demarches[2]?.mesure).toBeNull();
+    // A whole entry, each field with its own value: none renamed, dropped or added (the review of the index).
+    const reduit = { ...nom("www.cdn.example", "cdn.example", "cdn-us", true), reduit: true as const };
+    const entiere = JSON.parse(
+      indexDemarches(
+        {
+          noms: new Map([["www.cdn.example", { ...reduit, cdn: { id: "cloudflare", methode: "cname" } }]]),
+          domaines: new Map(),
+        },
+        {
+          edition: 16,
+          periode: "janvier 2027",
+          publiee: "2027-01-20",
+          demarches: [
+            {
+              id: "42",
+              nom: "Une démarche",
+              perimetre: "Un ministère",
+              administration: "UNE ADMINISTRATION",
+              volumeTotal: 7,
+              volumeEnLigne: 5,
+              hote: "www.cdn.example",
+              domaine: "cdn.example",
+            },
+          ],
+        },
+      ),
+    ) as { demarches: unknown[] };
+    expect(entiere.demarches).toEqual([
+      {
+        id: "42",
+        nom: "Une démarche",
+        perimetre: "Un ministère",
+        administration: "UNE ADMINISTRATION",
+        volumeTotal: 7,
+        volumeEnLigne: 5,
+        hote: "www.cdn.example",
+        domaine: "cdn.example",
+        mesure: {
+          etat: "ok",
+          categorie: "hors d'Europe",
+          horsUE: true,
+          niveau: "confirmé",
+          societes: ["cdn-us"],
+          cdn: "cloudflare",
+          partiel: true,
+        },
+      },
+    ]);
     // Written only when the démarches are given.
     expect(
       index(e, { as: new Map(), societes: new Map(), organismes: new Map(), organismesDe: new Map() }).has(
