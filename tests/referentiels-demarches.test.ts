@@ -2,6 +2,7 @@
 // with only what Sovermap takes of a démarche, never its marks.
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { lireReferentielDemarches } from "@/pipeline/observatoire";
 import { construireListe, lireCopiePerimetre } from "@/pipeline/perimetre";
 import { domaineEnregistrable, lireListeSuffixes } from "@/pipeline/psl";
 import demarches from "@/referentiels/demarches.json";
@@ -81,4 +82,27 @@ describe("the démarches of the Observatoire (referentiels/demarches.json)", () 
     expect([...nouveaux].sort()).toEqual(["monespacesante.fr"]);
     // The whole reference list is built from the real copies: beyond the default 5 s when the whole suite runs at once.
   }, 30_000);
+
+  it("are read at the border: every field checked, and a text that may name a person refused (P13)", () => {
+    const lu = lireReferentielDemarches(demarches);
+    expect(lu.edition).toBe(demarches.source.edition);
+    expect(lu.demarches).toHaveLength(demarches.demarches.length);
+    const premiere = demarches.demarches[0];
+    if (premiere === undefined) throw new Error("aucune démarche");
+    const avec = (changement: Record<string, unknown>) => ({
+      ...demarches,
+      demarches: [{ ...premiere, ...changement }, ...demarches.demarches.slice(1)],
+    });
+    const adresse = ["accueil", "exemple.example"].join("@");
+    expect(() => lireReferentielDemarches(avec({ nom: `Écrire à ${adresse}` }))).toThrow(/personne/);
+    expect(() => lireReferentielDemarches(avec({ administration: "Mme Exemple" }))).toThrow(/personne/);
+    expect(() => lireReferentielDemarches(avec({ volumeTotal: -1 }))).toThrow(/illisible/);
+    expect(() => lireReferentielDemarches(avec({ hote: "www.ailleurs.example", domaine: "autre.example" }))).toThrow(
+      /illisible/,
+    );
+    expect(() => lireReferentielDemarches(avec({ id: demarches.demarches[1]?.id }))).toThrow(/double|ordre/);
+    expect(() => lireReferentielDemarches({ ...demarches, source: { ...demarches.source, edition: 0 } })).toThrow(
+      /illisibles/,
+    );
+  });
 });

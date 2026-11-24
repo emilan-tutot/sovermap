@@ -31,6 +31,7 @@ import { construireEtat, type Controles, type Mesures, type Pannes } from "../et
 import { type Garde, gardesPannes, gardeTerme, veilleUtilisable as veilleUtilisableDe, verifierLimite } from "../garde";
 import { type MesureNom, type MesureZone, mesurerNom } from "../mesure";
 import { REGLES_EXCLUSION } from "../noms";
+import { lireReferentielDemarches } from "../observatoire";
 import { fichiersOuverts, verifierOuvertes } from "../ouvertes";
 import {
   type AdressesDemarches,
@@ -205,33 +206,14 @@ function referentiels() {
   const tableAs = json<ReferentielAs>(RACINE, "referentiels/as-societes.json");
   const erreurs = validerReferentiels(cdn, tableAs, societes);
   if (erreurs.length > 0) throw new Error(`référentiels invalides :\n- ${erreurs.join("\n- ")}`);
-  // The démarches' addresses of the Observatoire's latest edition (fiche 55, C.8), read and checked here: each one a
-  // host name (pipeline/perimetre.ts checks it again), its edition dated.
-  const observatoire = json<{ source?: { publiee?: unknown; edition?: unknown }; demarches?: unknown }>(
-    RACINE,
-    "referentiels/demarches.json",
-  );
-  const publiee = observatoire.source?.publiee;
-  const edition = observatoire.source?.edition;
-  if (
-    typeof publiee !== "string" ||
-    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(publiee) ||
-    typeof edition !== "number" ||
-    !Number.isSafeInteger(edition) ||
-    edition < 1 ||
-    !Array.isArray(observatoire.demarches)
-  )
-    throw new Error("referentiels/demarches.json : édition, date de l'édition ou démarches illisibles");
+  // The démarches of the Observatoire's latest edition (fiche 55, C.8), read and checked at the border
+  // (pipeline/observatoire.ts): their addresses enter the list, and the day's index of the démarches (D.2) is made from
+  // them (pipeline/publication.ts).
+  const observatoire = lireReferentielDemarches(json<unknown>(RACINE, "referentiels/demarches.json"));
+  const { edition } = observatoire;
   const demarches: AdressesDemarches = {
-    date: publiee,
-    hotes: [
-      ...new Set(
-        observatoire.demarches.flatMap((d: unknown) => {
-          const hote = typeof d === "object" && d !== null ? (d as { hote?: unknown }).hote : undefined;
-          return typeof hote === "string" && hote.length <= 253 ? [hote] : [];
-        }),
-      ),
-    ].sort(),
+    date: observatoire.publiee,
+    hotes: [...new Set(observatoire.demarches.flatMap((d) => (d.hote === null ? [] : [d.hote])))].sort(),
   };
   const regles = {
     listes: copies.map((c) => c.date),
@@ -252,6 +234,7 @@ function referentiels() {
     copies,
     perimetre,
     demarches,
+    observatoire,
     psl,
     plateformes: new Set(plateformes.domaines),
     temoins,
@@ -908,6 +891,7 @@ async function principal(): Promise<number> {
       organismes,
       organismesDe: new Map([...liste.domaines].map(([cle, d]) => [cle, d.organismes])),
       jours,
+      demarches: ref.observatoire,
     }),
     ["agregats/chiffres.json", `${jsonStable(figures)}\n`],
     [
