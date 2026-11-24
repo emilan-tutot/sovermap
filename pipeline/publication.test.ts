@@ -521,12 +521,15 @@ describe("the index of the démarches (C.8, D.2)", () => {
           demarche("115", null),
           demarche("1764", "www.service.example"),
           demarche("2000", "x.autre.example"),
+          demarche("2001", "recette.service.example"),
         ],
       }),
-    ) as { source: unknown; demarches: { id: string; mesure: unknown }[] };
+    ) as { source: unknown; demarches: { id: string; hote: unknown; domaine: unknown; mesure: unknown }[] };
     expect(lu.source).toEqual({ fiche: 55, edition: 15, periode: "octobre 2026", publiee: "2026-10-20" });
-    expect(lu.demarches.map((d) => d.id)).toEqual(["115", "1764", "2000"]);
+    expect(lu.demarches.map((d) => d.id)).toEqual(["115", "1764", "2000", "2001"]);
     expect(lu.demarches[0]?.mesure).toBeNull();
+    // An address the method calls internal or technical (a test environment) is never published (methode § 3).
+    expect(lu.demarches[3]).toMatchObject({ hote: null, domaine: null, mesure: null });
     expect(lu.demarches[1]?.mesure).toEqual({
       etat: "ok",
       categorie: "France",
