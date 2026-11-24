@@ -1323,6 +1323,27 @@ describe("the scheduling of a collection", () => {
     );
   });
 
+  it("starts a second half from the first's counts: the day keeps its pauses, never as many again (B.8)", async () => {
+    // The first half took the day's 3 pauses: the second one's first breach stops it, without a pause (the review of
+    // B.8: each half had its own 3 pauses). Its counts at the end are the day's.
+    const { r, lignes } = await collecteEnPanne(domainesP(2_000), () => true, {
+      urgenceDuJour: { pauses: 3, depassements: 0 },
+    });
+    expect(lignes.filter((l) => l.startsWith("pause d'urgence"))).toHaveLength(0);
+    expect(r.arret).toMatch(/toutes les pauses du jour prises \(3 sur 3\)$/);
+    expect(r.urgence).toEqual({ pauses: 3, depassements: 1 });
+    // Two breaches in a row already: the next one is the third, and stops.
+    const suite = await collecteEnPanne(domainesP(2_000), () => true, {
+      urgenceDuJour: { pauses: 2, depassements: 2 },
+    });
+    expect(suite.lignes.filter((l) => l.startsWith("pause d'urgence"))).toHaveLength(0);
+    expect(suite.r.arret).toMatch(/au dépassement 3 de suite/);
+    // A half without an outage gives back the counts it was given.
+    const sain = await collecteEnPanne(domainesP(200), () => false, { urgenceDuJour: { pauses: 1, depassements: 0 } });
+    expect(sain.r.arret).toBeNull();
+    expect(sain.r.urgence).toEqual({ pauses: 1, depassements: 0 });
+  });
+
   it("never counts the retries: a retry full of failures never pauses nor stops", async () => {
     // Four domains in ten always fail: under the threshold in the first pass, all of them in each retry.
     const { r, lignes } = await collecteEnPanne(domainesP(60), (nom) => numero(nom) % 10 < 4, enOrdre);

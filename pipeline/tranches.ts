@@ -4,6 +4,7 @@
 // the guards on the whole day. This module is pure: the half of a domain, what a half's job hands on, and the merging
 // of the two halves.
 import { createHash } from "node:crypto";
+import type { UrgenceDuJour } from "./collecte";
 import type { DebitServeurs } from "./debit-serveurs";
 import type { MesureNom, MesureZone } from "./mesure";
 import type { ResultatSpf } from "./spf";
@@ -24,7 +25,8 @@ export type Attentes = { ouvertures: number; questions: number; secondes: number
 
 /**
  * What a half's job hands on to the next one: its measurement (as the day's observations keep it), its controls,
- * its confirmations and its pace. A file of the run's artifact, never published (it holds RIS's answers).
+ * its confirmations, its pace and the emergency stop's counts. A file of the run's artifact, never published: the raw
+ * DNS answers of public names (never a SOA's contact, a CAA's, or a TXT other than SPF).
  */
 export type ResultatTranche = {
   tranche: Tranche;
@@ -54,6 +56,8 @@ export type ResultatTranche = {
   controle: { noms: number; mx: number; hotes: number };
   debit: DebitServeurs | null;
   attentes: Attentes;
+  /** The emergency stop's counts at the half's end, the day's so far: the second half starts from the first's. */
+  urgence: UrgenceDuJour;
   /** The half's minutes, from its own start, for the summary. */
   minutes: number;
 };
@@ -88,6 +92,8 @@ export function lireTranche(texte: string, attendue: Tranche, date: string): Res
     r.controle?.noms,
     r.controle?.mx,
     r.controle?.hotes,
+    r.urgence?.pauses,
+    r.urgence?.depassements,
   ]) {
     if (typeof n !== "number" || !Number.isFinite(n) || n < 0)
       throw new Error(`tranche ${attendue} : un compte illisible`);
@@ -231,7 +237,9 @@ export function fusionnerTranches(a: ResultatTranche, b: ResultatTranche): Resul
     controle: {
       noms: a.controle.noms + b.controle.noms,
       mx: a.controle.mx + b.controle.mx,
-      hotes: a.controle.hotes + b.controle.hotes,
+      // A host of the « État » that serves domains of both halves was given to Quad9 by each: counted once (the review
+      // of B.8). The plans' names never are (a domain, and its web name, belong to one half).
+      hotes: a.controle.hotes + b.controle.hotes - communes(a.controleNoms, b.controleNoms),
     },
     debit: fusionnerDebits(a.debit, b.debit),
     attentes: {
@@ -239,6 +247,14 @@ export function fusionnerTranches(a: ResultatTranche, b: ResultatTranche): Resul
       questions: a.attentes.questions + b.attentes.questions,
       secondes: a.attentes.secondes + b.attentes.secondes,
     },
+    // The second half started from the first's counts: its own are the day's.
+    urgence: b.urgence,
     minutes: a.minutes + b.minutes,
   };
+}
+
+/** The keys two lists share. */
+function communes<T>(a: readonly [string, T][], b: readonly [string, T][]): number {
+  const cles = new Set(a.map(([k]) => k));
+  return b.filter(([k]) => cles.has(k)).length;
 }

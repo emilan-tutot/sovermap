@@ -13,7 +13,7 @@ import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { estPlage, type PlagesOfficielles, type ReferentielCdn } from "../cdn";
-import { collecter, type OptionsCollecte, POLITESSE } from "../collecte";
+import { collecter, type OptionsCollecte, POLITESSE, type UrgenceDuJour } from "../collecte";
 import {
   ClientCadence,
   ControleEnContinu,
@@ -131,6 +131,9 @@ const { values: o } = parseArgs({
     "echeance-minutes": { type: "string", default: "255" },
     "fin-reprises-minutes": { type: "string", default: "290" },
     "fin-controles-minutes": { type: "string", default: "300" },
+    // The start of the job, when its time limits count from there rather than from this process (collecte.yml: the
+    // wait for a trial and the preparation come first; the review of B.8).
+    "debut-tache": { type: "string" },
     // IPtoASN, surveyed by hand (docs/sources.md, card 18): its files are closed to robots, never downloaded here.
     iptoasn: { type: "string" },
     essai: { type: "boolean", default: false },
@@ -158,6 +161,20 @@ const TRANCHE = ((): Tranche | null => {
  * the fourth rule's state (asked to Quad9 once a day), so that every job builds the same list.
  */
 type JourTranche1 = { date: string; debut: string; sources: EtatSource[]; regleInterne: EtatRegleInterne };
+
+/**
+ * The start of the job (--debut-tache, an instant of UTC), checked as soon as it is read: at most 3 hours before now
+ * (a job's own preparation never lasts so long) and never after it. Without it, this process's start.
+ */
+function debutDeLaTache(valeur: string | undefined, maintenant: Date): Date {
+  if (valeur === undefined) return maintenant;
+  const debut = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(valeur) ? new Date(valeur) : null;
+  const ecart = debut === null ? Number.NaN : maintenant.getTime() - debut.getTime();
+  if (debut === null || !(ecart >= -60_000 && ecart <= 3 * 3_600_000)) {
+    throw new Error(`--debut-tache : un instant UTC des 3 dernières heures (reçu « ${valeur.slice(0, 40)} »)`);
+  }
+  return debut;
+}
 
 function lireJourTranche1(travail: string): JourTranche1 {
   const j = json<Partial<JourTranche1>>(travail, "jour.json");
@@ -481,7 +498,7 @@ async function principal(): Promise<number> {
   if (travail === undefined) throw new Error("option manquante : --travail <dossier>");
   // The second half and the assembly (B.8) start from what the first half kept: its day, the start of the day's
   // measurement, its sources and the fourth rule's state. The job's own start sets its time limits only.
-  const debutJob = new Date();
+  const debutJob = debutDeLaTache(o["debut-tache"], new Date());
   const repris = TRANCHE === 2 || o.assembler ? lireJourTranche1(travail) : null;
   const maintenant = repris === null ? debutJob : new Date(repris.debut);
   const date = repris?.date ?? o.date ?? maintenant.toISOString().slice(0, 10);
@@ -625,7 +642,11 @@ async function principal(): Promise<number> {
    * it gives what the rest of the job, or the next job, needs of it. In a half: its domains only (by a stable hash of
    * their name), their names with them, the control plan drawn among them; the witnesses in the first half only.
    */
-  const mesurerTranche = async (tranche: Tranche | null): Promise<ResultatTranche> => {
+  const mesurerTranche = async (
+    tranche: Tranche | null,
+    /** The first half's emergency counts, for the second (the day keeps its 3 pauses: the review of B.8). */
+    urgenceDuJour?: UrgenceDuJour,
+  ): Promise<ResultatTranche> => {
     const dansLaTranche = (domaine: string) => tranche === null || trancheDe(domaine) === tranche;
     const domainesDeLaTranche = domainesMesures.filter((d) => dansLaTranche(d.domaine));
     const nomsDeLaTranche = new Map([...noms].filter(([, domaine]) => dansLaTranche(domaine)));
@@ -673,6 +694,7 @@ async function principal(): Promise<number> {
     const [mesures, controleQuad9, controleCloudflare] = await Promise.all([
       collecter(nomsDeLaTranche, knot, {
         ...POLITESSE,
+        ...(urgenceDuJour === undefined ? {} : { urgenceDuJour }),
         nomsParSeconde: Number(o["noms-par-seconde"]),
         delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
         echeance: minutesDe(echeanceMinutes),
@@ -786,6 +808,7 @@ async function principal(): Promise<number> {
       controle: { noms: plan.noms.length, mx: plan.mx.length, hotes: hotesControles.length },
       debit: debitServeurs,
       attentes: attentesFrein,
+      urgence: mesures.urgence,
       minutes: minutes(),
     };
   };
@@ -806,7 +829,10 @@ async function principal(): Promise<number> {
     if (seconde === null && premiere.arret === null) throw new Error("assemblage : le fichier de la tranche 2 manque");
     r = seconde === null ? premiere : fusionnerTranches(premiere, seconde);
   } else {
-    r = await mesurerTranche(TRANCHE);
+    // The second half starts from the first's emergency counts: the day has 3 pauses, not 3 per half (methode § 7).
+    const urgence = TRANCHE === 2 ? lireFichierTranche(1)?.urgence : undefined;
+    if (TRANCHE === 2 && urgence === undefined) throw new Error("tranche 2 : le fichier de la tranche 1 manque");
+    r = await mesurerTranche(TRANCHE, urgence);
   }
   if (TRANCHE !== null) {
     writeFileSync(fichierTranche(TRANCHE), gzipSync(JSON.stringify(r)));

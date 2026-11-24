@@ -99,13 +99,15 @@ jobs:
     needs: jour
     if: needs.jour.outputs.faite != 'true'
     runs-on: ubuntu-24.04
-    # A trial is capped: its three jobs end within 60 minutes (it never runs into a day's collection: pipeline/creneau.ts
-    # counts on it).
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 25 || 165 }}
-    # One measurement at a time of each kind: a trial never takes the place of a day's waiting measurement (GitHub keeps
-    # one waiting job per group). A trial never measures during, or around the start of, a day's collection (its first
-    # step below): two measurements at once would double the questions to the shared servers (brief B.3). The day's
-    # runs are also one at a time (the workflow's group).
+    # A half's time limits count from its job's start (DEBUT_TACHE, below), and its job keeps a margin past them for
+    # the domains still open and the files (the review of B.8: 30 minutes for a day, as before the halves; 20 for a
+    # trial, whose open domains took up to 20 minutes on a hard day, trap 67). A trial is capped: its three jobs end
+    # within 90 minutes (it never runs into a day's collection: pipeline/creneau.ts counts on it).
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 40 || 180 }}
+    # One measurement at a time of each kind, both halves included: a trial never takes the place of a day's waiting
+    # measurement (GitHub keeps one waiting job per group). A trial never measures during, or around the start of, a
+    # day's collection (its first step below): two measurements at once would double the questions to the shared
+    # servers (brief B.3). The day's runs are also one at a time (the workflow's group).
     concurrency:
       group: collecte-mesure-${{ github.event_name == 'pull_request' && 'essai' || 'jour' }}
       cancel-in-progress: false
@@ -115,6 +117,8 @@ jobs:
     outputs:
       arret: ${{ steps.collecte.outputs.arret }}
     steps:
+      # The job's start: its time limits count from here, the wait for a trial and the preparation included.
+      - run: echo "DEBUT_TACHE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -124,7 +128,7 @@ jobs:
           cache: npm
       - run: npm ci
       # A trial waits for its slot (pipeline/creneau.ts): stopped, in red with a sentence, while a day's collection runs
-      # or waits, or within 60 minutes before 03:17, 09:47 and 15:17 UTC or 120 minutes after; it is then run again later.
+      # or waits, or within 90 minutes before 03:17, 09:47 and 15:17 UTC or 120 minutes after; it is then run again later.
       - if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -202,9 +206,9 @@ jobs:
       # A day is measured once (the owner's rule, point 13, § 8): the mark « measurement started » is saved before the
       # first question, so that neither the run of 09:47 nor a re-run of this job asks the servers again that day, even
       # after a guard blocked the publication or a time limit cut the job. An error of GitHub's API stops here; so does
-      # a re-run after midnight (the day of « jour » must be the clock's), so does a measurement that could not end
-      # before midnight (it starts after 18:30 UTC, and may last 330 minutes: it would meet the next day's), and so does
-      # a run outside « main ».
+      # a re-run after midnight (the day of « jour » must be the clock's), so does a measurement that could come close
+      # to the next day's (it starts after 18:30 UTC, and its jobs may last 410 minutes: 180 for each half, 30 for the
+      # assembly, 20 for the publication), and so does a run outside « main ».
       - if: env.ESSAI != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -256,12 +260,12 @@ jobs:
           # above; a trial's is measured on the same day).
           DATE: ${{ needs.jour.outputs.date }}
         run: |
-          args=(--tranche 1 --travail travail --veille veille --conteneur knot --date "$DATE")
+          args=(--tranche 1 --travail travail --veille veille --conteneur knot --date "$DATE" --debut-tache "$DEBUT_TACHE")
           releve=$(ls releves/ip2asn-combined-*.tsv.gz 2> /dev/null | sort | tail -n 1 || true)
           if [ -n "$releve" ]; then args+=(--iptoasn "$releve"); fi
           if [ -d publie ]; then args+=(--donnees publie); fi
-          # A half's time limits, from its job's start: its first pass (about 85 minutes on day 3), its attempts, its
-          # controls; a trial's are shorter.
+          # A half's time limits, from its job's start (--debut-tache): its first pass (about 85 minutes on day 3), its
+          # attempts, its controls; a trial's are shorter.
           if [ "$ESSAI" = "true" ]; then
             args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10 --fin-reprises-minutes 18 --fin-controles-minutes 20)
           else
@@ -282,8 +286,10 @@ jobs:
           # The resolver's last lines, for a failure: never its questions nor a server's address (the log is public).
           docker logs knot 2>&1 | grep -v -E "querying:|@'|#[0-9]{5}" | tail -n 20 || true
           docker rm -f knot > /dev/null 2>&1 || true
-      # What the next jobs need, kept one day in the run's artifacts (never published: they hold RIS's answers): the
-      # day's context, the sources (never downloaded twice a day) and the first half's measurement.
+      # What the next jobs need of the first half, kept one day in the run's artifacts: the day's context (the dates and
+      # prints of its sources) and the half's measurement (the DNS answers of public names; never a SOA's contact, a
+      # CAA's or a TXT other than SPF). Nothing a source forbids to republish: a public repository's artifacts can be
+      # downloaded by any GitHub account.
       - if: steps.collecte.outputs.arret != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -292,9 +298,29 @@ jobs:
             travail/jour.json
             travail/tranche-1.json.gz
             travail/resume-tranche-1.md
-            travail/sources
           retention-days: 1
           if-no-files-found: error
+      # The sources themselves (RIS's dumps, the RIPE's files, the DILA's zip, the CDNs' lists: never republished,
+      # docs/sources.md) go to the next jobs through the Actions cache, under this run's own key, like yesterday's: never
+      # in an artifact, and never downloaded twice a day. actions/cache/save never fails its step: the entry is read
+      # back, or the next jobs never start.
+      - if: steps.collecte.outputs.arret != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: travail/sources
+          key: collecte-sources-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+      - if: steps.collecte.outputs.arret != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLE: collecte-sources-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+        run: |
+          for essai in 1 2 3 4 5 6; do
+            trouvee=$(gh cache list --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF" --key "$CLE" --json key --jq 'map(select(.key == env.CLE)) | length') || trouvee=""
+            if [ "$trouvee" = "1" ]; then exit 0; fi
+            if [ "$essai" != "6" ]; then sleep 20; fi
+          done
+          echo "mesurer : les sources du jour n'ont pas pu être gardées pour la suite ; la seconde moitié ne part pas." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+          exit 1
 
   # The second half, after the first (never at the same time), from the first's sources and context; never after an
   # emergency stop (the day is lost: the assembly keeps its diagnosis).
@@ -302,13 +328,18 @@ jobs:
     needs: [jour, mesurer-1]
     if: needs.mesurer-1.outputs.arret == 'false'
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 25 || 165 }}
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 40 || 180 }}
+    # The first half's queue (the review of B.8): another trial's first half never measures at the same time as this one.
+    concurrency:
+      group: collecte-mesure-${{ github.event_name == 'pull_request' && 'essai' || 'jour' }}
+      cancel-in-progress: false
     permissions:
       contents: read
       actions: read
     outputs:
       arret: ${{ steps.collecte.outputs.arret }}
     steps:
+      - run: echo "DEBUT_TACHE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -317,6 +348,22 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # A trial's second half checks its slot again: it may have waited in the queue (pipeline/creneau.ts).
+      - if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          en_cours=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow collecte.yml --limit 50 --json event,status --jq '[.[] | select(.event != "pull_request" and .status != "completed")] | length')
+          npx tsx pipeline/cli/creneau-essai.ts "$en_cours"
+      # A day's second half, like its first: never re-run after midnight (two days would mix).
+      - if: env.ESSAI != 'true'
+        env:
+          DATE: ${{ needs.jour.outputs.date }}
+        run: |
+          if [ "$(date -u +%F)" != "$DATE" ]; then
+            echo "mesurer-2 : le jour à mesurer ($DATE) n'est plus celui de l'horloge ; rien n'est mesuré (une relance après minuit)." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+            exit 1
+          fi
       - id: image
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -341,6 +388,11 @@ jobs:
         with:
           name: tranche-1
           path: travail
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: travail/sources
+          key: collecte-sources-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+          fail-on-cache-miss: true
       # The second half is measured once too (the owner's rule, point 13, § 8): its own mark is saved before its first
       # question and read back, so that a re-run of this job never asks its servers again; the assembly, which asks
       # nothing, may be re-run.
@@ -380,7 +432,7 @@ jobs:
         env:
           DATE: ${{ needs.jour.outputs.date }}
         run: |
-          args=(--tranche 2 --travail travail --conteneur knot --date "$DATE")
+          args=(--tranche 2 --travail travail --conteneur knot --date "$DATE" --debut-tache "$DEBUT_TACHE")
           if [ "$ESSAI" = "true" ]; then
             args+=(--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10 --fin-reprises-minutes 18 --fin-controles-minutes 20)
           else
@@ -440,6 +492,12 @@ jobs:
         with:
           name: tranche-2
           path: travail
+      # The day's sources, from the first half (the Actions cache, never an artifact).
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: travail/sources
+          key: collecte-sources-${{ needs.jour.outputs.date }}-${{ github.run_id }}
+          fail-on-cache-miss: true
       # Yesterday: its observations (the Actions cache, never published), and the published state.
       - if: env.ESSAI != 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

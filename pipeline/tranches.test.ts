@@ -54,6 +54,7 @@ const vide = (tranche: Tranche): ResultatTranche => ({
   controle: { noms: 0, mx: 0, hotes: 0 },
   debit: null,
   attentes: { ouvertures: 0, questions: 0, secondes: 0 },
+  urgence: { pauses: 0, depassements: 0 },
   minutes: 0,
 });
 const debit = (d: Partial<DebitServeurs>): DebitServeurs => ({
@@ -92,6 +93,13 @@ describe("the halves of the collection (B.8)", () => {
     delete coupe.domaines;
     expect(() => lireTranche(JSON.stringify(coupe), 2, "2026-11-24")).toThrow(/incomplet/);
     expect(() => lireTranche(JSON.stringify({ ...t, aConfirmer: -1 }), 2, "2026-11-24")).toThrow(/compte/);
+    // The emergency stop's counts, which the second half starts from: never missing nor negative.
+    const sansUrgence: Partial<ResultatTranche> = { ...t };
+    delete sansUrgence.urgence;
+    expect(() => lireTranche(JSON.stringify(sansUrgence), 2, "2026-11-24")).toThrow(/compte/);
+    expect(() =>
+      lireTranche(JSON.stringify({ ...t, urgence: { pauses: -1, depassements: 0 } }), 2, "2026-11-24"),
+    ).toThrow(/compte/);
   });
 
   it("merges the two halves: names and domains side by side, a shared host measured once, the stop of either", () => {
@@ -118,12 +126,19 @@ describe("the halves of the collection (B.8)", () => {
         ["ns1.hebergeur.example", nom("ns1.hebergeur.example")],
         ["ns2.hebergeur.example", nom("ns2.hebergeur.example", "echec")],
       ],
+      // A host of the « État » that both halves gave to Quad9 (it serves a domain of each).
+      controleNoms: [
+        ["ns1.hebergeur.example", { resolveur: "quad9", mesure: nom("ns1.hebergeur.example") }],
+        ["www.b.example", { resolveur: "quad9", mesure: nom("www.b.example") }],
+      ],
       pannes: { noms: ["www.y.example"], zones: ["z.example"] },
       arret: "15 % de domaines en échec, trois fenêtres de suite",
-      controle: { noms: 2, mx: 1, hotes: 1 },
+      controle: { noms: 2, mx: 1, hotes: 2 },
       aConfirmer: 1,
+      urgence: { pauses: 2, depassements: 1 },
       minutes: 80,
     };
+    a.controleNoms.push(["ns1.hebergeur.example", { resolveur: "quad9", mesure: nom("ns1.hebergeur.example") }]);
     const jour = fusionnerTranches(a, b);
     expect(jour.noms.map(([n]) => n)).toEqual(["www.a.example", "www.b.example"]);
     expect(jour.domaines.map(([d]) => d)).toEqual(["a.example", "b.example"]);
@@ -133,8 +148,12 @@ describe("the halves of the collection (B.8)", () => {
     expect(jour.pannes).toEqual({ noms: ["www.y.example"], zones: ["z.example"] });
     expect(jour.arret).toBe("15 % de domaines en échec, trois fenêtres de suite");
     expect(jour.temoinsKnot.map(([n]) => n)).toEqual(["temoin.example"]);
+    // The shared host counted once (the review of B.8): 2 + 2 - 1.
     expect(jour.controle).toEqual({ noms: 5, mx: 2, hotes: 3 });
+    expect(jour.controleNoms.filter(([n]) => n === "ns1.hebergeur.example")).toHaveLength(1);
     expect(jour.aConfirmer).toBe(3);
+    // The second half started from the first's emergency counts: its own are the day's.
+    expect(jour.urgence).toEqual({ pauses: 2, depassements: 1 });
     expect(jour.minutes).toBe(170);
   });
 

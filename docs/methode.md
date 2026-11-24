@@ -219,9 +219,10 @@ Le chiffre-titre ne compte que le « confirmé ». Il se lit donc « **au moins 
 - **Trois tâches qui se suivent** (depuis le chantier 2, B.8) : une collecte qui approche 3 heures se découpe ; le jour 3 a duré 216 minutes.
   - Chaque moitié de la liste est mesurée entièrement dans sa propre tâche : première passe, reprises, contrôles, confirmations. La moitié d'un domaine vient d'un hachage stable de son nom, pour que chaque moitié ait sa part de chaque sorte de domaine.
   - Les deux moitiés passent l'une après l'autre, jamais en même temps : la charge sur les serveurs ne change pas.
-  - La première tâche télécharge les sources et vérifie la quatrième règle, une seule fois par jour, et les transmet à la suivante.
+  - La première tâche télécharge les sources et vérifie la quatrième règle, une seule fois par jour, et les transmet aux suivantes : les fichiers des sources par le cache d'Actions, sous la clé de l'exécution, jamais par un fichier joint à l'exécution, que tout compte GitHub peut télécharger (certaines sources ne se republient pas).
   - Une dernière tâche assemble les deux moitiés et passe les garde-fous sur le jour entier.
-  - Un arrêt d'urgence dans la première moitié arrête la journée : la seconde ne part pas, et rien n'est publié.
+  - Un arrêt d'urgence dans la première moitié arrête la journée : la seconde ne part pas, et rien n'est publié. La seconde moitié reprend les comptes de la première : la journée a trois pauses au plus, et non trois par moitié.
+  - Les limites de temps d'une moitié partent du début de sa tâche (l'attente d'un essai et la préparation comprises), et sa tâche garde une marge après elles pour les domaines encore ouverts : 30 minutes pour un jour, 20 pour un essai.
 - **Politesse** :
   - débit limité, et respect des conditions de chaque source ;
   - un agent utilisateur qui s'identifie, sans adresse e-mail ni nom de compte : `Sovermap-bot/<version> (+https://sovermap.vercel.app)`, puis sovermap.com au chantier 3 ;
