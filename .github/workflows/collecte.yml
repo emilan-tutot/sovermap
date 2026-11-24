@@ -521,6 +521,10 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+    # The local directory's publication (annuaire.yml) is in the same group: one writer of « donnees » at a time.
+    concurrency:
+      group: donnees-ecriture
+      cancel-in-progress: false
     env:
       GH_TOKEN: ${{ github.token }}
       DATE: ${{ needs.jour.outputs.date }}
@@ -566,8 +570,9 @@ jobs:
               exit 1
             fi
           fi
-          # Everything is replaced by the day's state, but the journal: it keeps every day (journal/AAAA/MM/…).
-          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name journal -exec rm -rf {} +
+          # Everything is replaced by the day's state, but the journal, which keeps every day (journal/AAAA/MM/…), and the
+          # territories, which annuaire.yml publishes at each new copy of the local directory.
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name journal ! -name territoires -exec rm -rf {} +
           cp -a ../collecte/sortie/. ./
           git add --all -- README.md vercel.json etat.json noms domaines index agregats journal schemas
           if git diff --cached --quiet; then

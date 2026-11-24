@@ -142,10 +142,23 @@ export const DOMAINE: Schema = objet(
         type: ["object", "null"],
       },
     }),
+    territoire: objet({
+      commune: {
+        ...objet({ code: { type: "string", pattern: "^[0-9][0-9AB][0-9]{3}$" }, nom: texte(120) }),
+        type: ["object", "null"],
+      },
+      groupement: {
+        ...objet({ nom: texte(300), siren: { type: ["string", "null"], pattern: "^[0-9]{9}$" } }),
+        type: ["object", "null"],
+      },
+      departement: { type: ["string", "null"], pattern: "^([0-9]{2,3}|2A|2B)$" },
+      region: { type: ["string", "null"], pattern: "^[0-9]{2}$" },
+      niveau: { enum: ["probable"] },
+    }),
     tronque: { enum: [true] },
     reduit: { enum: [true] },
   },
-  ["tronque", "reduit"],
+  ["territoire", "tronque", "reduit"],
 );
 
 export const FRAGMENT_NOMS: Schema = {

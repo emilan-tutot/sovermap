@@ -13,6 +13,7 @@ import {
   historique,
   historiqueRelu,
   index,
+  indexDemarches,
   jsonStable,
   joursDeChangement,
   journal,
@@ -492,5 +493,55 @@ describe("the figures' history", () => {
       ["2026-11-22", "0.2.3"],
     ]);
     expect(lire(historique(null, "2026-11-23", "0.2.3", false, figures(4.9))).jours).toHaveLength(1);
+  });
+});
+
+describe("the index of the démarches (C.8, D.2)", () => {
+  it("gives each démarche what the edition says of it and, when its address was measured, what serves it", () => {
+    const e: Etat = {
+      noms: new Map([["www.service.example", nom("www.service.example", "service.example", "hebergeur-fr", false)]]),
+      domaines: new Map(),
+    };
+    const demarche = (id: string, hote: string | null) => ({
+      id,
+      nom: `Démarche ${id}`,
+      perimetre: "Ministère de l’Exemple",
+      administration: null,
+      volumeTotal: 100,
+      volumeEnLigne: null,
+      hote,
+      domaine: hote === null ? null : hote.split(".").slice(-2).join("."),
+    });
+    const lu = JSON.parse(
+      indexDemarches(e, {
+        edition: 15,
+        periode: "octobre 2026",
+        publiee: "2026-10-20",
+        demarches: [
+          demarche("115", null),
+          demarche("1764", "www.service.example"),
+          demarche("2000", "x.autre.example"),
+        ],
+      }),
+    ) as { source: unknown; demarches: { id: string; mesure: unknown }[] };
+    expect(lu.source).toEqual({ fiche: 55, edition: 15, periode: "octobre 2026", publiee: "2026-10-20" });
+    expect(lu.demarches.map((d) => d.id)).toEqual(["115", "1764", "2000"]);
+    expect(lu.demarches[0]?.mesure).toBeNull();
+    expect(lu.demarches[1]?.mesure).toEqual({
+      etat: "ok",
+      categorie: "France",
+      horsUE: false,
+      niveau: "confirmé",
+      societes: ["hebergeur-fr"],
+      cdn: null,
+    });
+    // An address the day's list does not hold (set aside by a rule, or no record that day): nothing measured.
+    expect(lu.demarches[2]?.mesure).toBeNull();
+    // Written only when the démarches are given.
+    expect(
+      index(e, { as: new Map(), societes: new Map(), organismes: new Map(), organismesDe: new Map() }).has(
+        "index/demarches.json",
+      ),
+    ).toBe(false);
   });
 });

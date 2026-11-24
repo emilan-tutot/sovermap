@@ -141,6 +141,30 @@ describe("the polite downloader", () => {
       f.retablir();
     }
   });
+
+  it("reads robots.txt once and gives requests asked at once one slot each, a second apart (the review of PR 18)", async () => {
+    const appels: string[] = [];
+    const attentes: number[] = [];
+    const vraieDate = Date.now;
+    Date.now = () => 1_000_000;
+    try {
+      const t = new Telechargeur({
+        agent: agentUtilisateur("1"),
+        fetch: (async (url: string | URL | Request) => {
+          appels.push(String(url));
+          return new Response(String(url).endsWith("/robots.txt") ? "" : "x", { status: 200 });
+        }) as typeof fetch,
+        // A clock that stands still: each request's wait is its slot's distance from now.
+        dormir: async (ms) => void attentes.push(ms),
+      });
+      // Three ranges a reader asks together, as hyparquet does for a file of several row groups.
+      await Promise.all(["a", "b", "c"].map((x) => t.obtenir(`https://d.example/${x}`)));
+      expect(appels.filter((u) => u.endsWith("/robots.txt"))).toHaveLength(1);
+      expect(attentes.sort((x, y) => x - y)).toEqual([1000, 2000, 3000]);
+    } finally {
+      Date.now = vraieDate;
+    }
+  });
 });
 
 describe("the agent string", () => {
