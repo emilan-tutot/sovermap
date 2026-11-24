@@ -644,9 +644,15 @@ async function principal(): Promise<number> {
    */
   const mesurerTranche = async (
     tranche: Tranche | null,
-    /** The first half's emergency counts, for the second (the day keeps its 3 pauses: the review of B.8). */
-    urgenceDuJour?: UrgenceDuJour,
+    /**
+     * The first half, for the second (the review of B.8): its emergency counts (the day keeps its 3 pauses), and the
+     * hosts it measured and gave to Quad9, never asked again.
+     */
+    premiere?: ResultatTranche,
   ): Promise<ResultatTranche> => {
+    const urgenceDuJour: UrgenceDuJour | undefined = premiere?.urgence;
+    const hotesConnus = new Map(premiere?.hotes ?? []);
+    const hotesDejaControles = new Set((premiere?.controleNoms ?? []).map(([nom]) => nom));
     const dansLaTranche = (domaine: string) => tranche === null || trancheDe(domaine) === tranche;
     const domainesDeLaTranche = domainesMesures.filter((d) => dansLaTranche(d.domaine));
     const nomsDeLaTranche = new Map([...noms].filter(([, domaine]) => dansLaTranche(domaine)));
@@ -695,6 +701,7 @@ async function principal(): Promise<number> {
       collecter(nomsDeLaTranche, knot, {
         ...POLITESSE,
         ...(urgenceDuJour === undefined ? {} : { urgenceDuJour }),
+        ...(hotesConnus.size === 0 ? {} : { hotesConnus }),
         nomsParSeconde: Number(o["noms-par-seconde"]),
         delaiRepriseMs: Number(o["delai-reprise-minutes"]) * 60_000,
         echeance: minutesDe(echeanceMinutes),
@@ -709,7 +716,8 @@ async function principal(): Promise<number> {
           finControles = Date.now();
         },
         apresDomaine: (domaine, zone) => {
-          if (domainesEtat.has(domaine)) controleHotesEnCours.ajouter(hotesDeZone(zone));
+          if (domainesEtat.has(domaine))
+            controleHotesEnCours.ajouter(hotesDeZone(zone).filter((h) => !hotesDejaControles.has(h)));
         },
         apresPremierePasse: () =>
           suivi(
@@ -829,10 +837,11 @@ async function principal(): Promise<number> {
     if (seconde === null && premiere.arret === null) throw new Error("assemblage : le fichier de la tranche 2 manque");
     r = seconde === null ? premiere : fusionnerTranches(premiere, seconde);
   } else {
-    // The second half starts from the first's emergency counts: the day has 3 pauses, not 3 per half (methode § 7).
-    const urgence = TRANCHE === 2 ? lireFichierTranche(1)?.urgence : undefined;
-    if (TRANCHE === 2 && urgence === undefined) throw new Error("tranche 2 : le fichier de la tranche 1 manque");
-    r = await mesurerTranche(TRANCHE, urgence);
+    // The second half starts from the first: its emergency counts (the day has 3 pauses, not 3 per half, methode § 7),
+    // and the hosts it measured and controlled, never asked again.
+    const premiere = TRANCHE === 2 ? lireFichierTranche(1) : null;
+    if (TRANCHE === 2 && premiere === null) throw new Error("tranche 2 : le fichier de la tranche 1 manque");
+    r = await mesurerTranche(TRANCHE, premiere ?? undefined);
   }
   if (TRANCHE !== null) {
     writeFileSync(fichierTranche(TRANCHE), gzipSync(JSON.stringify(r)));

@@ -143,6 +143,26 @@ describe("the scheduling of a collection", () => {
     );
     expect(r.questions.filter((q) => q === "ns1.hebergeur.example A")).toHaveLength(1);
     expect(resultat.hotes.get("mx.hebergeur.example")?.a).toEqual([{ adresse: "192.0.2.25", ttl: 300 }]);
+    // A second half (B.8) never asks again a host the first one measured and that answered; a failed one, it asks
+    // again (the review of B.8: the name servers of a large host serve domains of both halves).
+    const ns1 = resultat.hotes.get("ns1.hebergeur.example");
+    const mx = resultat.hotes.get("mx.hebergeur.example");
+    if (ns1 === undefined || mx === undefined) throw new Error("hôtes manquants");
+    const r2 = new ResolveurSimule(ZONE, zoneDe);
+    const seconde = await collecter(noms, r2, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+      aleatoire: generateur(1),
+      hotesConnus: new Map([
+        ["ns1.hebergeur.example", ns1],
+        ["mx.hebergeur.example", { ...mx, etat: "echec", echec: "TIMEOUT" }],
+      ]),
+    });
+    expect(r2.questions.filter((q) => q.startsWith("ns1.hebergeur.example "))).toEqual([]);
+    expect(seconde.hotes.has("ns1.hebergeur.example")).toBe(false);
+    expect(r2.questions.filter((q) => q === "mx.hebergeur.example A")).toHaveLength(1);
+    expect(seconde.hotes.get("mx.hebergeur.example")?.etat).toBe("ok");
     expect(resultat.spf.get("mairie.example")?.reseaux.map((x) => x.reseau)).toEqual([
       "192.0.2.0/24",
       "203.0.113.0/24",
