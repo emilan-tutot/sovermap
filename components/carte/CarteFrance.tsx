@@ -21,6 +21,9 @@ type Props = {
 export const departementsDeLaRegion = (region: string): Set<string> =>
   new Set(fond.departements.filter((d) => d.region === region).map((d) => d.code));
 
+/** Whether the base map draws a territory: an overseas collectivity outside the IGN's layer has no shape on it. */
+export const dansLeFondDeCarte = (code: string): boolean => fond.departements.some((d) => d.code === code);
+
 type Boite = { x: number; y: number; l: number; h: number };
 
 /** The box of some departments' paths, from their points (« M12 34 56 78Z »). */

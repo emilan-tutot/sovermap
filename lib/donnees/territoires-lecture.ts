@@ -30,9 +30,14 @@ export async function indexTerritoiresDuJour(): Promise<IndexTerritoires> {
  * inside keeps its official case (the review of PR 18).
  */
 export async function fichierDepartementDuJour(code: string): Promise<FichierDepartement> {
+  const etat = await lecteur.etat();
   const lu = await lecteur.fichier(`index/territoires/${code.toLowerCase()}.json`);
   if (lu.statut === "absent" || lu.statut === "porte fermée") notFound();
   const fichier = lu.statut === "ok" ? lireFichierDepartement(lu.donnees, code) : null;
   if (fichier === null) indisponible();
+  // A file of another day (the day before's, read when today's could not be) would show its lists under today's date,
+  // and a commune or a group added today would answer « not found », kept by the CDN: the page is unavailable instead,
+  // never cached (the review of PR 22; fiche() treats a record of another day the same way).
+  if (lu.statut === "ok" && etat.statut === "ok" && lu.date !== etat.date) indisponible();
   return fichier;
 }

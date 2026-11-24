@@ -14,7 +14,15 @@ export const CACHE_FICHE = "max-age=86400, stale-while-revalidate=604800";
 /** An aggregated page (the Atlas, a list, a ministry, a company, a country, Quality): an hour, then stale a day. */
 export const CACHE_AGREGAT = "max-age=3600, stale-while-revalidate=86400";
 
-const FICHES = ["/radiographie/:domaine", "/journal/:date"];
+// A day of the journal by its date only: « /journal/flux.xml » is not a day, and keeps its own Cache-Control (an hour
+// when it answers, never stored when it fails), which a rule here would override (the review of PR 22). The routes of
+// app/ set their own Cache-Control the same way: no rule here may cover one (tests/cache.test.ts).
+const FICHES = [
+  "/radiographie/:domaine",
+  "/journal/:date(\\d{4}-\\d{2}-\\d{2})",
+  "/communes/:cle",
+  "/groupements/:cle",
+];
 const AGREGATS = [
   "/",
   "/societes",
@@ -26,6 +34,9 @@ const AGREGATS = [
   "/qualite",
   "/donnees",
   "/sources",
+  "/territoires",
+  "/regions/:cle",
+  "/departements/:cle",
 ];
 
 /**

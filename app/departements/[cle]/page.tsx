@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { CarteFrance, departementsDeLaRegion } from "@/components/carte/CarteFrance";
+import { CarteFrance, dansLeFondDeCarte, departementsDeLaRegion } from "@/components/carte/CarteFrance";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
 import { Domaines } from "@/components/territoires/Domaines";
@@ -47,7 +47,11 @@ export default async function DepartementPage({ params }: Props) {
   if (`/departements/${cle}` !== adresse) permanentRedirect(adresse);
   const fichier = await fichierDepartementDuJour(code);
   const region = departement.region === null ? undefined : territoires.regions.get(departement.region);
-  // Its whole région on the map, as the base map gives it; an overseas collectivity without a région, alone.
+  // Its whole région on the map, as the base map gives it; an overseas collectivity without a région, alone, and only
+  // when the base map draws it (the lists stay the page's text): never all of France with nothing marked (the review
+  // of PR 22). Such a collectivity is named as one, never « département ».
+  const collectivite = departement.region === null;
+  const surLaCarte = dansLeFondDeCarte(code);
   const voisins = departement.region === null ? new Set<string>() : departementsDeLaRegion(departement.region);
   const parNom = <T extends { nom: string }>(a: T, b: T) => a.nom.localeCompare(b.nom, "fr");
   return (
@@ -59,18 +63,20 @@ export default async function DepartementPage({ params }: Props) {
           { nom: departement.nom, chemin: adresse },
         ]}
       />
-      <p className="etiquette-capitales">{t.surtitres.departement}</p>
+      <p className="etiquette-capitales">{collectivite ? t.surtitres.collectivite : t.surtitres.departement}</p>
       <h1 className="titre-page">{t.titrePage(departement.nom)}</h1>
-      <figure className="releve">
-        <CarteFrance
-          titre={t.carteDepartement(departement.nom)}
-          surligner={new Set([code])}
-          cadrer={voisins.size > 0 ? voisins : new Set([code])}
-        />
-        <figcaption className="releve-note">{t.fond}</figcaption>
-      </figure>
+      {surLaCarte ? (
+        <figure className="releve">
+          <CarteFrance
+            titre={collectivite ? t.carteCollectivite(departement.nom) : t.carteDepartement(departement.nom)}
+            surligner={new Set([code])}
+            cadrer={voisins.size > 0 ? voisins : new Set([code])}
+          />
+          <figcaption className="releve-note">{t.fond}</figcaption>
+        </figure>
+      ) : null}
       <section className="releve" aria-labelledby="departement-conseil">
-        <h2 id="departement-conseil">{t.conseilDepartemental}</h2>
+        <h2 id="departement-conseil">{collectivite ? t.conseilCollectivite : t.conseilDepartemental}</h2>
         <Domaines domaines={fichier.conseil} />
       </section>
       <section className="releve" aria-labelledby="departement-communes">
@@ -134,6 +140,8 @@ export default async function DepartementPage({ params }: Props) {
             </tbody>
           </table>
         )}
+        {/* A group without a SIREN has no page: its name is not a link, and the note says why (the review of PR 22). */}
+        {fichier.groupements.some((g) => g.siren === null) ? <p className="releve-note">{t.sansSiren}</p> : null}
       </section>
       <p className="releve-note">{t.source}</p>
     </Coque>

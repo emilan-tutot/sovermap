@@ -441,7 +441,9 @@ export const credits: PageDeTexte = soignee({
           ],
         },
         // lib/credits.ts, written by scripts/credits.ts; tests/credits.test.ts fails when it no longer matches.
-        { liste: LOGICIELS.map((l) => [`${l.nom} ${l.version} (licence ${l.licence}).`]) },
+        {
+          liste: LOGICIELS.map((l) => [`${l.nom}${l.version === null ? "" : ` ${l.version}`} (licence ${l.licence}).`]),
+        },
       ],
     },
     {

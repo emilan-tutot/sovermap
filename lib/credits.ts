@@ -3,11 +3,11 @@
 import type { Logiciel } from "@/scripts/lib/credits";
 
 export const LOGICIELS: readonly Logiciel[] = [
-  { nom: "dns-packet", version: "5.6.1", licence: "MIT" },
-  { nom: "next", version: "16.4.6", licence: "MIT" },
-  { nom: "react", version: "19.3.1", licence: "MIT" },
-  { nom: "react-dom", version: "19.3.1", licence: "MIT" },
-  { nom: "server-only", version: "0.0.1", licence: "MIT" },
-  { nom: "three", version: "0.187.0", licence: "MIT" },
+  { nom: "dns-packet", version: null, licence: "MIT" },
+  { nom: "next", version: null, licence: "MIT" },
+  { nom: "react", version: null, licence: "MIT" },
+  { nom: "react-dom", version: null, licence: "MIT" },
+  { nom: "server-only", version: null, licence: "MIT" },
+  { nom: "three", version: null, licence: "MIT" },
   { nom: "Knot Resolver (CZ.NIC)", version: "6.5.1-20261117", licence: "GPL" },
 ];
