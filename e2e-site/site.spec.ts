@@ -409,10 +409,13 @@ test("démarches : les plus utilisées d'abord, chacune avec le nom de son adres
   await expect(page.locator("main")).toContainText(t.source("15", "octobre 2026"));
   await page.goto("/ministeres");
   await expect(page.getByRole("link", { name: t.lien })).toHaveAttribute("href", "/demarches");
-  await page.goto("/donnees");
-  await expect(page.locator(".attributions").first()).toContainText(
-    "Observatoire de la qualité des démarches en ligne, édition 15 (octobre 2026)",
-  );
+  // The attribution of card 55, on both pages that list the attributions the licences require.
+  for (const chemin of ["/donnees", "/sources"]) {
+    await page.goto(chemin);
+    await expect(page.locator(".attributions").first()).toContainText(
+      "Observatoire de la qualité des démarches en ligne, édition 15 (octobre 2026)",
+    );
+  }
 });
 
 // The Journal's Atom feed (point 13, § 10): served as Atom, well formed, announced by the journal's page.

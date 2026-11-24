@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Coque } from "@/components/coque/Coque";
 import { FilAriane } from "@/components/coque/FilAriane";
-import { type DemarcheServie, lireIndexDemarches } from "@/lib/donnees/demarches";
+import { Valeur } from "@/components/texte/Valeur";
+import { type DemarcheServie, lireIndexDemarches, servieDe } from "@/lib/donnees/demarches";
 import { indisponible } from "@/lib/donnees/indisponible";
 import { lecteur } from "@/lib/donnees/lecture";
 import { type IndexSocietes, lireIndexSocietes } from "@/lib/donnees/radiographie";
@@ -23,47 +24,58 @@ export const metadata: Metadata = {
 
 const t = fr.demarches;
 
-/** The name of its address: plain text (a démarche's name may not be its domain's web name, which a Radiographie shows). */
+/**
+ * The name of its address: a raw value, which breaks only after a dot (DESIGN.md § 6; a démarche's name may not be its
+ * domain's web name, which a Radiographie shows).
+ */
 function Adresse({ d }: { d: DemarcheServie }) {
   if (d.hote === null) return <>{t.sansAdresse}</>;
   return (
     <>
-      <span className="hote">{d.hote}</span>
+      <span className="valeur">
+        <Valeur texte={d.hote} />
+      </span>
       {d.mesure === null ? <span className="releve-note"> {t.note(t.nonMesure)}</span> : null}
     </>
   );
 }
 
-/** Who serves it: the companies of the day's index (by their key when the index does not name one), or why none. */
+/**
+ * Who serves it (servieDe): the companies of the day's index, linked to their page; a company the index does not name
+ * that day says so, as the Radiographie does; or why there is none.
+ */
 function Servie({ d, societes }: { d: DemarcheServie; societes: IndexSocietes }) {
-  const m = d.mesure;
-  if (m === null) return null;
-  if (m.etat !== "ok") {
-    const etat = m.etat === "nxdomain" || m.etat === "nodata" || m.etat === "echec" ? t.etats[m.etat] : t.etats.echec;
-    return <>{etat}</>;
+  const s = servieDe(d.mesure, (cle) => societes.get(cle)?.nom);
+  switch (s.sorte) {
+    case "non mesuree":
+      return null;
+    case "sans reponse":
+      return <>{t.etats[s.etat]}</>;
+    case "servie":
+      return (
+        <>
+          {s.societes.length === 0
+            ? t.sansSociete
+            : s.societes.map(({ cle, nom }, i) => (
+                <span key={cle}>
+                  {i > 0 ? t.separateur : null}
+                  {nom === null ? (
+                    fr.radiographie.mere.nomNonPublie
+                  ) : (
+                    <Link href={`/societes/${cle}`} prefetch={false}>
+                      {nom}
+                    </Link>
+                  )}
+                </span>
+              ))}
+          {s.partiel ? <span className="releve-note"> {t.note(t.partiel)}</span> : null}
+        </>
+      );
+    default: {
+      const jamais: never = s;
+      return jamais;
+    }
   }
-  return (
-    <>
-      {m.societes.length === 0
-        ? t.sansSociete
-        : m.societes.map((cle, i) => {
-            const nom = societes.get(cle)?.nom;
-            return (
-              <span key={cle}>
-                {i > 0 ? t.separateur : null}
-                {nom === undefined ? (
-                  cle
-                ) : (
-                  <Link href={`/societes/${cle}`} prefetch={false}>
-                    {nom}
-                  </Link>
-                )}
-              </span>
-            );
-          })}
-      {m.partiel ? <span className="releve-note"> {t.note(t.partiel)}</span> : null}
-    </>
-  );
 }
 
 // The démarches (C.8, D.2): those the DINUM's Observatoire follows, the most used first (the volume of its edition:

@@ -1,7 +1,7 @@
 // Tests of the reading of the démarches' index by the site (C.8, D.2): made-up démarches, documentation names only
 // (RFC 2606); every entry checked, the most used first.
 import { describe, expect, it } from "vitest";
-import { lireIndexDemarches } from "@/lib/donnees/demarches";
+import { editionDemarches, lireIndexDemarches, servieDe } from "@/lib/donnees/demarches";
 
 const demarche = (id: string, volumeTotal: number | null, hote: string | null, mesure: unknown = null) => ({
   id,
@@ -68,5 +68,64 @@ describe("the démarches' index, as the site reads it (C.8, D.2)", () => {
     expect(lireIndexDemarches({ source: { ...source, periode: "" }, demarches: [] })).toBeNull();
     expect(lireIndexDemarches({ source: { ...source, publiee: "20/10/2026" }, demarches: [] })).toBeNull();
     expect(lireIndexDemarches("index")).toBeNull();
+  });
+
+  it("never tells an unknown state as a failure, and never shows an address the method excludes", () => {
+    // The review of the démarches' page: a state the collection does not publish is no measure; an address the method
+    // calls internal or technical (here a test environment) is neither measured nor shown (docs/methode.md § 3).
+    const lu = lireIndexDemarches({
+      source,
+      demarches: [
+        demarche("1", 3, "www.service.example", { ...mesure, etat: "reduit" }),
+        demarche("2", 2, "recette.service.example", mesure),
+      ],
+    });
+    expect(lu?.demarches.find((d) => d.id === "1")?.mesure).toBeNull();
+    expect(lu?.demarches.find((d) => d.id === "2")).toMatchObject({ hote: null, domaine: null, mesure: null });
+  });
+});
+
+describe("the « served by » cell of a démarche (servieDe)", () => {
+  const lue = (m: unknown) =>
+    lireIndexDemarches({ source, demarches: [demarche("1", 1, "www.service.example", m)] })?.demarches[0]?.mesure ??
+    null;
+  const noms = new Map([["cdn-us", "Exemple CDN"]]);
+  const nomDe = (cle: string) => noms.get(cle);
+
+  it("says nothing when the name was not measured, and why a name does not answer", () => {
+    expect(servieDe(null, nomDe)).toEqual({ sorte: "non mesuree" });
+    for (const etat of ["nxdomain", "nodata", "echec"] as const)
+      expect(servieDe(lue({ ...mesure, etat }), nomDe)).toEqual({ sorte: "sans reponse", etat });
+  });
+
+  it("names the companies by the day's index, says a partial record, and keeps an unnamed one unnamed", () => {
+    expect(servieDe(lue({ ...mesure, societes: ["cdn-us", "autre-cle"], partiel: true }), nomDe)).toEqual({
+      sorte: "servie",
+      societes: [
+        { cle: "cdn-us", nom: "Exemple CDN" },
+        { cle: "autre-cle", nom: null },
+      ],
+      partiel: true,
+    });
+    expect(servieDe(lue({ ...mesure, societes: [] }), nomDe)).toEqual({
+      sorte: "servie",
+      societes: [],
+      partiel: false,
+    });
+  });
+});
+
+describe("the démarches' edition, for the attribution of card 55 (editionDemarches)", () => {
+  it("gives the edition of a readable index, nothing without an index, an error for one that does not read", () => {
+    expect(editionDemarches({ statut: "ok", donnees: { source, demarches: [] }, date: "2026-11-24" })).toEqual({
+      statut: "ok",
+      edition: 15,
+      periode: "octobre 2026",
+    });
+    expect(editionDemarches({ statut: "absent" })).toEqual({ statut: "absent" });
+    expect(editionDemarches({ statut: "ok", donnees: { demarches: [] }, date: "2026-11-24" })).toEqual({
+      statut: "indisponible",
+    });
+    expect(editionDemarches({ statut: "indisponible" })).toEqual({ statut: "indisponible" });
   });
 });

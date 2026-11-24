@@ -40,12 +40,15 @@ export default async function MinisteresPage() {
       <FilAriane miettes={[{ nom: fr.coque.navigation.ministeres, chemin: "/ministeres" }]} />
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
-      {/* The démarches' page (C.8, D.2) is reached from here, not from the navigation, which keeps its seven items. */}
-      <p className="releve-note">
-        <Link href="/demarches" prefetch={false}>
-          {fr.demarches.lien}
-        </Link>
-      </p>
+      {/* The démarches' page (C.8, D.2) is reached from here, not from the navigation, which keeps its seven items; only
+          once their index is published, so that the link never leads to « not found ». */}
+      {etat.donnees.sommes["index/demarches.json"] === undefined ? null : (
+        <p className="releve-note">
+          <Link href="/demarches" prefetch={false}>
+            {fr.demarches.lien}
+          </Link>
+        </p>
+      )}
       <p className="releve-note">{t.entete(nombre(ministeres.length))}</p>
       <table className="releve-table liste-releve">
         <thead>

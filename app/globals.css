@@ -816,6 +816,11 @@
       color: var(--color-discret);
     }
 
+    /* The accent of « outside the EU » stays at the phone too (DESIGN.md § 1.2: everywhere). */
+    .liste-releve td.hors-ue {
+      color: var(--color-accent);
+    }
+
     .liste-releve .nombre {
       grid-column: 2;
       grid-row: 1;
@@ -835,10 +840,7 @@
 
   .texte-section p,
   /* An attribution holds a long address: it wraps anywhere rather than scroll sideways. */
-  .attributions li,
-  /* A démarche's host name (up to 40 characters without a space) wraps too, rather than widen its table past the
-     page's frame (the review of the démarches' page). */
-  .releve-table .hote {
+  .attributions li {
     overflow-wrap: anywhere;
   }
 
