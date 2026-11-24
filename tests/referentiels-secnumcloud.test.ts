@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import secnumcloud from "@/referentiels/secnumcloud.json";
 import societes from "@/referentiels/societes.json";
+import { servicesEnVigueur, societesQualifiees } from "@/pipeline/secnumcloud";
 
 const registre = readFileSync(new URL("../docs/sources.md", import.meta.url), "utf8");
 const methode = readFileSync(new URL("../docs/methode.md", import.meta.url), "utf8");
@@ -98,5 +99,21 @@ describe("the SecNumCloud survey (referentiels/secnumcloud.json)", () => {
     expect(methode).toContain(regle);
     expect(luhn("790173066")).toBe(true);
     expect(luhn("790163066")).toBe(false);
+  });
+});
+
+describe("the qualifications in force on a day", () => {
+  it("drops an ended qualification on its own the day after its end (Outscale, 30/11/2026)", () => {
+    const services = secnumcloud.services as { societe: string | null; service: string; debut: string; fin: string }[];
+    const outscale = services.filter((s) => s.societe === "outscale");
+    expect(outscale.map((s) => s.fin)).toEqual(["2026-11-30"]);
+    expect(societesQualifiees(services, "2026-11-30").has("outscale")).toBe(true);
+    expect(societesQualifiees(services, "2026-12-01").has("outscale")).toBe(false);
+    // Both days of a decision count; before its start, nothing.
+    const exemple = [{ societe: "exemple", service: "Service Exemple", debut: "2026-01-10", fin: "2029-01-10" }];
+    expect(
+      ["2026-01-09", "2026-01-10", "2029-01-10", "2029-01-11"].map((j) => servicesEnVigueur(exemple, j).length),
+    ).toEqual([0, 1, 1, 0]);
+    expect(() => servicesEnVigueur(exemple, "30/11/2026")).toThrow();
   });
 });

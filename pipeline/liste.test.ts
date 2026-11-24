@@ -61,7 +61,40 @@ describe("the Public Suffix List", () => {
       const liste2 = lireListeSuffixes(texte);
       expect(liste2.regles.has("gouv.fr")).toBe(true);
       expect(domaineEnregistrable("www.service.gouv.fr", liste2)).toBe("service.gouv.fr");
+      // Every comment line is one the copy may keep (the review of PR 17): a « Submitted by » line, which names a
+      // contributor even without an e-mail address, can never come back.
+      const permises = [
+        /^\/\/ This Source Code Form is subject to the terms of the Mozilla Public$/,
+        /^\/\/ License, v\. 2\.0\. If a copy of the MPL was not distributed with this$/,
+        /^\/\/ file, You can obtain one at https:\/\/mozilla\.org\/MPL\/2\.0\/\.$/,
+        /^\/\/ Copie réduite par Sovermap : l'en-tête de licence, la version et les règles, sans les autres commentaires$/,
+        /^\/\/ \(qui nomment des contributeurs\)\. Les règles sont inchangées\. Voir docs\/sources\.md, fiche 42\.$/,
+        /^\/\/ VERSION: \d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_UTC$/,
+        /^\/\/ COMMIT: [0-9a-f]{40}$/,
+        /^\/\/ ===(BEGIN|END) (ICANN|PRIVATE) DOMAINS===$/,
+      ];
+      const commentaires = texte.split("\n").filter((l) => l.startsWith("//"));
+      for (const l of commentaires)
+        expect(
+          permises.some((p) => p.test(l)),
+          l,
+        ).toBe(true);
+      // A rule is one word: the PSL ignores what follows a space, where a name could otherwise hide (the review of 0.4).
+      const regles = texte.split("\n").filter((l) => l !== "" && !l.startsWith("//"));
+      expect(regles.length).toBeGreaterThan(1000);
+      for (const l of regles) expect(/^\S+$/.test(l), l).toBe(true);
     }
+  });
+
+  it("pins one copy only, named by the date of its own version line (the collection takes it by its name)", () => {
+    const fichiers = readdirSync("referentiels/psl").filter((f) => f.endsWith(".dat"));
+    expect(fichiers).toHaveLength(1);
+    const [fichier = ""] = fichiers;
+    const version = /^\/\/ VERSION: (\d{4}-\d{2}-\d{2})_/m.exec(
+      readFileSync(`referentiels/psl/${fichier}`, "utf8"),
+    )?.[1];
+    expect(version).toBeDefined();
+    expect(fichier).toBe(`public_suffix_list-${version}.dat`);
   });
 });
 
