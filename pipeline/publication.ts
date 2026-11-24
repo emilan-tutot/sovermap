@@ -524,6 +524,9 @@ export function indexDemarches(etat: Etat, referentiel: ReferentielDemarches): s
               niveau: web.niveau,
               societes: [...new Set(web.exploitants.flatMap((e) => (e.societe === null ? [] : [e.societe])))].sort(),
               cdn: web.cdn?.id ?? null,
+              // A record reduced or shortened that day: what it says is partial, as its Radiographie says (the review of
+              // the index).
+              partiel: web.reduit === true || web.tronque === true,
             },
     };
   });

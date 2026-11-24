@@ -94,15 +94,36 @@ describe("the démarches of the Observatoire (referentiels/demarches.json)", () 
       demarches: [{ ...premiere, ...changement }, ...demarches.demarches.slice(1)],
     });
     const adresse = ["accueil", "exemple.example"].join("@");
+    // Each of the three texts passes the control of personal data.
     expect(() => lireReferentielDemarches(avec({ nom: `Écrire à ${adresse}` }))).toThrow(/personne/);
+    expect(() => lireReferentielDemarches(avec({ perimetre: "Cabinet de M. Exemple" }))).toThrow(/personne/);
     expect(() => lireReferentielDemarches(avec({ administration: "Mme Exemple" }))).toThrow(/personne/);
-    expect(() => lireReferentielDemarches(avec({ volumeTotal: -1 }))).toThrow(/illisible/);
-    expect(() => lireReferentielDemarches(avec({ hote: "www.ailleurs.example", domaine: "autre.example" }))).toThrow(
-      /illisible/,
-    );
+    // Every field checked, never quietly emptied (the review of the index).
+    for (const changement of [
+      { volumeTotal: -1 },
+      { volumeEnLigne: 1.5 },
+      { id: 115 },
+      { nom: "" },
+      { nom: "x".repeat(301) },
+      { nom: " Une démarche" },
+      { nom: "Une démarche‮" },
+      { perimetre: "x".repeat(121) },
+      { administration: "x".repeat(121) },
+      { administration: 7 },
+      { hote: "https://www.ailleurs.example/", domaine: null },
+      { hote: "www.ailleurs.example", domaine: null },
+      { hote: null, domaine: "ailleurs.example" },
+      { hote: "www.ailleurs.example", domaine: "autre.example" },
+      { hote: "WWW.AILLEURS.EXAMPLE", domaine: "ailleurs.example" },
+    ])
+      expect(() => lireReferentielDemarches(avec(changement)), JSON.stringify(changement)).toThrow(/illisible/);
     expect(() => lireReferentielDemarches(avec({ id: demarches.demarches[1]?.id }))).toThrow(/double|ordre/);
-    expect(() => lireReferentielDemarches({ ...demarches, source: { ...demarches.source, edition: 0 } })).toThrow(
-      /illisibles/,
-    );
+    for (const source of [{ edition: 0 }, { periode: "2026" }, { publiee: "20/10/2026" }])
+      expect(() => lireReferentielDemarches({ ...demarches, source: { ...demarches.source, ...source } })).toThrow(
+        /illisibles/,
+      );
+    expect(() =>
+      lireReferentielDemarches({ ...demarches, demarches: Array.from({ length: 2001 }, () => premiere) }),
+    ).toThrow(/illisibles/);
   });
 });
