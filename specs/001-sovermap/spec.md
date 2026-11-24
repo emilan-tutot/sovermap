@@ -122,6 +122,17 @@ Ce qui distingue Sovermap :
   - Preuve : `npm run probe:prod` (la production) et `e2e/porte.spec.ts` (le build local) interrogent la même liste d'adresses, au moins une adresse réelle par famille.
 - **EX-24** WCAG 2.2 AA ; axe sans violation ; une alternative en texte à la 3D et à chaque graphique.
 - **EX-25** Le site écrit, sur l'accueil, la méthode et chaque radiographie, ce qu'il montre et ce qu'il ne montre pas (cahier §2).
+- **EX-26** Les adresses des pages (D.7), en français, lisibles et stables : elles ne changent plus après l'ouverture. Proposées au point 10 du chantier 2, **validées par le propriétaire le 22/11/2026** (réponse au point 13 : point 10, Q1 A ; elles remplacent celles du point 07, sauf les communes, qui gardent le code officiel en tête) :
+  - `/` : l'Atlas (l'accueil) ;
+  - `/radiographie/<domaine>` : la Radiographie d'un domaine enregistré, par son nom (`/radiographie/impots.gouv.fr`) ;
+  - `/pays/<nom>` : un pays, par son nom français sans accents ni espaces (`/pays/etats-unis`) ;
+  - `/ministeres` et `/ministeres/<nom>` : la liste, puis un ministère par son nom court ; un ministère renommé garde son ancienne adresse, qui renvoie (308) vers la nouvelle ;
+  - `/societes` et `/societes/<clé>` : la liste, puis une société par sa clé du référentiel (`/societes/celeste`) ;
+  - `/territoires`, puis une région, un département, une commune ou un groupement par son code officiel et son nom : `/regions/53-bretagne`, `/departements/35-ille-et-vilaine`, `/communes/35238-rennes`, `/groupements/<SIREN>-<nom>` (le code officiel d'abord : deux communes peuvent porter le même nom ; un nom sans accents ni espaces) ;
+  - `/journal` et `/journal/<AAAA-MM-JJ>` ; `/qualite` ;
+  - la recherche, sur l'Atlas (point 10) : pas de page à elle ; son index, chargé au premier usage, a son adresse : `/recherche/index.json` ;
+  - les plans du site (D.7) : `/sitemap.xml` (l'index), `/plans/pages.xml` et `/plans/radiographies.xml` ;
+  - les pages de textes (E) : `/methode`, `/donnees`, `/sources`, `/glossaire`, `/pourquoi-ca-compte`, `/corrections`, `/mentions-legales`, `/confidentialite`, `/accessibilite`, `/credits`, `/a-propos`, et `/radiographie-de-sovermap` (Sovermap passé à sa propre radiographie).
 
 ## 5. Critères de succès mesurables
 

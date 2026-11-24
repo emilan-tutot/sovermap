@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { enTetesDeCache } from "./lib/cache";
 import { reecrituresPorte } from "./lib/porte";
 import { securityHeaders } from "./lib/security/headers";
 import { indexingOpen } from "./lib/site";
@@ -25,6 +26,8 @@ const nextConfig: NextConfig = {
           indexing: indexingOpen(),
         }),
       },
+      // The data pages, kept by Vercel's CDN behind an open door (lib/cache.ts; D.4).
+      ...enTetesDeCache(),
     ];
   },
   // The production door (lib/porte.ts): while SITE_PUBLIC is not exactly « open », only the waiting page answers.
