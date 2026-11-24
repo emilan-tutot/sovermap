@@ -88,38 +88,42 @@ export default async function DemarchesPage() {
       <h1 className="titre-page">{t.titre}</h1>
       <p className="chapo">{t.chapo}</p>
       <p className="releve-note">{t.entete(nombre(index.demarches.length), String(index.edition), index.periode)}</p>
-      <table className="releve-table liste-releve">
-        <thead>
-          <tr>
-            <th scope="col">{t.colonnes.demarche}</th>
-            <th scope="col">{t.colonnes.perimetre}</th>
-            <th scope="col" className="nombre">
-              {t.colonnes.volume}
-            </th>
-            <th scope="col">{t.colonnes.adresse}</th>
-            <th scope="col">{t.colonnes.servie}</th>
-            <th scope="col">{t.colonnes.siege}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {index.demarches.map((d) => (
-            <tr key={d.id}>
-              <th scope="row">{d.nom}</th>
-              <td>{d.perimetre}</td>
-              <td className="nombre valeur">{d.volumeTotal === null ? t.sansVolume : nombre(d.volumeTotal)}</td>
-              <td>
-                <Adresse d={d} />
-              </td>
-              <td>
-                <Servie d={d} societes={societes} />
-              </td>
-              <td className={d.mesure?.etat === "ok" && d.mesure.horsUE === true ? "hors-ue" : undefined}>
-                {d.mesure === null || d.mesure.etat !== "ok" ? null : fr.radiographie.categories[d.mesure.categorie]}
-              </td>
+      {/* The table follows a source's edition (its words, its host names): rather than be clipped by the page's frame,
+          it scrolls sideways inside its own, reachable by the keyboard (the review of the démarches' page). */}
+      <div className="tableau-defilant" tabIndex={0} role="region" aria-label={t.tableau}>
+        <table className="releve-table liste-releve">
+          <thead>
+            <tr>
+              <th scope="col">{t.colonnes.demarche}</th>
+              <th scope="col">{t.colonnes.perimetre}</th>
+              <th scope="col" className="nombre">
+                {t.colonnes.volume}
+              </th>
+              <th scope="col">{t.colonnes.adresse}</th>
+              <th scope="col">{t.colonnes.servie}</th>
+              <th scope="col">{t.colonnes.siege}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {index.demarches.map((d) => (
+              <tr key={d.id}>
+                <th scope="row">{d.nom}</th>
+                <td>{d.perimetre}</td>
+                <td className="nombre valeur">{d.volumeTotal === null ? t.sansVolume : nombre(d.volumeTotal)}</td>
+                <td>
+                  <Adresse d={d} />
+                </td>
+                <td>
+                  <Servie d={d} societes={societes} />
+                </td>
+                <td className={d.mesure?.etat === "ok" && d.mesure.horsUE === true ? "hors-ue" : undefined}>
+                  {d.mesure === null || d.mesure.etat !== "ok" ? null : fr.radiographie.categories[d.mesure.categorie]}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="releve-note">{t.source(String(index.edition), index.periode)}</p>
     </Coque>
   );

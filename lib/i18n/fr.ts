@@ -401,6 +401,8 @@ export const fr = {
       "Les démarches en ligne que suit l’Observatoire de la qualité des démarches en ligne de la DINUM, les plus utilisées d’abord, d’après la volumétrie de l’édition. Pour chacune, le nom de son adresse et l’exploitant qui le sert le jour de la collecte. Sovermap ne dit rien de la qualité d’une démarche.",
     entete: (n: string, edition: string, periode: string) =>
       `${n}${NBSP}démarches, d’après l’édition ${edition} (${periode})`,
+    /** The name of the table's frame, which scrolls sideways when the table is wider than the page. */
+    tableau: "Tableau des démarches en ligne",
     colonnes: {
       demarche: "Démarche",
       perimetre: "Périmètre de l’Observatoire",

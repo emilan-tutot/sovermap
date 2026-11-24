@@ -467,6 +467,12 @@
     overflow-wrap: anywhere;
   }
 
+  /* A table that follows a source's edition (the démarches): it scrolls sideways inside its frame rather than be
+     clipped by the page's, whatever the edition's words. */
+  .tableau-defilant {
+    overflow-x: auto;
+  }
+
   .releve-table {
     width: 100%;
     border-collapse: collapse;

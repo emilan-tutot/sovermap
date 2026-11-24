@@ -385,6 +385,8 @@ test("citer : une Radiographie, un ministère, une société et un pays donnent 
 test("démarches : les plus utilisées d'abord, chacune avec le nom de son adresse et qui le sert", async ({ page }) => {
   const t = fr.demarches;
   await page.goto("/demarches");
+  // The table's frame, named, scrolls sideways rather than be clipped when an edition's words are too wide.
+  await expect(page.getByRole("region", { name: t.tableau })).toHaveCSS("overflow-x", "auto");
   const lignes = page.locator("table.releve-table tbody tr");
   await expect(lignes.locator("th")).toHaveText([
     "Déclarer un exemple",
