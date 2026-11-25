@@ -469,7 +469,9 @@ export class ClientParZone implements ClientDns {
         await this.#creneauParent(nom, zone);
       } else if (this.frein) await this.frein(nom, zone, false);
       // The same instant at each of the zone's name servers (shared by many zones), or at the zone's own pace; a
-      // question that costs the servers more than one question takes more: what the logs measured for the zone; four
+      // question that costs the servers more than one question takes more: what the logs measured for the zone, or for
+      // a zone its CNAMEs lead to, the most of them (the resolver asks that zone's servers too, and fetches what proves
+      // its answers: 2 839 DNSKEY questions for 261 of ours, up to 18 a second to one server, on 25/11/2026); four
       // where a question failed (the resolver tries the other servers, and again: up to 5 questions for one of ours);
       // and, before the logs can tell, one more for each new name between the zone and the asked name (the resolver
       // asked those first, with QNAME minimisation; it no longer minimises, since 22/11/2026, but the weight stays, as a
@@ -484,13 +486,10 @@ export class ClientParZone implements ClientDns {
         nom === zone
           ? this.#apexEnPanne.has(zone)
           : ClientParZone.sousZones(nom, zone).some((s) => this.#sousEnPanne.has(s));
+      const cout = Math.max(...[zone, ...(this.#suites.get(zone) ?? [])].map((z) => this.journal?.cout(z) ?? 1));
       const poids = Math.min(
         POIDS_MAX,
-        Math.max(
-          enPanne ? 4 : 1,
-          Math.ceil((this.journal?.cout(zone) ?? 1) / AMPLIFICATION_PERMISE),
-          1 + intermediaires.length,
-        ),
+        Math.max(enPanne ? 4 : 1, Math.ceil(cout / AMPLIFICATION_PERMISE), 1 + intermediaires.length),
       );
       await instantCommun(
         this.#cles(zone).map((cle) => this.#cadence(this.#rythmes, cle, this.serveurParSeconde)),
