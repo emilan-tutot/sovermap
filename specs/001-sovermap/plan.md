@@ -126,6 +126,10 @@ Chaque limite citée renvoie à sa source et à sa date de lecture (18/11/2026).
 - **Le goulot** : la politesse envers les serveurs des domaines de premier niveau (6 ouvertures par seconde par registre, et non 8 comme dans le calcul ci-dessous) : 41 720 ouvertures prennent au moins 116 min. Découper la collecte en tâches parallèles (B.8) n'y ferait rien gagner, puisque ces serveurs sont partagés : chaque tâche devrait se partager le même rythme.
 - **Le remède** (21/11/2026) : le contrôle des hôtes de l'État part dès qu'un domaine de l'État est mesuré, pendant la première passe, au même rythme de Quad9 (2 questions par seconde, partagées avec le contrôle du plan, qui finit vers 102 min). La queue de 34 min disparaît : durée attendue, environ 177 min. La marge reste mince ; si une collecte dépasse encore 3 h, l'heure limite des reprises se revoit, jamais la politesse.
 
+**Mesuré aux jours 2 à 5 (22 au 25/11/2026)** : 219, 216, 252 et 257 min, toujours au-delà de 3 h (jour 5 : 101 981 noms, 41 785 domaines). La politesse a pris le pas sur le rythme des ouvertures : le plafond des questions en attente aux serveurs des registres un jour dégradé (PR n° 21), puis le poids des questions qui coûtent plus aux serveurs, y compris par les zones où mènent leurs CNAME (PR n° 19).
+
+**Le découpage (B.8, PR n° 27, 25/11/2026)** : la collecte se fait en deux moitiés qui se suivent dans une même exécution, jamais en parallèle (la politesse reste celle d'une seule collecte), puis l'assemblage du jour ; chaque tâche reste sous 3 h (180 min par moitié, 30 pour l'assemblage) ; les moitiés passent par le cache d'Actions, jamais par un fichier joint. L'essai de sa PR (7 610 noms) : 13 min, puis 10 min, puis 51 s. Le premier jour découpé (26/11/2026) donnera la durée d'une moitié sur toute la liste.
+
 **Recalculé le 20/11/2026 (chantier 2, partie B), avec la messagerie (C2-1)** :
 - **Noms mesurés** : 105 728 (les deux listes réunies, 122 209 noms distincts, moins 30 157 noms internes ou techniques, plus les sites du Référentiel de la DILA et 507 noms web ajoutés), dans **41 720 unités** (domaines enregistrés, ou noms d'une plateforme tierce), dont 1 903 dans le périmètre « État ».
 - **Requêtes au résolveur** : A et AAAA par nom (≈ 212 000) ; NS, SOA, DS, CAA, MX et TXT par domaine (≈ 250 000) ; A et AAAA de chaque serveur de noms et de messagerie, une fois par hôte (**hypothèse** : 15 000 hôtes, ≈ 30 000) ; les recherches SPF, 10 au plus par domaine (**hypothèse** : ≈ 20 000). Total : **≈ 510 000 requêtes**.
@@ -180,23 +184,23 @@ Principe :
 
 | Source | Usage | Requêtes | Volume | Limite documentée (lue le 18/11/2026) |
 |---|---|---|---|---|
-| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5), messagerie comprise | ≈ 510 000 par jour au résolveur (recalcul du 20/11/2026), réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, réglé à la source (6 zones nouvelles par seconde au plus vers les serveurs d'un même registre ; 5 questions par seconde au plus vers chaque serveur de noms, toutes zones comprises) et mesuré chaque jour sur les journaux du résolveur (`etat.json`, `qualite.debitMaxParServeur` : part des secondes au-delà de 10 et maximum) ; tolérance de départ : 0,1 % des secondes, jamais plus de 15 (point 04) ; mesure domaine par domaine, les plus grands d'abord ; 8 domaines nouveaux par seconde au plus |
+| Serveurs DNS qui font autorité, par notre résolveur local | Mesure (§ 5), messagerie comprise | ≈ 510 000 par jour au résolveur (recalcul du 20/11/2026) ; mesuré aux jours 1 à 5 : de 502 711 à 537 071 questions du résolveur par jour, réparties sur des milliers de serveurs | — | Plafond que nous fixons : 10 requêtes par seconde par serveur, réglé à la source (6 zones nouvelles par seconde au plus vers les serveurs d'un même registre ; 5 questions par seconde au plus vers chaque serveur de noms, toutes zones comprises) et mesuré chaque jour sur les journaux du résolveur (`etat.json`, `qualite.debitMaxParServeur` : part des secondes au-delà de 10 et maximum) ; tolérance : 0,1 % des secondes, jamais plus de 15 (point 04) ; elle juge l'essai d'une nouvelle version, et la collecte du jour publie ses dépassements, rafales DNSKEY du résolveur comprises (réponse du propriétaire au point 17, § 6.1 ; piège 74) ; mesure domaine par domaine, les plus grands d'abord ; 8 domaines nouveaux par seconde au plus |
 | Quad9 | Contrôle : nom web et MX de tous les domaines du périmètre « État », 3 % des autres, les témoins, et les hôtes des serveurs de noms et de messagerie de l'État | ≈ 10 000 par jour, à 2 par seconde | — | Pas de plafond chiffré ; contact demandé avant un « large-scale DNS traffic » |
 | Cloudflare 1.1.1.1 | Contrôle (témoins) | ≈ 100 par jour | — | Aucune limite publiée |
-| IPtoASN | IP → AS | 1 fichier par jour | 10,9 Mo | Aucune ; fichiers faits pour cet usage |
+| IPtoASN | IP → AS | 1 copie manuelle (relevé du 20/11/2026, renouvelé tous les 80 jours : décision du point 02, ses fichiers étant fermés aux robots) | 10,9 Mo | Aucune ; fichiers faits pour cet usage |
 | RIS (riswhoisdump IPv4 et IPv6) | Confirmation de l'AS | 2 fichiers par jour | 7 Mo | Aucune écrite |
 | Fichiers de délégation des 5 registres | Pays d'enregistrement | 5 fichiers par jour | 46 Mo | Aucune écrite |
 | Fichiers « split » du RIPE | AS → organisation | 2 fichiers par semaine | 14,4 Mo | « insubstantial part » seulement (art. 4.5) |
 | Listes des CDN (Cloudflare, CloudFront, Fastly ; Azure chaque semaine) | Indicateur CDN | 4 par jour, plus 2 par semaine | 2,8 Mo par jour | Aucune écrite. Partie B : Cloudflare (2 fichiers) et Fastly ; CloudFront et Azure avec C.3 |
-| Team Cymru (DNS) | Troisième avis sur l'AS | ≤ 100 par jour | — | Interface DNS conseillée pour un usage régulier |
-| RIPEstat | Contrôles | ≤ 140 par jour | — | Inscription au-delà de 1 000 par jour ; 8 requêtes simultanées par IP |
-| RDAP des registres | Titulaire d'un nouvel AS | ≤ 50 par jour | — | Usage raisonnable ; 3 connexions simultanées (RIPE) |
+| Team Cymru (DNS) | Troisième avis sur l'AS, par l'outil de contre-vérification (C.9), lancé à la main, jamais par la collecte | ≤ 100 par passage | — | Interface DNS conseillée pour un usage régulier |
+| RIPEstat | Contrôles | aucune aujourd'hui (aucune adresse dans le code) | — | Inscription au-delà de 1 000 par jour ; 8 requêtes simultanées par IP |
+| RDAP des registres | Titulaire d'un nouvel AS | aucune depuis le 21/11/2026 (aucune preuve ne vient plus du RDAP, C.1) | — | Usage raisonnable ; 3 connexions simultanées (RIPE) |
 | Référentiel de la DILA | Organismes de l'État | 1 fichier par jour ouvré | 3,2 Mo | Aucune annoncée |
 | API tabulaire de data.gouv.fr (SIG, MESR, PLF, BANATIC) | Organismes et sites | ≈ 40 par semaine | < 1 Mo | Aucune annoncée |
 | GLEIF | Maison mère | quelques dizaines par mois (mise à jour des tables) | — | 60 requêtes par minute |
 | API Recherche d'entreprises | Siège, nature juridique | quelques dizaines par mois | — | 7 requêtes par seconde par IP ; 30 par seconde par ASN |
 
-**Total quotidien** : environ 12 fichiers (70 Mo) et 400 requêtes de contrôle, plus la mesure DNS elle-même.
+**Total quotidien** (estimation du 20/11/2026) : environ 12 fichiers (70 Mo) et 400 requêtes de contrôle, plus la mesure DNS elle-même ; moins aujourd'hui, IPtoASN étant copié à la main et RIPEstat, les RDAP et Team Cymru hors de la collecte.
 
 **Ce qui reste manuel** :
 - la liste SecNumCloud de l'ANSSI, relevée à la main chaque mois et datée ;
@@ -264,6 +268,7 @@ Principe :
   - le journal des changements.
   Git ne stocke que ce qui change. **Hypothèse** : 1 % des fiches change chaque jour, soit environ 330 Ko de lignes par jour avant compression, et 20 à 40 Mo par an dans l'historique.
 - **Mesuré au jour 1 (21/11/2026)** : l'état initial pèse 117 Mo bruts et **25,1 Mo compressés** dans Git (82 876 fichiers : environ 52 000 fragments de noms et 31 000 de domaines, 31 index ; le plus gros fichier, `index/organismes.json`, fait 1,5 Mo), soit plus que l'hypothèse ci-dessus (des fiches plus riches que 300 octets, et l'index des organismes). La croissance par jour se mesure à partir du jour 2 : pour tenir la cible de moins de 200 Mo dans un an (ci-dessous), elle doit rester sous 0,5 Mo compressé par jour en moyenne (25 Mo d'état initial, puis 365 jours). La Release `donnees-courant` (14,3 Mo compressés) est remplacée chaque jour.
+- **Mesuré du jour 2 au jour 5 (22 au 25/11/2026)** : 6,4 Mo compressés du jour 2 au jour 3 ; 10,99 Mo du jour 3 au jour 4 (règles nouvelles : 28 069 fichiers changés) ; **3,18 Mo** du jour 4 au jour 5, le premier jour sans changement de règles (1 649 fichiers changés), soit environ 1,2 Go par an : plus de six fois la cible de 0,5 Mo par jour. Cause première : la date du contrôle (64 % des fichiers changés, sur un échantillon de 300). B.6 (PR n° 27, méthode 0.3.2) la retire des fiches ; la croissance du premier jour ordinaire après sa fusion (le jour 7, 27/11/2026) dira si la cible tient. Le dépôt sur GitHub : 36 729 Ko le 23/11/2026, 49 019 Ko le 25/11/2026.
 - **Releases mensuelles** : 12 par an, d'environ 5 à 10 Mo compressés chacune. Elles ne comptent pas dans la taille du dépôt Git.
 - **Code** : moins de 50 Mo, polices comprises.
 - **Taille du dépôt dans un an** : moins de 200 Mo. La documentation recommande « ideally less than 1 GB, and less than 5 GB is strongly recommended » (docs.github.com, lu le 18/11/2026).
@@ -696,5 +701,12 @@ Le titulaire s'écrit toujours « Les contributeurs de Sovermap ».
 | **T9 — Avant l'ouverture** | Audit complet du dépôt ; attaque simulée de notre propre site ; vrais iPhone et Android ; lecteur d'écran. | Rapports d'audit et d'essais, défauts corrigés. |
 | **T10 — Ouverture** | `SITE_INDEXING=open` ; sitemap ; Search Console ; réutilisation déclarée sur data.gouv.fr ; décision sur les robots d'IA. | Site indexé ; 30 jours d'usage sous les cibles du § 11. |
 | **T11 — L'anglais** (D5, après l'ouverture) | Traduction des clés, relecture éditoriale, `hreflang` ; tout le site, de A à Z, avec un petit bouton FR / EN ; ensuite, chaque texte ajouté ou modifié l'est dans les deux langues dans le même commit, et la CI refuse un texte sans sa traduction (décision de l'ARRÊT 2 bis, § 15). | 100 % des clés traduites et relues. |
+
+**Les preuves de fin à la fin du chantier 2 (25/11/2026)** :
+- **T2** : faits, moins de 2 % d'échecs (jours 1 à 5 : de 0,05 % à 0,99 % de domaines en échec non confirmés), le disjoncteur et le contrôle de fraîcheur déclenchés exprès (issues n° 11 et 14, fermées). Restent : 14 jours de suite publiés (5 au 25/11/2026 : du 21 au 25) ; moins de 3 h, tenu pour chaque tâche depuis le découpage en deux moitiés (PR n° 27), mais pas pour la collecte entière (de 189 à 257 min).
+- **T3** : faits, les tables sourcées ligne par ligne (référentiels 0.4 : 91 AS, 93 sociétés), les relais de sécurité, le relevé SecNumCloud, la méthode 0.3 ; la contre-vérification (C.9 : 121 concordances sur 121, plus que les 10 domaines et les 95 % demandés). Reste : 95 % « confirmé » (36,3 % au jour 5 ; les leviers : `tasks.md`, C.1).
+- **T4** : faits, les e2e verts, axe sans violation sérieuse ni critique, un LCP de 568 à 628 ms (cible 1,8 s ; vraies données du jour 2, 23/11/2026). Restent : les quotas de Vercel mesurés sur 30 jours (la production reste fermée), et G.1 sur les données du jour 6.
+- **T5** : faits, chaque page datée, chaque fait sourcé, la déclaration d'accessibilité écrite (`/accessibilite`, derrière la porte). Reste : la relecture du propriétaire (E.5), au chantier 3, sa décision.
+- **T6** : fait, les fichiers valides selon leur schéma (garde-fou de la collecte, F.3). Reste : la première archive mensuelle (F.2, F.4 : le 01/12/2026, ou au chantier 3).
 
 **Organisation** (décision de l'ARRÊT 2 bis, 19/11/2026, § 15) : après T1, les chantiers T2 à T11 se font, dans cet ordre, en deux grands chantiers de plusieurs jours, avec un point toutes les deux ou trois heures ; le découpage est proposé dans le rapport final de T1. À ces points, les propositions de design se montrent en planches d'images, et en vidéo seulement quand il faut juger un mouvement (retouche de l'ARRÊT 2 ter, § 15).
