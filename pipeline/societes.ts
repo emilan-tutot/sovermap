@@ -88,6 +88,24 @@ export function categorie(pays: string | null): Categorie {
   return "hors d'Europe";
 }
 
+const ELOIGNEMENT: readonly Categorie[] = ["France", "UE hors France", "Europe hors UE", "hors d'Europe"];
+
+/**
+ * The seat that gives a serving company its category and its thread (the owner's decision of ARRÊT 2, plan § 15, with
+ * rule C2-4): the farther of its own seat and its ultimate parent's; on a tie, the parent's. With its parent unknown
+ * (`paysMere` null), the retained seat is not established, so no thread is drawn (a country is counted only for an
+ * established seat, PR 19); its category is still « hors d'Europe » for a company outside Europe, whatever that
+ * parent, and « non déterminé » for any other.
+ */
+export function siegeRetenu(pays: string, paysMere: string | null): { pays: string | null; categorie: Categorie } {
+  const propre = categorie(pays);
+  if (paysMere === null) return { pays: null, categorie: propre === "hors d'Europe" ? propre : "non déterminé" };
+  const mere = categorie(paysMere);
+  return ELOIGNEMENT.indexOf(propre) > ELOIGNEMENT.indexOf(mere)
+    ? { pays, categorie: propre }
+    : { pays: paysMere, categorie: mere };
+}
+
 /** Who produced a source: its host name. Two pages of the same producer count once. */
 function producteur(source: Source): string {
   try {
@@ -108,6 +126,8 @@ export type ChaineSociete = {
   mere: { cle: string; nom: string; pays: string; controle?: string } | null;
   categorie: Categorie;
   niveau: Niveau;
+  /** The level of the operating company's own seat (its sources, not its parent's link): what rule C2-4 needs alone. */
+  niveauSociete: Niveau;
 };
 
 const niveauNoeud = (s: Societe): Niveau => niveauMin(niveauSources(s.sources), niveauSources(s.sources_mere));
@@ -116,27 +136,53 @@ const niveauNoeud = (s: Societe): Niveau => niveauMin(niveauSources(s.sources), 
 export function chaineDepuisSociete(cle: string | null, societes: ReferentielSocietes): ChaineSociete {
   const s = cle === null ? undefined : societes.societes[cle];
   if (cle === null || s === undefined)
-    return { societe: null, mere: null, categorie: "non déterminé", niveau: "non déterminé" };
+    return {
+      societe: null,
+      mere: null,
+      categorie: "non déterminé",
+      niveau: "non déterminé",
+      niveauSociete: "non déterminé",
+    };
   const exploitante = { cle, nom: s.nom, pays: s.pays };
+  const niveauSociete = niveauSources(s.sources);
   const niveaux: Niveau[] = [niveauNoeud(s)];
   let cleMere = cle;
   let mere = s;
   for (let i = 0; i < 10 && mere.mere !== null; i += 1) {
     const suivante = mere.mere === MERE_INCONNUE ? undefined : societes.societes[mere.mere];
     if (suivante === undefined)
-      return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé" };
+      return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé", niveauSociete };
     cleMere = mere.mere;
     mere = suivante;
     niveaux.push(niveauNoeud(mere));
   }
   if (mere.mere !== null)
-    return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé" };
+    return { societe: exploitante, mere: null, categorie: "non déterminé", niveau: "non déterminé", niveauSociete };
   return {
     societe: exploitante,
     mere: { cle: cleMere, nom: mere.nom, pays: mere.pays, ...(mere.controle ? { controle: mere.controle } : {}) },
     categorie: categorie(mere.pays),
     niveau: niveauMin(...niveaux),
+    niveauSociete,
   };
+}
+
+/**
+ * The companies above a company, from its direct parent up to its ultimate parent (10 at most), as far as the
+ * referential knows them: none at the top of a chain; the known part when a parent is not established. What the pages
+ * show as « qui possède qui » (D.2, R9).
+ */
+export function maillonsDe(cle: string, societes: ReferentielSocietes): { cle: string; nom: string; pays: string }[] {
+  const maillons: { cle: string; nom: string; pays: string }[] = [];
+  let s = societes.societes[cle];
+  for (let i = 0; i < 10 && s !== undefined && s.mere !== null && s.mere !== MERE_INCONNUE; i += 1) {
+    const cleMere: string = s.mere;
+    const mere = societes.societes[cleMere];
+    if (mere === undefined) break;
+    maillons.push({ cle: cleMere, nom: mere.nom, pays: mere.pays });
+    s = mere;
+  }
+  return maillons;
 }
 
 /** From an AS to its operating company and ultimate parent. */

@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { ReferentielDila } from "./dila";
-import { construireListe, lireCopiePerimetre, ministeresDuDomaine, uniteDe } from "./perimetre";
+import { cleDemarches, construireListe, lireCopiePerimetre, ministeresDuDomaine, uniteDe } from "./perimetre";
 import { lireListeSuffixes } from "./psl";
 
 const suffixes = lireListeSuffixes(
@@ -15,6 +15,8 @@ const plateformes = new Set(["createur.example"]);
 
 const dila: ReferentielDila = {
   fichier: "dila_refOrga_admin_Etat_fr_20260101.zip",
+  neutralises: 0,
+  ecarts: {},
   services: new Map([
     [
       "s1",
@@ -59,6 +61,63 @@ describe("the reference list", () => {
     });
     expect(liste.noms.has("recette.mairie.example")).toBe(false);
     expect(liste.exclus.get("environnement")).toBe(1);
+  });
+
+  it("measures the démarches' addresses (fiche 55) with their provenance: a change of list, never a reason of the perimeter", () => {
+    const copies = [
+      { date: "2026-11-19", csv: "name,type\nwww.caisse.example,Organisme\nwww.service.gouv.example,\n" },
+    ];
+    const sans = construireListe(copies, null, suffixes, plateformes, ".gouv.example");
+    const avec = construireListe(copies, null, suffixes, plateformes, ".gouv.example", undefined, [], {
+      date: "2026-10-20",
+      hotes: [
+        "www.caisse.example",
+        "teleservice.caisse.example",
+        "recette.caisse.example",
+        "assure.nouveau.example",
+        "demarche.service.gouv.example",
+        "www.neuf.gouv.example",
+      ],
+    });
+    // A unit that has a reason keeps exactly its own (the review of C.8: the reasons compared are not empty).
+    expect(sans.domaines.get("service.gouv.example")?.raisons.length).toBeGreaterThan(0);
+    expect(avec.domaines.get("service.gouv.example")?.raisons).toEqual(
+      sans.domaines.get("service.gouv.example")?.raisons,
+    );
+    // A new unit on the State's suffix enters « État » by that suffix (D1), never by the Observatoire.
+    expect(avec.domaines.get("neuf.gouv.example")?.perimetre).toBe("État");
+    expect(avec.domaines.get("neuf.gouv.example")?.raisons).toEqual(
+      construireListe(
+        [{ date: "2026-11-19", csv: "name,type\nwww.neuf.gouv.example,\n" }],
+        null,
+        suffixes,
+        plateformes,
+        ".gouv.example",
+      ).domaines.get("neuf.gouv.example")?.raisons,
+    );
+    // A name already listed keeps it, with one more provenance; a new one enters; an internal one stays out.
+    expect(avec.noms.get("www.caisse.example")?.provenances).toEqual(["dinum:2026-11-19", "observatoire:2026-10-20"]);
+    expect(avec.noms.get("teleservice.caisse.example")?.provenances).toEqual(["observatoire:2026-10-20"]);
+    expect(avec.noms.has("recette.caisse.example")).toBe(false);
+    expect(sans.noms.has("teleservice.caisse.example")).toBe(false);
+    // A new unit stays outside the perimeter, and a listed one keeps its own: the Observatoire gives no reason.
+    expect(avec.domaines.get("nouveau.example")?.perimetre).toBe("hors État");
+    expect(avec.domaines.get("caisse.example")?.raisons).toEqual(sans.domaines.get("caisse.example")?.raisons);
+    expect(avec.domaines.get("caisse.example")?.perimetre).toBe(sans.domaines.get("caisse.example")?.perimetre);
+  });
+
+  it("names the démarches' edition, date and addresses in the day's rules (the review of C.8)", () => {
+    const edition15 = { date: "2026-10-20", hotes: ["a.service.example", "b.service.example"] };
+    expect(cleDemarches(15, edition15)).toMatch(/^observatoire:15:2026-10-20:[0-9a-f]{12}$/);
+    // The same addresses in another order: the same rules.
+    expect(cleDemarches(15, { ...edition15, hotes: ["b.service.example", "a.service.example"] })).toBe(
+      cleDemarches(15, edition15),
+    );
+    // The same edition read again with other addresses, as many of them, or another edition: other rules.
+    expect(cleDemarches(15, { ...edition15, hotes: ["a.service.example", "c.service.example"] })).not.toBe(
+      cleDemarches(15, edition15),
+    );
+    expect(cleDemarches(16, edition15)).not.toBe(cleDemarches(15, edition15));
   });
 
   it("counts a name set aside once, keeps it, and measures it when the fourth rule is suspended", () => {

@@ -29,8 +29,8 @@ const hote = (h: string, societe: string | null, preuve: string): Hote => ({
   etat: "ok",
   as: [64496],
   exploitants: [
-    { role: "hébergé par", societe, preuve, niveau: "probable" },
-    { role: "hébergé par", societe, preuve, niveau: "probable" },
+    { role: "hébergé par", societe, preuve, niveau: "probable", niveauSociete: "probable" },
+    { role: "hébergé par", societe, preuve, niveau: "probable", niveauSociete: "probable" },
   ],
   categorie: "France",
   horsUE: false,

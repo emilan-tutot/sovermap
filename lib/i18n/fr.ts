@@ -8,8 +8,7 @@ export const fr = {
   site: {
     name: "Sovermap",
     question: `Qui héberge l’État${NBSP}?`,
-    description:
-      `Pour chaque site public français${NBSP}: chez qui il est hébergé ou diffusé, à quelle société il appartient et dans quel pays est son siège, jour après jour.`,
+    description: `Pour chaque site public français${NBSP}: chez qui il est hébergé ou diffusé, à quelle société il appartient et dans quel pays est son siège, jour après jour.`,
   },
   meta: {
     /** The title of a page, followed by the name of the site. */
@@ -39,9 +38,9 @@ export const fr = {
   },
   globe: {
     titre: "Les fils de la France vers les pays des sièges",
-    honnetete: "Les fils vont vers le pays du siège de la maison mère, pas vers l’emplacement d’un serveur.",
-    descriptionScene:
-      `Globe${NBSP}: des fils partent de la France vers les pays des sièges des maisons mères. La liste des pays suit.`,
+    honnetete:
+      "Les fils vont vers le pays du siège retenu, le plus éloigné de celui de la société et de celui de sa maison mère, pas vers l’emplacement d’un serveur.",
+    descriptionScene: `Globe${NBSP}: des fils partent de la France vers les pays des sièges retenus des sociétés. La liste des pays suit.`,
     chargement: "Chargement de la carte en relief",
     recentrer: "Recentrer",
     explorer: "Explorer le globe",

@@ -3,7 +3,14 @@
 // addresses, classified the same way), and the SPF record's networks. Only what may be republished is kept here: the
 // AS and its IPtoASN range and description (PDDL), the registry's country of registration of the AS, the companies of
 // referentiels/; never RIS's prefixes (« en contrôle seulement », brief F.3), which only decide the confidence level.
-import { type Classement, classer, type Contexte, type Perimetre, type Servant } from "./classement";
+import {
+  categorieDuServant,
+  type Classement,
+  classer,
+  type Contexte,
+  type Perimetre,
+  type Servant,
+} from "./classement";
 import type { ObservationDns } from "./dns";
 import type { MesureNom } from "./mesure";
 import { adresseEnEntier, type CoucheReseau, type TableIpToAsn, type TableRis } from "./reseau";
@@ -34,6 +41,8 @@ export type Exploitant = {
   categorie: Categorie;
   preuve: string;
   niveau: Niveau;
+  /** The level of « this company serves the name, and has its seat there », without its parents (rule C2-4). */
+  niveauSociete: Niveau;
 };
 
 export type CoucheAdresses = {
@@ -136,9 +145,10 @@ function exploitants(c: Classement): Exploitant[] {
       pays: s.chaine.societe?.pays ?? null,
       mere: s.chaine.mere?.cle ?? null,
       paysMere: s.chaine.mere?.pays ?? null,
-      categorie: s.chaine.categorie,
+      categorie: categorieDuServant(s),
       preuve: s.preuve,
       niveau: s.niveau,
+      niveauSociete: s.niveauSociete,
     }))
     .sort((x, y) => parTexte(`${x.societe ?? ""}${x.preuve}`, `${y.societe ?? ""}${y.preuve}`));
 }
@@ -192,7 +202,8 @@ export function coucheAdresses(
 export type CoucheHotes = {
   hotes: { hote: string; couche: CoucheAdresses }[];
   categorie: Categorie;
-  /** At least one host depends on a company whose ultimate parent is outside the EU; null when undetermined. */
+  /** At least one host depends on a company whose own seat, or whose ultimate parent's, is outside the EU (C2-4); null
+   * when undetermined. */
   horsUE: boolean | null;
   niveau: Niveau;
 };

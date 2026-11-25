@@ -1,0 +1,2444 @@
+{
+  "version": "2026-10-20",
+  "source": {
+    "fiche": 55,
+    "document": "DINUM, Observatoire de la qualité des démarches en ligne, édition 15 (octobre 2026)",
+    "edition": 15,
+    "periode": "octobre 2026",
+    "publiee": "2026-10-20",
+    "releve": "relevé manuel : fichier déposé par le propriétaire le 2026-11-22, lu le 2026-11-22"
+  },
+  "note": "Pour chaque démarche : son nom, son identifiant, son périmètre ministériel, son administration, ses volumes (null quand l'édition n'en donne pas) et le nom de son adresse avec son domaine enregistré. Les notes de la démarche (satisfaction, accessibilité, clarté…) ne sont jamais reprises : Sovermap décrit des dépendances, pas la qualité d'une démarche.",
+  "demarches": [
+    {
+      "id": "44",
+      "nom": "Obtenir une attestation de droits (Ameli)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 60759228,
+      "volumeEnLigne": 60759228,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "45",
+      "nom": "Changement d'adresse (Ameli)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 4807601,
+      "volumeEnLigne": 4807601,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "46",
+      "nom": "Attestation de paiement d'indemnités journalières",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 46010250,
+      "volumeEnLigne": 46010250,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "115",
+      "nom": "Vote pour les Français de l’Etranger aux élections consulaires",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "116",
+      "nom": "Vote pour les Français de l’Etranger aux élections législatives",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "votefae.diplomatie.gouv.fr",
+      "domaine": "diplomatie.gouv.fr"
+    },
+    {
+      "id": "123",
+      "nom": "Dépôts de compte et dépôts d’actes (entreprises)",
+      "perimetre": "Économie et finances",
+      "administration": "DGE-INPI",
+      "volumeTotal": 1516665,
+      "volumeEnLigne": 1516665,
+      "hote": "procedures.inpi.fr",
+      "domaine": "inpi.fr"
+    },
+    {
+      "id": "757",
+      "nom": "Demander une carte européenne d'assurance maladie (Ceam)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 5981157,
+      "volumeEnLigne": 5981157,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "772",
+      "nom": "Déclarer une naissance (Ameli)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 602832,
+      "volumeEnLigne": 602832,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "1617",
+      "nom": "Ma demande de compensation du handicap MDPH (mdphenligne.cnsa.fr)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGCS",
+      "volumeTotal": 1754243,
+      "volumeEnLigne": 241795,
+      "hote": "mdphenligne.cnsa.fr",
+      "domaine": "cnsa.fr"
+    },
+    {
+      "id": "1620",
+      "nom": "Déclaration de ressources annuelles auprès de la CAF",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 2734401,
+      "volumeEnLigne": 2355430,
+      "hote": "wwwd.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1621",
+      "nom": "Demande de Complémentaire Santé Solidaire (CSS)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 2876209,
+      "volumeEnLigne": 2876209,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "1622",
+      "nom": "Demande de retraite personnelle",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 580000,
+      "volumeEnLigne": 580000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "1623",
+      "nom": "Demande de réversion",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 130000,
+      "volumeEnLigne": 130000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "1624",
+      "nom": "Déclarer un changement de situation pour les prestations familiales",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 1036626,
+      "volumeEnLigne": 1034603,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1627",
+      "nom": "Demande de carte du combattant et du titre de reconnaissance de la Nation",
+      "perimetre": "Défense",
+      "administration": "ONACVG",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.onac-vg.fr",
+      "domaine": "onac-vg.fr"
+    },
+    {
+      "id": "1629",
+      "nom": "Demande de regroupement familial (ressortissants étrangers)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGEF",
+      "volumeTotal": 32038,
+      "volumeEnLigne": 11958,
+      "hote": "etrangers-en-france.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "1634",
+      "nom": "Déclaration de modification ou de dissolution d'une association",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DLPAJ",
+      "volumeTotal": 270002,
+      "volumeEnLigne": 270002,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1635",
+      "nom": "Création d'une association (e-création)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DLPAJ",
+      "volumeTotal": 115029,
+      "volumeEnLigne": 115029,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1636",
+      "nom": "Autorisation de sortie du territoire (AST) d'un mineur non accompagné par un titulaire de l'autorité parentale",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DLPAJ",
+      "volumeTotal": 1756782,
+      "volumeEnLigne": 1756782,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1637",
+      "nom": "Demande d'inscription sur les listes électorales communales",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DMATES",
+      "volumeTotal": 877398,
+      "volumeEnLigne": 877398,
+      "hote": "www.inscriptionelectorale.service-public.fr",
+      "domaine": "service-public.fr"
+    },
+    {
+      "id": "1638",
+      "nom": "Etablissement d'une procuration de vote (Maprocuration)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DMATES",
+      "volumeTotal": 16789,
+      "volumeEnLigne": 16789,
+      "hote": "maprocuration.gouv.fr",
+      "domaine": "maprocuration.gouv.fr"
+    },
+    {
+      "id": "1639",
+      "nom": "Demande de subvention pour travaux - Propriétaires occupants dite « MonProjet ANAH »",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGALN",
+      "volumeTotal": 67365,
+      "volumeEnLigne": 63323,
+      "hote": "monprojet.anah.gouv.fr",
+      "domaine": "anah.gouv.fr"
+    },
+    {
+      "id": "1641",
+      "nom": "Demande de permis de conduire après suspension, invalidation et annulation dont AM après perte de droits",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 410052,
+      "volumeEnLigne": 410052,
+      "hote": "permisdeconduire.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1642",
+      "nom": "Déclaration de cession d'un véhicule",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 8431724,
+      "volumeEnLigne": 8431724,
+      "hote": "immatriculation.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1644",
+      "nom": "Demande de renouvellement du certificat d'immatriculation (carte grise) suite à perte, vol ou détérioration du titre",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 467466,
+      "volumeEnLigne": 467466,
+      "hote": "immatriculation.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1652",
+      "nom": "Déclaration de détention et d'acquisition d'armes",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "SCAE",
+      "volumeTotal": 173400,
+      "volumeEnLigne": 173400,
+      "hote": "sia.detenteurs.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "1656",
+      "nom": "Je change de coordonnées (JCC)",
+      "perimetre": "Services du Premier ministre et Autorités administratives indépendantes",
+      "administration": "DILA",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1657",
+      "nom": "Demande de certificat de situation administrative (non gage)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 11240019,
+      "volumeEnLigne": 11240019,
+      "hote": "siv.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "1658",
+      "nom": "URSSAF - Déclaration préalable à l'embauche (DPAE)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 53569479,
+      "volumeEnLigne": 53541605,
+      "hote": "www.due.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "1661",
+      "nom": "Chorus Pro - Remboursement de taxes",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "AIFE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "cpro.chorus-pro.gouv.fr",
+      "domaine": "chorus-pro.gouv.fr"
+    },
+    {
+      "id": "1664",
+      "nom": "Demande d'indemnisation des pertes - Procédure des calamités agricoles",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "DGPE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "ecoagri.agriculture.gouv.fr",
+      "domaine": "agriculture.gouv.fr"
+    },
+    {
+      "id": "1666",
+      "nom": "Tesa + Bulletins de salaire",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 333411,
+      "volumeEnLigne": 333411,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "1671",
+      "nom": "Déclaration de situation pour les prestations familiales et les aides au logement",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 395344,
+      "volumeEnLigne": 358123,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "1679",
+      "nom": "Études en France",
+      "perimetre": "Affaires étrangères",
+      "administration": "DGM",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "etudesenfrance.diplomatie.gouv.fr",
+      "domaine": "diplomatie.gouv.fr"
+    },
+    {
+      "id": "1680",
+      "nom": "Paiement de la contribution de vie étudiante et de campus (CVEC)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "CNOUS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "cvec.etudiant.gouv.fr",
+      "domaine": "etudiant.gouv.fr"
+    },
+    {
+      "id": "1683",
+      "nom": "Demande de logement en cité universitaire",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "CNOUS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "trouverunlogement.lescrous.fr",
+      "domaine": "lescrous.fr"
+    },
+    {
+      "id": "1690",
+      "nom": "CESU - Déclarer les heures des volets sociaux (Chèque Emploi Service Universel)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 19245185,
+      "volumeEnLigne": 18340614,
+      "hote": "www.cesu.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "1691",
+      "nom": "CESU - Créer son compte - Futur employeur (Chèque Emploi Service Universel)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 277862,
+      "volumeEnLigne": 274883,
+      "hote": "www.cesu.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "1693",
+      "nom": "Demande en ligne d'homologation d'une rupture conventionnelle (TéléRC)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGT",
+      "volumeTotal": 561479,
+      "volumeEnLigne": 561479,
+      "hote": "www.telerc.travail.gouv.fr",
+      "domaine": "travail.gouv.fr"
+    },
+    {
+      "id": "1694",
+      "nom": "Consulter mes droits de formation (CPF)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGEFP",
+      "volumeTotal": 17701670,
+      "volumeEnLigne": 17701670,
+      "hote": "www.moncompteformation.gouv.fr",
+      "domaine": "moncompteformation.gouv.fr"
+    },
+    {
+      "id": "1695",
+      "nom": "Saisie en ligne des états de présence (SYLAé)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGEFP",
+      "volumeTotal": 536931,
+      "volumeEnLigne": 536931,
+      "hote": "sylae.asp.gouv.fr",
+      "domaine": "asp.gouv.fr"
+    },
+    {
+      "id": "1696",
+      "nom": "Demande de prime d'activité",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 1067992,
+      "volumeEnLigne": 1015596,
+      "hote": "wwwd.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1697",
+      "nom": "Publication d'une offre d'emploi en ligne (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 1235135,
+      "volumeEnLigne": 1235135,
+      "hote": "entreprise.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "1699",
+      "nom": "Demander une carte vitale",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 2752471,
+      "volumeEnLigne": 2752471,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "1700",
+      "nom": "S'inscrire ou se réinscrire comme demandeur d'emploi à France Travail",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 2750507,
+      "volumeEnLigne": 2750507,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "1701",
+      "nom": "Demande de complément de libre choix de mode de garde - Prestation d'accueil du jeune enfant (Paje)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 366811,
+      "volumeEnLigne": 355032,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1703",
+      "nom": "Inscription au registre national des refus de dons d'organes",
+      "perimetre": "Affaires sociales",
+      "administration": "DGS",
+      "volumeTotal": 56701,
+      "volumeEnLigne": 45139,
+      "hote": "www.registrenationaldesrefus.fr",
+      "domaine": "registrenationaldesrefus.fr"
+    },
+    {
+      "id": "1705",
+      "nom": "Demande d'aide au logement",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 1177204,
+      "volumeEnLigne": 952192,
+      "hote": "wwwd.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1706",
+      "nom": "Demande d'aide au logement pour les étudiants",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 317821,
+      "volumeEnLigne": 317784,
+      "hote": "wwwd.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1707",
+      "nom": "Demande unique d’aide à l’autonomie des personnes agées",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAV",
+      "volumeTotal": 329613,
+      "volumeEnLigne": 329613,
+      "hote": "demande-autonomie.gouv.fr",
+      "domaine": "demande-autonomie.gouv.fr"
+    },
+    {
+      "id": "1708",
+      "nom": "Pre-demande de Pacs",
+      "perimetre": "Justice",
+      "administration": "DACS",
+      "volumeTotal": 200000,
+      "volumeEnLigne": 16376,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1709",
+      "nom": "Demande de certificat qualité de l'air (Crit’air)",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGEC",
+      "volumeTotal": 6091043,
+      "volumeEnLigne": 6042614,
+      "hote": "www.certificat-air.gouv.fr",
+      "domaine": "certificat-air.gouv.fr"
+    },
+    {
+      "id": "1713",
+      "nom": "Mes Points Permis",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 37000000,
+      "volumeEnLigne": 37000000,
+      "hote": "mespoints.permisdeconduire.gouv.fr",
+      "domaine": "permisdeconduire.gouv.fr"
+    },
+    {
+      "id": "1714",
+      "nom": "Déclaration de changement d'adresse sur le certificat d'immatriculation",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 2330256,
+      "volumeEnLigne": 2330256,
+      "hote": "immatriculation.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1715",
+      "nom": "Demande de passeport",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DLPAJ",
+      "volumeTotal": 4587631,
+      "volumeEnLigne": 4587631,
+      "hote": "passeport.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1716",
+      "nom": "Inscription sur \"Fil d'Ariane\" (alerte en cas de crise lors d'un voyage à l'étranger)",
+      "perimetre": "Affaires étrangères",
+      "administration": "CDCS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "fildariane.diplomatie.gouv.fr",
+      "domaine": "diplomatie.gouv.fr"
+    },
+    {
+      "id": "1717",
+      "nom": "Transmettre un certificat de vie pour les retraités à l'étranger",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "1718",
+      "nom": "Demande d'acte de décès (survenu à l'étranger)",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1719",
+      "nom": "Demande d'acte de mariage (célébré à l'étranger)",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1720",
+      "nom": "Demande d'acte de naissance (à l'étranger)",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1722",
+      "nom": "Inscription consulaire (registre des Français établis hors de France)",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1729",
+      "nom": "Demande de carte nationale d’identité",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DLPAJ",
+      "volumeTotal": 6039927,
+      "volumeEnLigne": 6039927,
+      "hote": "passeport.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1730",
+      "nom": "Demande d'extrait de casier judiciaire (bulletin n°3)",
+      "perimetre": "Justice",
+      "administration": "DACG",
+      "volumeTotal": 4868726,
+      "volumeEnLigne": 4847629,
+      "hote": "casier-judiciaire.justice.gouv.fr",
+      "domaine": "justice.gouv.fr"
+    },
+    {
+      "id": "1731",
+      "nom": "Inscription en 5ème, 4ème ou 3ème",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 2078226,
+      "volumeEnLigne": 305207,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "1732",
+      "nom": "Orientation en fin de collège",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 860665,
+      "volumeEnLigne": 514088,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "1733",
+      "nom": "Orientation au lycée",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 550753,
+      "volumeEnLigne": 347372,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "1734",
+      "nom": "Consulter les résultats de son examen de permis de conduire",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 27000000,
+      "volumeEnLigne": 27000000,
+      "hote": "www.securite-routiere.gouv.fr",
+      "domaine": "securite-routiere.gouv.fr"
+    },
+    {
+      "id": "1736",
+      "nom": "Demande de logement social – renouvellement",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "GIP SNE",
+      "volumeTotal": 1194853,
+      "volumeEnLigne": 1445685,
+      "hote": "www.demande-logement-social.gouv.fr",
+      "domaine": "demande-logement-social.gouv.fr"
+    },
+    {
+      "id": "1737",
+      "nom": "Contestation d’avis de contravention et désignation de conducteur (infractions relevées par radars ou Pve)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "ANTAI",
+      "volumeTotal": 4893722,
+      "volumeEnLigne": 4893722,
+      "hote": "www.usagers.antai.gouv.fr",
+      "domaine": "antai.gouv.fr"
+    },
+    {
+      "id": "1738",
+      "nom": "Consulter et suivre son dossier d'infraction routière",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "ANTAI",
+      "volumeTotal": 3983975,
+      "volumeEnLigne": 3983975,
+      "hote": "www.antai.gouv.fr",
+      "domaine": "antai.gouv.fr"
+    },
+    {
+      "id": "1740",
+      "nom": "Consulter le livret scolaire unique (école et collège)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 5812068,
+      "volumeEnLigne": 2470734,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "1741",
+      "nom": "Autorisations de sortie scolaire (école, collège et lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": null,
+      "volumeEnLigne": 475,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "1742",
+      "nom": "Consulter le livret scolaire (lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 671725,
+      "volumeEnLigne": 84720,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "1744",
+      "nom": "Demande de subvention en ligne pour une association et services associés",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DJEPVA",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "lecompteasso.associations.gouv.fr",
+      "domaine": "associations.gouv.fr"
+    },
+    {
+      "id": "1747",
+      "nom": "Demande d'aide juridictionnelle",
+      "perimetre": "Justice",
+      "administration": "SADJAV",
+      "volumeTotal": 810269,
+      "volumeEnLigne": 174386,
+      "hote": "www.aidejuridictionnelle.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "1748",
+      "nom": "Obtenir mon âge de départ à la retraite",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAV",
+      "volumeTotal": 5876255,
+      "volumeEnLigne": 5876255,
+      "hote": "www.lassuranceretraite.fr",
+      "domaine": "lassuranceretraite.fr"
+    },
+    {
+      "id": "1750",
+      "nom": "Consulter le montant déclaré à l’administration fiscale",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAV",
+      "volumeTotal": 4275820,
+      "volumeEnLigne": 4275820,
+      "hote": "www.lassuranceretraite.fr",
+      "domaine": "lassuranceretraite.fr"
+    },
+    {
+      "id": "1754",
+      "nom": "Inscription en ligne à l'examen du permis de conduire",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 1148807,
+      "volumeEnLigne": 1148807,
+      "hote": "www.securite-routiere.gouv.fr",
+      "domaine": "securite-routiere.gouv.fr"
+    },
+    {
+      "id": "1755",
+      "nom": "Demande de permis de conduire après réussite à l'examen",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 1180525,
+      "volumeEnLigne": 1180525,
+      "hote": "permisdeconduire.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1756",
+      "nom": "Demande de renouvellement du permis de conduire en cas de perte, vol, détérioration ou changement d'état-civil",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 977587,
+      "volumeEnLigne": 977587,
+      "hote": "permisdeconduire.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1757",
+      "nom": "Demande de renouvellement du permis de conduire après expiration du titre",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 449614,
+      "volumeEnLigne": 449614,
+      "hote": "permisdeconduire.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1758",
+      "nom": "Signaler une utilisation frauduleuse de sa carte bancaire en ligne (PERCEVAL)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGGN",
+      "volumeTotal": 206902,
+      "volumeEnLigne": 206902,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1759",
+      "nom": "Demande de permis de conduire international",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 225490,
+      "volumeEnLigne": 225490,
+      "hote": "permisdeconduire.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1760",
+      "nom": "Consulter l’historique officiel et la situation administrative d’un véhicule d’occasion (Histovec)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 7489000,
+      "volumeEnLigne": 7489000,
+      "hote": "histovec.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "1763",
+      "nom": "Saisine du Défenseur des droits",
+      "perimetre": "Services du Premier ministre et Autorités administratives indépendantes",
+      "administration": "DDD",
+      "volumeTotal": 49499,
+      "volumeEnLigne": 41588,
+      "hote": "formulaire.defenseurdesdroits.fr",
+      "domaine": "defenseurdesdroits.fr"
+    },
+    {
+      "id": "1764",
+      "nom": "Publication des comptes annuels des associations, fondations et fonds de dotation",
+      "perimetre": "Services du Premier ministre et Autorités administratives indépendantes",
+      "administration": "DILA",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "associations-depot-comptes.journal-officiel.gouv.fr",
+      "domaine": "journal-officiel.gouv.fr"
+    },
+    {
+      "id": "1766",
+      "nom": "Demander le crédit du pass Culture",
+      "perimetre": "Culture",
+      "administration": "SG-MC",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "passculture.app",
+      "domaine": "passculture.app"
+    },
+    {
+      "id": "1771",
+      "nom": "Recensement Citoyen Obligatoire",
+      "perimetre": "Défense",
+      "administration": "DILA",
+      "volumeTotal": 131503,
+      "volumeEnLigne": 131503,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1772",
+      "nom": "Demande de titre de séjour",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGEF",
+      "volumeTotal": 1233819,
+      "volumeEnLigne": 1233819,
+      "hote": "administration-etrangers-en-france.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "1773",
+      "nom": "Autres demandes concernant l’immatriculation de véhicule",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 839010,
+      "volumeEnLigne": 839010,
+      "hote": "immatriculation.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1774",
+      "nom": "Vérifier sa situation électorale",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DMATES",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.elections.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "1775",
+      "nom": "Demande d'indemnisation d'activité partielle",
+      "perimetre": "Affaires sociales",
+      "administration": "ASP",
+      "volumeTotal": 31736,
+      "volumeEnLigne": 31736,
+      "hote": "activitepartielle.emploi.gouv.fr",
+      "domaine": "emploi.gouv.fr"
+    },
+    {
+      "id": "1776",
+      "nom": "Demande de certificat d'immatriculation d'un véhicule d'occasion immatriculé en France (changement de titulaire du véhicule)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 7094297,
+      "volumeEnLigne": 7094297,
+      "hote": "immatriculation.ants.gouv.fr",
+      "domaine": "ants.gouv.fr"
+    },
+    {
+      "id": "1778",
+      "nom": "Rechercher des offres d’emploi (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 242851419,
+      "volumeEnLigne": 242851419,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "1779",
+      "nom": "La Déclaration Unique Simplifiée (GUSO)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 396510,
+      "volumeEnLigne": 396510,
+      "hote": "www.guso.fr",
+      "domaine": "guso.fr"
+    },
+    {
+      "id": "1789",
+      "nom": "Déclaration trimestrielle prime d'activité",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 19589964,
+      "volumeEnLigne": 19299720,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "1795",
+      "nom": "Dépôt de plainte en ligne pour escroqueries commises sur Internet (THESEE)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGPN",
+      "volumeTotal": 80618,
+      "volumeEnLigne": 80618,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "1799",
+      "nom": "Demande de recherche administrative (créatrice de droits)",
+      "perimetre": "Défense",
+      "administration": "DMCA",
+      "volumeTotal": 217994,
+      "volumeEnLigne": 149193,
+      "hote": "www.servicehistorique.sga.defense.gouv.fr",
+      "domaine": "defense.gouv.fr"
+    },
+    {
+      "id": "1819",
+      "nom": "Déclaration trimestrielle de prime d’activité pour les assurés du régime agricole",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 576462,
+      "volumeEnLigne": 533466,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "1820",
+      "nom": "Demande de Complémentaire Santé Solidaire (CSS) pour les assurés du régime agricole",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 256228,
+      "volumeEnLigne": 256228,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "1831",
+      "nom": "Mettre à jour ses données personnelles pour la Journée Défense et Citoyenneté",
+      "perimetre": "Défense",
+      "administration": "DSNJ",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "presaje.sga.defense.gouv.fr",
+      "domaine": "defense.gouv.fr"
+    },
+    {
+      "id": "1833",
+      "nom": "SignalConso",
+      "perimetre": "Économie et finances",
+      "administration": "DGCCRF",
+      "volumeTotal": null,
+      "volumeEnLigne": 0,
+      "hote": "signal.conso.gouv.fr",
+      "domaine": "conso.gouv.fr"
+    },
+    {
+      "id": "1844",
+      "nom": "Créer son compte sur le site majdc.fr",
+      "perimetre": "Défense",
+      "administration": "DSNJ",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "presaje.sga.defense.gouv.fr",
+      "domaine": "defense.gouv.fr"
+    },
+    {
+      "id": "1920",
+      "nom": "Demandes de parloirs en établissement pénitentiaire",
+      "perimetre": "Justice",
+      "administration": "DAP",
+      "volumeTotal": null,
+      "volumeEnLigne": 1297757,
+      "hote": "www.penitentiaire.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "1997",
+      "nom": "Choisir le service public",
+      "perimetre": "Économie et finances",
+      "administration": "DGAFP",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "choisirleservicepublic.gouv.fr",
+      "domaine": "choisirleservicepublic.gouv.fr"
+    },
+    {
+      "id": "2006",
+      "nom": "Renouvellement mensuel de la situation de demandeur d’emploi (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 35455961,
+      "volumeEnLigne": 35455961,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "2042",
+      "nom": "Gérer mon prélèvement à la source",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 6760412,
+      "volumeEnLigne": 6760412,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "2056",
+      "nom": "Dépôt de plainte en ligne",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGPN",
+      "volumeTotal": 746501,
+      "volumeEnLigne": 746501,
+      "hote": "plainte-en-ligne.masecurite.interieur.gouv.fr",
+      "domaine": "interieur.gouv.fr"
+    },
+    {
+      "id": "2058",
+      "nom": "Demande d'aides aux surfaces (TéléPAC)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "ASP",
+      "volumeTotal": 298000,
+      "volumeEnLigne": 298000,
+      "hote": "www2.telepac.agriculture.gouv.fr",
+      "domaine": "agriculture.gouv.fr"
+    },
+    {
+      "id": "2059",
+      "nom": "Demande d'aides aux bovins (TéléPAC)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "ASP",
+      "volumeTotal": 115000,
+      "volumeEnLigne": 115000,
+      "hote": "www2.telepac.agriculture.gouv.fr",
+      "domaine": "agriculture.gouv.fr"
+    },
+    {
+      "id": "2060",
+      "nom": "Demande d'aides aux ovins (TéléPAC)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "ASP",
+      "volumeTotal": 23000,
+      "volumeEnLigne": 23000,
+      "hote": "www2.telepac.agriculture.gouv.fr",
+      "domaine": "agriculture.gouv.fr"
+    },
+    {
+      "id": "2154",
+      "nom": "Microentrepreneur - Déclarer le chiffre d'affaires et payer les cotisations sociales",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 18251400,
+      "volumeEnLigne": 18251400,
+      "hote": "www.autoentrepreneur.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2155",
+      "nom": "URSSAF - Obtenir une attestation de vigilance (attestation de régularité)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 5549800,
+      "volumeEnLigne": 5549800,
+      "hote": "www.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2190",
+      "nom": "Candidater à une offre d’emploi (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 13924909,
+      "volumeEnLigne": 13924909,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "2191",
+      "nom": "Rechercher sa formation (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 19220738,
+      "volumeEnLigne": 19220738,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "2192",
+      "nom": "CESU - Obtenir une attestation fiscale (Chèque Emploi Service Universel)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 1952343,
+      "volumeEnLigne": 1815677,
+      "hote": "www.cesu.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2193",
+      "nom": "PAJE - Déclarer les heures de volets sociaux (Prestation d'Accueil du Jeune Enfant)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 8052616,
+      "volumeEnLigne": 8052616,
+      "hote": "pajemploi.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2194",
+      "nom": "PAJE - Obtenir une attestation fiscale (Prestation d'Accueil du Jeune Enfant)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 586731,
+      "volumeEnLigne": 586731,
+      "hote": "pajemploi.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2195",
+      "nom": "PAJE - Adhérer (Prestation d'Accueil du Jeune Enfant)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 300895,
+      "volumeEnLigne": 300895,
+      "hote": "pajemploi.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2225",
+      "nom": "Recherche, consultation de données relatives aux entreprises",
+      "perimetre": "Économie et finances",
+      "administration": "INPI",
+      "volumeTotal": 5716694,
+      "volumeEnLigne": 5716694,
+      "hote": "data.inpi.fr",
+      "domaine": "inpi.fr"
+    },
+    {
+      "id": "2232",
+      "nom": "Aide sociale aux ressortissants du code des pensions militaires d'invalidité et des victimes de guerre (CPMIVG)",
+      "perimetre": "Défense",
+      "administration": "ONACVG",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.onac-vg.fr",
+      "domaine": "onac-vg.fr"
+    },
+    {
+      "id": "2244",
+      "nom": "Demande d'aide au logement (MSA)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 76212,
+      "volumeEnLigne": 60939,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "2250",
+      "nom": "Demande de prime de transition énergétique dite \"MaPrimeRénov'\"",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGALN",
+      "volumeTotal": 233906,
+      "volumeEnLigne": 233906,
+      "hote": "www.maprimerenov.gouv.fr",
+      "domaine": "maprimerenov.gouv.fr"
+    },
+    {
+      "id": "2278",
+      "nom": "DossierFacile : aide à la constitution d’un dossier numérique de location de logement",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGALN",
+      "volumeTotal": 497249,
+      "volumeEnLigne": 497249,
+      "hote": "www.dossierfacile.logement.gouv.fr",
+      "domaine": "logement.gouv.fr"
+    },
+    {
+      "id": "2343",
+      "nom": "Formalités des entreprises (création, modification, cessation)",
+      "perimetre": "Économie et finances",
+      "administration": "DGE-INPI",
+      "volumeTotal": 4397908,
+      "volumeEnLigne": 4397908,
+      "hote": "procedures.inpi.fr",
+      "domaine": "inpi.fr"
+    },
+    {
+      "id": "2422",
+      "nom": "1jeune1solution : évaluer les aides auxquelles j'ai droit",
+      "perimetre": "Affaires sociales",
+      "administration": "DGEFP",
+      "volumeTotal": null,
+      "volumeEnLigne": 837168,
+      "hote": "mes-aides.1jeune1solution.beta.gouv.fr",
+      "domaine": "beta.gouv.fr"
+    },
+    {
+      "id": "2424",
+      "nom": "Demande de prime à la naissance",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "2429",
+      "nom": "Prestation éducation – aide à l’éducation",
+      "perimetre": "Défense",
+      "administration": "ASA",
+      "volumeTotal": 5849,
+      "volumeEnLigne": 5552,
+      "hote": "www.igesa.fr",
+      "domaine": "igesa.fr"
+    },
+    {
+      "id": "2443",
+      "nom": "Mon estimation retraite",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 23690000,
+      "volumeEnLigne": 23690000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "2475",
+      "nom": "Simulateur de revenus pour salarié",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 90660,
+      "volumeEnLigne": 90660,
+      "hote": "mon-entreprise.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2490",
+      "nom": "Gérer Mes Biens Immobiliers – Déclaration d’occupation",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 12525719,
+      "volumeEnLigne": 12525719,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "2491",
+      "nom": "Subvention interministérielle pour le séjour de mon enfant en centre de loisirs sans hébergement",
+      "perimetre": "Défense",
+      "administration": "ASA",
+      "volumeTotal": 9543,
+      "volumeEnLigne": 9317,
+      "hote": "www.igesa.fr",
+      "domaine": "igesa.fr"
+    },
+    {
+      "id": "2508",
+      "nom": "Demande de transcription d'un acte survenu à l'étranger",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "2510",
+      "nom": "Assistance aux Demandes d'Autorisation d'Urbanisme (Permis de construire en ligne) - ADAU",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGALN",
+      "volumeTotal": 22829,
+      "volumeEnLigne": 5126,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "2604",
+      "nom": "Demande de carte famille nombreuse",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGITM",
+      "volumeTotal": 167492,
+      "volumeEnLigne": 167492,
+      "hote": "www.carte-familles-nombreuses.gouv.fr",
+      "domaine": "carte-familles-nombreuses.gouv.fr"
+    },
+    {
+      "id": "2608",
+      "nom": "Demande d'acte de naissance : copie intégrale ou extrait (naissance en France)",
+      "perimetre": "Justice",
+      "administration": "DACS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "2609",
+      "nom": "Demande d'acte de mariage : copie intégrale ou extrait (mariage en France)",
+      "perimetre": "Justice",
+      "administration": "DACS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "2610",
+      "nom": "Demande d'acte de décès : copie intégrale ou extrait (décès en France)",
+      "perimetre": "Justice",
+      "administration": "DACS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "2658",
+      "nom": "Recherche du véhicule à partir du numéro d’immatriculation (fourrières)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DSR",
+      "volumeTotal": 547000,
+      "volumeEnLigne": 547000,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    },
+    {
+      "id": "2706",
+      "nom": "Tesa S Bulletins de salaire",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 1213464,
+      "volumeEnLigne": 1213464,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "2717",
+      "nom": "Demande de logement social – demande initiale",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "GIP SNE",
+      "volumeTotal": 1040812,
+      "volumeEnLigne": 747916,
+      "hote": "www.demande-logement-social.gouv.fr",
+      "domaine": "demande-logement-social.gouv.fr"
+    },
+    {
+      "id": "2726",
+      "nom": "Formalité de l'enregistrement en ligne (dons, cessions de droits sociaux)",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 663909,
+      "volumeEnLigne": 365283,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "2731",
+      "nom": "Aide au projet ou au fonctionnement – Création artistique",
+      "perimetre": "Culture",
+      "administration": "DGCA",
+      "volumeTotal": null,
+      "volumeEnLigne": 3964,
+      "hote": "www.demarches-simplifiees.fr",
+      "domaine": "demarches-simplifiees.fr"
+    },
+    {
+      "id": "2732",
+      "nom": "Aide au projet ou au fonctionnement - Patrimoines et architecture",
+      "perimetre": "Culture",
+      "administration": "DGPA",
+      "volumeTotal": null,
+      "volumeEnLigne": 1982,
+      "hote": "www.demarches-simplifiees.fr",
+      "domaine": "demarches-simplifiees.fr"
+    },
+    {
+      "id": "2733",
+      "nom": "Aide à la transmission, à l’action culturelle et territoriale, à la langue française et aux langues de France",
+      "perimetre": "Culture",
+      "administration": "DGDCER",
+      "volumeTotal": 10000,
+      "volumeEnLigne": 9980,
+      "hote": "www.demarches-simplifiees.fr",
+      "domaine": "demarches-simplifiees.fr"
+    },
+    {
+      "id": "2736",
+      "nom": "Aide au livre, à la lecture et aux industries culturelles",
+      "perimetre": "Culture",
+      "administration": "DGMIC",
+      "volumeTotal": null,
+      "volumeEnLigne": 928,
+      "hote": "www.demarches-simplifiees.fr",
+      "domaine": "demarches-simplifiees.fr"
+    },
+    {
+      "id": "2737",
+      "nom": "Demande d'allocation de soutien familial, d'intermédiation et d'aide au recouvrement des pensions alimentaires",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 415603,
+      "volumeEnLigne": 393841,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "2739",
+      "nom": "Simulateur d’aide juridictionnelle",
+      "perimetre": "Justice",
+      "administration": "SADJAV",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.aidejuridictionnelle.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "2740",
+      "nom": "Estimer le montant de la saisie sur salaire ou saisie sur rémunérations (simulateur)",
+      "perimetre": "Justice",
+      "administration": "SG-MJ",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "2741",
+      "nom": "Simulateur de calcul de pension alimentaire",
+      "perimetre": "Justice",
+      "administration": "SG-MJ",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "2742",
+      "nom": "Demande de permis de visite en établissement pénitentiaire",
+      "perimetre": "Justice",
+      "administration": "DAP",
+      "volumeTotal": null,
+      "volumeEnLigne": 20422,
+      "hote": "www.penitentiaire.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "2745",
+      "nom": "Aide à la garde d'enfants (AGE) pour le demandeur d'emploi",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 18127,
+      "volumeEnLigne": 18127,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "2752",
+      "nom": "Demande de carte européenne d'assurance maladie (MSA)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 252403,
+      "volumeEnLigne": 151770,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "2753",
+      "nom": "Modification des coordonnées médiatiques (MSA)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 126883,
+      "volumeEnLigne": 60117,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "2755",
+      "nom": "Déclaration Préalable à l'Embauche - DPAE (MSA)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "2757",
+      "nom": "Attestations professionnelles (MSA)",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 529670,
+      "volumeEnLigne": 392168,
+      "hote": "monespaceprive.msa.fr",
+      "domaine": "msa.fr"
+    },
+    {
+      "id": "2763",
+      "nom": "Ma carrière (Je consulte mon relevé de carrière)",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 21290000,
+      "volumeEnLigne": 21290000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "2764",
+      "nom": "Mes paiements - historique (paiements retraite info-retraite / suivi de mes paiements retraite)",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 23120000,
+      "volumeEnLigne": 23120000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "2765",
+      "nom": "Mes attestations de paiements",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 7650000,
+      "volumeEnLigne": 7650000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "2766",
+      "nom": "Mon épargne retraite (consulter ses contrats Epargne retraite)",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 1320000,
+      "volumeEnLigne": 1320000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "2767",
+      "nom": "Suivi des demandes (de correction de mon relevé de carrière, retraite et réversion )",
+      "perimetre": "Affaires sociales",
+      "administration": "GIP UR",
+      "volumeTotal": 14320000,
+      "volumeEnLigne": 14320000,
+      "hote": "www.info-retraite.fr",
+      "domaine": "info-retraite.fr"
+    },
+    {
+      "id": "2768",
+      "nom": "Calculer l'indemnité de licenciement (simulateur)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGT",
+      "volumeTotal": 1182000,
+      "volumeEnLigne": 1182000,
+      "hote": "code.travail.gouv.fr",
+      "domaine": "travail.gouv.fr"
+    },
+    {
+      "id": "2769",
+      "nom": "Changement de situation (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 410133,
+      "volumeEnLigne": 410133,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "2770",
+      "nom": "Demande d'allocation de solidarité spécifique (France Travail)",
+      "perimetre": "Affaires sociales",
+      "administration": "FRANCE TRAVAIL",
+      "volumeTotal": 582853,
+      "volumeEnLigne": 582853,
+      "hote": "candidat.francetravail.fr",
+      "domaine": "francetravail.fr"
+    },
+    {
+      "id": "2771",
+      "nom": "Carte vitale : perte et vol (tous régimes partenaires gérés par le régime général)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 1889837,
+      "volumeEnLigne": 1889837,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "2772",
+      "nom": "Demande de pension d'invalidité",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 19468,
+      "volumeEnLigne": 19468,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "2773",
+      "nom": "Prise de rendez-vous (Ameli)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 2660481,
+      "volumeEnLigne": 2660481,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "2774",
+      "nom": "Mise à jour des coordonnées bancaires (Ameli)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 1428760,
+      "volumeEnLigne": 1428760,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "2775",
+      "nom": "Chevauchement d’un organisme complémentaire",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": 2404256,
+      "volumeEnLigne": 2404256,
+      "hote": "assure.ameli.fr",
+      "domaine": "ameli.fr"
+    },
+    {
+      "id": "2808",
+      "nom": "Utilisation du chèque énergie",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGEC",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "chequeenergie.gouv.fr",
+      "domaine": "chequeenergie.gouv.fr"
+    },
+    {
+      "id": "2809",
+      "nom": "Vérifier mon éligibilité au chèque énergie (Simulateur)",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGEC",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "guichet.chequeenergie.gouv.fr",
+      "domaine": "chequeenergie.gouv.fr"
+    },
+    {
+      "id": "2823",
+      "nom": "CEA - Emploi d'un salarié (Chèque Emploi Associatif)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 534159,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "2826",
+      "nom": "PAM - paiement des cotisations (Praticiens et Auxiliaires Médicaux)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 3729328,
+      "volumeEnLigne": 3716000,
+      "hote": "www.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2828",
+      "nom": "AAD - Paiement des cotisations sociales (Diffuseurs d’œuvres)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 200080,
+      "volumeEnLigne": 200080,
+      "hote": "www.artistes-auteurs.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2829",
+      "nom": "TESE - déclaration des cotisations (Titre emploi service entreprise)",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "2830",
+      "nom": "Vérifier une attestation Urssaf",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": 667380,
+      "volumeEnLigne": 667380,
+      "hote": "www.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "2839",
+      "nom": "Signaler un problème de mal-logement (Signal Logement)",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGALN",
+      "volumeTotal": 38000,
+      "volumeEnLigne": 33000,
+      "hote": "signal-logement.beta.gouv.fr",
+      "domaine": "beta.gouv.fr"
+    },
+    {
+      "id": "2851",
+      "nom": "Demander l'ouverture des droits à l'assurance maladie",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAM",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "2858",
+      "nom": "Candidater en première année de master (Mon Master)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESIP",
+      "volumeTotal": null,
+      "volumeEnLigne": 256000,
+      "hote": "candidature.monmaster.gouv.fr",
+      "domaine": "monmaster.gouv.fr"
+    },
+    {
+      "id": "2865",
+      "nom": "Simulateur de droits à l'aide au logement (PNDS)",
+      "perimetre": "Affaires sociales",
+      "administration": "DSS",
+      "volumeTotal": 80681,
+      "volumeEnLigne": 80681,
+      "hote": "www.mesdroitssociaux.gouv.fr",
+      "domaine": "mesdroitssociaux.gouv.fr"
+    },
+    {
+      "id": "2866",
+      "nom": "Simulateur de droits à l'allocation pour adulte handicapé(e) (PNDS)",
+      "perimetre": "Affaires sociales",
+      "administration": "DSS",
+      "volumeTotal": 38241,
+      "volumeEnLigne": 38241,
+      "hote": "www.mesdroitssociaux.gouv.fr",
+      "domaine": "mesdroitssociaux.gouv.fr"
+    },
+    {
+      "id": "2867",
+      "nom": "Simulateur de droits à la complémentaire santé solidaire (PNDS)",
+      "perimetre": "Affaires sociales",
+      "administration": "DSS",
+      "volumeTotal": 227107,
+      "volumeEnLigne": 227107,
+      "hote": "www.mesdroitssociaux.gouv.fr",
+      "domaine": "mesdroitssociaux.gouv.fr"
+    },
+    {
+      "id": "2868",
+      "nom": "Simuler mes droits sociaux (PNDS)",
+      "perimetre": "Affaires sociales",
+      "administration": "DSS",
+      "volumeTotal": 3732911,
+      "volumeEnLigne": 3732911,
+      "hote": "www.mesdroitssociaux.gouv.fr",
+      "domaine": "mesdroitssociaux.gouv.fr"
+    },
+    {
+      "id": "2928",
+      "nom": "Mon espace santé",
+      "perimetre": "Affaires sociales",
+      "administration": "DNS",
+      "volumeTotal": 428000000,
+      "volumeEnLigne": 428000000,
+      "hote": "www.monespacesante.fr",
+      "domaine": "monespacesante.fr"
+    },
+    {
+      "id": "2940",
+      "nom": "Achat de formation (CPF)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGEFP",
+      "volumeTotal": 1347173,
+      "volumeEnLigne": 1347173,
+      "hote": "www.moncompteformation.gouv.fr",
+      "domaine": "moncompteformation.gouv.fr"
+    },
+    {
+      "id": "2972",
+      "nom": "Demande de bourse (collège et lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 3330507,
+      "volumeEnLigne": 695605,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "2981",
+      "nom": "Demande de prime à la conversion et bonus écologique",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGEC",
+      "volumeTotal": 148131,
+      "volumeEnLigne": 125572,
+      "hote": "www.primealaconversion.gouv.fr",
+      "domaine": "primealaconversion.gouv.fr"
+    },
+    {
+      "id": "2988",
+      "nom": "Déclaration préalable de détachement de salariés en ligne (SIPSI)",
+      "perimetre": "Affaires sociales",
+      "administration": "DGT",
+      "volumeTotal": 417550,
+      "volumeEnLigne": 417550,
+      "hote": "www.sipsi.travail.gouv.fr",
+      "domaine": "travail.gouv.fr"
+    },
+    {
+      "id": "2995",
+      "nom": "Chorus Pro - Factures émises",
+      "perimetre": "Économie et finances",
+      "administration": "AIFE",
+      "volumeTotal": 84000000,
+      "volumeEnLigne": 84000000,
+      "hote": "cpro.chorus-pro.gouv.fr",
+      "domaine": "chorus-pro.gouv.fr"
+    },
+    {
+      "id": "3004",
+      "nom": "Déclarations de contributions indirectes (alcool et tabacs) (CIEL)",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 1074432,
+      "volumeEnLigne": 1074432,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3005",
+      "nom": "Déclaration en douane – Fret traditionnel (DELTA G)",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 16994984,
+      "volumeEnLigne": 16994984,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3008",
+      "nom": "Déclaration de transit douanier (Delta-T)",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 3056205,
+      "volumeEnLigne": 3056205,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3040",
+      "nom": "Gestion de l’Accompagnement des Mouvements de Marchandises soumises à Accises (EMCS-GAMMA)",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 5046760,
+      "volumeEnLigne": 5046760,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3043",
+      "nom": "Détaxe électronique pour les touristes : consultation bordereaux de vente en détaxe par les indépendants (PABLO-I )",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 7614734,
+      "volumeEnLigne": 7544942,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3055",
+      "nom": "Déclaration d’Échanges de Biens Intracommunautaires (DEB)",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 851774,
+      "volumeEnLigne": 851774,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3056",
+      "nom": "Déclaration mensuelle des opérations de service pour lesquelles la TVA est acquittée par le preneur établi dans un autre État membre (DES)",
+      "perimetre": "Économie et finances",
+      "administration": "DGDDI",
+      "volumeTotal": 505432,
+      "volumeEnLigne": 505432,
+      "hote": "www.douane.gouv.fr",
+      "domaine": "douane.gouv.fr"
+    },
+    {
+      "id": "3059",
+      "nom": "Déclaration des revenus",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 40902874,
+      "volumeEnLigne": 36501728,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3060",
+      "nom": "Paiement impôts particuliers",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "cfspart-idp.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3061",
+      "nom": "Déclarer la TVA",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 35801972,
+      "volumeEnLigne": 35801972,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3062",
+      "nom": "Déclaration de résultat BIC, IS, BA pour régime RSI, BNC et RF des SCI déposant une 2072 C, TS (ACQUI EFI PRO)",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 10515922,
+      "volumeEnLigne": 10515922,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3065",
+      "nom": "Paiement amendes (Amendes)",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 19713767,
+      "volumeEnLigne": 15070737,
+      "hote": "www.amendes.gouv.fr",
+      "domaine": "amendes.gouv.fr"
+    },
+    {
+      "id": "3066",
+      "nom": "Achat de timbre fiscal",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 8321534,
+      "volumeEnLigne": 6242284,
+      "hote": "timbres.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3067",
+      "nom": "Rechercher des transactions immobilières",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 2251765,
+      "volumeEnLigne": 2251765,
+      "hote": "www.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3069",
+      "nom": "Recensement de la population",
+      "perimetre": "Économie et finances",
+      "administration": "INSEE",
+      "volumeTotal": 9004245,
+      "volumeEnLigne": 6962571,
+      "hote": "www.le-recensement-et-moi.fr",
+      "domaine": "le-recensement-et-moi.fr"
+    },
+    {
+      "id": "3080",
+      "nom": "Recherche, consultation des marques en vigueur en France (Base marques)",
+      "perimetre": "Économie et finances",
+      "administration": "INPI",
+      "volumeTotal": 2251653,
+      "volumeEnLigne": 2251653,
+      "hote": "data.inpi.fr",
+      "domaine": "inpi.fr"
+    },
+    {
+      "id": "3081",
+      "nom": "Recherche, consultation de brevets (Base brevets)",
+      "perimetre": "Économie et finances",
+      "administration": "INPI",
+      "volumeTotal": 809258,
+      "volumeEnLigne": 809258,
+      "hote": "data.inpi.fr",
+      "domaine": "inpi.fr"
+    },
+    {
+      "id": "3082",
+      "nom": "Recherche, consultation de modèles (Base dessins et modèles)",
+      "perimetre": "Économie et finances",
+      "administration": "INPI",
+      "volumeTotal": 171642,
+      "volumeEnLigne": 171642,
+      "hote": "data.inpi.fr",
+      "domaine": "inpi.fr"
+    },
+    {
+      "id": "3084",
+      "nom": "S’inscrire à une formation au CNED",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "CNED",
+      "volumeTotal": 149599,
+      "volumeEnLigne": 119003,
+      "hote": "www.cned.fr",
+      "domaine": "cned.fr"
+    },
+    {
+      "id": "3085",
+      "nom": "Cession de droit à l'image (école, collège et lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": null,
+      "volumeEnLigne": 475,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3086",
+      "nom": "Inscription à l'entrée au collège",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 679555,
+      "volumeEnLigne": 106649,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3087",
+      "nom": "Changement de coordonnées ou de situation personnelle en cours de scolarité (collège et lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": null,
+      "volumeEnLigne": 280793,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3089",
+      "nom": "Demande de certificat de scolarité (collège et lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": null,
+      "volumeEnLigne": 1028547,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3093",
+      "nom": "Formuler des vœux d'affectation ou de poursuite post 3ème",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 886384,
+      "volumeEnLigne": 561731,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3094",
+      "nom": "Inscription à l'entrée au lycée",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 664616,
+      "volumeEnLigne": 259807,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3096",
+      "nom": "Inscription en 2e ou 3e année de lycée",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": 1196094,
+      "volumeEnLigne": 233649,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3098",
+      "nom": "Paiement lié à la scolarité (collège et lycée)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESCO",
+      "volumeTotal": null,
+      "volumeEnLigne": 1840441,
+      "hote": "teleservices.education.gouv.fr",
+      "domaine": "education.gouv.fr"
+    },
+    {
+      "id": "3100",
+      "nom": "Admission dans l'enseignement supérieur (Parcoursup)",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DGESIP",
+      "volumeTotal": null,
+      "volumeEnLigne": 980000,
+      "hote": "www.parcoursup.gouv.fr",
+      "domaine": "parcoursup.gouv.fr"
+    },
+    {
+      "id": "3101",
+      "nom": "Établir un certificat de décès",
+      "perimetre": "Affaires sociales",
+      "administration": "DGS",
+      "volumeTotal": 647556,
+      "volumeEnLigne": 352782,
+      "hote": "sic.certdc.inserm.fr",
+      "domaine": "inserm.fr"
+    },
+    {
+      "id": "3102",
+      "nom": "Demande de Revenu de Solidarité Active (RSA)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 775277,
+      "volumeEnLigne": 589727,
+      "hote": "wwwd.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "3103",
+      "nom": "Déclaration trimestrielle RSA",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 13266477,
+      "volumeEnLigne": 12903805,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "3104",
+      "nom": "Déclaration trimestrielle AAH (Allocation Adulte Handicapé)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 1011301,
+      "volumeEnLigne": 908065,
+      "hote": "connect.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "3382",
+      "nom": "Dossier social étudiant - Bourse sur critères sociaux de l’enseignement supérieur",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "CNOUS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.messervices.etudiant.gouv.fr",
+      "domaine": "etudiant.gouv.fr"
+    },
+    {
+      "id": "3410",
+      "nom": "Simulateur d'indemnité de rupture conventionnelle",
+      "perimetre": "Affaires sociales",
+      "administration": "DGT",
+      "volumeTotal": 1524000,
+      "volumeEnLigne": 1524000,
+      "hote": "code.travail.gouv.fr",
+      "domaine": "travail.gouv.fr"
+    },
+    {
+      "id": "3414",
+      "nom": "Demande de Visa (France Visa)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGEF",
+      "volumeTotal": 3521550,
+      "volumeEnLigne": 3521550,
+      "hote": "france-visas.gouv.fr",
+      "domaine": "france-visas.gouv.fr"
+    },
+    {
+      "id": "3439",
+      "nom": "Pre-demande de mariage",
+      "perimetre": "Justice",
+      "administration": "DACS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "3491",
+      "nom": "Demande et Attribution du chèque énergie",
+      "perimetre": "Transition écologique, cohésion des territoires et mer",
+      "administration": "DGEC",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "chequeenergie.gouv.fr",
+      "domaine": "chequeenergie.gouv.fr"
+    },
+    {
+      "id": "3537",
+      "nom": "Demande de relevé de propriété",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 1700000,
+      "volumeEnLigne": 0,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "3556",
+      "nom": "Pécule (virement)",
+      "perimetre": "Justice",
+      "administration": "DAP",
+      "volumeTotal": null,
+      "volumeEnLigne": 52888,
+      "hote": "www.penitentiaire.justice.fr",
+      "domaine": "justice.fr"
+    },
+    {
+      "id": "3611",
+      "nom": "Remboursement de timbres électroniques",
+      "perimetre": "Économie et finances",
+      "administration": "DGFIP",
+      "volumeTotal": 164211,
+      "volumeEnLigne": 122461,
+      "hote": "timbres.impots.gouv.fr",
+      "domaine": "impots.gouv.fr"
+    },
+    {
+      "id": "3619",
+      "nom": "Vérifier vos droits à la prime d'activité (Simulateur CAF)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAF",
+      "volumeTotal": 6878357,
+      "volumeEnLigne": 6878357,
+      "hote": "wwwd.caf.fr",
+      "domaine": "caf.fr"
+    },
+    {
+      "id": "3658",
+      "nom": "Recevoir son pass Sport",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "3659",
+      "nom": "Récupérer son code pass Sport",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.pass.sports.gouv.fr",
+      "domaine": "sports.gouv.fr"
+    },
+    {
+      "id": "3660",
+      "nom": "Tester son éligibilité au pass Sport",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "DS",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.pass.sports.gouv.fr",
+      "domaine": "sports.gouv.fr"
+    },
+    {
+      "id": "3702",
+      "nom": "Demande d'Aspa auprès de la Caisse nationale d'assurance vieillesse (Cnav)",
+      "perimetre": "Affaires sociales",
+      "administration": "CNAV",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.lassuranceretraite.fr",
+      "domaine": "lassuranceretraite.fr"
+    },
+    {
+      "id": "3809",
+      "nom": "Titre firmes étrangères (TFE) : déclaration et paiement des cotisations",
+      "perimetre": "Affaires sociales",
+      "administration": "URSSAF",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.tfe.urssaf.fr",
+      "domaine": "urssaf.fr"
+    },
+    {
+      "id": "3870",
+      "nom": "Demande d'attestation de diplôme",
+      "perimetre": "Éducation nationale, Jeunesse et Sports, Enseignement supérieur et Recherche",
+      "administration": "RECTORAT",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "candidat.examens-concours.gouv.fr",
+      "domaine": "examens-concours.gouv.fr"
+    },
+    {
+      "id": "4000",
+      "nom": "Signaler un contenu illicite de l'internet (PHAROS)",
+      "perimetre": "Intérieur et outre-mer",
+      "administration": "DGPN",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "internet-signalement.gouv.fr",
+      "domaine": "internet-signalement.gouv.fr"
+    },
+    {
+      "id": "4001",
+      "nom": "J'alerte l'Arcom sur un programme ou une publicité",
+      "perimetre": "Services du Premier ministre et Autorités administratives indépendantes",
+      "administration": "ARCOM",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.arcom.fr",
+      "domaine": "arcom.fr"
+    },
+    {
+      "id": "4024",
+      "nom": "Tesa S DPAE",
+      "perimetre": "Agriculture, alimentation, agroalimentaire et forêt",
+      "administration": "MSA",
+      "volumeTotal": 716380,
+      "volumeEnLigne": 716380,
+      "hote": null,
+      "domaine": null
+    },
+    {
+      "id": "4067",
+      "nom": "Demande de renouvellement de licence d’entrepreneur de spectacles vivants",
+      "perimetre": "Culture",
+      "administration": "DGCA",
+      "volumeTotal": null,
+      "volumeEnLigne": 10031,
+      "hote": "demarche.numerique.gouv.fr",
+      "domaine": "numerique.gouv.fr"
+    },
+    {
+      "id": "4068",
+      "nom": "Première demande de licence d’entrepreneur de spectacles vivants",
+      "perimetre": "Culture",
+      "administration": "DGCA",
+      "volumeTotal": null,
+      "volumeEnLigne": 7845,
+      "hote": "demarche.numerique.gouv.fr",
+      "domaine": "numerique.gouv.fr"
+    },
+    {
+      "id": "4069",
+      "nom": "Demande de subvention pour études et travaux sur monuments historiques",
+      "perimetre": "Culture",
+      "administration": "DGPA",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "demarche.numerique.gouv.fr",
+      "domaine": "numerique.gouv.fr"
+    },
+    {
+      "id": "4113",
+      "nom": "Demander ses certificats (inscription ou radiation) et sa carte consulaire",
+      "perimetre": "Affaires étrangères",
+      "administration": "DFAE",
+      "volumeTotal": null,
+      "volumeEnLigne": null,
+      "hote": "www.service-public.gouv.fr",
+      "domaine": "service-public.gouv.fr"
+    }
+  ]
+}

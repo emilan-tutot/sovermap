@@ -9,7 +9,8 @@ Pour chaque site public français, Sovermap montre, jour après jour :
 - chez qui le site est hébergé ou diffusé ;
 - à quelle société appartient cet hébergeur, et quelle est sa maison mère ultime ;
 - dans quel pays sont les sièges de ces sociétés ;
-- quelle part de l'État dépend de sociétés dont la maison mère est hors de l'Union européenne (définition : décision D1 du 19/11/2026, `docs/methode.md` § 3 et § 5).
+- quelle part de l'État dépend d'une société qui a son siège, ou dont la maison mère ultime a le sien, hors de l'Union européenne (définition : décision D1 du 19/11/2026, modifiée par C2-4 le 20/11/2026 ; `docs/methode.md` § 3, § 5 et couche 7) ;
+- qui reçoit le courrier de chaque domaine, et qui peut en envoyer en son nom (la messagerie, C2-1), avec son propre chiffre, à part du chiffre-titre.
 
 ## 2. Originalité (vérifiée en A.1)
 
@@ -30,17 +31,19 @@ Ce qui distingue Sovermap :
 
 ### P1 — indispensables à l'ouverture
 
-**R1. Le chiffre-titre.** Une journaliste veut savoir quelle part des sites de l'État dépend de sociétés non européennes.
+**R1. Le chiffre-titre.** Une journaliste veut savoir quelle part des sites de l'État dépend de sociétés non européennes (la société qui sert le site, ou sa maison mère ultime, a son siège hors de l'UE : C2-4).
 - Étant donné la dernière collecte réussie, quand elle ouvre l'accueil, alors elle lit :
   - la question « De quels pays dépend l'État ? » ;
   - le chiffre-titre, qui se lit « au moins X % » des domaines de l'État, avec son périmètre, sa date et sa définition (un lien) ;
-  - juste à côté, la part hors UE au niveau « probable » et la part « non déterminé ».
+  - juste à côté, la part hors UE au niveau « probable » et la part « non déterminé » ;
+  - à côté encore, le chiffre de la messagerie (C2-1), qui n'entre pas dans le chiffre-titre.
 - Étant donné que la dernière collecte a plus de 36 h, quand elle ouvre l'accueil, alors la date de la dernière collecte s'affiche bien en vue, avec la mention que les données ne sont pas à jour.
 
 **R2. La Radiographie d'un site.** Un agent public veut comprendre comment un site de son ministère est servi.
-- Étant donné un domaine de la liste, quand il ouvre sa fiche, alors il voit les couches de haut en bas : domaine, serveurs de noms, adresses, réseau, société exploitante, maison mère, pays, offres SecNumCloud, CDN. Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance.
+- Étant donné un domaine de la liste, quand il ouvre sa fiche, alors il voit les couches de haut en bas : domaine, serveurs de noms, adresses, réseau, société exploitante, maison mère, pays, offres SecNumCloud, CDN ; puis la messagerie (les serveurs MX avec la même chaîne, et les expéditeurs SPF par leurs réseaux : C2-1). Chaque couche donne sa valeur, sa source, sa date et son niveau de confiance.
 - Étant donné le mode « Simple », quand il bascule en « Expert », alors il voit les données brutes (police mono, tableaux), sans changer de page.
-- Étant donné un site placé derrière un CDN, alors la fiche dit « diffusé par » (le CDN) et « hébergé par : non observable ».
+- Étant donné un site placé derrière un CDN ou un relais de sécurité, alors la fiche dit « diffusé par » (le CDN ou le relais) et « hébergé par : non observable ».
+- Étant donné un site servi par une société dont le siège est hors de l'UE et dont la maison mère est dans l'UE (le cas Imperva), alors la fiche montre les deux sièges, sa catégorie et son fil suivent le plus éloigné (décision de l'ARRÊT 2), et le site compte comme dépendant d'un siège hors de l'UE (C2-4).
 
 **R3. Vérifier soi-même.** Un chercheur veut refaire une mesure.
 - Étant donné une fiche, quand il ouvre « Vérifier vous-même », alors il obtient les commandes exactes pour Windows (`Resolve-DnsName`, `nslookup`), macOS et Linux (`dig`), et les liens vers les registres. S'il refait la mesure le même jour, depuis le même type de point de mesure, il obtient le même réseau et la même société, ou il comprend pourquoi ce n'est pas le cas (CDN, réponses géolocalisées).
@@ -73,7 +76,7 @@ Ce qui distingue Sovermap :
 - **R12.** L'anglais complet, après l'ouverture (décision D5 : chantier T11).
 - **R13.** « Comparer deux ministères ».
 - **R14.** Les archives citables avec un DOI.
-- **R15.** La messagerie (MX) comme couche affichée, en V2 (décision D3).
+- **R15.** La messagerie (MX) comme couche affichée : **avancée au chantier 2** (C2-1, D3 modifiée le 20/11/2026), avec son propre chiffre (R1, R2, EX-02).
 
 ## 4. Exigences
 
@@ -82,13 +85,13 @@ Ce qui distingue Sovermap :
   - Les noms internes ou techniques (réseau interministériel `rie.gouv.fr`, préproduction, recette, outils internes) ne sont ni mesurés ni affichés, selon les règles versionnées de `docs/methode.md` § 3.
   - Sur la copie du 11/12/2024, il reste 90 803 noms publics sur 103 398, répartis en 34 068 domaines enregistrés.
   - Le chiffre compte chaque domaine une fois, par son nom web. Ses autres noms publics sont mesurés et affichés dans sa fiche.
-- **EX-02** Pour chaque nom, elle note la chaîne CNAME, les adresses A et AAAA, les serveurs de noms de la zone, l'état DNSSEC, le résolveur utilisé et l'heure. La messagerie (MX) attend la V2 (D3).
+- **EX-02** Pour chaque nom, elle note la chaîne CNAME, les adresses A et AAAA, les serveurs de noms de la zone, l'état DNSSEC, le résolveur utilisé et l'heure. Pour chaque domaine, elle note aussi ses serveurs de messagerie (MX), avec la même chaîne jusqu'au pays des sièges, et ses expéditeurs autorisés (SPF), réduits à leurs réseaux (AS) (C2-1, D3 modifiée le 20/11/2026).
 - **EX-02 bis** Chaque jour, tous les domaines du périmètre « État » sont reposés au résolveur public de contrôle, ainsi que 3 % des autres domaines, pour permettre le niveau « confirmé » de la couche adresse.
 - **EX-03** Chaque adresse est rattachée à son préfixe et à son AS d'origine par au moins deux sources indépendantes (registre `docs/sources.md`).
 - **EX-04** Chaque AS est rattaché à une société exploitante, puis à sa maison mère ultime et au pays de chaque siège. Ce rattachement passe par une table tenue à la main, où chaque ligne a sa source et sa date.
 - **EX-05** Un CDN est reconnu par ses CNAME ou ses AS, d'après une liste tenue à la main et sourcée. Un site derrière un CDN est « diffusé par » ce CDN, et son hébergeur d'origine est « non observable ».
 - **EX-06** Aucune géolocalisation d'adresse IP n'est utilisée.
-- **EX-07** Chaque couche reçoit un niveau de confiance : « confirmé », « probable » ou « non déterminé » (cahier §4.5).
+- **EX-07** Chaque couche reçoit un niveau de confiance : « confirmé », « probable » ou « non déterminé » (cahier §4.5). Le niveau d'un domaine compté hors de l'UE est le meilleur de ce qui le prouve : toute la chaîne jusqu'à la maison mère, ou, pour le siège de la société qui le sert, la couche des adresses, le lien vers cette société et les sources de son siège (C2-4, méthode 0.3).
   - Le chiffre-titre ne compte que le « confirmé » : il se lit « au moins X % ».
   - Il affiche à côté la part hors UE au niveau « probable » et la part « non déterminé ».
 - **EX-08** Un changement n'est publié qu'après deux collectes successives concordantes (hystérésis).
@@ -139,7 +142,8 @@ Le site ne montre pas :
 - où sont stockées les données des usagers ;
 - les systèmes internes de l'État (messageries internes, applications métier, bases de données) ;
 - si un site respecte la loi ;
-- l'hébergeur d'origine caché derrière un CDN (« non observable »).
+- l'hébergeur d'origine caché derrière un CDN ou un relais de sécurité (« non observable ») ;
+- où sont stockées les boîtes aux lettres, ni qui lit le courrier : la messagerie montre seulement qui reçoit le courrier d'un domaine et qui peut en envoyer en son nom (C2-1), jamais une qualité de sécurité.
 
 Il n'y aura pas :
 - de jeu ;

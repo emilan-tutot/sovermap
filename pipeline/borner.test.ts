@@ -6,7 +6,13 @@ import { type EnregistrementDomaine, type EnregistrementNom, jsonStable } from "
 import { DOMAINE, NOM, valider } from "./schemas";
 
 const long = (i: number) => `${"x".repeat(60)}${i}.${"y".repeat(60)}.${"z".repeat(60)}.example`;
-const exploitant = { role: "hébergé par", societe: "hebergeur-fr", preuve: "AS64496", niveau: "probable" as const };
+const exploitant = {
+  role: "hébergé par",
+  societe: "hebergeur-fr",
+  preuve: "AS64496",
+  niveau: "probable" as const,
+  niveauSociete: "probable" as const,
+};
 
 const nom: EnregistrementNom = {
   nom: "www.mairie.example",

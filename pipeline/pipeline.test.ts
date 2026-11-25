@@ -11,7 +11,9 @@ import { readFileSync } from "node:fs";
 import {
   categorie,
   chaineDepuisAs,
+  maillonsDe,
   MERE_INCONNUE,
+  siegeRetenu,
   niveauSources,
   type ReferentielAs,
   type ReferentielSocietes,
@@ -146,6 +148,22 @@ describe("réseau", () => {
 });
 
 describe("sociétés et pays", () => {
+  it("retains the farther of a company's seat and its parent's, the parent's on a tie (ARRÊT 2)", () => {
+    // An American subsidiary of a French group (the Imperva case), and a German one: the subsidiary's seat.
+    expect(siegeRetenu("US", "FR")).toEqual({ pays: "US", categorie: "hors d'Europe" });
+    expect(siegeRetenu("DE", "FR")).toEqual({ pays: "DE", categorie: "UE hors France" });
+    // A French subsidiary of an American group: the parent's seat, as before.
+    expect(siegeRetenu("FR", "US")).toEqual({ pays: "US", categorie: "hors d'Europe" });
+    // Two seats of one category: the parent's.
+    expect(siegeRetenu("CH", "GB")).toEqual({ pays: "GB", categorie: "Europe hors UE" });
+    // A company at the top of its chain is its own parent.
+    expect(siegeRetenu("FR", "FR")).toEqual({ pays: "FR", categorie: "France" });
+    // The parent unknown: no established seat, so no thread; outside Europe is outside Europe whatever that parent,
+    // anything else is not determined.
+    expect(siegeRetenu("IL", null)).toEqual({ pays: null, categorie: "hors d'Europe" });
+    expect(siegeRetenu("GB", null)).toEqual({ pays: null, categorie: "non déterminé" });
+    expect(siegeRetenu("FR", null)).toEqual({ pays: null, categorie: "non déterminé" });
+  });
   it("follows the chain to the ultimate parent and classifies its country", () => {
     const chaine = chaineDepuisAs(64500, tableAs, societes);
     expect(chaine.societe?.nom).toBe("CDN Exemple B.V.");
@@ -154,6 +172,13 @@ describe("sociétés et pays", () => {
     expect(chaine.niveau).toBe("confirmé");
     expect(chaineDepuisAs(64501, tableAs, societes).niveau).toBe("probable");
     expect(chaineDepuisAs(64511, tableAs, societes).categorie).toBe("non déterminé");
+  });
+  it("gives the companies above a company, by name: « qui possède qui »", () => {
+    expect(maillonsDe("cdn-filiale-nl", societes)).toEqual([{ cle: "cdn-us", nom: "CDN Exemple, Inc.", pays: "US" }]);
+    // At the top of its chain: none; a parent not established: only the known part; an unknown key: none.
+    expect(maillonsDe("hebergeur-fr", societes)).toEqual([]);
+    expect(maillonsDe("filiale-inconnue", societes)).toEqual([]);
+    expect(maillonsDe("inconnue", societes)).toEqual([]);
   });
   it("counts two pages of the same producer as one source", () => {
     expect(
@@ -362,6 +387,296 @@ describe("observation et classement", () => {
     expect(c.niveau).toBe("confirmé");
     // Without the control resolver, the address layer is at best « probable ».
     expect(classer(o, null, "État", contexte).niveau).toBe("probable");
+  });
+
+  it("counts a site outside the EU when the company that serves it is, though its parent is not (rule C2-4)", async () => {
+    // The Imperva case: a security relay whose own seat is in the United States, owned by a French group.
+    const avecRelais = (
+      sourcesRelais: typeof deux,
+      { sourcesMere = deux, mere = "groupe-fr" }: { sourcesMere?: typeof deux; mere?: string } = {},
+    ): Contexte => ({
+      ...contexte,
+      societes: {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "groupe-fr": { nom: "Groupe Exemple SA", pays: "FR", mere: null, sources: deux, sources_mere: deux },
+          "relais-us": {
+            nom: "Relais Exemple, Inc.",
+            pays: "US",
+            mere,
+            sources: sourcesRelais,
+            sources_mere: sourcesMere,
+          },
+        },
+      },
+      cdn: {
+        ...cdn,
+        fournisseurs: [
+          ...cdn.fournisseurs,
+          {
+            id: "relais-exemple",
+            nom: "Relais Exemple",
+            societe: "relais-us",
+            suffixes: [{ suffixe: ".relais.example", source: "https://relais.example/doc", lu_le: "2026-11-19" }],
+            as: [],
+          },
+        ],
+      },
+    });
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), chaineCname: ["site.relais.example"] };
+    const c = classer(o, o, "État", avecRelais(deux));
+    expect(c.cdn?.id).toBe("relais-exemple");
+    // The farther seat, the company's, gives the category (ARRÊT 2), and puts the site outside the EU, proved by the
+    // documented suffix, the control resolver and two sources for the company's seat.
+    expect(c.categorie).toBe("hors d'Europe");
+    expect(c.horsUE).toBe(true);
+    expect(c.niveau).toBe("confirmé");
+    // Without the control resolver, the address layer, and so the proof, is « probable » at best.
+    expect([
+      classer(o, null, "État", avecRelais(deux)).horsUE,
+      classer(o, null, "État", avecRelais(deux)).niveau,
+    ]).toEqual([true, "probable"]);
+    // Its level is the one of what proves it: one source for the company's seat makes it « probable » at best.
+    const uneSource = classer(o, o, "État", avecRelais(une));
+    expect([uneSource.horsUE, uneSource.niveau]).toEqual([true, "probable"]);
+    // The link to its parent is not part of that proof: one source for it leaves the site « confirmé ».
+    const lienFaible = classer(o, o, "État", avecRelais(deux, { sourcesMere: une }));
+    expect([lienFaible.horsUE, lienFaible.niveau, lienFaible.servants[0]?.niveau]).toEqual([
+      true,
+      "confirmé",
+      "probable",
+    ]);
+    // A company outside Europe whose parent is unknown: whatever that parent, the farther seat is outside Europe.
+    const sansMere = classer(o, o, "État", avecRelais(deux, { mere: MERE_INCONNUE, sourcesMere: [] }));
+    expect([sansMere.categorie, sansMere.horsUE, sansMere.niveau]).toEqual(["hors d'Europe", true, "confirmé"]);
+  });
+
+  it("applies rule C2-4 to a company found by its AS, with the level of the AS row", async () => {
+    // A network whose AS belongs to an American subsidiary of a French group; IPtoASN and RIS agree on it.
+    const avecFiliale = (sourcesAs: typeof deux): Contexte => ({
+      ...contexte,
+      iptoasn: new TableIpToAsn("192.0.2.0\t192.0.2.255\t64503\tUS\tEXEMPLE-FILIALE-US"),
+      ris: new TableRis(["64503\t192.0.2.0/24\t300"]),
+      tableAs: {
+        ...tableAs,
+        as: {
+          ...tableAs.as,
+          "64503": { societe: "filiale-us", titulaire_registre: "EXEMPLE-FILIALE-US", sources: sourcesAs },
+        },
+      },
+      societes: {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "groupe-fr": { nom: "Groupe Exemple SA", pays: "FR", mere: null, sources: deux, sources_mere: deux },
+          "filiale-us": {
+            nom: "Filiale Exemple, Inc.",
+            pays: "US",
+            mere: "groupe-fr",
+            sources: deux,
+            sources_mere: deux,
+          },
+        },
+      },
+    });
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    const c = classer(o, o, "État", avecFiliale(deux));
+    expect([c.servants[0]?.preuve, c.categorie, c.horsUE, c.niveau]).toEqual([
+      "AS64503",
+      "hors d'Europe",
+      true,
+      "confirmé",
+    ]);
+    // One source for the AS row: the company's seat proves the dependence at « probable » only.
+    const c1 = classer(o, o, "État", avecFiliale(une));
+    expect([c1.horsUE, c1.niveau]).toEqual([true, "probable"]);
+  });
+
+  it("keeps the weakest proof of a company reached by two addresses, whatever their order (rule C2-4)", async () => {
+    // Two networks of one American subsidiary: AS64503 with two sources, AS64504 with one. Its link to its parent
+    // has one source, so both addresses give the whole chain the same « probable »: only the company's own proof
+    // differs, and it must not depend on which address comes first.
+    const deuxReseaux: Contexte = {
+      ...contexte,
+      iptoasn: new TableIpToAsn(
+        [
+          "192.0.2.0\t192.0.2.127\t64503\tUS\tEXEMPLE-FILIALE-US",
+          "192.0.2.128\t192.0.2.255\t64504\tUS\tEXEMPLE-FILIALE-US-2",
+        ].join("\n"),
+      ),
+      ris: new TableRis([["64503\t192.0.2.0/25\t300", "64504\t192.0.2.128/25\t300"].join("\n")]),
+      tableAs: {
+        ...tableAs,
+        as: {
+          ...tableAs.as,
+          "64503": { societe: "filiale-us", titulaire_registre: "EXEMPLE-FILIALE-US", sources: deux },
+          "64504": { societe: "filiale-us", titulaire_registre: "EXEMPLE-FILIALE-US-2", sources: une },
+        },
+      },
+      societes: {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "groupe-fr": { nom: "Groupe Exemple SA", pays: "FR", mere: null, sources: deux, sources_mere: deux },
+          "filiale-us": {
+            nom: "Filiale Exemple, Inc.",
+            pays: "US",
+            mere: "groupe-fr",
+            sources: deux,
+            sources_mere: une,
+          },
+        },
+      },
+    };
+    const base = await observer("www.ministere.example", resolveur, fixe);
+    for (const a of [
+      ["192.0.2.10", "192.0.2.200"],
+      ["192.0.2.200", "192.0.2.10"],
+    ]) {
+      const o = { ...base, a, aaaa: [] };
+      const c = classer(o, o, "État", deuxReseaux);
+      expect([c.servants.length, c.horsUE, c.niveau, c.servants[0]?.niveauSociete]).toEqual([
+        1,
+        true,
+        "probable",
+        "probable",
+      ]);
+    }
+  });
+
+  /**
+   * One network of 192.0.2.0/24 for AS 64505 (RIS agrees unless `sansRis`), held by the company `cle`, with the
+   * companies given; and the CDN of the test fixtures plus the ones given.
+   */
+  const contexteAs = (
+    cle: string,
+    lesSocietes: ReferentielSocietes["societes"],
+    { sourcesAs = deux, sansRis = false, fournisseurs = [] as ReferentielCdn["fournisseurs"] } = {},
+  ): Contexte => ({
+    ...contexte,
+    iptoasn: new TableIpToAsn("192.0.2.0\t192.0.2.255\t64505\tUS\tEXEMPLE-RESEAU"),
+    ris: new TableRis([sansRis ? "64499\t198.51.100.0/24\t300" : "64505\t192.0.2.0/24\t300"]),
+    tableAs: {
+      ...tableAs,
+      as: { ...tableAs.as, "64505": { societe: cle, titulaire_registre: "EXEMPLE-RESEAU", sources: sourcesAs } },
+    },
+    societes: { ...societes, societes: { ...societes.societes, ...lesSocietes } },
+    cdn: { ...cdn, fournisseurs: [...cdn.fournisseurs, ...fournisseurs] },
+  });
+
+  it("proves a parent's seat with the whole chain's level, never with the company's own (rule C2-4)", async () => {
+    // A German subsidiary of an American group, its link to the group with one source: « probable », not « confirmé ».
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    const c = classer(
+      o,
+      o,
+      "État",
+      contexteAs("filiale-de", {
+        "filiale-de": { nom: "Filiale Exemple GmbH", pays: "DE", mere: "groupe-us", sources: deux, sources_mere: une },
+        "groupe-us": { nom: "Groupe Exemple, Inc.", pays: "US", mere: null, sources: deux, sources_mere: deux },
+      }),
+    );
+    expect([c.categorie, c.horsUE, c.niveau]).toEqual(["hors d'Europe", true, "probable"]);
+  });
+
+  it("takes the best of a servant's two proofs: a company at the top, its seat proved better than its chain", async () => {
+    // The Fastly case: its seat has two sources, « no parent above it » one: its own seat proves it « confirmé ».
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    const c = classer(
+      o,
+      o,
+      "État",
+      contexteAs("sommet-us", {
+        "sommet-us": { nom: "Sommet Exemple, Inc.", pays: "US", mere: null, sources: deux, sources_mere: une },
+      }),
+    );
+    expect([c.servants[0]?.niveau, c.horsUE, c.niveau]).toEqual(["probable", true, "confirmé"]);
+  });
+
+  it("proves a company's own seat no better than its link: a relay found by its AS only, or an AS alone in IPtoASN", async () => {
+    const o = { ...(await observer("www.ministere.example", resolveur, fixe)), aaaa: [] };
+    // A relay whose seat has two sources, but recognised by its AS only: « probable ».
+    const relais = classer(
+      o,
+      o,
+      "État",
+      contexteAs(
+        "relais-as",
+        { "relais-as": { nom: "Relais Exemple, Inc.", pays: "US", mere: null, sources: deux, sources_mere: deux } },
+        {
+          fournisseurs: [
+            {
+              id: "relais-as",
+              nom: "Relais par son AS",
+              societe: "relais-as",
+              suffixes: [],
+              as: [{ numero: 64505, suffit_seul: true, source: "https://relais.example/doc", lu_le: "2026-11-19" }],
+            },
+          ],
+        },
+      ),
+    );
+    expect([relais.cdn?.id, relais.horsUE, relais.niveau]).toEqual(["relais-as", true, "probable"]);
+    // An American subsidiary of a French group, its AS known to IPtoASN only (RIS does not see it): « probable ».
+    const filiale = classer(
+      o,
+      o,
+      "État",
+      contexteAs(
+        "filiale-us",
+        {
+          "groupe-fr": { nom: "Groupe Exemple SA", pays: "FR", mere: null, sources: deux, sources_mere: deux },
+          "filiale-us": {
+            nom: "Filiale Exemple, Inc.",
+            pays: "US",
+            mere: "groupe-fr",
+            sources: deux,
+            sources_mere: deux,
+          },
+        },
+        { sansRis: true },
+      ),
+    );
+    expect([filiale.horsUE, filiale.niveau]).toEqual([true, "probable"]);
+  });
+
+  it("never shows « France » for a domain outside the EU by a company whose farther seat is not known", async () => {
+    // A French host, and a British company whose parent is unknown: outside the EU by that company's seat, but its
+    // farther seat may be in Europe or beyond it: the domain's category is not determined.
+    const o = {
+      ...(await observer("www.ministere.example", resolveur, fixe)),
+      a: ["192.0.2.10", "192.0.2.200"],
+      aaaa: [],
+    };
+    const c = classer(o, o, "État", {
+      ...contexte,
+      iptoasn: new TableIpToAsn(
+        [
+          "192.0.2.0\t192.0.2.127\t64496\tFR\tEXEMPLE-HEBERGEUR",
+          "192.0.2.128\t192.0.2.255\t64507\tGB\tEXEMPLE-GB",
+        ].join("\n"),
+      ),
+      ris: new TableRis([["64496\t192.0.2.0/25\t300", "64507\t192.0.2.128/25\t300"].join("\n")]),
+      tableAs: {
+        ...tableAs,
+        as: { ...tableAs.as, "64507": { societe: "societe-gb", titulaire_registre: "EXEMPLE-GB", sources: deux } },
+      },
+      societes: {
+        ...societes,
+        societes: {
+          ...societes.societes,
+          "societe-gb": {
+            nom: "Société Exemple Ltd",
+            pays: "GB",
+            mere: MERE_INCONNUE,
+            sources: deux,
+            sources_mere: [],
+          },
+        },
+      },
+    });
+    expect([c.servants.length, c.horsUE, c.categorie]).toEqual([2, true, "non déterminé"]);
   });
 
   it("reads the headline figure as « au moins X % », with the probable and undetermined shares beside it", async () => {

@@ -1,10 +1,12 @@
-// Classification of one domain (docs/methode.md § 5 and § 6, decision D1): who serves it (« diffusé par » / « hébergé
-// par »), the country category of their ultimate parents, the confidence, and whether it depends on a company whose
-// ultimate parent is outside the EU.
+// Classification of one domain (docs/methode.md § 5 and § 6, decision D1 modified by C2-4 in method 0.3): who serves
+// it (« diffusé par » / « hébergé par »), the country category of their ultimate parents, the confidence, and whether it
+// depends on a company whose own seat, or whose ultimate parent's, is outside the EU.
 import { detecterCdn, type DetectionCdn, type PlagesOfficielles, type ReferentielCdn } from "./cdn";
 import type { ObservationDns } from "./dns";
 import { coucheReseau, type CoucheReseau, type TableIpToAsn, type TableRis } from "./reseau";
 import {
+  categorie as categorieDuPays,
+  siegeRetenu,
   chaineDepuisAs,
   chaineDepuisSociete,
   type ChaineSociete,
@@ -26,7 +28,19 @@ export type Contexte = {
   coucheReseau?: typeof coucheReseau;
 };
 
-export type Servant = { role: "diffusé par" | "hébergé par"; chaine: ChaineSociete; preuve: string; niveau: Niveau };
+export type Servant = {
+  role: "diffusé par" | "hébergé par";
+  chaine: ChaineSociete;
+  preuve: string;
+  /** The whole chain's level: the address layer, the link to the company, the company and its parents. */
+  niveau: Niveau;
+  /**
+   * The level of « this company serves the site, and has its seat there »: the address layer, the link to the company
+   * (the CDN, or the AS) and the company's own sources, without its parents: what rule C2-4 needs when the company
+   * alone is outside the EU.
+   */
+  niveauSociete: Niveau;
+};
 
 export type Classement = {
   nom: string;
@@ -44,6 +58,12 @@ export type Classement = {
 
 const ORDRE_CATEGORIE: readonly Categorie[] = ["France", "UE hors France", "Europe hors UE", "hors d'Europe"];
 const HORS_UE = new Set<Categorie>(["Europe hors UE", "hors d'Europe"]);
+/** A servant's category: the farther of its company's seat and its ultimate parent's (ARRÊT 2, plan § 15). */
+export const categorieDuServant = (s: Pick<Servant, "chaine">): Categorie =>
+  s.chaine.societe === null
+    ? s.chaine.categorie
+    : siegeRetenu(s.chaine.societe.pays, s.chaine.mere?.pays ?? null).categorie;
+
 const niveauMax = (niveaux: Niveau[]): Niveau =>
   niveaux.reduce<Niveau>((a, b) => (ORDRE_NIVEAU.indexOf(a) >= ORDRE_NIVEAU.indexOf(b) ? a : b), "non déterminé");
 
@@ -61,7 +81,15 @@ function servants(
     return {
       cdn,
       reseau,
-      servants: [{ role: "diffusé par", chaine, preuve: cdn.preuve, niveau: niveauMin(chaine.niveau, cdn.niveau) }],
+      servants: [
+        {
+          role: "diffusé par",
+          chaine,
+          preuve: cdn.preuve,
+          niveau: niveauMin(chaine.niveau, cdn.niveau),
+          niveauSociete: niveauMin(chaine.niveauSociete, cdn.niveau),
+        },
+      ],
     };
   }
   const parSociete = new Map<string, Servant>();
@@ -70,10 +98,16 @@ function servants(
       const chaine = chaineDepuisAs(asn, contexte.tableAs, contexte.societes);
       const cle = chaine.societe?.cle ?? `AS${asn}`;
       const niveau = niveauMin(chaine.niveau, couche.niveau);
+      const niveauSociete = niveauMin(chaine.niveauSociete, chaine.niveauAs, couche.niveau);
       const existant = parSociete.get(cle);
-      if (!existant || ORDRE_NIVEAU.indexOf(niveau) < ORDRE_NIVEAU.indexOf(existant.niveau)) {
-        parSociete.set(cle, { role: "hébergé par", chaine, preuve: `AS${asn}`, niveau });
-      }
+      // The weakest of each level over the company's addresses, whatever their order (the entry kept is the weakest).
+      const plusFaible = !existant || ORDRE_NIVEAU.indexOf(niveau) < ORDRE_NIVEAU.indexOf(existant.niveau);
+      const garde: Omit<Servant, "niveauSociete"> =
+        plusFaible || !existant ? { role: "hébergé par", chaine, preuve: `AS${asn}`, niveau } : existant;
+      parSociete.set(cle, {
+        ...garde,
+        niveauSociete: existant ? niveauMin(existant.niveauSociete, niveauSociete) : niveauSociete,
+      });
     }
   }
   return { cdn: null, reseau, servants: [...parSociete.values()] };
@@ -117,22 +151,35 @@ export function classer(
     accord = { resolveur: controle.resolveur, accord: ok };
     niveauControle = ok ? "confirmé" : "non déterminé";
   }
-  const liste = base.servants.map((s) => ({ ...s, niveau: niveauMin(s.niveau, niveauControle) }));
+  const liste = base.servants.map((s) => ({
+    ...s,
+    niveau: niveauMin(s.niveau, niveauControle),
+    niveauSociete: niveauMin(s.niveauSociete, niveauControle),
+  }));
 
-  const determines = liste.filter((s) => s.chaine.categorie !== "non déterminé");
-  const horsUE = liste.filter((s) => HORS_UE.has(s.chaine.categorie));
+  const determines = liste.filter((s) => categorieDuServant(s) !== "non déterminé");
+  // Rule C2-4 (method 0.3; plan § 15): a servant puts the site outside the EU when its ultimate parent's seat is, or
+  // its own is (the Imperva case: an American subsidiary of a French group). Either proof is enough, so the servant
+  // takes the best of the levels of its proofs: the whole chain for the parent's seat; the address layer, the link to
+  // the company and the company's own sources for its own seat.
+  const horsUE = liste.flatMap((s): Niveau[] => {
+    const preuves: Niveau[] = [];
+    if (HORS_UE.has(s.chaine.categorie)) preuves.push(s.niveau);
+    if (s.chaine.societe !== null && HORS_UE.has(categorieDuPays(s.chaine.societe.pays))) preuves.push(s.niveauSociete);
+    return preuves.length === 0 ? [] : [niveauMax(preuves)];
+  });
   const categorie =
     determines.length === 0
       ? "non déterminé"
       : determines
-          .map((s) => s.chaine.categorie)
+          .map(categorieDuServant)
           .reduce((a, b) => (ORDRE_CATEGORIE.indexOf(a) >= ORDRE_CATEGORIE.indexOf(b) ? a : b));
 
   let estHorsUE: boolean | null;
   let niveau: Niveau;
   if (horsUE.length > 0) {
     estHorsUE = true;
-    niveau = niveauMax(horsUE.map((s) => s.niveau));
+    niveau = niveauMax(horsUE);
   } else if (liste.length > 0 && determines.length === liste.length) {
     estHorsUE = false;
     niveau = niveauMin(...liste.map((s) => s.niveau));
@@ -140,6 +187,9 @@ export function classer(
     estHorsUE = null;
     niveau = "non déterminé";
   }
+  // Outside the EU, but by a company whose farther seat is not known (its parent unknown, its own seat in Europe outside
+  // the EU): the farthest category is not known either, never « France » beside a French host (second review of 0.3).
+  const categorieFinale = estHorsUE === true && !HORS_UE.has(categorie) ? "non déterminé" : categorie;
   return {
     ...vide,
     cdn: base.cdn,
@@ -147,7 +197,7 @@ export function classer(
     servants: liste,
     hebergePar: base.cdn ? "non observable" : "voir les sociétés",
     controle: accord,
-    categorie,
+    categorie: categorieFinale,
     horsUE: estHorsUE,
     niveau,
   };
