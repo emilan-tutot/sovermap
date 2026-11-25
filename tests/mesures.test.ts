@@ -49,7 +49,8 @@ describe("a published state, read for the tools", () => {
 
   it("tells a fragment of records from the bucket's checksums and from any other file", () => {
     for (const f of ["d1.json", "2c.json", "d1.1.json", "ff.12.json"]) expect(FRAGMENT.test(f), f).toBe(true);
-    for (const f of ["sommes.json", "index.json", "d1.json.gz", "d1.txt", "D1.json"]) expect(FRAGMENT.test(f), f).toBe(false);
+    for (const f of ["sommes.json", "index.json", "d1.json.gz", "d1.txt", "D1.json"])
+      expect(FRAGMENT.test(f), f).toBe(false);
   });
 
   it("checks each value at the border", () => {

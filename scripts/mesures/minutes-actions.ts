@@ -34,4 +34,7 @@ for (const [cle, flux] of [...parFlux].sort((a, b) => b[1].minutes - a[1].minute
   minutes += flux.minutes;
 }
 console.log(`total depuis le ${depuis} : ${passages} passages, ${Math.round(minutes)} min (durée murale)`);
-if (passages >= 1000) console.log("attention : 1 000 passages, le plus que GitHub rend avec ce filtre ; le compte est sans doute incomplet");
+if (passages >= 1000)
+  console.log(
+    "attention : 1 000 passages, le plus que GitHub rend avec ce filtre ; le compte est sans doute incomplet",
+  );

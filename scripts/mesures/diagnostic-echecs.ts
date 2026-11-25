@@ -85,7 +85,9 @@ for (const l of lignes) {
 }
 
 const essai = diagnostic["essai"] === true ? " (essai)" : "";
-console.log(`date ${chaine(diagnostic["date"]) ?? "?"}${essai} : ${lignes.length} domaines en échec sur ${domaines.size}`);
+console.log(
+  `date ${chaine(diagnostic["date"]) ?? "?"}${essai} : ${lignes.length} domaines en échec sur ${domaines.size}`,
+);
 console.log("\npar question en échec :");
 for (const [k, n] of [...parQuestion].sort((a, b) => b[1] - a[1])) console.log(`  ${n}\t${k}`);
 function tableau(titre: string, echecs: Comptes, denominateurs: Comptes): void {
