@@ -19,8 +19,9 @@ for (const paquet of PAQUETS) {
   const manifeste = objet(JSON.parse(readFileSync(path.join("node_modules", paquet, "package.json"), "utf8")));
   const version = chaine(manifeste?.["version"]);
   if (version === null) throw new Error(`version de ${paquet} illisible dans node_modules`);
-  const touches: string[] = [];
-  let total = 0;
+  // One advisory may give several ranges (one per branch of the package): each advisory counts once.
+  const touches = new Map<string, string>();
+  const vus = new Set<string>();
   let apres: string | null = null;
   do {
     const args = ["api", "graphql", "-f", `query=${REQUETE}`, "-f", `p=${paquet}`];
@@ -28,17 +29,19 @@ for (const paquet of PAQUETS) {
     const reponse = objet(JSON.parse(execFileSync("gh", args, { encoding: "utf8" })));
     const page = objet(objet(reponse?.["data"])?.["securityVulnerabilities"]);
     for (const n of liste(page?.["nodes"])) {
-      total += 1;
       const noeud = objet(n);
       const avis = objet(noeud?.["advisory"]);
+      // A withdrawn advisory does not count, not even in the total.
       if (avis === null || (avis["withdrawnAt"] ?? null) !== null) continue;
+      const id = chaine(avis["ghsaId"]) ?? "?";
+      vus.add(id);
       if (!dansLaPlage(version, chaine(noeud?.["vulnerableVersionRange"]) ?? "")) continue;
       const jour = (chaine(avis["publishedAt"]) ?? "").slice(0, 10);
-      touches.push(`${chaine(avis["ghsaId"]) ?? "?"} (${chaine(avis["severity"]) ?? "?"}, ${jour})`);
+      touches.set(id, `${id} (${chaine(avis["severity"]) ?? "?"}, ${jour})`);
     }
     const pages = objet(page?.["pageInfo"]);
     apres = pages?.["hasNextPage"] === true ? chaine(pages["endCursor"]) : null;
   } while (apres !== null);
-  const detail = touches.length > 0 ? ` : ${touches.join(", ")}` : "";
-  console.log(`${paquet} ${version} : ${touches.length} avis sur ${total} touchent cette version${detail}`);
+  const detail = touches.size > 0 ? ` : ${[...touches.values()].join(", ")}` : "";
+  console.log(`${paquet} ${version} : ${touches.size} avis sur ${vus.size} touchent cette version${detail}`);
 }

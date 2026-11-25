@@ -17,8 +17,8 @@ export const chaine = (v: unknown): string | null => (typeof v === "string" ? v 
 /** An array, or an empty one for anything else. */
 export const liste = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : []);
 
-/** A fragment of the published state: « 2c.json », or « 2c.1.json » when a bucket is split. */
-const FRAGMENT = /^[0-9a-f]{2}(\.[0-9]+)?\.json$/;
+/** A fragment of the published state: « 2c.json », or « 2c.1.json » when a bucket is split; never « sommes.json ». */
+export const FRAGMENT = /^[0-9a-f]{2}(\.[0-9]+)?\.json$/;
 
 /** Every record of a kind (« noms » by their name, « domaines » by their domain), from every fragment of the folder. */
 export function lireFiches(dossier: string, sorte: "noms" | "domaines"): Map<string, Fiche> {

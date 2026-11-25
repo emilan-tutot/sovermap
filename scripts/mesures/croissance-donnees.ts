@@ -4,10 +4,12 @@
 // objects (fetch the branch first).
 //   npx tsx scripts/mesures/croissance-donnees.ts <commit avant> <commit après> [échantillon=300]
 import { execFileSync } from "node:child_process";
-import { chaine, type Fiche, liste, objet } from "./etat-publie";
+import { chaine, type Fiche, FRAGMENT, liste, objet } from "./etat-publie";
 
 const [avant = "", apres = "", nombre = "300"] = process.argv.slice(2);
 if (avant === "" || apres === "") throw new Error("deux commits attendus : avant, puis après");
+// A commit given by hand never becomes an option of git (« --output=… » would write a file).
+if (avant.startsWith("-") || apres.startsWith("-")) throw new Error("un commit ne commence jamais par « - »");
 const git = (...args: string[]) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 1 << 28 });
 
 const paquet = execFileSync("git", ["pack-objects", "--revs", "--thin", "--stdout", "-q"], {
@@ -16,9 +18,13 @@ const paquet = execFileSync("git", ["pack-objects", "--revs", "--thin", "--stdou
 });
 console.log(`taille ajoutée : ${(paquet.length / 1e6).toFixed(2).replace(".", ",")} Mo compressés`);
 
+// The fragments of records only (noms/<bb>/<fragment>, domaines/<bb>/<fragment>), never their checksums (sommes.json).
 const changes = git("diff", "--name-only", avant, apres)
   .split("\n")
-  .filter((f) => /^(noms|domaines)\//.test(f));
+  .filter((f) => {
+    const [sorte, , fichier = ""] = f.split("/");
+    return (sorte === "noms" || sorte === "domaines") && FRAGMENT.test(fichier);
+  });
 const pas = Math.max(1, Math.floor(changes.length / Math.max(1, Number(nombre))));
 const echantillon = changes.filter((_, i) => i % pas === 0);
 const champs = new Map<string, number>();
@@ -57,7 +63,7 @@ for (const fichier of echantillon) {
   compter(parCause, `${sorte}: ${[...causes].sort().join("+") || "(enregistrement retiré)"}`);
 }
 
-console.log(`fragments changés : ${changes.length} ; échantillon : ${echantillon.length}`);
+console.log(`fragments de fiches changés (sans les sommes) : ${changes.length} ; échantillon : ${echantillon.length}`);
 console.log("champs changés (enregistrements) :");
 for (const [k, n] of [...champs].sort((a, b) => b[1] - a[1]).slice(0, 15)) console.log(`  ${n}\t${k}`);
 console.log("fragments par cause :");

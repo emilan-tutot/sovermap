@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { chaine, liste, lireFiches, objet } from "@/scripts/mesures/etat-publie";
+import { chaine, FRAGMENT, liste, lireFiches, objet } from "@/scripts/mesures/etat-publie";
 import { comparerVersions, dansLaPlage } from "@/scripts/mesures/versions";
 
 // The shared parts of the measurement tools of the points (scripts/mesures/): no network, a made-up state only.
@@ -45,6 +45,11 @@ describe("a published state, read for the tools", () => {
     const fiches = lireFiches(dossier, "noms");
     expect([...fiches.keys()].sort()).toEqual(["www.a.example", "www.b.example"]);
     expect(fiches.get("www.b.example")?.["etat"]).toBe("echec");
+  });
+
+  it("tells a fragment of records from the bucket's checksums and from any other file", () => {
+    for (const f of ["d1.json", "2c.json", "d1.1.json", "ff.12.json"]) expect(FRAGMENT.test(f), f).toBe(true);
+    for (const f of ["sommes.json", "index.json", "d1.json.gz", "d1.txt", "D1.json"]) expect(FRAGMENT.test(f), f).toBe(false);
   });
 
   it("checks each value at the border", () => {
