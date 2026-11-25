@@ -92,6 +92,16 @@ export type OptionsCollecte = {
    * after their retries.
    */
   arret: { fenetre: number; part: number; pauseMs: number; depassements: number; pausesMax: number };
+  /**
+   * The emergency stop's counts already taken that day (B.8: the second half starts from the first's, so that the day
+   * has `pausesMax` pauses and `depassements` breaches in a row, as one job had; the review of B.8).
+   */
+  urgenceDuJour?: UrgenceDuJour;
+  /**
+   * The name servers and mail exchangers the first half already measured that day (B.8): one that answered is never
+   * asked again (a host serves domains of both halves; the review of B.8), one that failed is asked again.
+   */
+  hotesConnus?: ReadonlyMap<string, MesureNom>;
   /** The web name of a domain, for the emergency stop's count. */
   nomWebDe?: (domaine: string) => string | undefined;
   /** Called once, when the emergency stop is decided, with its reason (the controls stop too). */
@@ -120,7 +130,12 @@ export const POLITESSE: Omit<OptionsCollecte, "zoneDe"> = {
   arret: { fenetre: 1_000, part: 0.15, pauseMs: 10 * 60 * 1000, depassements: 3, pausesMax: 3 },
 };
 
+/** The emergency stop's counts of a day: its pauses, and its breaches in a row not yet lifted. */
+export type UrgenceDuJour = { pauses: number; depassements: number };
+
 export type ResultatCollecte = {
+  /** The emergency stop's counts at the end, the day's so far (`urgenceDuJour` included). */
+  urgence: UrgenceDuJour;
   noms: Map<string, MesureNom>;
   domaines: Map<string, MesureZone>;
   /** The addresses of every name server and mail exchanger seen, once per host. */
@@ -674,6 +689,7 @@ export async function collecter(
   const cadenceNoms = new Cadence(options.nomsParSeconde, horloge);
   const cadenceDomaines = new Cadence(options.domainesParSeconde, horloge, options.montee);
   const resultat: ResultatCollecte = {
+    urgence: { pauses: 0, depassements: 0 },
     noms: new Map(),
     domaines: new Map(),
     hotes: new Map(),
@@ -693,6 +709,10 @@ export async function collecter(
   const mesurerHote = (hote: string): Promise<void> => {
     const enCours = hotesEnCours.get(hote);
     if (enCours) return enCours;
+    // Measured by the first half, and answered (even « no such name »): the assembly keeps that measurement
+    // (tranches.ts, partagees); a failed one is asked again.
+    const connu = options.hotesConnus?.get(hote);
+    if (connu !== undefined && connu.etat !== "echec") return Promise.resolve();
     const promesse = mesurerNom(hote, client).then((m) => {
       resultat.hotes.set(hote, m);
     });
@@ -710,9 +730,9 @@ export async function collecter(
   let epoque = 0;
   let pauseJusqua = 0;
   /** The breaches in a row: each but the last brings a pause; a full count under the threshold resets them. */
-  let depassements = 0;
-  /** The pauses of the day (at most `pausesMax`: a breach beyond them stops). */
-  let pauses = 0;
+  let depassements = options.urgenceDuJour?.depassements ?? 0;
+  /** The pauses of the day (at most `pausesMax`: a breach beyond them stops), the first half's included. */
+  let pauses = options.urgenceDuJour?.pauses ?? 0;
   const seuil = `seuil : ${Math.round(100 * options.arret.part)} %`;
   const minutesPause = Math.round(options.arret.pauseMs / 60_000);
   const enEchecPourArret = (unite: string): boolean => {
@@ -933,5 +953,6 @@ export async function collecter(
     );
   }
   resultat.fin = Date.now();
+  resultat.urgence = { pauses, depassements };
   return resultat;
 }

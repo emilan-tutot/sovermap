@@ -9,9 +9,11 @@ const workflow = readFileSync(".github/workflows/collecte.yml", "utf8");
 const tache = (nom: string) => {
   const debut = workflow.indexOf(`\n  ${nom}:\n`);
   if (debut === -1) throw new Error(`tâche ${nom} absente`);
-  const suite = workflow.slice(debut + 1).search(/\n {2}[a-z]+:\n/);
+  const suite = workflow.slice(debut + 1).search(/\n {2}[a-z0-9-]+:\n/);
   return suite === -1 ? workflow.slice(debut) : workflow.slice(debut, debut + 1 + suite);
 };
+/** The three jobs that measure and build the day (brief B.8). */
+const MESURE = ["mesurer-1", "mesurer-2", "assembler"] as const;
 
 describe("the collection's workflow", () => {
   it("enables the scheduled workflows again from two places, with the least rights, never on a pull request", () => {
@@ -61,13 +63,74 @@ describe("the collection's workflow", () => {
     expect(workflow).toContain('- cron: "17 15 * * *"');
   });
 
-  it("ends a trial's first pass at its deadline (20 minutes), so that a degraded trial still ends in its 60 minutes", () => {
+  it("ends a trial's first pass at its deadline, so that a degraded trial's three jobs still end in 100 minutes", () => {
     // Trap 67 (23/11/2026, 07:07): two emergency pauses at one domain a second took a trial past its job's limit; the
-    // domains already open at the deadline may still take 14 to 20 minutes on a harder day (the third review of PR 25).
-    expect(tache("mesurer")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
-    expect(workflow).toContain("--echeance-minutes 20");
+    // domains already open at the deadline may still take up to 20 minutes on a harder day (the third review of PR 25,
+    // the reviews of B.8). A day's half counts its limits from its job's start, and its job keeps 30 minutes past them;
+    // a trial's half counts them from the start of its measurement (the first half's downloads never eat its first
+    // pass), and its job keeps room for the downloads; a trial's jobs add up to 100 minutes (pipeline/creneau.ts).
+    expect(tache("mesurer-1")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 180 }}");
+    expect(tache("mesurer-2")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 180 }}");
+    expect(tache("assembler")).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 10 || 30 }}");
+    for (const nom of ["mesurer-1", "mesurer-2"]) {
+      const texte = tache(nom);
+      expect(texte).toContain('--essai --limite "$LIMITE_ESSAI" --delai-reprise-minutes 1 --echeance-minutes 10');
+      expect(texte).toContain("--fin-controles-minutes 20)");
+      expect(texte).toContain("--fin-controles-minutes 150)");
+      // The job's start, noted at its first step: a day's limits count from there, the wait and the preparation included.
+      expect(texte.indexOf('echo "DEBUT_TACHE=')).toBeGreaterThan(-1);
+      expect(texte.indexOf('echo "DEBUT_TACHE=')).toBeLessThan(texte.indexOf("actions/checkout"));
+      expect(texte).toContain('--debut-tache "$DEBUT_TACHE"');
+    }
     const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
     expect(collecter).toContain("...(o.essai ? { finPremierePasse: minutesDe(echeanceMinutes) } : {}),");
+    expect(collecter).toContain('const debutJob = debutDeLaTache(o["debut-tache"], new Date());');
+    expect(collecter).toContain("const origine = o.essai ? Date.now() : debutJob.getTime();");
+  });
+
+  it("measures the list in two halves, one job after the other, then builds the day from both (brief B.8)", () => {
+    const [premiere, seconde, assemblage] = MESURE.map(tache);
+    expect(premiere).toContain("args=(--tranche 1 ");
+    expect(seconde).toContain("args=(--tranche 2 ");
+    expect(assemblage).toContain("args=(--assembler ");
+    // Never two measurements at once: the second half after the first, never after an emergency stop.
+    expect(seconde).toContain("needs: [jour, mesurer-1]");
+    expect(seconde).toContain("if: needs.mesurer-1.outputs.arret == 'false'");
+    expect(assemblage).toContain("needs: [jour, mesurer-1, mesurer-2]");
+    expect(assemblage).toContain("needs.mesurer-1.outputs.arret == 'true'");
+    // What a half hands on (the sources, downloaded once a day; the day's context; its measurement) goes through the
+    // Actions cache under the run's own key, read back after saving, never through an artifact, which any GitHub
+    // account may download (the reviews of B.8: RIS's dumps, the RIPE's files, the DILA's zip, the CDNs' lists are
+    // never republished; a half's file names the busiest servers by their address, and third parties' zones).
+    for (const texte of [premiere, seconde]) expect(texte).not.toContain("actions/upload-artifact@");
+    expect(assemblage).not.toContain("name: tranche-");
+    const premiereCle = "key: collecte-tranche-1-${{ needs.jour.outputs.date }}-${{ github.run_id }}";
+    const secondeCle = "key: collecte-tranche-2-${{ needs.jour.outputs.date }}-${{ github.run_id }}";
+    const relecture = "--key \"$CLE\" --json key --jq 'map(select(.key == env.CLE)) | length'";
+    expect(premiere).toContain(premiereCle);
+    expect(premiere).toContain(relecture);
+    expect(seconde).toContain(premiereCle);
+    expect(seconde).toContain(secondeCle);
+    expect(seconde).toContain(relecture);
+    expect(assemblage).toContain(premiereCle);
+    expect(assemblage).toContain(secondeCle);
+    for (const texte of [seconde, assemblage]) expect(texte).toContain("fail-on-cache-miss: true");
+    expect(seconde).not.toContain("--veille");
+    expect(seconde).not.toContain("--iptoasn");
+    expect(assemblage).not.toContain("--conteneur");
+    expect(assemblage).not.toContain("docker run");
+    // The witnesses are asked in each half (each half's resolver is checked on its own; the second review of B.8), and
+    // a re-run of the assembly never compares the day with itself.
+    const collecter = readFileSync("pipeline/cli/collecter.ts", "utf8");
+    expect(collecter).toContain("const nomsTemoins = ref.temoins.temoins.map((t) => t.nom);");
+    expect(collecter).toContain("const verdictsParTranche = tranchesDuJour.map((t) => {");
+    expect(collecter).toContain("if (veilleObs !== null && !(veilleObs.date < date)) {");
+    // The publication and the alarm follow the assembly.
+    expect(tache("publier")).toContain("needs: [jour, assembler]");
+    expect(tache("publier")).toContain("needs.assembler.outputs.publiable == 'true'");
+    expect(tache("alerter")).toContain("needs: [jour, mesurer-1, mesurer-2, assembler, publier]");
+    for (const nom of MESURE) expect(tache("alerter")).toContain(`needs.${nom}.result == 'failure'`);
+    expect(workflow).not.toContain("needs.mesurer.");
   });
 
   it("never reads an error of GitHub's API as « today is not done » (the day would be measured twice)", () => {
@@ -81,7 +144,7 @@ describe("the collection's workflow", () => {
 
   it("keeps the failures' diagnosis in the run's artifact only: never in « donnees » nor in the release", () => {
     // The artifact takes it beside « sortie » (pipeline/diagnostic.ts writes it in the work folder).
-    expect(tache("mesurer")).toContain("travail/diagnostic.json");
+    expect(tache("assembler")).toContain("travail/diagnostic.json");
     // The publication copies « sortie » only, and the release archives what was copied.
     const publier = tache("publier");
     expect(publier).toContain("cp -a ../collecte/sortie/. ./");
@@ -89,9 +152,10 @@ describe("the collection's workflow", () => {
   });
 
   it("measures the day the check named, never the clock's", () => {
-    const mesurer = tache("mesurer");
-    expect(mesurer).toContain("DATE: ${{ needs.jour.outputs.date }}");
-    expect(mesurer).toContain('--date "$DATE"');
+    for (const nom of MESURE) {
+      expect(tache(nom)).toContain("DATE: ${{ needs.jour.outputs.date }}");
+      expect(tache(nom)).toContain('--date "$DATE"');
+    }
   });
 
   it("never publishes an older day, nor another content for the published day", () => {
@@ -105,8 +169,8 @@ describe("the collection's workflow", () => {
     expect(memeJour).toBeLessThan(publier.indexOf("git commit -q"));
   });
 
-  it("reads « no data branch yet » from exit code 2 only, in the measuring and the publishing jobs", () => {
-    for (const nom of ["mesurer", "publier"]) {
+  it("reads « no data branch yet » from exit code 2 only, in the jobs that read the published state", () => {
+    for (const nom of ["mesurer-1", "assembler", "publier"]) {
       const texte = tache(nom);
       expect(texte).toContain("git ls-remote --exit-code --heads origin donnees");
       expect(texte).toMatch(/2\)|-eq 2/);
@@ -115,19 +179,32 @@ describe("the collection's workflow", () => {
   });
 
   it("never lets a trial take the place of a day's measurement, nor measure during or around one", () => {
-    const mesurer = tache("mesurer");
-    expect(mesurer).toContain("group: collecte-mesure-${{ github.event_name == 'pull_request' && 'essai' || 'jour' }}");
-    const creneau = mesurer.indexOf("npx tsx pipeline/cli/creneau-essai.ts");
-    expect(creneau).toBeGreaterThan(-1);
-    expect(creneau).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));
-    expect(mesurer.slice(mesurer.lastIndexOf("- if:", creneau), creneau)).toContain(
-      "github.event_name == 'pull_request'",
-    );
-    // A trial is capped, and the day's collection waits for a trial that measures.
-    expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 60 || 330 }}");
+    // Both halves wait in the same queue, and both check the slot: a trial's second half may have waited in it (the
+    // review of B.8: another trial's first half measured meanwhile).
+    for (const nom of ["mesurer-1", "mesurer-2"]) {
+      const mesurer = tache(nom);
+      expect(mesurer).toContain(
+        "group: collecte-mesure-${{ github.event_name == 'pull_request' && 'essai' || 'jour' }}",
+      );
+      const creneau = mesurer.indexOf("npx tsx pipeline/cli/creneau-essai.ts");
+      expect(creneau).toBeGreaterThan(-1);
+      expect(creneau).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));
+      expect(mesurer.slice(mesurer.lastIndexOf("- if:", creneau), creneau)).toContain(
+        "github.event_name == 'pull_request'",
+      );
+      // A trial is capped.
+      expect(mesurer).toContain("timeout-minutes: ${{ github.event_name == 'pull_request' && 45 || 180 }}");
+    }
+    // The day's collection waits for a trial that measures.
+    const mesurer = tache("mesurer-1");
     const attente = mesurer.indexOf("--event pull_request");
     expect(attente).toBeGreaterThan(-1);
     expect(attente).toBeLessThan(mesurer.indexOf("docker run -d --name knot"));
+    // A day's second half is never re-run after midnight: two days would mix (the review of B.8).
+    const seconde = tache("mesurer-2");
+    const horloge = seconde.indexOf('if [ "$(date -u +%F)" != "$DATE" ]; then');
+    expect(horloge).toBeGreaterThan(-1);
+    expect(horloge).toBeLessThan(seconde.indexOf("docker run -d --name knot"));
   });
 
   it("has shell blocks that bash can read (a stray quote would fail a day's run)", () => {
@@ -156,7 +233,7 @@ describe("the collection's workflow", () => {
     const config = readFileSync("pipeline/knot/config.yaml", "utf8");
     // The resolver listens where the collection asks.
     expect(config).toContain("interface: 127.0.0.1@5300");
-    expect(tache("mesurer")).toContain("attendre-resolveur.ts 127.0.0.1:5300");
+    for (const nom of ["mesurer-1", "mesurer-2"]) expect(tache(nom)).toContain("attendre-resolveur.ts 127.0.0.1:5300");
     // The « views » section, to the next top-level key (comment lines left out); each view opens with « - » at two
     // spaces, its keys at four.
     const lignes = config.split("\n").filter((l) => !/^\s*#/.test(l));
@@ -202,7 +279,19 @@ describe("the collection's workflow", () => {
   });
 
   it("measures a day once: the mark « measurement started » is saved and read back before the collection", () => {
-    const mesurer = tache("mesurer");
+    // In the first half's job, before its first question; the second half and the assembly run only after it.
+    const mesurer = tache("mesurer-1");
+    // The assembly asks nothing: it may be re-run. The second half has its own mark: a re-run of it refuses.
+    expect(tache("assembler")).not.toContain("collecte-commencee");
+    const seconde = tache("mesurer-2");
+    const marque = seconde.indexOf(
+      "key: collecte-commencee-${{ needs.jour.outputs.date }}-moitie2-${{ github.run_id }}",
+    );
+    expect(seconde.indexOf('--key "collecte-commencee-$DATE-moitie2-"')).toBeGreaterThan(-1);
+    expect(seconde.indexOf('--key "collecte-commencee-$DATE-moitie2-"')).toBeLessThan(marque);
+    expect(marque).toBeLessThan(seconde.indexOf('--ref refs/heads/main --key "$CLE"'));
+    expect(seconde.indexOf('--ref refs/heads/main --key "$CLE"')).toBeLessThan(seconde.indexOf("- id: collecte"));
+    expect(seconde).toMatch(/permissions:\n {6}contents: read\n {6}actions: read/);
     const debut = mesurer.indexOf("# A day is measured once");
     const collecte = mesurer.indexOf("- id: collecte");
     expect(debut).toBeGreaterThan(-1);

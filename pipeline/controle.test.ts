@@ -1,28 +1,62 @@
 // Tests of the controls: the plan of the day, the control resolver's pace, the witnesses. Simulated resolver, fake
 // clock, documentation names, addresses and AS numbers only (RFC 2606, RFC 5737, RFC 5398).
 import { describe, expect, it } from "vitest";
-import { ClientCadence, conforme, ControleEnContinu, controler, planDeControle, verifierTemoins } from "./controle";
+import {
+  ClientCadence,
+  CYCLE_CONTROLE,
+  conforme,
+  ControleEnContinu,
+  controler,
+  planDeControle,
+  tourDe,
+  tourDuJour,
+  verifierTemoins,
+} from "./controle";
 import type { MesureNom } from "./mesure";
-import { generateur, type Horloge } from "./politesse";
+import type { Horloge } from "./politesse";
 import { ResolveurSimule } from "./resolveur-simule";
 
 const zoneDe = (nom: string) => nom.split(".").slice(-2).join(".");
 
 describe("the controls", () => {
-  it("asks every « État » domain, 3 % of the others and the witnesses", () => {
+  it("asks every « État » domain, the others whose turn it is, and the witnesses", () => {
     const domaines = [
       { domaine: "ministere.example", nomWeb: "www.ministere.example", perimetre: "État" as const },
-      ...Array.from({ length: 100 }, (_, i) => ({
+      ...Array.from({ length: 3300 }, (_, i) => ({
         domaine: `c${i}.example`,
         nomWeb: `c${i}.example`,
         perimetre: "hors État" as const,
       })),
     ];
-    const plan = planDeControle(domaines, ["temoin.example"], generateur(7));
+    const plan = planDeControle(domaines, ["temoin.example"], "2026-11-24");
     expect(plan.mx).toEqual(["ministere.example"]);
     expect(plan.noms).toContain("www.ministere.example");
     expect(plan.noms).toContain("temoin.example");
-    expect(plan.noms).toHaveLength(1 + 3 + 1);
+    // About 3 % of the others (100 of 3,300), and never an « État » domain counted twice.
+    expect(plan.noms.length - 2).toBeGreaterThan(70);
+    expect(plan.noms.length - 2).toBeLessThan(130);
+  });
+
+  it("controls each other domain once in a cycle of 33 days, never twice, never at random", () => {
+    const autres = Array.from({ length: 2000 }, (_, i) => ({
+      domaine: `d${i}.example`,
+      nomWeb: `www.d${i}.example`,
+      perimetre: "hors État" as const,
+    }));
+    const vus = new Map<string, number>();
+    const debut = Date.parse("2026-11-24T00:00:00Z");
+    for (let j = 0; j < CYCLE_CONTROLE; j += 1) {
+      const jour = new Date(debut + j * 86_400_000).toISOString().slice(0, 10);
+      for (const nom of planDeControle(autres, [], jour).noms) vus.set(nom, (vus.get(nom) ?? 0) + 1);
+    }
+    expect(vus.size).toBe(autres.length);
+    expect([...vus.values()].every((n) => n === 1)).toBe(true);
+    // The same day gives the same plan; the next cycle starts again with the same domains.
+    expect(planDeControle(autres, [], "2026-11-24")).toEqual(planDeControle(autres, [], "2026-11-24"));
+    expect(planDeControle(autres, [], "2026-12-27")).toEqual(planDeControle(autres, [], "2026-11-24"));
+    expect(tourDuJour("2026-12-27")).toBe(tourDuJour("2026-11-24"));
+    expect(tourDe("d1.example")).toBe(tourDe("d1.example"));
+    expect(() => tourDuJour("24/11/2026")).toThrow(/illisible/);
   });
 
   it("asks the witnesses first, so that neither the deadline nor an emergency stop leaves them out", () => {
@@ -30,7 +64,7 @@ describe("the controls", () => {
       { domaine: "a.example", nomWeb: "a.example", perimetre: "État" as const },
       { domaine: "z.example", nomWeb: "z.example", perimetre: "État" as const },
     ];
-    const plan = planDeControle(domaines, ["temoin-b.example", "temoin-a.example"], generateur(7));
+    const plan = planDeControle(domaines, ["temoin-b.example", "temoin-a.example"], "2026-11-24");
     expect(plan.noms).toEqual(["temoin-a.example", "temoin-b.example", "a.example", "z.example"]);
   });
 

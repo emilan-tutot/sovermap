@@ -703,6 +703,9 @@ export const methode: PageDeTexte = soignee({
             [
               "0.3.1 (24/11/2026) : les adresses des démarches en ligne suivies par l'Observatoire de la DINUM entrent dans la liste mesurée, sans rien changer au périmètre « État ».",
             ],
+            [
+              "0.3.2 (24/11/2026) : les domaines hors du périmètre « État » reposés chaque jour au résolveur de contrôle suivent un tour de 33 jours, fixé par leur nom, et non plus un tirage au hasard ; un nom qui n'est pas reposé garde l'accord de son dernier contrôle tant que ce qui le sert ne change pas, 40 jours au plus ; derrière un CDN, les réseaux d'un nom se publient par leur seul numéro d'AS.",
+            ],
           ],
         },
       ],

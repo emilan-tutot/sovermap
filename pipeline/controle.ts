@@ -1,11 +1,12 @@
 // The daily controls (brief B.4, plan § 9 and § 13): Quad9 gets, at 2 questions per second at most and alongside the
 // measurement, the web name and the MX of every domain of the « État » perimeter, the web names of 3 % of the other
-// domains drawn at random, and the witnesses; Cloudflare 1.1.1.1 gets the witnesses only. Their answers make the
+// domains (those whose turn it is in a cycle of 33 days), and the witnesses; Cloudflare 1.1.1.1 gets the witnesses only. Their answers make the
 // address layer « confirmé » when they agree (methode § 5); the witnesses, whose behaviour is known and dated in
 // referentiels/temoins.json, must all be found again, or nothing is published (methode § 7).
+import { createHash } from "node:crypto";
 import type { ClientDns, Reponse, TypeRr } from "./dns-bas";
 import { type Etat, type MesureNom, mesurerNom } from "./mesure";
-import { Cadence, type Horloge, HORLOGE_REELLE, melanger } from "./politesse";
+import { Cadence, type Horloge, HORLOGE_REELLE } from "./politesse";
 
 export type Temoin = {
   nom: string;
@@ -39,18 +40,34 @@ export class ClientCadence implements ClientDns {
   }
 }
 
-/** The share of the other domains asked to Quad9 each day (brief B.4). */
-export const PART_ECHANTILLON = 0.03;
+/**
+ * The control cycle of the other domains (brief B.4, 3 % a day; methode § 5, B.6): each day, the web names of the
+ * domains whose turn it is, one domain in 33; each one is controlled once every 33 days, never drawn at random (a draw of
+ * 3 % a day would leave 40 % of them without any control over 30 days: 0.97^30).
+ */
+export const CYCLE_CONTROLE = 33;
 
-/** The names and domains the control resolver gets today. */
+/** A domain's turn in the control cycle: the first four bytes of the SHA-256 of its name, modulo the cycle. */
+export function tourDe(domaine: string): number {
+  return createHash("sha256").update(domaine).digest().readUInt32BE(0) % CYCLE_CONTROLE;
+}
+
+/** The turn of a day (AAAA-MM-JJ): its number of days since 1970-01-01 (UTC), modulo the cycle. */
+export function tourDuJour(jour: string): number {
+  const t = Date.parse(`${jour}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(jour) || Number.isNaN(t)) throw new Error(`jour illisible : ${jour.slice(0, 20)}`);
+  return Math.floor(t / 86_400_000) % CYCLE_CONTROLE;
+}
+
+/** The names and domains the control resolver gets today (`jour`, AAAA-MM-JJ). */
 export function planDeControle(
   domaines: readonly { domaine: string; nomWeb: string; perimetre: "État" | "hors État" }[],
   temoins: readonly string[],
-  aleatoire: () => number,
+  jour: string,
 ): { noms: string[]; mx: string[] } {
   const etat = domaines.filter((d) => d.perimetre === "État");
-  const autres = domaines.filter((d) => d.perimetre !== "État");
-  const echantillon = melanger(autres, aleatoire).slice(0, Math.round(autres.length * PART_ECHANTILLON));
+  const tour = tourDuJour(jour);
+  const echantillon = domaines.filter((d) => d.perimetre !== "État" && tourDe(d.domaine) === tour);
   // The witnesses first: asked within the first seconds, they are never left out by the deadline or an emergency stop.
   return {
     noms: [

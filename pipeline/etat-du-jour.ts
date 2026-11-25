@@ -57,7 +57,96 @@ export type Controles = {
   noms: ReadonlyMap<string, { resolveur: string; mesure: MesureNom }>;
   /** The MX hosts the control resolver saw, by domain (null: its answer failed). */
   mx: ReadonlyMap<string, string[] | null>;
+  /** The day of these controls (AAAA-MM-JJ; by default, the day of the state's hour). */
+  jour?: string;
+  /** The agreements that a name not controlled today may carry, by name (B.6). */
+  reports?: ReadonlyMap<string, AccordReporte>;
 };
+
+/**
+ * An agreement of the control resolver that a name not controlled today may carry (B.6; methode § 5): its last one,
+ * while what serves the name is the same (its CDN and the AS numbers of its addresses), and for 40 days at most from
+ * that control (a cycle of 33 days, and a week for a control missed); never a disagreement. The agreements travel from
+ * day to day in the day's observations (the Actions cache), never in the published state: the day of a control would
+ * change the record at each control, and a record kept by the hysteresis would carry a stale day.
+ */
+export type AccordReporte = { resolveur: string; le: string; servi: string };
+
+/** How long an agreement may be carried, in days from its control. */
+export const VALIDITE_ACCORD_JOURS = 40;
+
+const JOUR = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The days from one day to another (AAAA-MM-JJ); NaN when one of them is not a day. */
+function joursEntre(de: string, a: string): number {
+  if (!JOUR.test(de) || !JOUR.test(a)) return Number.NaN;
+  return Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86_400_000);
+}
+
+/** What serves a name, as an agreement compares it: its CDN and the sorted AS numbers of its addresses. */
+function servi(cdn: string | null, reseaux: readonly { as: number }[]): string {
+  return `${cdn ?? ""}|${[...new Set(reseaux.map((r) => r.as))].sort((a, b) => a - b).join(",")}`;
+}
+
+/**
+ * The control resolver's answer about a name, unless it failed (TIMEOUT, SERVFAIL, REFUSED, ERREUR): a failed answer
+ * is a control missed, never a disagreement, so that a carried agreement still holds (the method gives a missed control
+ * a week; the second review of B.6).
+ */
+function controleDe(controles: Controles, nom: string): { resolveur: string; mesure: MesureNom } | null {
+  const c = controles.noms.get(nom);
+  return c === undefined || c.mesure.etat === "echec" ? null : c;
+}
+
+/**
+ * The agreements a day's state lets the next day's names carry (B.6): each name whose control agreed that day (`jour`),
+ * or that carried an agreement that day (with the day of its control), and what served it; never a disagreement, nor
+ * an agreement on a name that failed or a reduced record. `servis`: what served each name, from its whole address layer
+ * (construireEtat), as today compares it; without it, from the record, whose networks are bounded.
+ */
+export function accordsDuJour(
+  etat: Etat,
+  controles: Controles,
+  jour: string,
+  servis?: ReadonlyMap<string, string>,
+): Map<string, AccordReporte> {
+  const accords = new Map<string, AccordReporte>();
+  for (const [nom, e] of etat.noms) {
+    const c = e.controle;
+    if (c === null || c.accord !== true || e.etat !== "ok" || e.reduit === true) continue;
+    const le = controleDe(controles, nom) !== null ? jour : controles.reports?.get(nom)?.le;
+    if (le === undefined || !JOUR.test(le)) continue;
+    accords.set(nom, {
+      resolveur: c.resolveur.slice(0, 60),
+      le,
+      servi: servis?.get(nom) ?? servi(e.cdn?.id ?? null, e.reseaux),
+    });
+  }
+  return accords;
+}
+
+/** A day's observations, as the next day reads them (the Actions cache): its day, its facts, its controls. */
+export type ObservationsDuJour = { date: string; mesures: Mesures; controles: Controles; pannes: Pannes };
+
+/**
+ * Yesterday's state as today classifies it again (B.6, B.7 bis), and the agreements it lets today's names carry:
+ * today's rules (`contexte`), but its own day and the agreements it carried, so that it is the state it was. The
+ * hysteresis compares today's records with it; null without yesterday's observations.
+ */
+export function veilleEtAccords(
+  liste: ListeReference,
+  veille: ObservationsDuJour | null,
+  contexte: ContexteV1,
+  heure: string,
+): { etat: Etat | null; accords: Map<string, AccordReporte> } {
+  if (veille === null) return { etat: null, accords: new Map() };
+  const controles = { ...veille.controles, jour: veille.date };
+  // What served each name, from its whole address layer: the same base as today's comparison (a record keeps 20
+  // networks at most; the second review of B.6).
+  const servis = new Map<string, string>();
+  const etat = construireEtat(liste, veille.mesures, controles, contexte, heure, veille.pannes, undefined, servis);
+  return { etat, accords: accordsDuJour(etat, controles, veille.date, servis) };
+}
 
 /** The failures the control resolver confirmed after every attempt (methode § 7): names and zones. */
 export type Pannes = { noms: ReadonlySet<string>; zones: ReadonlySet<string>; resolveur: string };
@@ -72,8 +161,11 @@ export function construireEtat(
   heure: string,
   pannes: Pannes = AUCUNE_PANNE,
   rapport: RapportConstruction = { erreurs: 0, reduits: 0 },
+  /** Filled, when given, with what serves each name from its whole address layer (B.6: the agreements' base). */
+  servis?: Map<string, string>,
 ): Etat {
   const noms = new Map<string, EnregistrementNom>();
+  const jour = controles.jour ?? heure.slice(0, 10);
   for (const entree of [...liste.noms.values()].sort((a, b) => (a.nom < b.nom ? -1 : 1))) {
     const m = mesures.noms.get(entree.nom);
     const domaine = liste.domaines.get(entree.domaine);
@@ -100,7 +192,25 @@ export function construireEtat(
       reduit: true,
     });
     const construire = () => {
-      const c = coucheAdresses(m, controles.noms.get(entree.nom) ?? null, domaine.perimetre, contexte, heure);
+      const duJour = controleDe(controles, entree.nom);
+      let c = coucheAdresses(m, duJour, domaine.perimetre, contexte, heure);
+      let controle = c.controle;
+      const sert = servi(c.cdn?.id ?? null, c.reseaux);
+      if (c.etat === "ok") servis?.set(entree.nom, sert);
+      const report = duJour === null ? controles.reports?.get(entree.nom) : undefined;
+      const age = report === undefined ? Number.NaN : joursEntre(report.le, jour);
+      if (
+        report !== undefined &&
+        c.etat === "ok" &&
+        sert === report.servi &&
+        age >= 0 &&
+        age <= VALIDITE_ACCORD_JOURS
+      ) {
+        // Its last control agreed, and what serves the name has not changed since: that agreement still holds, and the
+        // name is classified as if the control resolver had answered the same today (methode § 5).
+        c = coucheAdresses(m, { resolveur: report.resolveur, mesure: m }, domaine.perimetre, contexte, heure);
+        controle = { resolveur: report.resolveur, accord: true };
+      }
       return bornerNom({
         nom: entree.nom,
         domaine: entree.domaine,
@@ -111,13 +221,17 @@ export function construireEtat(
         cname: c.cname,
         dnssec: c.dnssec,
         familleEnEchec: m.echecFamille?.famille ?? null,
-        reseaux: c.reseaux.map((r) => ({ as: r.as, plage: r.plage })),
+        // Behind a CDN, the addresses turn every day: its networks are kept by their AS only, never by a range (B.6).
+        reseaux:
+          c.cdn === null
+            ? c.reseaux.map((r) => ({ as: r.as, plage: r.plage }))
+            : [...new Set(c.reseaux.map((r) => r.as))].map((as) => ({ as, plage: null })),
         cdn: c.cdn ? { id: c.cdn.id, methode: c.cdn.methode } : null,
         exploitants: exploitantsDe(c),
         categorie: c.categorie,
         horsUE: c.horsUE,
         niveau: c.niveau,
-        controle: c.controle,
+        controle,
       });
     };
     noms.set(

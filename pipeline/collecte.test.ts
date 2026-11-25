@@ -143,6 +143,26 @@ describe("the scheduling of a collection", () => {
     );
     expect(r.questions.filter((q) => q === "ns1.hebergeur.example A")).toHaveLength(1);
     expect(resultat.hotes.get("mx.hebergeur.example")?.a).toEqual([{ adresse: "192.0.2.25", ttl: 300 }]);
+    // A second half (B.8) never asks again a host the first one measured and that answered; a failed one, it asks
+    // again (the review of B.8: the name servers of a large host serve domains of both halves).
+    const ns1 = resultat.hotes.get("ns1.hebergeur.example");
+    const mx = resultat.hotes.get("mx.hebergeur.example");
+    if (ns1 === undefined || mx === undefined) throw new Error("hôtes manquants");
+    const r2 = new ResolveurSimule(ZONE, zoneDe);
+    const seconde = await collecter(noms, r2, {
+      ...POLITESSE,
+      zoneDe,
+      horloge: fausseHorloge(),
+      aleatoire: generateur(1),
+      hotesConnus: new Map([
+        ["ns1.hebergeur.example", ns1],
+        ["mx.hebergeur.example", { ...mx, etat: "echec", echec: "TIMEOUT" }],
+      ]),
+    });
+    expect(r2.questions.filter((q) => q.startsWith("ns1.hebergeur.example "))).toEqual([]);
+    expect(seconde.hotes.has("ns1.hebergeur.example")).toBe(false);
+    expect(r2.questions.filter((q) => q === "mx.hebergeur.example A")).toHaveLength(1);
+    expect(seconde.hotes.get("mx.hebergeur.example")?.etat).toBe("ok");
     expect(resultat.spf.get("mairie.example")?.reseaux.map((x) => x.reseau)).toEqual([
       "192.0.2.0/24",
       "203.0.113.0/24",
@@ -1362,6 +1382,27 @@ describe("the scheduling of a collection", () => {
     expect(r.arret).toMatch(
       /^arrêt d'urgence après [0-9]+ domaines : (?:[5-9]|10) des 10 derniers domaines en échec \(seuil : 50 %\), toutes les pauses du jour prises \(1 sur 1\)$/,
     );
+  });
+
+  it("starts a second half from the first's counts: the day keeps its pauses, never as many again (B.8)", async () => {
+    // The first half took the day's 3 pauses: the second one's first breach stops it, without a pause (the review of
+    // B.8: each half had its own 3 pauses). Its counts at the end are the day's.
+    const { r, lignes } = await collecteEnPanne(domainesP(2_000), () => true, {
+      urgenceDuJour: { pauses: 3, depassements: 0 },
+    });
+    expect(lignes.filter((l) => l.startsWith("pause d'urgence"))).toHaveLength(0);
+    expect(r.arret).toMatch(/toutes les pauses du jour prises \(3 sur 3\)$/);
+    expect(r.urgence).toEqual({ pauses: 3, depassements: 1 });
+    // Two breaches in a row already: the next one is the third, and stops.
+    const suite = await collecteEnPanne(domainesP(2_000), () => true, {
+      urgenceDuJour: { pauses: 2, depassements: 2 },
+    });
+    expect(suite.lignes.filter((l) => l.startsWith("pause d'urgence"))).toHaveLength(0);
+    expect(suite.r.arret).toMatch(/au dépassement 3 de suite/);
+    // A half without an outage gives back the counts it was given.
+    const sain = await collecteEnPanne(domainesP(200), () => false, { urgenceDuJour: { pauses: 1, depassements: 0 } });
+    expect(sain.r.arret).toBeNull();
+    expect(sain.r.urgence).toEqual({ pauses: 1, depassements: 0 });
   });
 
   it("never counts the retries: a retry full of failures never pauses nor stops", async () => {
