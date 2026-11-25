@@ -580,6 +580,39 @@ describe("the scheduling of a collection", () => {
     expect(envois.map((e) => Number(e.split(" ")[1]) - apres)).toEqual([0, 1000, 3000, 3500]);
   });
 
+  it("weighs a question by what the zones its CNAMEs lead to cost the servers", async () => {
+    const horloge = fausseHorloge();
+    const envois: string[] = [];
+    const base: ClientDns = {
+      id: "base",
+      demander: async (nom, type) => {
+        if (type === "A") envois.push(`${nom} ${horloge.maintenant()}`);
+        const reponses: Reponse["reponses"] =
+          type === "NS"
+            ? [{ proprietaire: nom, ttl: 1, donnee: { type: "NS", cible: `ns.${nom}` } }]
+            : type === "A"
+              ? [{ proprietaire: nom, ttl: 1, donnee: { type: "CNAME", cible: "site.plateforme.example." } }]
+              : [];
+        return { code: "NOERROR", ad: false, reponses, duree: 1 };
+      },
+      fermer: () => {},
+    };
+    // A question that leads to plateforme.example costs its servers 3.2 questions (what proves its answers, fetched
+    // again and again): two instants each, once the zone's first answer tells where its CNAMEs lead.
+    const journal = {
+      cout: (zone: string) => (zone === "plateforme.example" ? 3.2 : 1),
+      envoi: () => {},
+      adresses: () => [],
+      adressesDeCoupe: () => [],
+    };
+    const client = new ClientParZone(base, zoneDe, 2, undefined, Number.POSITIVE_INFINITY, horloge, 2, journal);
+    await client.demander("alias.example", "NS");
+    const debut = horloge.maintenant();
+    for (const n of ["a", "b", "c"]) await client.demander(`${n}.alias.example`, "A");
+    // a went before anyone knew (one instant); b and c take two each.
+    expect(envois.map((e) => Number(e.split(" ")[1]) - debut)).toEqual([500, 1000, 2000]);
+  });
+
   it("paces a zone whose NS do not answer by the servers the resolver used for it, and its CNAMEs' zones", async () => {
     const horloge = fausseHorloge();
     const envois: string[] = [];
