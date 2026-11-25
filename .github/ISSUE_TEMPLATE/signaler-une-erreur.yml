@@ -1,0 +1,38 @@
+# The issue form of the Corrections page (brief E.1): it warns that an issue is public, and asks for the page, what
+# seems wrong, and a source. No label: creating one is a setting of the repository.
+name: Signaler une erreur
+description: "Une donnée de Sovermap vous semble fausse ? Dites-le ici. Attention : une issue est publique."
+title: "Erreur : "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Cette issue sera publique** : tout le monde pourra la lire. N’y écrivez aucune donnée personnelle (nom, adresse e-mail, téléphone).
+
+        Pour un droit de réponse, ou si vous préférez ne pas écrire en public, voyez la page « Signaler une erreur » du site.
+  - type: input
+    id: page
+    attributes:
+      label: L’adresse de la page
+      placeholder: https://sovermap.vercel.app/radiographie/impots.gouv.fr
+    validations:
+      required: true
+  - type: textarea
+    id: erreur
+    attributes:
+      label: Ce qui vous semble faux
+      description: "La couche concernée (serveurs de noms, adresses, réseau, société, maison mère, pays, CDN, SecNumCloud, messagerie) et ce que vous attendiez."
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Une source (facultatif)
+      description: Un lien public qui l’établit.
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Avant d’envoyer
+      options:
+        - label: J’ai compris que cette issue est publique, et je n’y ai écrit aucune donnée personnelle.
+          required: true

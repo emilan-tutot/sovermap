@@ -36,8 +36,21 @@ window.addEventListener("pointermove", () => { window.__mouvements += 1; }, { ca
       if (Number.isFinite(fin) && t >= fin) a.finish();
       else a.currentTime = t;
     }
-    // Two real frames: the state drawn above is on the surface when the image is taken.
-    return new Promise((fin) => rafReel(() => rafReel(fin)));
+    // Two real frames: the state drawn above is on the surface when the image is taken. An animation born meanwhile
+    // (a transition that the end of a view transition starts) is held at its start before the image, two more real
+    // frames, so that it never runs in real time for one image, then starts again at the next.
+    return new Promise((fin) => rafReel(() => rafReel(() => {
+      let nees = 0;
+      for (const a of document.getAnimations()) {
+        if (a.playState === "finished" || suivies.has(a)) continue;
+        a.pause();
+        a.currentTime = 0;
+        suivies.set(a, 0);
+        nees += 1;
+      }
+      if (nees > 0) rafReel(() => rafReel(fin));
+      else fin();
+    })));
   };
 })();
 `;

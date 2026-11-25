@@ -14,7 +14,9 @@ export function contentSecurityPolicy({ development }: Pick<SecurityHeaderOption
   const directives: [string, string[]][] = [
     ["default-src", ["'self'"]],
     // No nonce: pages are prerendered or cached and shared, so they cannot carry a per-request one. Next's own inline
-    // bootstrap scripts need 'unsafe-inline'; nothing else is allowed (no third-party script).
+    // bootstrap scripts need 'unsafe-inline'; nothing else is allowed (no third-party script). Tried on 22/11/2026
+    // (brief D.5): experimental.sri puts an integrity on the external scripts only; without 'unsafe-inline', the inline
+    // RSC payloads gave 137 violations on 10 kinds of page (9 to 27 a page). 'unsafe-inline' stays.
     ["script-src", ["'self'", "'unsafe-inline'", ...(development ? ["'unsafe-eval'"] : [])]],
     ["style-src", ["'self'", "'unsafe-inline'"]],
     ["img-src", ["'self'", "data:", "blob:"]],

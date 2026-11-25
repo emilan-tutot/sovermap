@@ -1126,7 +1126,7 @@ Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque
   - Le `robots.txt` de static.data.gouv.fr (le même que celui de www.data.gouv.fr, lu le 21/11/2026) ferme `/resources` à tous les robots.
   - L'API (`/api/1/datasets/`) reste ouverte, sauf `/api/1/datasets/r/` (les redirections vers les fichiers) : elle sert seulement à connaître la dernière édition et sa date.
 - **Relevé manuel daté** : le propriétaire dépose le fichier de chaque édition. Le 20/11/2026, il a déposé l'édition 14 ; le 22/11/2026, l'édition 15 (43 521 octets, la taille annoncée par data.gouv.fr).
-- **Ce qu'on en tire** : pour chaque démarche, son nom, son identifiant, son périmètre ministériel, son administration, sa volumétrie (totale et en ligne) et son adresse (« URL Démarche »), pour relier la démarche au nom mesuré qui la sert.
+- **Ce qu'on en tire** : pour chaque démarche, son nom, son identifiant, son périmètre ministériel, son administration, sa volumétrie (totale et en ligne) et son adresse (« URL Démarche »), pour relier la démarche au nom mesuré qui la sert. La page « Les démarches en ligne » du site (D.2) les montre, les plus utilisées d'abord, avec le nom de leur adresse et qui le sert ce jour-là (`index/demarches.json`, publié chaque jour), et l'attribution ci-dessous.
   - Depuis la méthode 0.3.1 (24/11/2026), le nom de chaque adresse entre aussi dans la liste mesurée chaque jour, avec sa provenance (`observatoire:` et la date de l'édition) : un changement de liste (B.7 bis), qui n'ajoute aucune raison au périmètre « État ». À chaque édition, un domaine nouveau est regardé avant d'être mesuré (une plateforme, un service de vidéo ou de formulaires serait un tiers, jamais une unité) : le test `tests/referentiels-demarches.test.ts` les nomme.
   - Les colonnes de notes (satisfaction, accessibilité, clarté du langage, autonomie, DLNUF) ne sont pas reprises : Sovermap décrit des dépendances, pas la qualité d'une démarche.
 - **Pièges** : des volumétries vides ou « À venir » ; des adresses sur des noms absents de la liste de la DINUM (les mesurer est un changement de liste, B.7 bis, jamais un déménagement).
@@ -1136,7 +1136,14 @@ Chiffres du commit `6c62e508…` du 14/11/2026. Les positions changent à chaque
 
 ## Attributions à afficher sur la page Données
 
-Liste provisoire. Elle sera relue en T6, avec les dates réelles des fichiers utilisés. Aucune ne suggère un aval du producteur.
+Relue le 22/11/2026 (F.1). La page Données les affiche, chacune avec la date réelle du fichier dont l'état du jour est fait (`lib/donnees/attributions.ts`) : les dates des téléchargements du jour et des copies datées viennent de `etat.json` (ses sources et ses versions) ; celles des pays et des sociétés, des référentiels avec lesquels le site est construit. Une source dont l'état ne donne pas la date n'est pas affichée : jamais une date fausse. Aucune ne suggère un aval du producteur.
+
+Précisions de cette relecture :
+- **DILA** : le nom daté du fichier JSON contenu dans l'archive (`dila_refOrga_admin_Etat_fr_<AAAAMMJJ>.json`, publié dans `etat.json`), et l'adresse longue de l'archive téléchargée (`…/FluxAnneeCourante/dila_refOrga_admin_Etat_fr_latest.zip`) ; les deux tirets cadratins du modèle deviennent des virgules (DESIGN.md § 8.3), sans rien retirer de ce que la DILA exige.
+- **RIPE NCC** : la date de la copie du jour des fichiers « split » est ajoutée.
+- **Insee (Sirene) et GLEIF** : leurs fiches sont lues une à une (API Recherche d'entreprises, fiche 32 ; GLEIF, fiche 31), sans fichier copié ; la date affichée est celle de la dernière lecture (« données lues le <date> », « lues le <date> »).
+- **Union européenne, CC BY 4.0** : « Copyright Union européenne, <année> » ; le signe « © » n'est pas employé dans les textes du site.
+- **SIG et MESR** : affichés dès que l'état du jour nomme leurs copies datées (périmètre, C.5).
 
 **Exigées par la licence ou les conditions :**
 - **DINUM / Etalab** : « liste des noms de domaine des organismes publics, copie du 11/12/2024, Licence Ouverte 2.0 » ; et, pour la liste à jour (fiche 1) : « Source : DINUM, liste des noms de domaine des organismes publics, version du <date>, Licence Ouverte 2.0 ».

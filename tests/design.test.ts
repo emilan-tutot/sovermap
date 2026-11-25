@@ -79,6 +79,35 @@ describe("étiquettes du globe (ARRÊT 2 bis, défaut a)", () => {
   });
 });
 
+describe("étiquettes du globe avec des dizaines de pays (D.3, correction 3)", () => {
+  // Forty points on the western half, given in order of priority (France first, then by number of sites): a column
+  // cannot hold them all. The labels kept are the first ones; the others stay in the list of countries.
+  const ancres: Ancre[] = Array.from({ length: 40 }, (_, i) => ({
+    code: `P${String(i).padStart(2, "0")}`,
+    x: 250 + ((i * 37) % 120),
+    y: 90 + ((i * 53) % 600),
+    l: 96,
+    h: 22,
+  }));
+  const places = placerEtiquettes(ancres, [], 1000, 800, 56, nouvelleMemoire());
+  const rang = (code: string) => ancres.findIndex((a) => a.code === code);
+  it("garde les étiquettes des pays qui ont le plus de sites, jamais une colonne vide", () => {
+    expect(places.length).toBeGreaterThanOrEqual(10);
+    expect(places.length).toBeLessThan(40);
+    const gardes = places.map((p) => rang(p.code));
+    const caches = ancres.map((_, i) => i).filter((i) => !gardes.includes(i));
+    expect(Math.max(...gardes)).toBeLessThan(Math.min(...caches));
+  });
+  it("ne pose jamais une étiquette sur une autre", () => {
+    for (const a of places)
+      for (const b of places) {
+        if (a === b) continue;
+        const separees = a.x + a.l <= b.x || b.x + b.l <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+        expect(separees, `${a.code} et ${b.code}`).toBe(true);
+      }
+  });
+});
+
 describe("hauteur des fils (ARRÊT 2 bis, défaut b)", () => {
   const hauteurMax = (arc: [number, number, number][]) => Math.max(...arc.map(([x, y, z]) => Math.hypot(x, y, z))) - 1;
   it("un lien court reste presque à plat, un lien long monte plus haut", () => {

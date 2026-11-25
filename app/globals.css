@@ -66,8 +66,12 @@
     text-wrap: pretty;
   }
 
+  /* Tailwind's preflight sets « text-decoration: inherit » on links: the underline is written here, so that a link of
+     the text's own colour can be told from the words around it (WCAG 1.4.1). The navigation and the buttons keep
+     their own rules (« text-decoration: none »). */
   a {
     color: inherit;
+    text-decoration-line: underline;
     text-underline-offset: 0.2em;
     text-decoration-thickness: 1px;
   }
@@ -89,6 +93,67 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+  }
+
+  /* Transitions between pages (DESIGN.md § 7; correction 4 of the Brume douce videos): the name of a domain flies
+     from the search into the Radiographie's title (« vole »), and two pages are never both readable at once (no ghost
+     text). React's integration keeps the page itself out of the transition (filmed on 23/11/2026: the pages swap at
+     once); should the page ever be animated, the old one leaves before the new one comes. Without the browser's
+     support, no animation at all. */
+  ::view-transition-old(root) {
+    animation: 150ms var(--ease-courbe) both vt-sortie;
+  }
+
+  ::view-transition-new(root) {
+    animation: 210ms var(--ease-courbe) 150ms both vt-entree;
+  }
+
+  ::view-transition-group(.vole) {
+    animation-duration: 360ms;
+    animation-timing-function: var(--ease-courbe);
+  }
+
+  /* The flying name never passes as text over text (the owner's retouch at point 17: it crossed the chapô for four
+     frames, and its two renderings blended for as many): only its new image flies, on a solid ground of the page's
+     colour, and what follows a landing title (« titre-vole »: a Radiographie's, a country's) stays hidden while a
+     navigation of the type « vole » runs (set by the search's domain links and the Atlas's table of countries), then
+     appears in 200 ms, once the name has landed: wherever it starts (lower on a phone), it never passes over text. */
+  ::view-transition-old(.vole) {
+    animation: none;
+    opacity: 0;
+  }
+
+  ::view-transition-new(.vole) {
+    animation: none;
+    background-color: var(--color-fond);
+  }
+
+  .titre-vole ~ * {
+    transition: opacity 200ms var(--ease-courbe);
+  }
+
+  :root:active-view-transition-type(vole) .titre-vole ~ * {
+    opacity: 0;
+  }
+
+  @keyframes vt-sortie {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes vt-entree {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
     }
   }
 }
@@ -120,13 +185,133 @@
 
   .entete {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.5rem;
     align-items: center;
     min-height: 3.5rem;
     padding: 0.5rem var(--marge);
     border-bottom: 1px solid var(--color-trait);
   }
 
+  /* The date of the last collection on every page of the full site; past 36 hours, « données en retard » in words
+     under a thick rule, never in red (DESIGN.md §1, plan § 6). */
+  .fraicheur {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .fraicheur p {
+    margin: 0;
+  }
+
+  .fraicheur-retard {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 3px solid var(--color-encre);
+    color: var(--color-encre);
+    font-size: var(--text-base);
+  }
+
+  /* The breadcrumb (D.7): small, discreet, its separators drawn by the style. */
+  .fil-ariane ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .fil-ariane li + li::before {
+    content: "›";
+    margin-right: 0.5rem;
+  }
+
+  .navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.25rem;
+    margin-left: auto;
+  }
+
+  .navigation a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .navigation a:hover {
+    text-decoration: underline;
+  }
+
+  /* The compact menu (DESIGN.md § 9): more than five items, on a phone, behind « Menu »; a native disclosure, no
+     script. Its sign is drawn, never written: a plus that becomes a minus (DESIGN.md § 5, signs of action). */
+  .navigation-compacte {
+    display: none;
+    margin-left: auto;
+  }
+
+  .navigation-compacte > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .navigation-compacte > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .navigation-compacte > summary::after {
+    content: "";
+    width: 0.75rem;
+    height: 0.75rem;
+    background:
+      linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat,
+      linear-gradient(currentColor, currentColor) center / 1.5px 100% no-repeat;
+  }
+
+  .navigation-compacte[open] > summary::after {
+    background: linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat;
+  }
+
+  .navigation-compacte > .navigation {
+    flex-direction: column;
+    align-items: flex-end;
+    margin-left: 0;
+  }
+
+  @media (max-width: 47.99rem) {
+    /* The wordmark stays at the top when the menu opens below « Menu ». */
+    .entete {
+      align-items: flex-start;
+    }
+
+    .navigation-barre {
+      display: none;
+    }
+
+    .navigation-compacte {
+      display: block;
+    }
+  }
+
+  /* A touch target of 44 px at least, like the navigation's links (DESIGN.md): on a phone, the wrapped navigation sits
+     right under it. */
   .logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     font-family: var(--font-titre);
     font-weight: 600;
     font-size: 1.05rem;
@@ -188,6 +373,12 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* A piece of a value that never breaks (DESIGN.md §6): a name with a hyphen, an address, a number, a date; a long
+     value breaks only between its pieces (components/texte/). */
+  .nb {
+    white-space: nowrap;
+  }
+
   .pied {
     padding: 1.5rem var(--marge) calc(1.5rem + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-trait);
@@ -198,4 +389,1096 @@
   .pied p {
     margin: 0.25rem 0;
   }
+
+  /* The links to the text pages (part E), behind an open door: a wrapping row, never a horizontal scroll. */
+  .pied-liens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Quality page: the head of the day and the delay notice, then the term-value rows on fine rules. */
+  .bulletin-tete {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bulletin-retard {
+    margin: 0;
+    padding-top: 0.75rem;
+    border-top: 3px solid var(--color-encre);
+    font-size: var(--text-lg);
+  }
+
+  .releve {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .releve h2 {
+    margin: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-trait-fort);
+    font-family: var(--font-titre);
+    font-size: var(--text-xl);
+    font-weight: 600;
+  }
+
+  .releve dl {
+    margin: 0;
+  }
+
+  .releve-ligne {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .releve-ligne dt {
+    color: var(--color-discret);
+  }
+
+  .releve-ligne dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  .releve-note {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  /* « Citer cette page » (point 13, § 10): a reference to copy; its address alone may wrap anywhere on a phone. */
+  .citer p {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .citer-adresse {
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+
+  /* A table that follows a source's edition (the démarches): it scrolls sideways inside its frame rather than be
+     clipped by the page's, whatever the edition's words. */
+  .tableau-defilant {
+    overflow-x: auto;
+  }
+
+  .releve-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .releve-table th,
+  .releve-table td {
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    border-bottom: 1px solid var(--color-trait);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .releve-table th {
+    font-weight: 600;
+    color: var(--color-discret);
+  }
+
+  .releve-table tbody th {
+    font-weight: 400;
+    color: var(--color-encre);
+  }
+
+  /* Quality page, proposal B (« les garde-fous »): a fine scale per guard, its limit a tick, its value a dot. */
+  .reglettes {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .reglette p {
+    margin: 0;
+  }
+
+  .reglette-chiffres {
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  .reglette-echelle {
+    display: block;
+    width: 100%;
+    height: 1.25rem;
+    margin-top: 0.375rem;
+    overflow: visible;
+  }
+
+  .reglette-base {
+    stroke: var(--color-trait-fort);
+    stroke-width: 1px;
+  }
+
+  .reglette-limite {
+    stroke: var(--color-encre);
+    stroke-width: 2px;
+  }
+
+  .reglette-point {
+    fill: var(--color-encre);
+  }
+
+  /* A page wider than a column of text: the Radiographie. */
+  .contenu-large {
+    max-width: 72rem;
+    justify-content: flex-start;
+  }
+
+  /* The Radiographie (DESIGN.md §5 and §8): numbered layers, each with its source, its date and its level; at the
+     computer, two columns, the layers on the left and the chain on the right, which stays in view. The layer reached
+     from the chain lights up (surface-2, « couche lue »). */
+  .radiographie {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .radiographie-modes {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .radiographie-modes a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 1rem;
+    border: 1px solid var(--color-controle);
+    border-radius: var(--radius-trait);
+    text-decoration: none;
+  }
+
+  .radiographie-modes a[aria-current="page"] {
+    background: var(--color-encre);
+    color: var(--color-fond);
+  }
+
+  .radiographie-colonnes {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  .radiographie-colonnes > * {
+    min-width: 0;
+  }
+
+  .radiographie-colonnes h2 {
+    margin: 0 0 0.75rem;
+  }
+
+  .couches {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-trait-fort);
+  }
+
+  .couche {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid var(--color-trait);
+    scroll-margin-top: 1rem;
+  }
+
+  .couche:target,
+  .couche[data-lue] {
+    background: var(--color-surface-2);
+  }
+
+  .couche-titre {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    margin: 0;
+    font-family: var(--font-titre);
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .couche-numero {
+    min-width: 1.5rem;
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  .couche-valeur,
+  .couche-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 2.25rem;
+  }
+
+  .couche-valeur {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .couche-valeur p,
+  .couche-meta p,
+  .couche-liste {
+    margin: 0;
+  }
+
+  .couche-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ligne-role {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.4em;
+  }
+
+  .couche-meta {
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .chaine {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chaine li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.5rem 0 0.5rem 1rem;
+    border-left: 1px solid var(--color-trait-fort);
+  }
+
+  .chaine a {
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  .chaine li[data-lue] {
+    border-left-color: var(--color-encre);
+    background: var(--color-surface-2);
+  }
+
+  .chaine li[data-lue] a {
+    color: var(--color-encre);
+  }
+
+  /* The chain, « le fil » (point 10, Q2 B, chosen on 22/11/2026): a thread with a node per step, like the globe's. */
+  .chaine-b li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    column-gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-left: none;
+  }
+
+  .chaine-b li::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(0.625rem - 0.5px);
+    width: 1px;
+    background: var(--color-trait-fort);
+  }
+
+  .chaine-b li:first-child::before {
+    top: 1rem;
+  }
+
+  .chaine-b li:last-child::before {
+    bottom: calc(100% - 1rem);
+  }
+
+  .chaine-b .chaine-noeud {
+    position: relative;
+    z-index: 1;
+    grid-row: 1 / span 2;
+    justify-self: center;
+    margin-top: 0.25rem;
+    fill: var(--color-fond);
+    stroke: var(--color-encre);
+    stroke-width: 1.5px;
+  }
+
+  .chaine-b li[data-lue] .chaine-noeud {
+    fill: var(--color-encre);
+  }
+
+  .chaine-b li[data-hors-ue] .chaine-noeud {
+    fill: var(--color-accent);
+    stroke: var(--color-accent);
+  }
+
+  .chaine-b a,
+  .chaine-b li > span {
+    grid-column: 2;
+  }
+
+  /* The companies (D.2): a list of entries on fine rules; a company's domains in columns at the computer. */
+  .liste-societes,
+  .liste-domaines {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .liste-societes li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .liste-societes a {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .liste-societes p {
+    margin: 0;
+    color: var(--color-discret);
+    font-size: var(--text-sm);
+  }
+
+  /* The lists' proposed forms (point 11): A the table, B the groups, C the index. Alphabetical, never a ranking. */
+  .liste-releve {
+    margin-top: 1rem;
+  }
+
+  .liste-releve .nombre {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .liste-releve tbody th a {
+    font-weight: 600;
+  }
+
+  .liste-controle {
+    display: block;
+    color: var(--color-discret);
+    font-size: var(--text-xs);
+  }
+
+  /* At the phone, each row is a small grid: the name, then the seat below it, the count on the right. The headers stay
+     visible above the rows, laid out like them, so that no figure loses its label. */
+  @media (max-width: 40rem) {
+    .liste-releve tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 1rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-trait);
+    }
+
+    .liste-releve th,
+    .liste-releve td {
+      padding: 0;
+      border-bottom: 0;
+    }
+
+    .liste-releve th:not(.nombre),
+    .liste-releve td:not(.nombre) {
+      grid-column: 1;
+    }
+
+    .liste-releve td:not(.nombre) {
+      color: var(--color-discret);
+    }
+
+    /* The accent of « outside the EU » stays at the phone too (DESIGN.md § 1.2: everywhere). */
+    .liste-releve td.hors-ue {
+      color: var(--color-accent);
+    }
+
+    .liste-releve .nombre {
+      grid-column: 2;
+      grid-row: 1;
+    }
+  }
+
+  /* The text pages (part E): a reading column, its sources and the day of its revision at the end. */
+  .texte-section {
+    margin-top: 2rem;
+  }
+
+  .texte-section h2,
+  .texte-sources h2 {
+    margin: 0 0 0.75rem;
+    font-size: var(--text-xl);
+  }
+
+  .texte-section p,
+  /* An attribution holds a long address: it wraps anywhere rather than scroll sideways. */
+  .attributions li {
+    overflow-wrap: anywhere;
+  }
+
+  .texte-section li {
+    max-width: 68ch;
+    font-size: var(--text-lecture);
+    line-height: 1.6;
+  }
+
+  /* The reset leaves paragraphs and lists without space or bullets: a reading text needs both. */
+  .texte-section > * + * {
+    margin-top: 0.875rem;
+  }
+
+  .texte-section ul,
+  .texte-sources ul {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+
+  .texte-section li + li,
+  .texte-sources li + li {
+    margin-top: 0.375rem;
+  }
+
+  .texte-sources {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-trait);
+    font-size: var(--text-sm);
+  }
+
+  .texte-revision {
+    margin-top: 1rem;
+  }
+
+  .liste-domaines {
+    columns: 16rem auto;
+    column-gap: 2rem;
+    font-size: var(--text-sm);
+  }
+
+  .liste-domaines li {
+    padding: 0.25rem 0;
+    break-inside: avoid;
+  }
+
+  /* The Atlas (D.2, DESIGN.md §8): the question in spaced capitals, the headline figure, its neighbours, the globe. */
+  .question {
+    margin: 0;
+    font-family: var(--font-texte);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-discret);
+  }
+
+  .atlas-chiffre {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .chiffre-titre {
+    margin: 0;
+    font-family: var(--font-titre);
+    font-size: var(--text-titre);
+    font-weight: 600;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .atlas-definition {
+    margin: 0;
+    max-width: 42rem;
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+
+  .atlas-voisins,
+  .atlas-sous-chiffres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .atlas-sous-chiffres {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-trait);
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .atlas-haut,
+  .atlas-texte {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .atlas-globe {
+    position: relative;
+  }
+
+  /* The time slider (D.2): a plain range input, its day's figure read aloud. */
+  .curseur-temps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-size: var(--text-sm);
+  }
+
+  .curseur-temps label {
+    color: var(--color-discret);
+  }
+
+  .curseur-temps input {
+    width: 100%;
+    min-height: 44px;
+    accent-color: var(--color-encre);
+  }
+
+  .curseur-temps p {
+    margin: 0;
+  }
+
+  /* At the computer, the text on the left and the whole globe on the right, both in the first screen (DESIGN.md §8). */
+  @media (min-width: 62rem) {
+    .atlas-haut {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .atlas-globe .scene {
+      max-height: calc(100svh - 10rem);
+      margin: 0 auto;
+    }
+
+    /* The search under the figures, on the left; the globe on the right (on a phone: the search after the globe). */
+    .atlas-haut {
+      grid-template-areas: "texte globe" "recherche globe";
+    }
+
+    .atlas-texte {
+      grid-area: texte;
+    }
+
+    .atlas-globe-bloc {
+      grid-area: globe;
+    }
+
+    .atlas-recherche {
+      grid-area: recherche;
+      align-self: start;
+    }
+  }
+
+  /* The search (D.2): a field, its state said aloud, its results with their categories. */
+  .recherche {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recherche label {
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .recherche input {
+    min-height: 44px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--color-controle);
+    border-radius: var(--radius-trait);
+    background: var(--color-surface);
+    color: var(--color-encre);
+    font: inherit;
+  }
+
+  .recherche-etat {
+    margin: 0;
+    min-height: 1.25rem;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .recherche-resultats {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-trait);
+  }
+
+  .recherche-resultats li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .recherche-resultats span {
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  /* A country's panel (DESIGN.md §9): on the side at the computer, the whole height under the header on a phone. The
+     globe's labels, which it would cover, fade while it is open: its edge never cuts a word. */
+  .atlas-panneau {
+    position: fixed;
+    z-index: 20;
+    top: 3.5rem;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    width: min(24rem, 100%);
+    padding: 1.5rem max(1.5rem, env(safe-area-inset-right)) calc(1.5rem + env(safe-area-inset-bottom)) 1.5rem;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border-left: 1px solid var(--color-trait-fort);
+  }
+
+  .atlas-panneau h2 {
+    margin: 0;
+    font-family: var(--font-titre);
+    font-size: var(--text-2xl);
+  }
+
+  .atlas-panneau p {
+    margin: 0;
+  }
+
+  .atlas-globe[data-panneau="ouvert"] .etiquettes,
+  .atlas-globe[data-panneau="ouvert"] .filets,
+  .atlas-globe[data-panneau="ouvert"] .scene-outils,
+  .atlas-globe-bloc:has(.atlas-globe[data-panneau="ouvert"]) > .releve-note {
+    visibility: hidden;
+  }
+
+  @media (max-width: 61.99rem) {
+    .atlas-panneau {
+      left: 0;
+      width: auto;
+      border-left: none;
+      border-top: 1px solid var(--color-trait-fort);
+    }
+  }
+
+  /* The accent says « outside the European Union », everywhere (DESIGN.md §1). */
+  .hors-ue {
+    color: var(--color-accent);
+  }
+
+  /* The constellation of a ministry (DESIGN.md §5): one disc per site, grouped by company, the accent outside the EU. */
+  .constellation {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .constellation-legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-discret);
+  }
+
+  .constellation-legende li {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .constellation-groupes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 1.75rem;
+    align-items: flex-end;
+  }
+
+  .constellation-groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .constellation-groupe svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .constellation-groupe figcaption {
+    display: flex;
+    gap: 0.5rem;
+    font-size: var(--text-sm);
+  }
+
+  .constellation-hors-ue circle {
+    fill: var(--color-accent);
+  }
+
+  .constellation-ue circle {
+    fill: none;
+    stroke: var(--color-encre);
+    stroke-width: 1.5px;
+  }
+
+  .constellation-inconnu circle {
+    fill: none;
+    stroke: var(--color-discret);
+    stroke-width: 1.5px;
+    stroke-dasharray: 2 2;
+  }
+
+  .groupe-ministere {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-trait);
+  }
+
+  .groupe-ministere h3 {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .groupe-ministere p {
+    margin: 0;
+  }
+
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .pagination a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .commande {
+    margin: 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-trait);
+    border-radius: var(--radius-trait);
+    font-size: var(--text-sm);
+    white-space: pre;
+  }
+
+  @media (min-width: 62rem) {
+    .radiographie-colonnes {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      align-items: start;
+    }
+
+    .radiographie-chaine {
+      position: sticky;
+      top: 1.5rem;
+    }
+  }
+
+  /* The map of the territories (components/carte/CarteFrance.tsx): never the accent, which means « outside the EU »
+     in the data; the strokes keep their width whatever the frame. */
+  .carte-france {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 34rem;
+  }
+
+  .carte-departement {
+    fill: var(--color-surface-2);
+    stroke: var(--color-fond);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .carte-surligne {
+    fill: var(--color-discret);
+  }
+
+  /* Around a framed région: lighter, so that the région stands out. */
+  .carte-autour {
+    fill: var(--color-surface);
+  }
+
+  .carte-regions {
+    fill: none;
+    stroke: var(--color-discret);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .carte-encart {
+    fill: none;
+    stroke: var(--color-trait-fort);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Printing a record (point 13, § 10): the content alone; the skip link, the header and its navigation, the footer,
+     the modes, the search and the buttons are left out; the chain follows the layers instead of standing beside them;
+     a layer, a reference or a statement is never cut across two pages. Nothing changes on screen. */
+  @media print {
+    .evitement,
+    .entete,
+    .navigation-compacte,
+    .pied,
+    .radiographie-modes,
+    .recherche,
+    .scene-outils,
+    .bouton {
+      display: none !important;
+    }
+
+    .radiographie-colonnes {
+      display: block;
+    }
+
+    .radiographie-chaine {
+      position: static;
+    }
+
+    .couche,
+    .citer,
+    .releve {
+      break-inside: avoid;
+    }
+  }
+}
+
+/* The globe of the Atlas (DESIGN.md §8): the canvas, the labels and their leader lines in HTML and SVG over it, the
+   buttons in the bottom corners, the static fallback. Colours from the tokens above only. Moved here from
+   components/globe/globe.css on 23/11/2026 (D.4: one stylesheet, and one script, fewer on the Atlas's first view),
+   unchanged and outside any layer, as it was: these rules keep their precedence over the components layer. */
+.cache {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  isolation: isolate;
+}
+.scene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: pan-y;
+  opacity: 0;
+  transition: opacity 900ms var(--ease-courbe);
+}
+.scene canvas[data-pret="oui"] {
+  opacity: 1;
+}
+.scene[data-actif="oui"] canvas {
+  touch-action: none;
+}
+.scene-attente {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--color-discret);
+  font-size: 0.875rem;
+}
+.scene-attente::before {
+  content: "";
+  position: absolute;
+  width: 72%;
+  aspect-ratio: 1;
+  border: 1px solid var(--color-trait);
+  border-radius: 50%;
+}
+/* The static fallback: a square image of the globe, centred, with the labels in HTML over it. */
+.repli-cadre {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+}
+.scene-repli {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.repli-cadre .filets line {
+  vector-effect: non-scaling-stroke;
+}
+.etiquette-repli {
+  transform: translate(0, -50%);
+}
+.etiquette-repli[data-cote="gauche"] {
+  transform: translate(-100%, -50%);
+}
+.filets {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+/* The labels of the live scene arrive with the globe, while the threads start to trace themselves. */
+.scene > .filets,
+.scene > .etiquettes {
+  animation: apparaitre 900ms 400ms var(--ease-courbe) backwards;
+}
+@keyframes apparaitre {
+  from {
+    opacity: 0;
+  }
+}
+/* The leader lines run over the globe: the colour of its coasts, which stands out against it in every direction. */
+.filets line {
+  stroke: var(--color-filet);
+  stroke-width: 1;
+  transition: opacity 200ms linear;
+}
+.etiquettes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.etiquette-pays {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0.125rem 0.4rem;
+  font-family: var(--font-texte);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--color-encre);
+  background: var(--color-fond);
+  border: 1px solid var(--color-trait);
+  border-radius: var(--radius-trait);
+  transition: opacity 200ms linear;
+  will-change: transform;
+}
+.etiquette-pays b {
+  font-weight: 600;
+  color: var(--color-encre);
+  font-variant-numeric: tabular-nums;
+}
+.etiquette-pays[data-hors-ue="oui"] b {
+  color: var(--color-accent);
+}
+/* The buttons sit in the bottom corners, outside the disc of the globe; the space between them lets the globe through. */
+.scene-outils {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  bottom: 0.25rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.scene-outils .bouton {
+  pointer-events: auto;
+}
+.bouton-explorer {
+  margin-right: auto;
+}
+@media (max-width: 61.99rem) {
+  .scene-outils {
+    left: calc(var(--marge) + 0.25rem);
+    right: calc(var(--marge) + 0.25rem);
+  }
+}
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 0.875rem;
+  border: 1px solid var(--color-controle);
+  border-radius: var(--radius-trait);
+  background: var(--color-fond);
+  color: var(--color-encre);
+  font-family: var(--font-texte);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.bouton:hover {
+  border-color: var(--color-accent);
+}
+.bouton[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-sur-accent);
+  border-color: var(--color-accent);
+}
+/* The help under the globe, never over a label. */
+.scene-aide {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-discret);
+}
+.honnetete {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-discret);
 }

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { fr } from "../lib/i18n/fr";
 import { ADRESSES_PORTE, type Attendu, CHEMIN_FERME, reecrituresPorte } from "../lib/porte";
 import { indexingOpen, sitePublic } from "../lib/site";
-import { ecartsPorte } from "../scripts/lib/porte-controle";
+import { ecartsPorte, SIGNES_DE_DONNEES } from "../scripts/lib/porte-controle";
 
 // The rewrite of a closed door, matched the way Next.js matches a rewrite: its own path matcher, in strict mode
 // (next/dist/server/lib/router-utils/filesystem.js). The e2e tests and probe:prod check the real answers.
@@ -159,5 +159,12 @@ describe("the production door (brief of chantier 2, A.6)", () => {
     expect(ecartsPorte(adresse("introuvable"), reponse(404, "text/html", entites))).toHaveLength(1);
     expect(ecartsPorte(adresse("attente-rsc"), reponse(200, "text/x-component", fr.attente.status))).toEqual([]);
     expect(ecartsPorte(adresse("attente-rsc"), reponse(200, "text/html", "<h1>Atlas</h1>"))).toHaveLength(2);
+  });
+
+  it("keeps every sign of data out of the dictionary the browser receives (scan:build, 22/11/2026)", () => {
+    // The globe, the atlas and the search import lib/i18n/fr.ts in the browser: its whole text is in their files,
+    // served whatever the door. Words that name the data live in modules only the server reads (fr-donnees.ts).
+    const texte = readFileSync("lib/i18n/fr.ts", "utf8");
+    for (const signe of SIGNES_DE_DONNEES) expect(texte, signe.source).not.toMatch(signe);
   });
 });

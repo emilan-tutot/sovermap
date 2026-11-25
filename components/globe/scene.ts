@@ -22,7 +22,7 @@ import {
 } from "three";
 import { adoucir, anneau, devant, materiauFil, segments, textureTerre, tube, type Fabrique } from "./commun";
 import { arcGrandCercle, graticule, surSphere } from "./geo";
-import { creerGlobe } from "./globe";
+import { creerGlobe } from "./moteur";
 
 /** The light, in view space: from the upper left, slightly in front. */
 const LUMIERE = new Vector3(-0.5, 0.45, 0.74).normalize();
