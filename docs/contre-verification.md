@@ -58,7 +58,7 @@ RIPEstat n'a servi qu'au passage du 22/11/2026.
 
 ### Passage du 23/11/2026 : l'état du jour 3
 
-- **L'état vérifié** : la collecte du 23/11/2026 (publiée à 15:13 UTC), commit `85166b9c5dd241bd9832345af77dda5449f93b5c` de la branche `donnees`. Vérification depuis un ordinateur, à 17:45 UTC, avec l'outil corrigé après sa relecture neuve.
+- **L'état vérifié** : la collecte du 23/11/2026 (publiée à 15:13 UTC), commit `ad0a3816103defed2fe7fa98124ff8e4c57da7f6` de la branche `donnees`. Vérification depuis un ordinateur, à 17:45 UTC, avec l'outil corrigé après sa relecture neuve.
 - **Le tirage** : graine 20261123 ; 30 domaines : 10 de l'État, 5 opérateurs, 5 collectivités, 5 derrière un CDN (tous les cinq derrière Cloudflare ce jour-là), 5 pour la messagerie.
 - **Le résultat** : **121 contrôles concordent sur 121 faits (100 %)**, au-dessus de l'objectif de 95 % ; 8 contrôles non vérifiables. Questions à Team Cymru ce jour : 82 (au plus 100).
 - **Par couche** : chaîne CNAME 30 sur 30 ; serveurs de noms 30 sur 30 ; messagerie 23 sur 23 ; réseau (AS) 25 sur 25 ; CDN 8 sur 8 ; maison mère 5 sur 5 (Worldline, Cloudflare, SFR, Cegedim.cloud, OVH). Une fiche écourtée (mairie-sagnes-et-goudoulet.fr) : ses serveurs de noms et de messagerie sont tous trouvés.
@@ -71,7 +71,7 @@ RIPEstat n'a servi qu'au passage du 22/11/2026.
 
 ### Passage du 22/11/2026 : l'état du jour 2 (corrigé le 23/11/2026)
 
-- **L'état vérifié** : la collecte du 22/11/2026 (mesure de 11:26 à 15:05 UTC, publiée à 15:06), commit `0d8887de9` de la branche `donnees`, méthode 0.2.1, référentiels 0.2. Vérification depuis un ordinateur, à partir de 16:10 UTC.
+- **L'état vérifié** : la collecte du 22/11/2026 (mesure de 11:26 à 15:05 UTC, publiée à 15:06), commit `9b800c2f5` de la branche `donnees`, méthode 0.2.1, référentiels 0.2. Vérification depuis un ordinateur, à partir de 16:10 UTC.
 - **Le tirage** : graine 20261122 ; 30 domaines : 10 de l'État, 5 opérateurs, 5 collectivités, 5 derrière un CDN (tous les cinq derrière Cloudflare ce jour-là), 5 pour la messagerie.
 - **Le résultat annoncé**, « 160 couches concordent sur 162 vérifiées (98,8 %) », **ne tient pas**, d'après la relecture neuve du 23/11/2026 :
   - les deux désaccords (les serveurs de noms d'emploi.gouv.fr et de ccomptes.fr) venaient de fiches écourtées, qui ne gardaient que leurs quatre premiers serveurs triés, et non d'un serveur ajouté depuis le jour 1 ;
