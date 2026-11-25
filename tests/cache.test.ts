@@ -37,7 +37,7 @@ describe("the data pages' shared cache (D.4)", () => {
     const sources = regles.map((r) => r.source.replace(/\(.*?\)(?=\/|$)/g, ""));
     const fichiers = readdirSync("app", { recursive: true, encoding: "utf8" }).map((f) => f.split(path.sep).join("/"));
     const adresse = (fichier: string) =>
-      `/${fichier.split("/").slice(0, -1).join("/")}`.replace(/\[(\w+)\]/g, ":$1").replace(/^\/$/, "/") || "/";
+      `/${fichier.split("/").slice(0, -1).join("/")}`.replace(/\[(\w+)\]/g, ":$1");
     const pages = fichiers.filter((f) => /(^|\/)page\.tsx$/.test(f)).map(adresse);
     expect(pages.length).toBeGreaterThan(25);
     for (const page of pages) expect(sources, page).toContain(page === "" ? "/" : page);
