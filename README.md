@@ -46,6 +46,7 @@ Ouvrez une [issue](../../issues) en décrivant le domaine, la couche en cause et
 - `npm install`, puis `npm run dev` : le site local tourne sur le port 3100.
 - `npm run check` : lint, types, tests et contrôle des informations personnelles (`scan:prive`).
 - `npm run build`, `npm run e2e` : build de production et tests de bout en bout.
+- `scripts/mesures/` : les mesures de chaque point, en lecture seule (`npx tsx scripts/mesures/<outil>.ts`) : les avis de sécurité de Next et de React, les minutes des Actions, les parts de C.10 et le diagnostic des échecs d’une collecte (sur un état publié, ou le fichier joint d’une exécution), la croissance de la branche `donnees` entre deux de ses commits.
 
 ## Licences
 
