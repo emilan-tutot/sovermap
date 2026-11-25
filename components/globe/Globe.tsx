@@ -9,7 +9,7 @@ import type { Etiquette, Scene } from "./commun";
 import { estMonde, type Fil } from "./geo";
 import { nouvelleMemoire, placerEtiquettes, type Ancre, type Place, type Point } from "./etiquettes";
 import placesRepli from "./repli-etiquettes.json";
-import "./globe.css";
+// Its styles live in app/globals.css, at the end (D.4: one stylesheet fewer on the Atlas's first view).
 
 type Props = { fils: Fil[]; origine: Fil; choisi: string | null; onChoisir: (code: string) => void };
 

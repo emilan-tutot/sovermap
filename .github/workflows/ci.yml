@@ -55,3 +55,5 @@ jobs:
       - run: npm ci
       - run: google-chrome --version
       - run: npx playwright test --project=desktop --project=pixel-7
+      # The full site, door open, on a made-up published state read from a local folder (D.8): no network, no real data.
+      - run: npm run e2e:site

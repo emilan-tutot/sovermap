@@ -225,7 +225,7 @@ describe("the site's reading of the data (B.9)", () => {
     expect(await l.fichier("agregats/chiffres.json")).toMatchObject({ statut: "ok", donnees: { domaines: 1 } });
     // Not published, not a data path, or a name every object has: nothing is read, nothing is logged.
     for (const chemin of ["noms/ab/ef.json", "agregats/absent.json", "../etat.json", "constructor", "toString.json"]) {
-      expect(await l.fichier(chemin)).toEqual({ statut: "indisponible" });
+      expect(await l.fichier(chemin)).toEqual({ statut: "absent" });
     }
     expect(g.lus).toEqual(["etat.json", "noms/ab/sommes.json", "noms/ab/cd.json", "agregats/chiffres.json"]);
     expect(journal).toEqual([]);
@@ -391,7 +391,7 @@ describe("the site's reading of the data (B.9)", () => {
     // On the 23rd, the name leaves the list: its folder no longer lists the fragment.
     publier(g, "2026-11-23", { nom: "a" }, { jours: 2, sansFragment: true });
     horloge.t += HEURE;
-    expect(await l.fichier("noms/ab/cd.json")).toEqual({ statut: "indisponible" });
+    expect(await l.fichier("noms/ab/cd.json")).toEqual({ statut: "absent" });
     expect(g.lus).toEqual(["etat.json", "noms/ab/sommes.json", "noms/ab/cd.json", "etat.json", "noms/ab/sommes.json"]);
     expect(journal).toEqual([]);
   });

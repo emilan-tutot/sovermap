@@ -152,10 +152,40 @@ function colonne(groupe: Ancre[], cote: Cote, decalage: number, ecart: number, c
 }
 
 /**
+ * The best column of one side for these labels, or null: the one it had while it stays valid, otherwise the cheapest
+ * valid one (near its points, downwards first); when nothing is valid, the softest rules give way first (a line near a
+ * point, then a label over a thread). The chosen column is kept in `memoire`.
+ */
+function meilleureColonne(groupe: Ancre[], cote: Cote, ecart: number, c: Cadre, o: Obstacles, memoire: Memoire): Place[] | null {
+  let choix: Place[] | null = null;
+  for (let souple = 0; souple <= 2 && !choix; souple += 1) {
+    const avant = memoire.colonnes.get(cote);
+    if (avant) {
+      choix = colonne(groupe, cote, avant.decalage, avant.ecart, c, o, souple);
+      if (choix) break;
+    }
+    let coutMin = Infinity;
+    for (const decalage of DECALAGES) {
+      for (const plus of [0, 16, 32]) {
+        const places = colonne(groupe, cote, decalage, ecart + plus, c, o, souple);
+        if (!places) continue;
+        const cout = places.reduce((s, p, i) => s + Math.abs(p.y + p.h / 2 - (groupe[i]?.y ?? 0)), 0) + Math.abs(decalage) * (decalage < 0 ? 0.8 : 0.5) + plus * 0.3;
+        if (cout < coutMin) {
+          coutMin = cout;
+          choix = places;
+          memoire.colonnes.set(cote, { decalage, ecart: ecart + plus });
+        }
+      }
+    }
+  }
+  return choix;
+}
+
+/**
  * Places every visible label. Each side is a column: the side with more labels first, then the other one, which keeps
- * clear of the first. A side keeps its column while it stays valid; otherwise it takes the cheapest valid one (near its
- * points, downwards first). When nothing is valid, the softest rules give way first (a line near a point, then a label
- * over a thread); labels that still find no place stay hidden.
+ * clear of the first. `ancres` come in order of priority (France first, then the countries by number of sites): a
+ * column holds at most what its height allows, and when it cannot hold all its labels, it keeps the most it can from
+ * the first ones (D.3, correction 3: with dozens of countries, the smallest stay in the list, never the largest).
  */
 export function placerEtiquettes(ancres: Ancre[], fils: Point[][], largeur: number, hauteur: number, basLibre: number, memoire: Memoire): Place[] {
   const milieu = largeur / 2;
@@ -174,30 +204,22 @@ export function placerEtiquettes(ancres: Ancre[], fils: Point[][], largeur: numb
   const cadre: Cadre = { largeur, hauteur, basLibre, ecart };
   const sortie: Place[] = [];
   for (const cote of ordre) {
-    const groupe = cotes[cote].sort((a, b) => a.y - b.y);
-    if (groupe.length === 0) {
-      memoire.colonnes.delete(cote);
-      continue;
-    }
-    let choix: Place[] | null = null;
-    for (let souple = 0; souple <= 2 && !choix; souple += 1) {
-      const avant = memoire.colonnes.get(cote);
-      if (avant) {
-        choix = colonne(groupe, cote, avant.decalage, avant.ecart, cadre, obstacles, souple);
-        if (choix) break;
-      }
-      let coutMin = Infinity;
-      for (const decalage of DECALAGES) {
-        for (const plus of [0, 16, 32]) {
-          const places = colonne(groupe, cote, decalage, ecart + plus, cadre, obstacles, souple);
-          if (!places) continue;
-          const cout = places.reduce((s, p, i) => s + Math.abs(p.y + p.h / 2 - (groupe[i]?.y ?? 0)), 0) + Math.abs(decalage) * (decalage < 0 ? 0.8 : 0.5) + plus * 0.3;
-          if (cout < coutMin) {
-            coutMin = cout;
-            choix = places;
-            memoire.colonnes.set(cote, { decalage, ecart: ecart + plus });
-          }
-        }
+    // The side's labels in order of priority, at most as many as the column's height can hold.
+    const parPriorite = cotes[cote];
+    const hauteurMax = Math.max(1, ...parPriorite.map((a) => a.h));
+    // n labels need n heights and n − 1 gaps between the top (4) and the free bottom (empiler).
+    const capacite = Math.floor((hauteur - basLibre - 4 + ECART_VERTICAL) / (hauteurMax + ECART_VERTICAL));
+    const essayer = (n: number) => meilleureColonne(parPriorite.slice(0, n).sort((a, b) => a.y - b.y), cote, ecart, cadre, obstacles, memoire);
+    let haut = Math.min(capacite, parPriorite.length);
+    let choix = haut > 0 ? essayer(haut) : null;
+    if (!choix && haut > 1) {
+      // The most labels that fit, from the first ones: a search by halves, so that a crowded frame stays fast.
+      let bas = 0;
+      while (haut - bas > 1) {
+        const milieuN = Math.floor((bas + haut) / 2);
+        const places = essayer(milieuN);
+        if (places) [bas, choix] = [milieuN, places];
+        else haut = milieuN;
       }
     }
     if (!choix) {

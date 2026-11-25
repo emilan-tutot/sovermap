@@ -6,13 +6,14 @@
 //   npx tsx scripts/design/planches.ts <description.json> <dossier> [--ecrans 0,1] [--composer]
 // Description: { "titre": "…", "origine": "http://localhost:3100", "aplats": [{ "nom": "…", "couleur": "#D7DADD" }],
 //   "lignes": [{ "nom": "…", "prefixe": "/" }], "ecrans": [{ "nom": "…", "chemin": "", "absolu": false,
-//   "bouton": "Expert", "attente": 1500 }] }
+//   "bouton": "Expert", "attente": 1500, "pleinePage": false }] }
+// « pleinePage »: the whole page, not only its first screen (a long page whose proposals differ below the fold).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, devices } from "@playwright/test";
 
-type Ecran = { nom: string; chemin: string; absolu?: boolean; bouton?: string; attente?: number };
+type Ecran = { nom: string; chemin: string; absolu?: boolean; bouton?: string; attente?: number; pleinePage?: boolean };
 type Description = { titre: string; origine: string; aplats?: { nom: string; couleur: string }[]; lignes: { nom: string; prefixe: string }[]; ecrans: Ecran[] };
 
 const [fichierDescription = "", dossier = "planches", ...options] = process.argv.slice(2);
@@ -42,7 +43,7 @@ if (!composerSeulement) {
         await page.goto(adresse, { waitUntil: "load" });
         if (e.bouton) await page.getByRole("button", { name: e.bouton }).click();
         await page.waitForTimeout(e.attente ?? 1500);
-        await page.screenshot({ path: fichier(a.nom, l, i) });
+        await page.screenshot({ path: fichier(a.nom, l, i), fullPage: e.pleinePage ?? false });
         await ctx.close();
       }
     }
