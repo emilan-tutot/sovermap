@@ -163,13 +163,21 @@
                     "probable",
                     "non déterminé"
                   ]
+                },
+                "niveauSociete": {
+                  "enum": [
+                    "confirmé",
+                    "probable",
+                    "non déterminé"
+                  ]
                 }
               },
               "required": [
                 "role",
                 "societe",
                 "preuve",
-                "niveau"
+                "niveau",
+                "niveauSociete"
               ],
               "additionalProperties": false
             },
